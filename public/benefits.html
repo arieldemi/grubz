@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/images/favicon/site.webmanifest">
+
+  <title>Benefits of BSF Larvae | GRUBZ</title>
+  <meta name="description" content="Species-specific benefits of Black Soldier Fly larvae (BSFL) for chickens, birds, reptiles and fish; nutrition values; environmental impact; FAQs.">
+  <meta property="og:title" content="Benefits of BSF Larvae | GRUBZ" />
+  <meta property="og:description" content="Why BSFL are a superior natural feed: species-specific benefits, nutrition, and sustainability." />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="en_GB" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{ --grubz-1:#d04211; --grubz-2:#e37500; --grubz-3:#daa266; --grubz-4:#71391d; }
+    .bg-grubz{ background: linear-gradient(135deg,var(--grubz-1),var(--grubz-2)); }
+    .text-shadow{ text-shadow:0 2px 8px rgba(0,0,0,.25) }
+    .chip{ background: rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25) }
+    .card{ border-radius:1rem; box-shadow: 0 10px 30px rgba(0,0,0,.08) }
+    .btn{
+      background: var(--grubz-1); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700;
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+      box-shadow: 0 8px 20px rgba(208,66,17,.3);
+    }
+    .btn:hover{ transform: translateY(-1px); background:#bd3a0f; box-shadow:0 10px 24px rgba(208,66,17,.35) }
+    .btn-outline{ border:2px solid var(--grubz-1); color:var(--grubz-1); background:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
+    .btn-outline:hover{ background:var(--grubz-1); color:#fff }
+    .btn-soft{ border:1px solid #e5e5e5; background:#fff; color:#0a0a0a; border-radius:.75rem; padding:.7rem 1rem; font-weight:600; }
+    .input{ border:1px solid #e5e5e5; border-radius:.75rem; padding:.65rem .8rem; width:100%; }
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    :focus-visible { outline: 3px solid var(--grubz-1); outline-offset: 3px; }
+    [id^="benefits-"] {
+      scroll-margin-top: 6rem; /* adjust based on your header height */
+    }
+    .icon {
+      width: 28px; height: 28px; display: inline-block;
+      vertical-align: middle;
+      color: var(--grubz-1); /* use --grubz-4 if you prefer the dark brown */
+    }
+  </style>
+</head>
+
+<body class="antialiased text-zinc-800">
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:bg-white focus:text-black focus:px-3 focus:py-2 focus:rounded">Skip to main content</a>
+  <!-- Header (same design, simplified: no cart/auth) -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-zinc-200">
+    <!-- top ribbon -->
+    <div class="bg-grubz text-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-2 text-sm flex items-center justify-between">
+        <div class="inline-flex items-center gap-2">
+          <img src="/images/greece-flag-40.png" class="h-3.5" alt="GR flag" />
+          <span data-i18n="madeInGr">Made in Greece</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="lang-en" class="px-2 py-1 rounded chip" aria-pressed="true">EN</button>
+          <button id="lang-el" class="px-2 py-1 rounded chip" aria-pressed="false">ΕΛ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- main nav -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="/images/grubz-icon-80.png" alt="GRUBZ icon" class="h-14 w-14"/>
+        <a href="/" class="text-2xl font-extrabold tracking-tight" style="color:var(--grubz-4)">GRUBZ</a>
+      </div>
+      <nav class="hidden sm:flex items-center gap-6 text-sm">
+        <a href="/#benefits" class="hover:opacity-80" data-i18n="navBenefits">Benefits</a>
+        <a href="/#products" class="hover:opacity-80" data-i18n="navProducts">Products</a>
+        <a href="/#faq" class="hover:opacity-80" data-i18n="navFAQ">FAQ</a>
+        <a href="/#contact" class="hover:opacity-80" data-i18n="navContact">Contact</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="/#products" class="btn hidden sm:inline-block" data-i18n="buyNow">Buy Now</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" role="main">
+    <!-- Hero (on-brand) -->
+    <section class="bg-grubz text-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-14 grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight text-shadow mt-2">
+            <span data-i18n="benefitsHeroL1">Why Black Soldier Fly Larvae?</span>
+          </h1>
+          <p class="mt-5 text-lg/7 opacity-95" data-i18n="benefitsHeroSub">
+            Species-specific benefits for chickens, birds, reptiles and fish — plus nutrition values and environmental impact.
+          </p>
+          <div class="mt-7 flex gap-3">
+            <a href="/#products" class="btn" data-i18n="ctaShop">Shop GRUBZ</a>
+            <a href="#toc" class="btn-outline" data-i18n="ctaExplore">Explore topics</a>
+          </div>
+          <div class="mt-6 flex flex-wrap gap-2 text-sm opacity-95">
+            <span class="chip rounded px-3 py-1" data-i18n="chipProtein">Up to 50% protein</span>
+            <span class="chip rounded px-3 py-1" data-i18n="chipCalcium">Naturally high calcium</span>
+            <span class="chip rounded px-3 py-1" data-i18n="chipSustainable">Sustainably produced</span>
+          </div>
+        </div>
+        <div class="card bg-white/95 p-6">
+          <img src="/images/bsfl-hero.png" alt="Close-up of Black Soldier Fly larvae" class="w-full h-auto rounded-lg object-cover">
+        </div>
+      </div>
+    </section>
+
+    <!-- TOC -->
+    <section id="toc" class="bg-[#fff7f2]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+        <div class="card bg-white border p-6">
+          <h2 class="text-xl font-extrabold" style="color:var(--grubz-4)" data-i18n="onThisPage">On this page</h2>
+          <ul class="mt-4 grid md:grid-cols-2 gap-2 text-sm">
+            <li><a class="hover:opacity-80" href="#benefits-chickens" data-i18n="tocChickens">Chickens</a></li>
+            <li><a class="hover:opacity-80" href="#benefits-birds" data-i18n="tocBirds">Pet Birds</a></li>
+            <li><a class="hover:opacity-80" href="#benefits-reptiles" data-i18n="tocReptiles">Reptiles</a></li>
+            <li><a class="hover:opacity-80" href="#benefits-fish" data-i18n="tocFish">Fish</a></li>
+            <li><a class="hover:opacity-80" href="#environment" data-i18n="tocEnv">Environmental Impact</a></li>
+            <li><a class="hover:opacity-80" href="#nutrition" data-i18n="tocNut">Nutrition Values</a></li>
+            <li><a class="hover:opacity-80" href="#how-to-feed" data-i18n="tocHow">How to Feed & Tips</a></li>
+            <li><a class="hover:opacity-80" href="#faq" data-i18n="tocFAQ">FAQs</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Species sections -->
+    <section id="benefits-chickens" class="bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold flex items-center gap-2" style="color:var(--grubz-4)">
+          <div class="inline-flex items-center justify-center rounded-xl p-2 bg-gradient-to-br from-[#d04211] to-[#e37500]">
+            <img src="/images/chicken.png" alt="" class="w-6 h-6 object-contain invert brightness-0 saturate-0 opacity-90">
+          </div>
+          <span data-i18n="secChickens">Benefits for Chickens</span>
+        </h2>
+        <ul class="mt-4 list-disc pl-6 space-y-2 text-zinc-700">
+          <li data-i18n="c1">High-quality protein to support condition and recovery.</li>
+          <li data-i18n="c2">Naturally high calcium to support strong eggshells.</li>
+          <li data-i18n="c3">Highly palatable; encourages natural foraging behaviour.</li>
+          <li data-i18n="c4">Great as a training/reward treat alongside a balanced feed.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="benefits-birds" class="bg-[#fff7f2]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold flex items-center gap-2"
+    style="color:var(--grubz-4)">
+  <div class="inline-flex items-center justify-center rounded-xl p-2 bg-gradient-to-br from-[#d04211] to-[#e37500]">
+            <img src="/images/parrot.png" alt="" class="w-6 h-6 object-contain invert brightness-0 saturate-0 opacity-90">
+          </div>
+  <span data-i18n="secBirds">Benefits for Pet Birds</span>
+</h2>
+
+        <ul class="mt-4 list-disc pl-6 space-y-2 text-zinc-700">
+          <li data-i18n="b1">Natural insect snack for insectivorous/omnivorous species.</li>
+          <li data-i18n="b2">Protein and healthy fats to support feathers and energy.</li>
+          <li data-i18n="b3">Useful enrichment; can offer dry or slightly rehydrated.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="benefits-reptiles" class="bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold flex items-center gap-2" style="color:var(--grubz-4)">
+          <div class="inline-flex items-center justify-center rounded-xl p-2 bg-gradient-to-br from-[#d04211] to-[#e37500]">
+            <img src="/images/gecko.png" alt="" class="w-6 h-6 object-contain invert brightness-0 saturate-0 opacity-90">
+          </div>
+          <span data-i18n="secReptiles">Benefits for Pet Reptiles</span>
+        </h2>
+        <ul class="mt-4 list-disc pl-6 space-y-2 text-zinc-700">
+          <li data-i18n="r1">Balanced protein & fat; suitable for many lizards/geckos.</li>
+          <li data-i18n="r2">Often favourable Ca:P ratio vs many common feeders.</li>
+          <li data-i18n="r3">Dried BSFL store easily and are low-mess vs live feeders.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="benefits-fish" class="bg-[#fff7f2]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold flex items-center gap-2" style="color:var(--grubz-4)">
+          <div class="inline-flex items-center justify-center rounded-xl p-2 bg-gradient-to-br from-[#d04211] to-[#e37500]">
+            <img src="/images/fish.png" alt="" class="w-6 h-6 object-contain invert brightness-0 saturate-0 opacity-90">
+          </div>
+          <span data-i18n="secFish">Benefits for Fish</span>
+        </h2>
+        <ul class="mt-4 list-disc pl-6 space-y-2 text-zinc-700">
+          <li data-i18n="f1">Well-accepted natural prey for many tropical and pond fish.</li>
+          <li data-i18n="f2">Dense nutrition for growth/conditioning; float or pre-soak as needed.</li>
+          <li data-i18n="f3">Mix with pellets for variety and appetite stimulation.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Environmental impact -->
+    <section id="environment" class="bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <div class="card border p-6">
+          <h2 class="text-2xl font-extrabold flex items-center gap-2" style="color:var(--grubz-4)">
+          <img src="images/livinsoil.png" width="64">
+          <span data-i18n="secEnv">Environmental Impact</span>
+        </h2>
+          
+          <ul class="mt-4 list-disc pl-6 space-y-2 text-zinc-700">
+            <li data-i18n="e1">Upcycles low-value organic by-products into high-value protein and frass.</li>
+            <li data-i18n="e2">Efficient conversion and compact footprint vs traditional protein sources.</li>
+            <li data-i18n="e3">Frass (insect compost) supports soil health and plant growth.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nutrition table -->
+    <section id="nutrition" class="bg-[#fff7f2]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold" style="color:var(--grubz-4)" data-i18n="secNut">Nutrition Values (Dried BSFL, Typical Ranges)</h2>
+        <p class="mt-2 text-sm text-zinc-600" data-i18n="nutNote">Values vary by strain, diet, age, and process. Use ranges as guidance, not absolutes.</p>
+        <div class="mt-6 overflow-x-auto">
+          <table class="min-w-full border border-zinc-200 bg-white rounded-xl overflow-hidden">
+            <thead class="bg-zinc-50 text-left text-sm">
+              <tr>
+                <th class="px-4 py-3 border-b" data-i18n="nutMetric">Metric</th>
+                <th class="px-4 py-3 border-b" data-i18n="nutRange">Typical Range</th>
+                <th class="px-4 py-3 border-b" data-i18n="nutNotes">Notes</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm text-zinc-800">
+              <tr><td class="px-4 py-3 border-b" data-i18n="nutCP">Crude Protein</td><td class="px-4 py-3 border-b">40–55%</td><td class="px-4 py-3 border-b" data-i18n="nutCPn">Method- and batch-dependent</td></tr>
+              <tr><td class="px-4 py-3 border-b" data-i18n="nutFat">Crude Fat</td><td class="px-4 py-3 border-b">20–35%</td><td class="px-4 py-3 border-b" data-i18n="nutFatn">Defatting lowers this</td></tr>
+              <tr><td class="px-4 py-3 border-b" data-i18n="nutMoist">Moisture</td><td class="px-4 py-3 border-b">3–8%</td><td class="px-4 py-3 border-b" data-i18n="nutMoistn">Shelf-stable target</td></tr>
+              <tr><td class="px-4 py-3 border-b" data-i18n="nutAsh">Ash (minerals)</td><td class="px-4 py-3 border-b">8–15%</td><td class="px-4 py-3 border-b" data-i18n="nutAshn">Includes calcium</td></tr>
+              <tr><td class="px-4 py-3 border-b" data-i18n="nutCa">Calcium</td><td class="px-4 py-3 border-b">1.5–8%+</td><td class="px-4 py-3 border-b" data-i18n="nutCan">Strain/diet dependent</td></tr>
+              <tr><td class="px-4 py-3 border-b" data-i18n="nutCap">Ca:P Ratio</td><td class="px-4 py-3 border-b">~1.5:1 – 3:1</td><td class="px-4 py-3 border-b" data-i18n="nutCapn">Often favourable vs many feeders</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to feed -->
+    <section id="how-to-feed" class="bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold" style="color:var(--grubz-4)" data-i18n="secHow">How to Feed & Tips</h2>
+        <div class="mt-5 grid md:grid-cols-2 gap-6">
+          <div class="card border bg-white p-5">
+            <h3 class="font-bold" data-i18n="howGen">General Guidance</h3>
+            <ul class="mt-3 list-disc pl-6 space-y-2 text-zinc-700">
+              <li data-i18n="how1">Use as a supplement or treat alongside a balanced diet.</li>
+              <li data-i18n="how2">Adjust portion to species size and activity; start small and observe.</li>
+              <li data-i18n="how3">For dried BSFL, you can briefly soak to soften for certain species.</li>
+            </ul>
+          </div>
+          <div class="card border bg-white p-5">
+            <h3 class="font-bold" data-i18n="howStor">Storage</h3>
+            <ul class="mt-3 list-disc pl-6 space-y-2 text-zinc-700">
+              <li data-i18n="stor1">Keep sealed in a cool, dry place away from sunlight.</li>
+              <li data-i18n="stor2">Use within the best-before date; reseal after each use.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="bg-[#fff7f2]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <h2 class="text-2xl font-extrabold" style="color:var(--grubz-4)" data-i18n="faqTitle">FAQs</h2>
+        <div class="mt-6 space-y-4">
+          <details class="card border bg-white p-4">
+            <summary class="font-semibold cursor-pointer" data-i18n="qDaily">Can I feed BSFL every day?</summary>
+            <p class="mt-2 text-zinc-700" data-i18n="aDaily">Yes, as part of a varied diet. Many keepers use BSFL frequently; balance with other feeds.</p>
+          </details>
+          <details class="card border bg-white p-4">
+            <summary class="font-semibold cursor-pointer" data-i18n="qYoung">Are they safe for young animals?</summary>
+            <p class="mt-2 text-zinc-700" data-i18n="aYoung">Offer appropriately sized portions. For very young or small animals, crush or pre-soak as needed.</p>
+          </details>
+          <details class="card border bg-white p-4">
+            <summary class="font-semibold cursor-pointer" data-i18n="qAllergy">What about allergies?</summary>
+            <p class="mt-2 text-zinc-700" data-i18n="aAllergy">Introduce gradually and monitor. Discontinue if any adverse reaction occurs; consult your vet if unsure.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+        <div class="card p-8 border flex items-center justify-between gap-6">
+          <div>
+            <h2 class="text-2xl font-extrabold" style="color:var(--grubz-4)" data-i18n="ctaReady">Ready to try GRUBZ?</h2>
+            <p class="mt-1 text-zinc-600" data-i18n="ctaLine">High-quality dried BSFL, packed in Greece.</p>
+          </div>
+          <a href="/#products" class="btn" data-i18n="ctaShop">Shop GRUBZ</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer (same style as home) -->
+  <footer id="contact" class="bg-zinc-900 text-zinc-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-3 gap-8">
+      <div>
+        <h3 class="font-extrabold text-xl">GRUBZ</h3>
+        <p class="text-sm mt-2 opacity-80" data-i18n="footTag">High-protein BSF snacks — Made in Greece.</p>
+      </div>
+      <div>
+        <h4 class="font-bold mb-2" data-i18n="footLinks">Links</h4>
+        <ul class="space-y-2 text-sm opacity-90">
+          <li><a href="/#benefits" class="hover:underline" data-i18n="navBenefits">Benefits</a></li>
+          <li><a href="/#products" class="hover:underline" data-i18n="navProducts">Products</a></li>
+          <li><a href="/#faq" class="hover:underline" data-i18n="navFAQ">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-2" data-i18n="footContact">Contact</h4>
+        <p class="text-sm opacity-90"><a href="mailto:info@grubz.gr">info@grubz.gr</a></p>
+        <p class="text-sm opacity-90">Thessaloniki, Greece</p>
+      </div>
+    </div>
+    <div class="border-t border-white/10">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-xs opacity-70 flex items-center justify-between">
+        <span>© <span id="year"></span> GRUBZ</span>
+        <span data-i18n="footMade">Made with ❤️ in Greece</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // --- Minimal i18n (reuse keys from homepage where possible) ---
+  const Cookie = {
+    set(n, v, d = 180) {
+      const exp = new Date(Date.now() + d*864e5).toUTCString();
+      document.cookie = `${n}=${encodeURIComponent(v)}; Expires=${exp}; Path=/; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;
+    },
+    get(n) {
+      const m = document.cookie.split('; ').find(r => r.startsWith(n+'='));
+      return m ? decodeURIComponent(m.split('=')[1]) : null;
+    }
+  };
+
+  const i18n = {
+    en: {
+      madeInGr:"Made in Greece",
+      navBenefits:"Benefits", navProducts:"Products", navFAQ:"FAQ", navContact:"Contact",
+      buyNow:"Buy Now", ctaShop:"Shop GRUBZ", ctaExplore:"Explore topics",
+      chipProtein:"Up to 50% protein", chipCalcium:"Naturally high calcium", chipSustainable:"Sustainably produced",
+      benefitsHeroL1:"Why Black Soldier Fly Larvae?",
+      benefitsHeroSub:"Species-specific benefits for chickens, birds, reptiles and fish — plus nutrition values and environmental impact.",
+      onThisPage:"On this page", tocChickens:"Chickens", tocBirds:"Pet Birds", tocReptiles:"Reptiles", tocFish:"Fish", tocEnv:"Environmental Impact", tocNut:"Nutrition Values", tocHow:"How to Feed & Tips", tocFAQ:"FAQs",
+      secChickens:"Benefits for Chickens", secBirds:"Benefits for Pet Birds", secReptiles:"Benefits for Reptiles", secFish:"Benefits for Fish",
+      c1:"High-quality protein to support condition and recovery.",
+      c2:"Naturally high calcium to support strong eggshells.",
+      c3:"Highly palatable; encourages natural foraging behaviour.",
+      c4:"Great as a training/reward treat alongside a balanced feed.",
+      b1:"Natural insect snack for insectivorous/omnivorous species.",
+      b2:"Protein and healthy fats to support feathers and energy.",
+      b3:"Useful enrichment; can offer dry or slightly rehydrated.",
+      r1:"Balanced protein & fat; suitable for many lizards/geckos.",
+      r2:"Often favourable Ca:P ratio vs many common feeders.",
+      r3:"Dried BSFL store easily and are low-mess vs live feeders.",
+      f1:"Well-accepted natural prey for many tropical and pond fish.",
+      f2:"Dense nutrition for growth/conditioning; float or pre-soak as needed.",
+      f3:"Mix with pellets for variety and appetite stimulation.",
+      secEnv:"Environmental Impact",
+      e1:"Upcycles low-value organic by-products into high-value protein and frass.",
+      e2:"Efficient conversion and compact footprint vs traditional protein sources.",
+      e3:"Frass (insect compost) supports soil health and plant growth.",
+      secNut:"Nutrition Values (Dried BSFL, Typical Ranges)",
+      nutNote:"Values vary by strain, diet, age, and process. Use ranges as guidance, not absolutes.",
+      nutMetric:"Metric", nutRange:"Typical Range", nutNotes:"Notes",
+      nutCP:"Crude Protein", nutCPn:"Method- and batch-dependent",
+      nutFat:"Crude Fat", nutFatn:"Defatting lowers this",
+      nutMoist:"Moisture", nutMoistn:"Shelf-stable target",
+      nutAsh:"Ash (minerals)", nutAshn:"Includes calcium",
+      nutCa:"Calcium", nutCan:"Strain/diet dependent",
+      nutCap:"Ca:P Ratio", nutCapn:"Often favourable vs many feeders",
+      secHow:"How to Feed & Tips", howGen:"General Guidance",
+      how1:"Use as a supplement or treat alongside a balanced diet.",
+      how2:"Adjust portion to species size and activity; start small and observe.",
+      how3:"For dried BSFL, you can briefly soak to soften for certain species.",
+      howStor:"Storage",
+      stor1:"Keep sealed in a cool, dry place away from sunlight.",
+      stor2:"Use within the best-before date; reseal after each use.",
+      faqTitle:"FAQs",
+      qDaily:"Can I feed BSFL every day?", aDaily:"Yes, as part of a varied diet. Many keepers use BSFL frequently; balance with other feeds.",
+      qYoung:"Are they safe for young animals?", aYoung:"Offer appropriately sized portions. For very young or small animals, crush or pre-soak as needed.",
+      qAllergy:"What about allergies?", aAllergy:"Introduce gradually and monitor. Discontinue if any adverse reaction occurs; consult your vet if unsure.",
+      ctaReady:"Ready to try GRUBZ?", ctaLine:"High-quality dried BSFL, packed in Greece.",
+      footTag:"High-protein BSF snacks — Made in Greece.", footLinks:"Links", footContact:"Contact", footMade:"Made with ❤️ in Greece",
+      readMore:"Read more…",
+      pageTitle:"Benefits of BSF Larvae | GRUBZ",
+      pageDesc:"Species-specific benefits of Black Soldier Fly larvae (BSFL) for chickens, birds, reptiles and fish; nutrition values; environmental impact; FAQs."
+    },
+    el: {
+      madeInGr:"Παράγεται στην Ελλάδα",
+      navBenefits:"Οφέλη", navProducts:"Προϊόντα", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
+      buyNow:"Αγορά τώρα", ctaShop:"Αγορά GRUBZ", ctaExplore:"Περιήγηση ενοτήτων",
+      chipProtein:"Έως 50% πρωτεΐνη", chipCalcium:"Φυσικά υψηλό ασβέστιο", chipSustainable:"Βιώσιμη παραγωγή",
+      benefitsHeroL1:"Γιατί προνύμφες Black Soldier Fly;",
+      benefitsHeroSub:"Εξειδικευμένα οφέλη για κότες, πουλιά, ερπετά και ψάρια — μαζί με διατροφικές τιμές και περιβαλλοντικό αποτύπωμα.",
+      onThisPage:"Σε αυτή τη σελίδα", tocChickens:"Κότες", tocBirds:"Κατοικίδια Πτηνά", tocReptiles:"Ερπετά", tocFish:"Ψάρια", tocEnv:"Περιβαλλοντικό Αποτύπωμα", tocNut:"Διατροφικές Τιμές", tocHow:"Πώς να ταΐζετε & συμβουλές", tocFAQ:"Συχνές Ερωτήσεις",
+      secChickens:"Οφέλη για κότες", secBirds:"Οφέλη για κατοικίδια πτηνά", secReptiles:"Οφέλη για ερπετά", secFish:"Οφέλη για ψάρια",
+      c1:"Υψηλής ποιότητας πρωτεΐνη για κατάσταση και ανάκαμψη.",
+      c2:"Φυσικά υψηλό ασβέστιο για ισχυρά τσόφλια.",
+      c3:"Πολύ εύγευστο· ενθαρρύνει φυσική αναζήτηση τροφής.",
+      c4:"Ιδανικό ως λιχουδιά/επιβράβευση μαζί με ισορροπημένη τροφή.",
+      b1:"Φυσικό έντομο-σνακ για εντομοφάγα/παμφάγα είδη.",
+      b2:"Πρωτεΐνη και υγιή λιπαρά για φτέρωμα και ενέργεια.",
+      b3:"Εμπλουτισμός· μπορεί να δοθεί στεγνό ή ελαφρώς μουλιασμένο.",
+      r1:"Ισορροπημένη πρωτεΐνη & λίπος· κατάλληλο για πολλά είδη.",
+      r2:"Συχνά ευνοϊκή αναλογία Ca:P σε σχέση με άλλα έντομα.",
+      r3:"Οι αποξηραμένες προνύμφες αποθηκεύονται εύκολα, χωρίς ακαταστασία.",
+      f1:"Εύκολα αποδεκτή φυσική λεία για πολλά τροπικά/λιμνόψαρα.",
+      f2:"Πυκνή διατροφή για ανάπτυξη· επιπλέει ή μουλιάζει ανάλογα.",
+      f3:"Συνδυάστε με pellets για ποικιλία και όρεξη.",
+      secEnv:"Περιβαλλοντικό Αποτύπωμα",
+      e1:"Αναβαθμίζει υποπροϊόντα σε υψηλής αξίας πρωτεΐνη και frass.",
+      e2:"Αποδοτική μετατροπή και μικρό αποτύπωμα χώρου.",
+      e3:"Το frass υποστηρίζει υγεία εδάφους και ανάπτυξη φυτών.",
+      secNut:"Διατροφικές Τιμές (Αποξηραμένες BSFL, Τυπικές)",
+      nutNote:"Οι τιμές ποικίλουν ανάλογα με στέλεχος, δίαιτα, ηλικία, επεξεργασία.",
+      nutMetric:"Δείκτης", nutRange:"Τυπικό Εύρος", nutNotes:"Σημειώσεις",
+      nutCP:"Ακατέργαστη Πρωτεΐνη", nutCPn:"Εξαρτάται από μέθοδο/παρτίδα",
+      nutFat:"Ακατέργαστα Λίπη", nutFatn:"Η απολίπανση μειώνει το ποσοστό",
+      nutMoist:"Υγρασία", nutMoistn:"Στόχος σταθερότητας",
+      nutAsh:"Τέφρα (ορυκτά)", nutAshn:"Συμπεριλαμβάνει ασβέστιο",
+      nutCa:"Ασβέστιο", nutCan:"Εξαρτάται από στέλεχος/δίαιτα",
+      nutCap:"Αναλογία Ca:P", nutCapn:"Συχνά ευνοϊκή",
+      secHow:"Πώς να ταΐζετε & συμβουλές", howGen:"Γενικές Οδηγίες",
+      how1:"Χρησιμοποιήστε ως συμπλήρωμα/λιχουδιά με ισορροπημένη τροφή.",
+      how2:"Προσαρμόστε μερίδα σε μέγεθος/δραστηριότητα· ξεκινήστε μικρά.",
+      how3:"Για αποξηραμένες, μουλιάστε λίγο αν χρειάζεται.",
+      howStor:"Αποθήκευση",
+      stor1:"Κρατήστε κλειστές σε δροσερό/ξηρό μέρος μακριά από ήλιο.",
+      stor2:"Χρήση εντός ημ/νίας, κλείσιμο μετά από κάθε χρήση.",
+      faqTitle:"Συχνές Ερωτήσεις",
+      qDaily:"Να ταΐζω καθημερινά;", aDaily:"Ναι, ως μέρος ποικίλης διατροφής.",
+      qYoung:"Είναι ασφαλές για νεαρά ζώα;", aYoung:"Δώστε κατάλληλο μέγεθος· θρυμματίστε/μουλιάστε όπου χρειάζεται.",
+      qAllergy:"Τι με αλλεργίες;", aAllergy:"Εισαγάγετε σταδιακά και παρακολουθήστε.",
+      ctaReady:"Έτοιμοι για GRUBZ;", ctaLine:"Αποξηραμένες BSFL υψηλής ποιότητας, συσκευασμένες στην Ελλάδα.",
+      footTag:"Πρωτεϊνούχα σνακ BSF — Ελληνικής παραγωγής.", footLinks:"Σύνδεσμοι", footContact:"Επικοινωνία", footMade:"Φτιαγμένο με ❤️ στην Ελλάδα",
+      readMore:"Περισσότερα…",
+      pageTitle:"Οφέλη προνυμφών BSF | GRUBZ",
+      pageDesc:"Εξειδικευμένα οφέλη των προνυμφών BSF για κότες, πουλιά, ερπετά και ψάρια· διατροφικές τιμές· περιβαλλοντικό αποτύπωμα· FAQ."
+    }
+  };
+
+  const lang = () =>
+    (Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') ||
+     (navigator.language && navigator.language.startsWith('el') ? 'el' : 'en'));
+
+  function setLangButtons(l) {
+    const en = document.getElementById('lang-en');
+    const el = document.getElementById('lang-el');
+    if (en) en.setAttribute('aria-pressed', String(l === 'en'));
+    if (el) el.setAttribute('aria-pressed', String(l === 'el'));
+  }
+
+  function applyLang(l) {
+    const dict = i18n[l] || i18n.en;
+
+    // Replace text for all data-i18n nodes
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      const val = dict[key];
+      if (typeof val === 'string') {
+        // all your translations are plain text → textContent is correct/safe
+        el.textContent = val;
+      }
+    });
+
+    // html lang + buttons
+    document.documentElement.lang = (l === 'el' ? 'el' : 'en');
+    localStorage.setItem('grubz_lang', l);
+    Cookie.set('grubz_lang', l);
+    setLangButtons(l);
+
+    // Update <title> and meta description / og:locale for consistency
+    if (dict.pageTitle) document.title = dict.pageTitle;
+    const mDesc = document.querySelector('meta[name="description"]');
+    if (mDesc && dict.pageDesc) mDesc.setAttribute('content', dict.pageDesc);
+    const ogLocale = document.querySelector('meta[property="og:locale"]');
+    if (ogLocale) ogLocale.setAttribute('content', l === 'el' ? 'el_GR' : 'en_GB');
+  }
+
+  // Wire clicks AFTER DOM is ready (the script is at the end, but this is safe)
+  document.getElementById('lang-en')?.addEventListener('click', () => applyLang('en'));
+  document.getElementById('lang-el')?.addEventListener('click', () => applyLang('el'));
+
+  // Footer year (single id only)
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Initial paint
+  applyLang(lang());
+</script>
+
+</body>
+</html>

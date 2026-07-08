@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Prevent zoom on mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/images/favicon/site.webmanifest">
+
+    <title>GRUBZ — High-Protein BSF Snacks | Made in Greece</title>
+    <meta name="description" content="GRUBZ: high-protein Black Soldier Fly larvae snacks for reptiles, birds, and fish. Made in Greece.">
+    <meta property="og:title" content="GRUBZ — High-Protein BSF Snacks" />
+    <meta property="og:description" content="Natural protein. Sustainable nutrition. Made in Greece." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_GB" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      :root{ --grubz-1:#d04211; --grubz-2:#e37500; --grubz-3:#daa266; --grubz-4:#71391d; }
+      .bg-grubz{ background: linear-gradient(135deg,var(--grubz-1),var(--grubz-2)); }
+      .text-shadow{ text-shadow:0 2px 8px rgba(0,0,0,.25) }
+      .chip{ background: rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25) }
+      .card{ border-radius:1rem; box-shadow: 0 10px 30px rgba(0,0,0,.08) }
+      .btn{
+        background: var(--grubz-1); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700;
+        transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+        box-shadow: 0 8px 20px rgba(208,66,17,.3);
+      }
+      .btn:hover{ transform: translateY(-1px); background:#bd3a0f; box-shadow:0 10px 24px rgba(208,66,17,.35) }
+      .btn-outline{ border:2px solid var(--grubz-1); color:var(--grubz-1); background:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
+      .btn-outline:hover{ background:var(--grubz-1); color:#fff }
+      .btn-soft{ border:1px solid #e5e5e5; background:#fff; color:#0a0a0a; border-radius:.75rem; padding:.7rem 1rem; font-weight:600; }
+      .btn-soft:hover{ background:#f5f5f5 }
+      .btn-danger{ border:1px solid #ef4444; color:#ef4444; background:#fff; border-radius:.75rem; padding:.7rem 1rem; font-weight:700; }
+      .btn-danger:hover{ background:#fee2e2 }
+      .input{ border:1px solid #e5e5e5; border-radius:.75rem; padding:.65rem .8rem; width:100%; }
+      .label{ font-size:.8rem; color:#525252 }
+      .cookie-banner{ box-shadow: 0 -10px 30px rgba(0,0,0,.12) }
+      .btn:disabled,
+      .btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+      .fade-slider { position: relative; border-radius: 1rem; overflow: hidden; }
+      .fade-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; }
+      .fade-slide.active { opacity: 1; }
+      .fade-dots { position: absolute; left: 50%; bottom: .5rem; transform: translateX(-50%); display: flex; gap: .4rem; }
+      .fade-dots button{ width:8px; height:8px; border-radius:9999px; background:rgba(255,255,255,.6); border:none }
+      .fade-dots button.active{ background:#fff; }
+      .product-thumb { height: 15rem; }
+      @media (min-width: 640px){ .product-thumb { height: 13rem; } }
+      :focus-visible { outline: 3px solid #111; outline-offset: 3px; }
+      .btn:focus-visible, .btn-outline:focus-visible, .btn-soft:focus-visible, .btn-danger:focus-visible { outline-color: var(--grubz-1); }
+      .skip-link { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+      .skip-link:focus { left:1rem; top:1rem; width:auto; height:auto; background:#fff; color:#111; border:2px solid #111; border-radius:.5rem; padding:.5rem .75rem; z-index:9999; }
+      @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+        .fade-slide { transition: none !important; }
+      }
+      .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      .btn-added{background:#16a34a; color:#fff; box-shadow:0 8px 20px rgba(22,163,74,.35)}
+      .btn-added:hover{background:#15803d; box-shadow:0 10px 24px rgba(22,163,74,.4)}
+      @keyframes btn-pop{0%{transform:scale(1)}35%{transform:scale(1.07)}100%{transform:scale(1)}}
+      .btn-pop{animation:btn-pop .6s ease}
+      @keyframes badge-bump{0%{transform:scale(1)}35%{transform:scale(1.2)}100%{transform:scale(1)}}
+      .badge-bump{animation:badge-bump .45s ease}
+      .cart-ping{ position:absolute; inset:-6px; border-radius:12px; pointer-events:none; box-shadow:0 0 0 0 rgba(255,255,255,.9); animation:cart-ping 700ms ease-out forwards }
+      @keyframes cart-ping{ 0%{box-shadow:0 0 0 0 rgba(255,255,255,.9); opacity:1} 100%{box-shadow:0 0 0 12px rgba(255,255,255,0); opacity:0} }
+      .product-card { position: relative; }
+      .badge-oos{ position:absolute; top:.75rem; left:.75rem; background:#111; color:#fff; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
+      .badge-low{ position:absolute; top:.75rem; right:.75rem; background:#eab308; color:#111; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
+      .boxnow-frame{ width:100%; height:min(76vh,720px); border:0; }
+      .product-detail-media{ background:#f8f1eb; }
+      .product-detail-image{ aspect-ratio:3/2; background-size:cover; background-repeat:no-repeat; }
+    </style>
+  </head>
+
+  <body class="antialiased text-zinc-800">
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-zinc-200">
+      <div class="bg-grubz text-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-2 text-sm flex items-center justify-between">
+          <div class="inline-flex items-center gap-2">
+            <img src="images/greece-flag-40.png" class="h-3.5" alt="GR flag" />
+            <span data-i18n="madeInGr">Made in Greece</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="lang-en" class="px-2 py-1 rounded chip">EN</button>
+            <button id="lang-el" class="px-2 py-1 rounded chip">ΕΛ</button>
+            <button id="authBtn" class="px-2 py-1 rounded chip" data-i18n="signIn">Sign in</button>
+
+            <button id="cartBtn" class="relative ml-2 rounded-lg px-3 py-1.5 bg-white/10 hover:bg-white/20 transition"
+                    aria-label="Open cart" aria-haspopup="dialog" aria-controls="cartModal">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l3-7H6.4M7 13l-1.3 5.2A1 1 0 007 20h10m-9 0a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 110 2 1 1 0 010-2z"/>
+              </svg>
+              <span id="cartCount"
+                class="absolute -top-1 -right-1 hidden min-w-[18px] h-[18px] text-[11px] leading-[18px] text-center rounded-full bg-white text-zinc-900 font-bold px-1">0</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="./images/grubz-icon-80.png" alt="GRUBZ icon" class="h-14 w-14"/>
+          <span class="text-2xl font-extrabold tracking-tight" style="color:var(--grubz-4)">GRUBZ</span>
+        </div>
+        <nav class="hidden sm:flex items-center gap-6 text-sm">
+          <a href="#benefits" class="hover:opacity-80" data-i18n="navBenefits">Benefits</a>
+          <a href="#products" class="hover:opacity-80" data-i18n="navProducts">Products</a>
+          <a href="#faq" class="hover:opacity-80" data-i18n="navFAQ">FAQ</a>
+          <a href="#contact" class="hover:opacity-80" data-i18n="navContact">Contact</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <a href="#products" class="btn hidden sm:inline-block" data-i18n="buyNow">Buy Now</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1" role="main">
+      <!-- Hero -->
+      <section class="bg-grubz text-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-14 grid md:grid-cols-2 gap-10">
+          <div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight text-shadow mt-6">
+              <span data-i18n="heroTitleL1">High-Protein</span>
+              <span data-i18n="heroTitleL2">BSF Snacks for Pets & Poultry</span>
+            </h1>
+            <p class="mt-5 text-lg/7 opacity-95" data-i18n="heroSubtitle">
+              Natural nutrition for reptiles, birds, and fish. Sustainable, tasty, and made in Greece.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a href="#products" class="btn" data-i18n="ctaShop">Shop GRUBZ</a>
+              <a href="#benefits" class="btn btn-outline" data-i18n="ctaLearn">Why GRUBZ?</a>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-2 text-sm opacity-95">
+              <span class="chip rounded px-3 py-1" data-i18n="chipProtein">Up to 50% protein</span>
+              <span class="chip rounded px-3 py-1" data-i18n="chipCalcium">Naturally high calcium</span>
+              <span class="chip rounded px-3 py-1" data-i18n="chipSustainable">Sustainably produced</span>
+            </div>
+          </div>
+          <div class="card bg-white/95 p-6">
+            <div id="heroSlider" class="fade-slider aspect-[16/10]">
+              <noscript>
+                <img src="images/bearded-dragon-rectangle.png" alt="Happy reptile with GRUBZ"
+                     class="absolute inset-0 w-full h-full object-cover">
+              </noscript>
+              <div class="fade-dots" aria-label="Hero images"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Benefits -->
+      <section id="benefits" class="bg-[#fff7f2]">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="benefitsTitle">Why GRUBZ?</h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="card bg-white p-6">
+              <h3 class="font-bold mb-2" data-i18n="b1Title">Complete Nutrition</h3>
+              <p class="text-sm opacity-90" data-i18n="b1Text">Balanced protein, fats, and micronutrients for healthy growth.</p>
+            </div>
+            <div class="card bg-white p-6">
+              <h3 class="font-bold mb-2" data-i18n="b2Title">Naturally High Calcium</h3>
+              <p class="text-sm opacity-90" data-i18n="b2Text">BSF larvae have excellent calcium levels—great for bones and eggshells.</p>
+            </div>
+            <div class="card bg-white p-6">
+              <h3 class="font-bold mb-2" data-i18n="b3Title">Made in Greece</h3>
+              <p class="text-sm opacity-90" data-i18n="b3Text">Fresh, local production you can trust.</p>
+            </div>
+            <div class="card bg-white p-6">
+              <h3 class="font-bold mb-2" data-i18n="b4Title">Sustainable</h3>
+              <p class="text-sm opacity-90" data-i18n="b4Text">Lower footprint vs. traditional protein sources.</p>
+            </div>
+          </div>
+          <a href="/benefits.html"
+           class="btn mt-5 inline-flex items-center gap-2"
+           aria-label="Read more about BSF larvae benefits"
+           data-analytics="benefits_read_more_click"
+           data-i18n="readMore">
+          Read more…
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 10H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </a>
+        </div>
+      </section>
+
+      <!-- Products -->
+      <section id="products" class="bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="productsTitle">Products</h2>
+
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+
+            <article class="card border p-5 h-full flex flex-col product-card" data-id="happy-chicken-1kg">
+              <div class="product-thumb mb-4 rounded-lg bg-[url('images/happy-chicken-1kg.png')] bg-cover bg-center"></div>
+              <h3 class="font-bold" data-i18n="p4Name">Happy Chicken - 1KG</h3>
+              <p class="text-sm opacity-80 mt-1" data-i18n="p4Desc">Dried BSF larvae for chickens.</p>
+              <div class="mt-auto pt-4 flex items-center justify-between">
+                <div class="leading-tight">
+                  <span class="font-extrabold price" data-id="happy-chicken-1kg" style="color:var(--grubz-1)"></span>
+                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
+                </div>
+                <button class="btn text-sm" data-product="happy-chicken-1kg" data-i18n="btnAdd">Add to cart</button>
+              </div>
+            </article>
+
+            <article class="card border p-5 h-full flex flex-col product-card" data-id="happy-chicken-2kg">
+              <div class="product-thumb mb-4 rounded-lg bg-[url('images/happy-chicken-2kg.png')] bg-cover bg-center"></div>
+              <h3 class="font-bold" data-i18n="p5Name">Happy Chicken - 2KG</h3>
+              <p class="text-sm opacity-80 mt-1" data-i18n="p5Desc">Value pack of dried BSF larvae for chickens.</p>
+              <div class="mt-auto pt-4 flex items-center justify-between">
+                <div class="leading-tight">
+                  <span class="font-extrabold price" data-id="happy-chicken-2kg" style="color:var(--grubz-1)"></span>
+                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
+                </div>
+                <button class="btn text-sm" data-product="happy-chicken-2kg" data-i18n="btnAdd">Add to cart</button>
+              </div>
+            </article>
+
+            <article class="card border p-5 h-full flex flex-col product-card" data-id="happy-chicken-3kg">
+              <div class="product-thumb mb-4 rounded-lg bg-[url('images/happy-chicken-3kg.png')] bg-cover bg-center"></div>
+              <h3 class="font-bold" data-i18n="p6Name">Happy Chicken - 3KG</h3>
+              <p class="text-sm opacity-80 mt-1" data-i18n="p6Desc">Large pack of dried BSF larvae for chickens.</p>
+              <div class="mt-auto pt-4 flex items-center justify-between">
+                <div class="leading-tight">
+                  <span class="font-extrabold price" data-id="happy-chicken-3kg" style="color:var(--grubz-1)"></span>
+                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
+                </div>
+                <button class="btn text-sm" data-product="happy-chicken-3kg" data-i18n="btnAdd">Add to cart</button>
+              </div>
+            </article>
+
+            <article class="card border p-5 h-full flex flex-col product-card" data-id="grubz-100g">
+              <div class="product-thumb mb-4 rounded-lg bg-[url('images/grubz-product-100g.png')] bg-cover bg-center"></div>
+              <h3 class="font-bold" data-i18n="p1Name">GRUBZ Dried BSF Larvae 100g</h3>
+              <p class="text-sm opacity-80 mt-1" data-i18n="p1Desc">Crispy dried larvae for reptiles, birds & fish.</p>
+              <div class="mt-auto pt-4 flex items-center justify-between">
+                <div class="leading-tight">
+                  <span class="font-extrabold price" data-id="grubz-100g" style="color:var(--grubz-1)"></span>
+                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
+                </div>
+                <button class="btn text-sm" data-product="grubz-100g" data-i18n="btnAdd">Add to cart</button>
+              </div>
+            </article>
+
+            <article class="card border p-5 h-full flex flex-col product-card" data-id="grubz-300g">
+              <div class="product-thumb mb-4 rounded-lg bg-[url('images/grubz-product-300g.png')] bg-cover bg-center"></div>
+              <h3 class="font-bold" data-i18n="p2Name">GRUBZ Premium Dried</h3>
+              <p class="text-sm opacity-80 mt-1" data-i18n="p2Desc">Larger larvae, extra crunch, top pick for adults.</p>
+              <div class="mt-auto pt-4 flex items-center justify-between">
+                <div class="leading-tight">
+                  <span class="font-extrabold price" data-id="grubz-300g" style="color:var(--grubz-1)"></span>
+                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
+                </div>
+                <button class="btn text-sm" data-product="grubz-300g" data-i18n="btnAdd">Add to cart</button>
+              </div>
+            </article>
+
+            <article class="card border p-5 h-full flex flex-col product-card" data-id="grubz-500g">
+              <div class="product-thumb mb-4 rounded-lg bg-[url('images/grubz-product-500g.png')] bg-cover bg-center"></div>
+              <h3 class="font-bold" data-i18n="p3Name">GRUBZ Mixed Treat</h3>
+              <p class="text-sm opacity-80 mt-1" data-i18n="p3Desc">Dried BSF with herbs for picky eaters.</p>
+              <div class="mt-auto pt-4 flex items-center justify-between">
+                <div class="leading-tight">
+                  <span class="font-extrabold price" data-id="grubz-500g" style="color:var(--grubz-1)"></span>
+                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
+                </div>
+                <button class="btn text-sm" data-product="grubz-500g" data-i18n="btnAdd">Add to cart</button>
+              </div>
+            </article>
+
+            
+          </div>
+
+          <div class="mt-10 flex flex-wrap gap-3">
+            <button id="checkout" class="btn" data-i18n="btnCheckout">Checkout</button>
+            <button id="clearCart" class="btn btn-outline" data-i18n="btnClear">Clear cart</button>
+          </div>
+        </div>
+      </section>  
+    </main>
+
+    <footer id="contact" class="bg-zinc-900 text-zinc-100">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-3 gap-8">
+        <div>
+          <h3 class="font-extrabold text-xl">GRUBZ</h3>
+          <p class="text-sm mt-2 opacity-80" data-i18n="footTag">High-protein BSF snacks — Made in Greece.</p>
+          <button id="manageCookies" class="mt-3 text-xs underline opacity-80 hover:opacity-100" data-i18n="manageCookies">
+            Manage cookies
+          </button>
+        </div>
+        <div>
+          <h4 class="font-bold mb-2" data-i18n="footLinks">Links</h4>
+          <ul class="space-y-2 text-sm opacity-90">
+            <li><a href="#benefits" class="hover:underline" data-i18n="navBenefits">Benefits</a></li>
+            <li><a href="#products" class="hover:underline" data-i18n="navProducts">Products</a></li>
+            <li><a href="#faq" class="hover:underline" data-i18n="navFAQ">FAQ</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold mb-2" data-i18n="footContact">Contact</h4>
+          <p class="text-sm opacity-90"><a href="mailto:info@grubz.gr">info@grubz.gr</a></p>
+          <p class="text-sm opacity-90">Thessaloniki, Greece</p>
+        </div>
+      </div>
+      <div class="border-t border-white/10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-xs opacity-70 flex items-center justify-between">
+          <span>© <span id="year"></span> GRUBZ</span>
+          <span data-i18n="footMade">Made with ❤️ in Greece</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Cookie banner -->
+    <div id="cookieBanner" class="cookie-banner fixed bottom-0 inset-x-0 z-[60] bg-white border-t border-zinc-200 hidden">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <p class="text-sm text-zinc-700">
+          <span data-i18n="cookieText">We use essential cookies to run this site and, with your consent, analytics to improve it.</span>
+          <a href="/privacy" class="underline" data-i18n="cookieLearnMore">Learn more</a>.
+        </p>
+        <div class="flex gap-2">
+          <button id="cookieReject" class="btn btn-outline text-sm" data-i18n="cookieReject">Reject non-essential</button>
+          <button id="cookieAccept" class="btn text-sm" data-i18n="cookieAccept">Accept all</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CART POPUP -->
+    <div id="cartModal" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+      <div id="cartBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
+      <div id="cartPanel" class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2
+                                bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition">
+        <div class="p-4 border-b flex items-center justify-between">
+          <h3 id="cartTitle" class="text-lg font-extrabold" data-i18n="cartTitle">Your cart</h3>
+          <button id="cartClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close cart">✕</button>
+        </div>
+
+        <div id="cartBody" class="max-h-[55vh] overflow-y-auto p-4">
+          <p id="cartEmpty" class="text-sm text-zinc-500" data-i18n="cartEmpty">Your cart is empty.</p>
+          <ul id="cartItems" class="divide-y hidden"></ul>
+          <div id="cartSuggestions" class="hidden mt-5 border-t pt-4">
+            <h4 class="text-sm font-extrabold mb-3" data-i18n="cartSuggestionsTitle">You may like</h4>
+            <div id="cartSuggestionsList" class="grid gap-3"></div>
+          </div>
+        </div>
+
+        <div class="p-4 border-t bg-zinc-50 rounded-b-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-zinc-600" data-i18n="cartSubtotal">Subtotal</span>
+            <strong id="cartSubtotalValue" class="text-lg">€0.00</strong>
+          </div>
+
+          <!-- COUPON UI -->
+          <div id="couponRow" class="mb-3 flex gap-2 items-center">
+            <input id="couponCode" class="input flex-1" placeholder="Coupon code" autocomplete="off" />
+            <button id="applyCoupon" class="btn-soft text-sm">Apply</button>
+            <button id="removeCoupon" class="btn-soft text-sm hidden">Remove</button>
+          </div>
+          <p id="couponMsg" class="text-sm"></p>
+
+          <!-- Discount line -->
+          <div id="cartDiscountRow" class="hidden flex items-center justify-between mb-3">
+            <span class="text-sm text-zinc-600" data-i18n="discountLabel">Discount</span>
+            <strong id="cartDiscountValue" class="text-lg">-€0.00</strong>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button id="cartClear" class="btn-danger" data-i18n="cartClear">Clear cart</button>
+            <div class="ml-auto"></div>
+            <button id="cartContinue" class="btn-soft" data-i18n="cartContinue">Continue shopping</button>
+            <button id="cartCheckout" class="btn" data-i18n="cartCheckout">Checkout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
+        <div class="p-5 border-b">
+          <h3 id="authTitle" class="text-lg font-extrabold"><span data-i18n="signIn">Sign in</span> / <span data-i18n="createAccount">Create account</span></h3>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <label class="label" for="authEmail" data-i18n="email">Email</label>
+            <input id="authEmail" type="email" class="input" autocomplete="email" />
+          </div>
+          <div>
+            <label class="label" for="authPass" data-i18n="password">Password</label>
+            <input id="authPass" type="password" class="input" autocomplete="current-password" />
+          </div>
+          <div class="flex gap-2">
+            <button id="doSignIn" class="btn flex-1" data-i18n="signIn">Sign in</button>
+            <button id="doSignUp" class="btn-outline flex-1" data-i18n="createAccount">Create account</button>
+          </div>
+          <p id="authErr" class="text-sm text-red-600"></p>
+        </div>
+        <div class="p-4 border-t bg-zinc-50 text-right">
+          <button id="authClose" class="btn-soft" data-i18n="cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADDRESS MODAL -->
+    <div id="addrModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle">
+      <div class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
+        <div class="p-5 border-b">
+          <h3 id="addrTitle" class="text-lg font-extrabold" data-i18n="contactDetails">Contact details</h3>
+        </div>
+        <div class="p-5 grid sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-1">
+            <label class="label" for="a_name" data-i18n="fullName">Full name</label>
+            <input id="a_name" class="input" autocomplete="name"></div>
+          <div class="sm:col-span-1">
+            <label class="label" for="a_phone" data-i18n="phone">Phone</label>
+            <input id="a_phone" class="input" autocomplete="tel"></div>
+          <div class="sm:col-span-2 hidden">
+            <label class="label" for="a_line1" data-i18n="line1">Address line 1</label>
+            <input id="a_line1" class="input" autocomplete="address-line1"></div>
+          <div class="sm:col-span-2 hidden">
+            <label class="label" for="a_line2" data-i18n="line2">Address line 2 (optional)</label>
+            <input id="a_line2" class="input" autocomplete="address-line2"></div>
+          <div class="hidden">
+            <label class="label" for="a_city" data-i18n="city">City</label>
+            <input id="a_city" class="input" autocomplete="address-level2"></div>
+          <div class="hidden">
+            <label class="label" for="a_region" data-i18n="region">Region</label>
+            <input id="a_region" class="input" autocomplete="address-level1"></div>
+          <div>
+            <label class="label" for="a_postal" data-i18n="postal">Postal code</label>
+            <input id="a_postal" class="input" autocomplete="postal-code"></div>
+          <div>
+            <label class="label" for="a_country" data-i18n="country">Country</label>
+            <input id="a_country" class="input" autocomplete="country" value="Greece"></div>
+          <p id="addrErr" class="sm:col-span-2 text-sm text-red-600"></p>
+        </div>
+        <div class="p-4 border-t bg-zinc-50 flex items-center justify-end gap-2">
+          <button id="addrCancel" class="btn-soft" data-i18n="cancel">Cancel</button>
+          <button id="addrSave" class="btn" data-i18n="saveDetails">Save details</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW MODAL -->
+    <div id="reviewModal" class="fixed inset-0 z-[85] hidden" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+      <div id="reviewBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
+
+      <div id="reviewPanel"
+           class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2
+                  bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition
+                  flex flex-col max-h-[90vh] overflow-hidden">
+
+        <div class="p-4 border-b flex items-center justify-between flex-none">
+          <h3 id="reviewTitle" class="text-lg font-extrabold" data-i18n="reviewTitle">Review & confirm</h3>
+          <button id="reviewClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close review">✕</button>
+        </div>
+
+        <div class="p-5 space-y-5 flex-1 overflow-y-auto min-h-0">
+          <section class="border rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold" data-i18n="reviewContact">Contact details</h4>
+              <button id="reviewEdit" class="btn-soft text-sm" data-i18n="reviewEditContact">Edit details</button>
+            </div>
+            <div id="reviewAddr" class="mt-2 text-sm text-zinc-700 whitespace-pre-line"></div>
+          </section>
+
+          <section class="border rounded-xl p-4">
+            <div class="flex items-center justify-between gap-3">
+              <h4 class="font-bold" data-i18n="boxnowTitle">BOX NOW locker</h4>
+              <button id="boxnowChoose" class="btn-soft text-sm" type="button" data-i18n="boxnowChoose">Choose locker</button>
+            </div>
+            <div id="boxnowSelected" class="mt-2 text-sm text-zinc-700 whitespace-pre-line" data-i18n="boxnowNone">No locker selected.</div>
+            <p id="boxnowErr" class="mt-2 text-sm text-red-600"></p>
+          </section>
+
+          <section class="border rounded-xl p-4">
+            <h4 class="font-bold mb-2" data-i18n="reviewItems">Items</h4>
+            <ul id="reviewItems" class="divide-y"></ul>
+
+            <!-- Discount line in review -->
+            <div id="reviewDiscountRow" class="hidden mt-3 flex items-center justify-between">
+              <span class="text-sm text-zinc-600" data-i18n="discountLabel">Discount</span>
+              <strong id="reviewDiscountValue" class="text-lg">-€0.00</strong>
+            </div>
+
+            <div id="reviewDeliveryRow" class="hidden mt-3 flex items-center justify-between">
+              <span class="text-sm text-zinc-600" data-i18n="boxnowFeeLabel">BOX NOW delivery</span>
+              <strong id="reviewDeliveryValue" class="text-lg">€0.00</strong>
+            </div>
+            <p id="reviewDeliveryMsg" class="mt-1 text-xs text-zinc-500"></p>
+
+            <div class="mt-3 flex items-center justify-between">
+              <span class="text-sm text-zinc-600" data-i18n="reviewTotal">Subtotal</span>
+              <strong id="reviewSubtotal" class="text-lg">€0.00</strong>
+            </div>
+          </section>
+        </div>
+
+        <div class="p-4 border-t bg-zinc-50 rounded-b-2xl flex items-center justify-end gap-2 flex-none">
+          <button id="reviewCancel" class="btn-soft" data-i18n="reviewCancel">Back</button>
+          <button id="reviewConfirm" class="btn" data-i18n="reviewConfirmPay">Confirm & Pay</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOX NOW MODAL -->
+    <div id="boxnowModal" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true" aria-labelledby="boxnowModalTitle">
+      <div id="boxnowBackdrop" class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute left-1/2 top-1/2 w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-4 border-b flex items-center justify-between">
+          <h3 id="boxnowModalTitle" class="text-lg font-extrabold" data-i18n="boxnowModalTitle">Choose BOX NOW locker</h3>
+          <button id="boxnowClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close BOX NOW">✕</button>
+        </div>
+        <iframe id="boxnowFrame" class="boxnow-frame" title="BOX NOW locker map" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <!-- PRODUCT DETAIL MODAL -->
+    <div id="productModal" class="fixed inset-0 z-[88] hidden" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+      <div id="productBackdrop" class="absolute inset-0 bg-black/40"></div>
+      <div id="productPanel"
+           class="absolute left-1/2 top-1/2 w-[min(94vw,860px)] max-h-[90vh] -translate-x-1/2 -translate-y-1/2
+                  bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div class="p-4 border-b flex items-center justify-between flex-none">
+          <h3 id="productModalTitle" class="text-lg font-extrabold">Product details</h3>
+          <button id="productClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close product details">✕</button>
+        </div>
+        <div class="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-0 overflow-y-auto">
+          <div id="productImageWrap" class="product-detail-media flex items-center">
+            <div id="productImage" class="product-detail-image w-full bg-center"></div>
+          </div>
+          <div class="p-5 flex flex-col gap-4">
+            <div>
+              <p id="productStock" class="text-xs font-bold uppercase tracking-wide text-zinc-500"></p>
+              <h4 id="productName" class="mt-1 text-2xl font-extrabold" style="color:var(--grubz-4)"></h4>
+              <p id="productDesc" class="mt-2 text-sm text-zinc-700"></p>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-y py-4">
+              <div>
+                <div id="productPrice" class="text-2xl font-extrabold" style="color:var(--grubz-1)"></div>
+                <div class="text-xs text-zinc-500" data-i18n="inclVATRate">incl. VAT 24%</div>
+              </div>
+              <button id="productAdd" class="btn" type="button" data-product-detail-add data-i18n="btnAdd">Add to cart</button>
+            </div>
+            <div>
+              <h5 class="font-bold mb-2" data-i18n="productDetailsTitle">Details</h5>
+              <p id="productDetailText" class="text-sm text-zinc-700 leading-6"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase SDKs (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics-compat.js"></script>
+
+    <!-- Define critical globals ONCE to avoid TDZ/duplicate errors -->
+    <script>
+      let __user = null;   // Firebase auth user
+      let __coupon = null; // { code, promotionCodeId, discount }
+    </script>
+
+    <script>
+(function initFirebase() {
+  if (!window.firebase) { console.error("Firebase SDK not loaded"); return; }
+  firebase.initializeApp({
+    apiKey: "AIzaSyCD6CZjOOrYn6YD71jGhtPSstuCq0R4PMU",
+    authDomain: "grubz-99b84.firebaseapp.com",
+    projectId: "grubz-99b84",
+    storageBucket: "grubz-99b84.appspot.com",
+    messagingSenderId: "712952743006",
+    appId: "1:712952743006:web:c84d1eef919f5029bba0cf",
+    measurementId: "G-TWQQC1WD7R"
+  });
+})();
+const API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
+const BOXNOW_PARTNER_ID = "";
+const BOXNOW_PARCEL_SIZE = "3";
+async function authedFetch(path, options = {}) {
+  const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+  if (__user) {
+    try {
+      const tok = await __user.getIdToken(true);
+      headers.Authorization = "Bearer " + tok;
+    } catch (e) { /* ignore */ }
+  }
+  return fetch(`${API_BASE}${path}`, { ...options, headers, mode: "cors" });
+}
+    </script>
+
+    <!-- App scripts -->
+    <script>
+      const FOCUSABLE = 'a[href], button:not([disabled]), input:not([type="hidden"]), textarea, select, [tabindex]:not([tabindex="-1"])';
+      let __modalLockCount = 0;
+      let __modalScrollY = 0;
+
+      function trapFocus(modalEl, panelEl) {
+        function onKey(e){
+          if (e.key === 'Escape') { modalEl._close?.(); }
+          if (e.key !== 'Tab') return;
+          const nodes = panelEl.querySelectorAll(FOCUSABLE);
+          if (!nodes.length) return;
+          const first = nodes[0], last = nodes[nodes.length - 1];
+          if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+          else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+        }
+        modalEl._trapKey = onKey;
+        panelEl.addEventListener('keydown', onKey);
+      }
+
+      function lockPageScroll() {
+        __modalLockCount += 1;
+        if (__modalLockCount > 1) return;
+        __modalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${__modalScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+        if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+
+      function unlockPageScroll() {
+        __modalLockCount = Math.max(0, __modalLockCount - 1);
+        if (__modalLockCount > 0) return;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        window.scrollTo(0, __modalScrollY);
+      }
+
+      function openDialog(modalId, panelId, openerEl) {
+        const modal = document.getElementById(modalId);
+        const panel = document.getElementById(panelId);
+        if (!modal || !panel) return;
+        if (!modal.classList.contains('hidden')) return;
+        modal.dataset.openerId = openerEl?.id || '';
+        modal.classList.remove('hidden');
+        lockPageScroll();
+        trapFocus(modal, panel);
+        const first = panel.querySelector(FOCUSABLE);
+        (first || panel).focus();
+        modal._close = () => closeDialog(modalId, panelId);
+      }
+      function closeDialog(modalId, panelId) {
+        const modal = document.getElementById(modalId);
+        const panel = document.getElementById(panelId);
+        if (!modal || !panel) return;
+        if (modal.classList.contains('hidden')) return;
+        panel.removeEventListener('keydown', modal._trapKey || (()=>{}));
+        delete modal._trapKey;
+        modal.classList.add('hidden');
+        unlockPageScroll();
+        const openerId = modal.dataset.openerId;
+        if (openerId) document.getElementById(openerId)?.focus();
+      }
+
+      const Cookie = {
+        set(name, value, days = 180){
+          const exp = new Date(Date.now() + days*864e5).toUTCString();
+          document.cookie = `${name}=${encodeURIComponent(value)}; Expires=${exp}; Path=/; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;
+        },
+        get(name){
+          const m = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+          return m ? decodeURIComponent(m.split('=')[1]) : null;
+        },
+        remove(name){
+          document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite:Lax${location.protocol==='https:'?'; Secure':''}`;
+        }
+      };
+
+      let __boxNowLocker = null;
+      let __boxNowFee = null;
+      let __boxNowFeeKey = "";
+      let __boxNowFeePromise = null;
+      let __currentProductId = null;
+      try {
+        const rawLocker = Cookie.get("grubz_boxnow_locker");
+        if (rawLocker) __boxNowLocker = JSON.parse(rawLocker);
+      } catch {}
+
+      function showCookieBanner(){ document.getElementById('cookieBanner').classList.remove('hidden'); }
+      function hideCookieBanner(){ document.getElementById('cookieBanner').classList.add('hidden'); }
+      function getConsent(){
+        const raw = Cookie.get('grubz_consent');
+        try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+      }
+      function setConsent(consent){
+        Cookie.set('grubz_consent', JSON.stringify(consent));
+        applyConsent(consent);
+      }
+      function loadAnalyticsOnce(){
+        if (window.__analyticsLoaded) return;
+        window.__analyticsLoaded = true;
+        try { if (window.firebase && firebase.analytics) firebase.analytics(); } catch(e){}
+      }
+      function applyConsent(consent){ if (consent && consent.analytics) loadAnalyticsOnce(); }
+      document.getElementById('cookieAccept').addEventListener('click', () => { setConsent({ necessary: true, analytics: true }); hideCookieBanner(); });
+      document.getElementById('cookieReject').addEventListener('click', () => { setConsent({ necessary: true, analytics: false }); hideCookieBanner(); });
+      document.getElementById('manageCookies').addEventListener('click', (e) => { e.preventDefault(); showCookieBanner(); });
+      const existingConsent = getConsent(); if (existingConsent) { applyConsent(existingConsent); } else { showCookieBanner(); }
+
+      const i18n = {
+        en: {
+          madeInGr:"Made in Greece",
+          navBenefits:"Benefits", navProducts:"Products", navFAQ:"FAQ", navContact:"Contact",
+          buyNow:"Buy Now",
+          heroTitleL1:"High-Protein", heroTitleL2:"BSF Snacks for Pets & Poultry",
+          heroSubtitle:"Natural nutrition for reptiles, birds, and fish. Sustainable, tasty, and made in Greece.",
+          ctaShop:"Shop GRUBZ", ctaLearn:"Why GRUBZ?",
+          chipProtein:"Up to 50% protein", chipCalcium:"Naturally high calcium", chipSustainable:"Sustainably produced",
+          heroCaption:"Loved by reptiles. Trusted by keepers.",
+          benefitsTitle:"Why GRUBZ?",
+          b1Title:"Complete Nutrition", b1Text:"Balanced protein, fats, and micronutrients for healthy growth.",
+          b2Title:"Naturally High Calcium", b2Text:"BSF larvae have excellent calcium levels—great for bones and eggshells.",
+          b3Title:"Made in Greece", b3Text:"Fresh, local production you can trust.",
+          b4Title:"Sustainable", b4Text:"Lower footprint vs. traditional protein sources.",
+          productsTitle:"Products",
+          p1Name:"GRUBZ SNACK (100g)", p1Desc:"Crispy dried larvae for reptiles, birds & fish.",
+          p2Name:"GRUBZ PREMIUM (300g)", p2Desc:"Larger larvae, extra crunch, top pick for adults.",
+          p3Name:"GRUBZ JUMBO (500g)", p3Desc:"Dried BSF with herbs for picky eaters.",
+          p4Name:"Happy Chicken - 1KG", p4Desc:"Dried BSF larvae for chickens.",
+          p5Name:"Happy Chicken VALUE PACK - 2KG", p5Desc:"Value pack of dried BSF larvae for chickens.",
+          p6Name:"Happy Chicken LARGE PACK - 3KG", p6Desc:"Large pack of dried BSF larvae for chickens.",
+          p1Detail:"A compact pack of dried black soldier fly larvae for everyday feeding. High in protein and naturally rich in calcium, suitable for reptiles, birds and fish as part of a balanced diet.",
+          p2Detail:"A larger premium pack with extra crunch and strong feeding response. Ideal when you feed regularly and want more value without moving to the jumbo size.",
+          p3Detail:"A jumbo 500g pack for keepers who feed often or manage multiple animals. Dried BSF larvae keep well when sealed and stored in a cool, dry place.",
+          p4Detail:"A 1kg chicken treat pack made with dried BSF larvae. A simple protein-rich supplement for flock enrichment and natural pecking behavior.",
+          p5Detail:"A 2kg value pack for regular chicken feeding. Built for better value per kilo while keeping the same dried BSF larvae quality.",
+          p6Detail:"A 3kg large pack for bigger flocks or frequent feeding. Convenient for stocking up on dried BSF larvae treats.",
+          btnAdd:"Add to cart", btnCheckout:"Checkout", btnClear:"Clear cart",
+          faqTitle:"FAQ",
+          q1:"What animals can eat GRUBZ?", a1:"Reptiles (bearded dragons, geckos), birds (chickens, songbirds), and most aquarium & pond fish.",
+          q2:"Do I need to add calcium?", a2:"BSF larvae are naturally calcium-rich. Many keepers still dust occasionally—follow your vet’s advice.",
+          q3:"How should I store them?", a3:"Keep sealed in a cool, dry place. Refrigeration extends freshness.",
+          q4:"Are they made in Greece?", a4:"Yes—locally produced to ensure quality and traceability.",
+          footTag:"High-protein BSF snacks — Made in Greece.",
+          footLinks:"Links", footContact:"Contact", footMade:"Made with ❤️ in Greece",
+          cookieText: "We use essential cookies to run this site and, with your consent, analytics to improve it.",
+          cookieLearnMore: "Learn more",
+          cookieReject: "Reject non-essential",
+          cookieAccept: "Accept all",
+          manageCookies: "Manage cookies",
+          cartTitle:"Your cart",
+          cartEmpty:"Your cart is empty.",
+          cartSubtotal:"Subtotal",
+          cartCheckout:"Checkout",
+          cartContinue:"Continue shopping",
+          cartRemove:"Remove",
+          cartQty:"Qty",
+          cartClear:"Clear cart",
+          cartSuggestionsTitle:"You may like",
+          signIn:"Sign in",
+          createAccount:"Create account",
+          email:"Email",
+          password:"Password",
+          cancel:"Cancel",
+          deliveryAddress:"Delivery address",
+          contactDetails:"Contact details",
+          fullName:"Full name",
+          phone:"Phone",
+          line1:"Address line 1",
+          line2:"Address line 2 (optional)",
+          city:"City",
+          region:"Region",
+          postal:"Postal code",
+          country:"Country",
+          saveAddress:"Save address",
+          saveDetails:"Save details",
+          contactRequired:"Full name, phone, postal code and country are required",
+          signOut:"Sign out",
+          myAccount:"My account",
+          reviewTitle:"Review & confirm",
+          reviewAddress:"Delivery address",
+          reviewEditAddress:"Edit address",
+          reviewContact:"Contact details",
+          reviewEditContact:"Edit details",
+          reviewItems:"Items",
+          reviewTotal:"Subtotal",
+          reviewCancel:"Back",
+          reviewConfirmPay:"Confirm & Pay",
+          boxnowTitle:"BOX NOW locker",
+          boxnowChoose:"Choose locker",
+          boxnowChange:"Change locker",
+          boxnowNone:"No locker selected.",
+          boxnowRequired:"Please choose a BOX NOW locker.",
+          boxnowModalTitle:"Choose BOX NOW locker",
+          boxnowFeeLabel:"BOX NOW delivery",
+          boxnowFeeLoading:"Calculating delivery fee...",
+          boxnowFeeUnavailable:"Delivery fee will be confirmed at checkout.",
+          inclVATRate: "incl. VAT 24%",
+          totalInclVAT: "Total (incl. VAT)",
+          outOfStock: "Out of stock",
+          notifyMe: "Notify me",
+          onlyXLeft: "Only {x} left",
+          readMore: "Read more…",
+          productDetailsTitle:"Details",
+          productDetailsAria:"Product details",
+          inStock:"In stock",
+
+          // Coupons
+          couponPlaceholder: "Coupon code",
+          couponApply: "Apply",
+          couponRemove: "Remove",
+          couponApplied: "Coupon applied",
+          couponInvalid: "Invalid coupon",
+          couponConditions: "Coupon conditions not met",
+          discountLabel: "Discount",
+        },
+        el: {
+          madeInGr:"Παράγεται στην Ελλάδα",
+          navBenefits:"Οφέλη", navProducts:"Προϊόντα", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
+          buyNow:"Αγορά τώρα",
+          heroTitleL1:"Πρωτεΐνη Υψηλή", heroTitleL2:"Σνακ BSF για Κατοικίδια & Κοτές",
+          heroSubtitle:"Φυσική διατροφή για ερπετά, πτηνά και ψάρια. Βιώσιμη, νόστιμη και ελληνική.",
+          ctaShop:"Αγορά GRUBZ", ctaLearn:"Γιατί GRUBZ;",
+          chipProtein:"Έως 50% πρωτεΐνη", chipCalcium:"Φυσικά υψηλό ασβέστιο", chipSustainable:"Βιώσιμη παραγωγή",
+          heroCaption:"Αγαπημένο από τα ερπετά. Εμπιστοσύνη στους κηδεμόνες.",
+          benefitsTitle:"Γιατί GRUBZ;",
+          b1Title:"Πλήρης Διατροφή", b1Text:"Ισορροπία πρωτεΐνης, λιπών και ιχνοστοιχείων για υγιή ανάπτυξη.",
+          b2Title:"Φυσικά Υψηλό Ασβέστιο", b2Text:"Οι προνύμφες BSF έχουν εξαιρετικά επίπεδα ασβεστίου—ιδανικό για οστά και τσόφλια.",
+          b3Title:"Ελληνικής Παραγωγής", b3Text:"Φρέσκια, τοπική παραγωγή που εμπιστεύεστε.",
+          b4Title:"Βιώσιμο", b4Text:"Μικρότερο αποτύπωμα σε σχέση με παραδοσιακές πηγές πρωτεΐνης.",
+          productsTitle:"Προϊόντα",
+          p1Name:"GRUBZ SNACK (100g)", p1Desc:"Τραγανές προνύμφες για ερπετά, πτηνά & ψάρια.",
+          p2Name:"GRUBZ PREMIUM (300g)", p2Desc:"Μεγαλύτερες προνύμφες, έξτρα τραγανές.",
+          p3Name:"GRUBZ JUMBO (500g)", p3Desc:"Αποξηραμένες BSF με βότανα για δύσκολους τρώγοντες.",
+          p4Name:"Happy Chicken - 1kg", p4Desc:"Αποξηραμένες προνύμφες BSF για κότες.",
+          p5Name:"Happy Chicken - 2kg", p5Desc:"Οικονομική συσκευασία αποξηραμένων προνυμφών BSF για κότες.",
+          p6Name:"Happy Chicken - 3kg", p6Desc:"Μεγάλη συσκευασία αποξηραμένων προνυμφών BSF για κότες.",
+          p1Detail:"Μικρή συσκευασία αποξηραμένων προνυμφών black soldier fly για καθημερινή χρήση. Υψηλή σε πρωτεΐνη και φυσικά πλούσια σε ασβέστιο, κατάλληλη για ερπετά, πτηνά και ψάρια ως μέρος ισορροπημένης διατροφής.",
+          p2Detail:"Μεγαλύτερη premium συσκευασία με έξτρα τραγανή υφή. Ιδανική για συχνή χρήση και καλύτερη αξία χωρίς να περάσετε στη jumbo συσκευασία.",
+          p3Detail:"Jumbo συσκευασία 500g για όσους ταΐζουν συχνά ή έχουν περισσότερα ζώα. Οι αποξηραμένες προνύμφες BSF διατηρούνται καλά όταν μένουν κλειστές σε δροσερό και ξηρό μέρος.",
+          p4Detail:"Συσκευασία 1kg για κότες με αποξηραμένες προνύμφες BSF. Ένα απλό, πλούσιο σε πρωτεΐνη συμπλήρωμα για εμπλουτισμό και φυσική συμπεριφορά τσιμπολογήματος.",
+          p5Detail:"Οικονομική συσκευασία 2kg για τακτική χρήση σε κότες. Προσφέρει καλύτερη αξία ανά κιλό με την ίδια ποιότητα αποξηραμένων προνυμφών BSF.",
+          p6Detail:"Μεγάλη συσκευασία 3kg για μεγαλύτερα κοπάδια ή συχνή χρήση. Πρακτική επιλογή για να έχετε πάντα διαθέσιμες αποξηραμένες προνύμφες BSF.",
+          btnAdd:"Προσθήκη στο καλάθι", btnCheckout:"Ολοκλήρωση αγοράς", btnClear:"Καθαρισμός καλαθιού",
+          faqTitle:"Συχνές Ερωτήσεις",
+          q1:"Ποια ζώα τρώνε GRUBZ;", a1:"Ερπετά (π.χ. beardies, geckos), πουλιά και τα περισσότερα ψάρια.",
+          q2:"Χρειάζεται πρόσθετο ασβέστιο;", a2:"Οι προνύμφες BSF είναι πλούσιες σε ασβέστιο. Πολλοί κάνουν περιστασιακό dusting.",
+          q3:"Πώς αποθηκεύονται;", a3:"Κλειστά, δροσερό και ξηρό μέρος. Το ψυγείο βοηθά.",
+          q4:"Παράγονται στην Ελλάδα;", a4:"Ναι — τοπική παραγωγή με ιχνηλασιμότητα.",
+          footTag:"Πρωτεϊνούχα σνακ BSF — Ελληνικής παραγωγής.",
+          footLinks:"Σύνδεσμοι", footContact:"Επικοινωνία", footMade:"Φτιαγμένο με ❤️ στην Ελλάδα",
+          cookieText: "Χρησιμοποιούμε αναγκαία cookies για τη λειτουργία του ιστότοπου και, με τη συγκατάθεσή σας, cookies ανάλυσης για τη βελτίωσή του.",
+          cookieLearnMore: "Μάθετε περισσότερα",
+          cookieReject: "Απόρριψη μη αναγκαίων",
+          cookieAccept: "Αποδοχή όλων",
+          manageCookies: "Διαχείριση cookies",
+          cartTitle:"Το καλάθι σας",
+          cartEmpty:"Το καλάθι είναι άδειο.",
+          cartSubtotal:"Μερικό σύνολο",
+          cartCheckout:"Ολοκλήρωση αγοράς",
+          cartContinue:"Συνέχεια αγορών",
+          cartRemove:"Αφαίρεση",
+          cartQty:"Ποσ.",
+          cartClear:"Καθαρισμός καλαθιού",
+          cartSuggestionsTitle:"Ίσως σας αρέσουν",
+          signIn:"Σύνδεση",
+          createAccount:"Δημιουργία λογαριασμού",
+          email:"Email",
+          password:"Κωδικός",
+          cancel:"Άκυρο",
+          deliveryAddress:"Διεύθυνση αποστολής",
+          contactDetails:"Στοιχεία επικοινωνίας",
+          fullName:"Ονοματεπώνυμο",
+          phone:"Τηλέφωνο",
+          line1:"Διεύθυνση (γραμμή 1)",
+          line2:"Διεύθυνση (γραμμή 2 — προαιρετικό)",
+          city:"Πόλη",
+          region:"Περιοχή",
+          postal:"T.K.",
+          country:"Χώρα",
+          saveAddress:"Αποθήκευση διεύθυνσης",
+          saveDetails:"Αποθήκευση στοιχείων",
+          contactRequired:"Απαιτούνται ονοματεπώνυμο, τηλέφωνο, Τ.Κ. και χώρα",
+          signOut:"Αποσύνδεση",
+          myAccount:"Ο λογαριασμός μου",
+          reviewTitle:"Έλεγχος & επιβεβαίωση",
+          reviewAddress:"Διεύθυνση αποστολής",
+          reviewEditAddress:"Επεξεργασία διεύθυνσης",
+          reviewContact:"Στοιχεία επικοινωνίας",
+          reviewEditContact:"Επεξεργασία στοιχείων",
+          reviewItems:"Προϊόντα",
+          reviewTotal:"Μερικό σύνολο",
+          reviewCancel:"Πίσω",
+          reviewConfirmPay:"Επιβεβαίωση & Πληρωμή",
+          boxnowTitle:"BOX NOW locker",
+          boxnowChoose:"Επιλογή locker",
+          boxnowChange:"Αλλαγή locker",
+          boxnowNone:"Δεν έχει επιλεγεί locker.",
+          boxnowRequired:"Παρακαλώ επιλέξτε BOX NOW locker.",
+          boxnowModalTitle:"Επιλογή BOX NOW locker",
+          boxnowFeeLabel:"BOX NOW αποστολή",
+          boxnowFeeLoading:"Υπολογισμός κόστους αποστολής...",
+          boxnowFeeUnavailable:"Το κόστος αποστολής θα επιβεβαιωθεί στο checkout.",
+          inclVATRate: "με ΦΠΑ 24%",
+          totalInclVAT: "Σύνολο (με ΦΠΑ)",
+          outOfStock: "Μη διαθέσιμο",
+          notifyMe: "Ειδοποίησέ με",
+          onlyXLeft: "Απομένουν μόνο {x}",
+          readMore: "Περισσότερα…",
+          productDetailsTitle:"Λεπτομέρειες",
+          productDetailsAria:"Λεπτομέρειες προϊόντος",
+          inStock:"Διαθέσιμο",
+
+          // Coupons
+          couponPlaceholder: "Κωδικός κουπονιού",
+          couponApply: "Εφαρμογή",
+          couponRemove: "Αφαίρεση",
+          couponApplied: "Το κουπόνι εφαρμόστηκε",
+          couponInvalid: "Μη έγκυρο κουπόνι",
+          couponConditions: "Δεν πληρούνται οι προϋποθέσεις του κουπονιού",
+          discountLabel: "Έκπτωση",
+        }
+      };
+
+      function announce(msg){
+        const live = document.getElementById('srLive');
+        if (!live) return;
+        live.textContent = '';
+        setTimeout(()=>{ live.textContent = msg; }, 10);
+      }
+
+      function morphAddButton(btn){
+        const l = (typeof lang === 'function' ? lang() : 'en');
+        const labels = { en:'Added ✓', el:'Προστέθηκε ✓' };
+        const original = btn.textContent;
+        btn.dataset.prevLabel = original;
+        btn.textContent = labels[l] || 'Added ✓';
+        btn.classList.add('btn-added','btn-pop');
+        setTimeout(()=> btn.classList.remove('btn-pop'), 650);
+        clearTimeout(btn.__addedTimer);
+        btn.__addedTimer = setTimeout(()=>{
+          btn.classList.remove('btn-added');
+          const dict = (i18n && i18n[l]) ? i18n[l] : { btnAdd:'Add to cart' };
+          btn.textContent = dict.btnAdd || btn.dataset.prevLabel || 'Add to cart';
+        }, 1600);
+      }
+
+      function pingCart(){
+        const btn = document.getElementById('cartBtn');
+        const badge = document.getElementById('cartCount');
+        if (badge){
+          badge.classList.remove('badge-bump');
+          void badge.offsetWidth;
+          badge.classList.add('badge-bump');
+        }
+        if (btn){
+          const ring = document.createElement('span');
+          ring.className = 'cart-ping';
+          ring.setAttribute('aria-hidden','true');
+          btn.appendChild(ring);
+          setTimeout(()=> ring.remove(), 750);
+        }
+      }
+
+      const $ = s=>document.querySelector(s);
+      const $$ = s=>document.querySelectorAll(s);
+      const lang = () => (Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') || (navigator.language.startsWith('el') ? 'el' : 'en'));
+
+      function applyLang(l){
+        localStorage.setItem('grubz_lang', l);
+        Cookie.set('grubz_lang', l);
+        const dict = i18n[l] || i18n.en;
+        $$("[data-i18n]").forEach(el=>{
+          const key = el.getAttribute("data-i18n");
+          if (dict[key]) el.textContent = dict[key];
+        });
+        const cp = document.getElementById("couponCode"); if (cp) cp.placeholder = dict.couponPlaceholder || "Coupon code";
+        const ap = document.getElementById("applyCoupon"); if (ap) ap.textContent = dict.couponApply || "Apply";
+        const rm = document.getElementById("removeCoupon"); if (rm) rm.textContent = dict.couponRemove || "Remove";
+        if (typeof applyStockStatus === "function") applyStockStatus();
+        document.documentElement.lang = (l==='el'?'el':'en');
+        if (window.__cartReady && typeof renderCart === 'function') renderCart();
+        if (typeof renderBoxNowSelection === "function") renderBoxNowSelection();
+        if (typeof renderProductModal === "function" && __currentProductId) renderProductModal(__currentProductId);
+      }
+
+      function setLangButtons(l) {
+        const en = document.getElementById('lang-en');
+        const el = document.getElementById('lang-el');
+        en.setAttribute('aria-pressed', String(l === 'en'));
+        el.setAttribute('aria-pressed', String(l === 'el'));
+        en.setAttribute('aria-label', 'Switch language to English');
+        el.setAttribute('aria-label', 'Αλλαγή γλώσσας σε Ελληνικά');
+      }
+      document.getElementById('lang-en').addEventListener('click', () => { applyLang('en'); setLangButtons('en'); });
+      document.getElementById('lang-el').addEventListener('click', () => { applyLang('el'); setLangButtons('el'); });
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      /* ---------- Cart ---------- */
+      const cart = new Map();
+      try { const rawCart = Cookie.get('grubz_cart'); if (rawCart) Object.entries(JSON.parse(rawCart)).forEach(([k,v]) => cart.set(k, v)); } catch {}
+      function writeCartCookie(){ Cookie.set('grubz_cart', JSON.stringify(Object.fromEntries(cart.entries()))); }
+
+      function setCheckoutEnabled(enabled){
+        ["checkout","cartCheckout", "clearCart"].forEach(id=>{
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.disabled = !enabled;
+          b.setAttribute("aria-disabled", String(!enabled));
+          b.classList.toggle("pointer-events-none", !enabled);
+        });
+      }
+      function updateCartInfo(){
+        const totalItems = Array.from(cart.values()).reduce((a,b)=>a+b,0);
+        const badge = document.getElementById("cartCount");
+        if (totalItems) { badge.textContent = totalItems; badge.classList.remove("hidden"); }
+        else { badge.classList.add("hidden"); }
+        writeCartCookie();
+        if (typeof invalidateBoxNowFee === "function") invalidateBoxNowFee();
+        setCheckoutEnabled(totalItems > 0);
+
+        const d = i18n[lang()] || i18n.en;
+        const msg = totalItems
+          ? (lang()==='el' ? `${totalItems} προϊόντα στο καλάθι` : `${totalItems} item(s) in cart`)
+          : (lang()==='el' ? 'Το καλάθι είναι άδειο' : 'Cart is empty');
+        const live = document.getElementById('a11y-live');
+        if (live) live.textContent = msg;
+      }
+
+      const CATALOG = {
+        "grubz-100g": { price: 6.90,  img:"images/grubz-product-100g.png", bg:"#6f4b2e", nameKey:"p1Name", descKey:"p1Desc", detailKey:"p1Detail" },
+        "grubz-300g": { price: 17.90, img:"images/grubz-product-300g.png", bg:"#28330c", nameKey:"p2Name", descKey:"p2Desc", detailKey:"p2Detail" },
+        "grubz-500g": { price: 36.90, img:"images/grubz-product-500g.png", bg:"#94632e", nameKey:"p3Name", descKey:"p3Desc", detailKey:"p3Detail" },
+        "happy-chicken-1kg": { price: 5.90, img:"images/happy-chicken-1kg.png", bg:"#f8f1eb", nameKey:"p4Name", descKey:"p4Desc", detailKey:"p4Detail" },
+        "happy-chicken-2kg": { price: 11.90, img:"images/happy-chicken-2kg.png", bg:"#f8f1eb", nameKey:"p5Name", descKey:"p5Desc", detailKey:"p5Detail" },
+        "happy-chicken-3kg": { price: 15.90, img:"images/happy-chicken-3kg.png", bg:"#f8f1eb", nameKey:"p6Name", descKey:"p6Desc", detailKey:"p6Detail" }
+      };
+
+      let __stockReady = false; // <-- important
+
+      const LOW_STOCK_CUTOFF = 5;
+
+      async function loadStockFromStripe(){
+        try {
+          const resp = await fetch(`${API_BASE}/getStock`, { method: "GET", mode: "cors" });
+          if (!resp.ok) throw new Error(`Stock fetch failed (${resp.status})`);
+          const live = await resp.json();
+
+          for (const [id, qty] of Object.entries(live)) {
+            if (CATALOG[id]) CATALOG[id].stock = Math.max(0, Number(qty) || 0);
+          }
+          __stockReady = true;                 // <-- mark known
+          applyStockStatus();
+          if (typeof renderProductModal === "function" && __currentProductId) renderProductModal(__currentProductId);
+          renderCart();                        // <-- re-render with real stock
+        } catch (e) {
+          console.warn("loadStockFromStripe:", e);
+          __stockReady = true;                 // fail “open”: consider stock known so we don’t lock the cart
+          applyStockStatus();
+          if (typeof renderProductModal === "function" && __currentProductId) renderProductModal(__currentProductId);
+          renderCart();
+        }
+      }
+
+
+      function getStockRaw(id){
+        return CATALOG[id]?.stock; // may be undefined/null until loaded
+      }
+
+      function getStock(id){
+        const s = getStockRaw(id);
+        if (s === undefined || s === null || Number.isNaN(Number(s))) return Infinity; // unknown yet
+        return Math.max(0, Number(s) || 0);
+      }
+
+      function stockIsKnown(id){
+        const s = getStockRaw(id);
+        return !(s === undefined || s === null || Number.isNaN(Number(s)));
+      }
+
+      function inStock(id){
+        const s = getStock(id);
+        return s === Infinity || s > 0;
+      }
+
+      function setCardStockUI(card, id){
+        card.querySelector(".badge-oos")?.remove();
+        card.querySelector(".badge-low")?.remove();
+
+        const addBtn = card.querySelector(`button[data-product="${id}"]`);
+        if (!addBtn) return;
+
+        const ldict = (i18n[lang()] || i18n.en);
+
+        if (!stockIsKnown(id)) {
+          // Unknown yet → optimistic UI: enable button, no badges
+          addBtn.disabled = false;
+          addBtn.setAttribute("aria-disabled","false");
+          addBtn.textContent = ldict.btnAdd || "Add to cart";
+          return;
+        }
+
+        const available = getStock(id);
+        if (available <= 0){
+          addBtn.disabled = true;
+          addBtn.setAttribute("aria-disabled","true");
+          addBtn.textContent = ldict.outOfStock || "Out of stock";
+          const b = document.createElement("span");
+          b.className = "badge-oos";
+          b.textContent = ldict.outOfStock || "Out of stock";
+          card.prepend(b);
+        } else {
+          addBtn.disabled = false;
+          addBtn.setAttribute("aria-disabled","false");
+          addBtn.textContent = ldict.btnAdd || "Add to cart";
+          if (Number.isFinite(available) && available <= LOW_STOCK_CUTOFF){
+            const b = document.createElement("span");
+            b.className = "badge-low";
+            b.textContent = (ldict.onlyXLeft || "Only {x} left").replace("{x}", String(available));
+            card.prepend(b);
+          }
+        }
+      }
+
+
+      function applyStockStatus(){
+        document.querySelectorAll(".product-card[data-id]").forEach(card=>{
+          setCardStockUI(card, card.getAttribute("data-id"));
+        });
+      }
+
+      const nf = (n)=> new Intl.NumberFormat(lang()==='el' ? 'el-GR' : 'en-GB', { style:'currency', currency:'EUR' }).format(n);
+      document.querySelectorAll('.product-thumb').forEach(el => el.setAttribute('aria-hidden','true'));
+
+      const VAT_RATE = 0; // gross already
+      const gross = n => n * (1 + VAT_RATE);
+
+      function setCardPrices(){
+        document.querySelectorAll(".price[data-id]").forEach(el=>{
+          const id = el.dataset.id;
+          const p = CATALOG[id];
+          if (p) el.textContent = nf(gross(p.price));
+        });
+      }
+      setCardPrices();
+      applyStockStatus();      // will show optimistic buttons
+      loadStockFromStripe();   // later flips __stockReady and re-renders
+      const _initialLang = lang();
+      applyLang(_initialLang);
+      setLangButtons(_initialLang);
+
+
+      function addProductToCart(id, sourceBtn){
+        const available = getStock(id);
+        if (available <= 0){
+          announce((i18n[lang()]||i18n.en).outOfStock || "Out of stock");
+          return false;
+        }
+        const cur = cart.get(id) || 0;
+        const next = Math.min(cur + 1, available);
+        if (next === cur){
+          announce((i18n[lang()]||i18n.en).outOfStock || "Out of stock");
+          return false;
+        }
+        cart.set(id, next);
+        updateCartInfo(); renderCart();
+        if (sourceBtn) morphAddButton(sourceBtn);
+        pingCart();
+
+        const dict = i18n[lang()] || i18n.en;
+        const name = (CATALOG[id] && dict[CATALOG[id].nameKey]) || id;
+        announce(lang()==='el' ? `Προστέθηκε στο καλάθι: ${name}` : `Added to cart: ${name}`);
+        return true;
+      }
+
+      document.querySelectorAll("[data-product]").forEach(btn=>{
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          addProductToCart(btn.getAttribute("data-product"), btn);
+        });
+      });
+
+      function productStockLabel(id){
+        const dict = i18n[lang()] || i18n.en;
+        if (!stockIsKnown(id)) return "";
+        const available = getStock(id);
+        if (available <= 0) return dict.outOfStock || "Out of stock";
+        if (Number.isFinite(available) && available <= LOW_STOCK_CUTOFF) {
+          return (dict.onlyXLeft || "Only {x} left").replace("{x}", String(available));
+        }
+        return dict.inStock || "In stock";
+      }
+
+      function renderProductModal(id){
+        const p = CATALOG[id];
+        if (!p) return;
+        const dict = i18n[lang()] || i18n.en;
+        const available = getStock(id);
+        const addBtn = document.getElementById("productAdd");
+
+        document.getElementById("productModalTitle").textContent = dict.productDetailsAria || "Product details";
+        document.getElementById("productName").textContent = dict[p.nameKey] || id;
+        document.getElementById("productDesc").textContent = dict[p.descKey] || "";
+        document.getElementById("productDetailText").textContent = dict[p.detailKey] || dict[p.descKey] || "";
+        document.getElementById("productPrice").textContent = nf(gross(p.price));
+        document.getElementById("productStock").textContent = productStockLabel(id);
+        document.getElementById("productImageWrap").style.backgroundColor = p.bg || "#f8f1eb";
+        const productImage = document.getElementById("productImage");
+        productImage.style.backgroundColor = p.bg || "#f8f1eb";
+        productImage.style.backgroundImage = `url('${p.img}')`;
+
+        addBtn.dataset.productDetailAdd = id;
+        addBtn.disabled = available <= 0;
+        addBtn.setAttribute("aria-disabled", String(available <= 0));
+        addBtn.textContent = available <= 0 ? (dict.outOfStock || "Out of stock") : (dict.btnAdd || "Add to cart");
+      }
+
+      function openProductModal(id, openerEl){
+        __currentProductId = id;
+        renderProductModal(id);
+        openDialog("productModal", "productPanel", openerEl);
+      }
+
+      function closeProductModal(){
+        closeDialog("productModal", "productPanel");
+      }
+
+      document.querySelectorAll(".product-card[data-id]").forEach(card=>{
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.classList.add("cursor-pointer");
+        card.addEventListener("click", () => openProductModal(card.dataset.id, card));
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openProductModal(card.dataset.id, card);
+          }
+        });
+      });
+
+      document.getElementById("productBackdrop").addEventListener("click", closeProductModal);
+      document.getElementById("productClose").addEventListener("click", closeProductModal);
+      document.getElementById("productAdd").addEventListener("click", (e)=>{
+        const id = e.currentTarget.dataset.productDetailAdd;
+        if (id) {
+          addProductToCart(id, e.currentTarget);
+          renderProductModal(id);
+        }
+      });
+
+      function clearCart({ close = false } = {}){
+        cart.clear();
+        updateCartInfo();
+        renderCart();
+        if (close) closeCart();
+      }
+
+      document.getElementById("clearCart").addEventListener("click", ()=> clearCart());
+
+      const modal = document.getElementById("cartModal"), panel = document.getElementById("cartPanel"), backdrop = document.getElementById("cartBackdrop");
+      function openCart(){
+        openDialog('cartModal', 'cartPanel', document.getElementById('cartBtn'));
+        const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
+        requestAnimationFrame(()=>{
+          backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
+          panel.classList.remove("opacity-0","scale-95"); panel.classList.add("opacity-100","scale-100");
+        });
+      }
+      function closeCart(){
+        const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
+        backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
+        panel.classList.add("opacity-0","scale-95"); panel.classList.remove("opacity-100","scale-100");
+        setTimeout(()=> closeDialog('cartModal', 'cartPanel'), 150);
+      }
+      document.getElementById("cartBtn").addEventListener("click", openCart);
+      document.getElementById("cartClose").addEventListener("click", closeCart);
+      backdrop.addEventListener("click", closeCart);
+      window.addEventListener("keydown", e=>{ if(e.key==="Escape") closeCart(); });
+
+      function cartTotals(){
+        let net = 0;
+        for (const [id, qty] of cart){
+          const p = CATALOG[id]; if (!p) continue;
+          net += (p.price * qty);
+        }
+        const vat = net * VAT_RATE;
+        const total = net + vat;
+        const discount = currentDiscount();
+        const grand = Math.max(0, total - discount);
+        return { net, vat, total, discount, grand };
+      }
+
+      function renderCart(){
+        const dict = i18n[lang()] || i18n.en;
+        const itemsEl = document.getElementById("cartItems");
+        const emptyEl = document.getElementById("cartEmpty");
+        const suggestionsEl = document.getElementById("cartSuggestions");
+        const suggestionsList = document.getElementById("cartSuggestionsList");
+        itemsEl.innerHTML = "";
+        suggestionsList.innerHTML = "";
+        if (!cart.size){
+          itemsEl.classList.add("hidden");
+          emptyEl.classList.remove("hidden");
+          suggestionsEl.classList.remove("hidden");
+          Object.entries(CATALOG)
+            .filter(([id]) => !stockIsKnown(id) || getStock(id) > 0)
+            .slice(0, 3)
+            .forEach(([id, p]) => {
+              const item = document.createElement("div");
+              item.dataset.suggestProduct = id;
+              item.className = "w-full rounded-lg border border-zinc-200 p-3 flex items-center gap-3 hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer";
+              item.innerHTML = `
+                <img src="${p.img}" alt="" class="w-14 h-14 rounded-md object-cover bg-zinc-100 flex-none">
+                <span class="min-w-0 flex-1">
+                  <span class="block font-semibold truncate">${dict[p.nameKey] || id}</span>
+                  <span class="block text-sm font-bold mt-0.5" style="color:var(--grubz-1)">${nf(gross(p.price))}</span>
+                </span>
+                <button type="button" class="btn text-sm px-3 py-2 flex-none" data-suggest-add="${id}">${dict.btnAdd || "Add"}</button>
+              `;
+              suggestionsList.appendChild(item);
+            });
+        } else {
+          itemsEl.classList.remove("hidden");
+          emptyEl.classList.add("hidden");
+          suggestionsEl.classList.add("hidden");
+          for (const [id, qty0] of cart){
+            let qty = cart.get(id) || 0;
+            if (stockIsKnown(id)) {
+              const available = getStock(id);
+              qty = Math.min(qty, available);
+              if (qty <= 0) { cart.delete(id); continue; } // only delete when stock is known
+              if (qty !== cart.get(id)) cart.set(id, qty);
+            } else {
+              // stock unknown → keep current qty, don’t delete
+            }
+            const p = CATALOG[id] || { price:0, img:"", nameKey:"" };
+            const name = dict[p.nameKey] || id;
+            const li = document.createElement("li");
+            li.className = "py-4 flex gap-3";
+            li.dataset.id = id;
+            li.innerHTML = `
+              <img src="${p.img}" alt="" class="w-16 h-16 rounded-lg object-cover bg-zinc-100">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="font-medium">${name}</div>
+                    <div class="text-xs text-zinc-500">${dict.cartQty}: <span class="font-semibold">${qty}</span></div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-semibold">${nf(gross(p.price) * qty)}</div>
+                    <button class="text-xs text-red-600 hover:underline remove">${dict.cartRemove}</button>
+                  </div>
+                </div>
+                <div class="mt-2 inline-flex items-center gap-2">
+                  <button class="px-2 py-1 rounded border dec" aria-label="decrease">−</button>
+                  <span class="w-6 text-center font-semibold">${qty}</span>
+                  <button class="px-2 py-1 rounded border inc" aria-label="increase">+</button>
+                </div>
+              </div>
+            `;
+            itemsEl.appendChild(li);
+          }
+        }
+        const { total, discount, grand } = cartTotals();
+        document.querySelector("[data-i18n='cartSubtotal']").textContent =
+          (i18n[lang()]||i18n.en).totalInclVAT;
+        document.getElementById("cartSubtotalValue").textContent = nf(grand);
+
+        const row = document.getElementById("cartDiscountRow");
+        const val = document.getElementById("cartDiscountValue");
+        if (discount > 0){
+          row.classList.remove("hidden");
+          val.textContent = "-" + nf(discount);
+        } else {
+          row.classList.add("hidden");
+        }
+
+        writeCartCookie();
+      }
+
+      window.__cartReady = true;
+      updateCartInfo();
+      renderCart();
+
+      document.getElementById("cartItems").addEventListener("click", (e)=>{
+        const row = e.target.closest("li[data-id]"); if (!row) return;
+        const id = row.dataset.id;
+        if (e.target.classList.contains("inc")){
+          const available = getStock(id);
+          const cur = cart.get(id) || 0;
+          const next = Math.min(cur + 1, available);
+          cart.set(id, next);
+          updateCartInfo(); renderCart();
+        } else if (e.target.classList.contains("dec")){
+          const q = (cart.get(id)||0)-1;
+          if (q<=0) cart.delete(id); else cart.set(id, q);
+          updateCartInfo(); renderCart();
+        } else if (e.target.classList.contains("remove")){
+          cart.delete(id);
+          updateCartInfo(); renderCart();
+        }
+      });
+      document.getElementById("cartContinue").addEventListener("click", closeCart);
+      document.getElementById("cartClear").addEventListener("click", ()=> clearCart({ close: true }));
+      document.getElementById("cartSuggestionsList").addEventListener("click", (e)=>{
+        const addBtn = e.target.closest("[data-suggest-add]");
+        if (addBtn) {
+          e.stopPropagation();
+          addProductToCart(addBtn.dataset.suggestAdd, addBtn);
+          return;
+        }
+        const item = e.target.closest("[data-suggest-product]");
+        if (!item) return;
+        closeCart();
+        setTimeout(() => openProductModal(item.dataset.suggestProduct, item), 180);
+      });
+
+      /* ---------- AUTH ---------- */
+      const auth = () => firebase.auth();
+
+      function show(el){ el.classList.remove("hidden"); }
+      function hide(el){ el.classList.add("hidden"); }
+
+      function openAuth(){ openDialog('authModal', 'authModal', document.getElementById('authBtn')); }
+      function closeAuth(){ closeDialog('authModal', 'authModal'); document.getElementById("authErr").textContent=""; }
+
+      document.getElementById("authBtn").addEventListener("click", async ()=>{
+        if (__user) {
+          await auth().signOut();
+        } else {
+          openAuth();
+        }
+      });
+      document.getElementById("authClose").addEventListener("click", closeAuth);
+
+      async function signIn(email, pass){
+        try {
+          await auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          await auth().signInWithEmailAndPassword(email, pass);
+          closeAuth();
+        }
+        catch(e){
+          const m = {
+            'auth/configuration-not-found': 'Project config missing. Add /__/firebase/init.js on Hosting or provide GRUBZ_FIREBASE_CONFIG with authDomain.',
+            'auth/operation-not-allowed': 'Email/Password provider is disabled in Firebase Console.',
+            'auth/invalid-email': 'Invalid email address.',
+            'auth/user-not-found': 'No user found with this email.',
+            'auth/wrong-password': 'Incorrect password.'
+          };
+          document.getElementById("authErr").textContent = m[e.code] || e.message || "Sign-in failed";
+        }
+      }
+      async function signUp(email, pass){
+        try {
+          await auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          await auth().createUserWithEmailAndPassword(email, pass);
+          closeAuth();
+          openAddr(true);
+        } catch(e){
+          const m = {
+            'auth/configuration-not-found': 'Project config missing.',
+            'auth/operation-not-allowed': 'Email/Password provider is disabled in Console.',
+            'auth/email-already-in-use': 'That email is already registered.',
+            'auth/invalid-email': 'Invalid email address.',
+            'auth/weak-password': 'Password is too weak (min 6 characters).'
+          };
+          document.getElementById("authErr").textContent = m[e.code] || e.message || "Sign-up failed";
+        }
+      }
+      document.getElementById("doSignIn").addEventListener("click", ()=>signIn(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
+      document.getElementById("doSignUp").addEventListener("click", ()=>signUp(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
+
+      auth().onAuthStateChanged(async (u) => {
+        __user = u || null;
+        const dict = i18n[lang()] || i18n.en;
+        const btn = document.getElementById("authBtn");
+        if (u) {
+          btn.textContent = dict.signOut;
+          try {
+            const resp = await authedFetch("/getProfile", { method: "GET" });
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data && data.shipping) {
+                fillAddrForm(data.shipping);
+                Cookie.set("grubz_shipto", JSON.stringify(data.shipping));
+              }
+            }
+          } catch (e) { /* ignore */ }
+        } else {
+          btn.textContent = dict.signIn;
+        }
+      });
+
+      /* ---------- ADDRESS ---------- */
+      function fillAddrForm(a){
+        document.getElementById("a_name").value = a.name || "";
+        document.getElementById("a_phone").value = a.phone || "";
+        document.getElementById("a_line1").value = a.line1 || "";
+        document.getElementById("a_line2").value = a.line2 || "";
+        document.getElementById("a_city").value = a.city || "";
+        document.getElementById("a_region").value = a.region || "";
+        document.getElementById("a_postal").value = a.postal || "";
+        document.getElementById("a_country").value = a.country || "Greece";
+      }
+      function readAddrForm(){
+        return {
+          name: document.getElementById("a_name").value.trim(),
+          phone: document.getElementById("a_phone").value.trim(),
+          line1: document.getElementById("a_line1").value.trim(),
+          line2: document.getElementById("a_line2").value.trim(),
+          city: document.getElementById("a_city").value.trim(),
+          region: document.getElementById("a_region").value.trim(),
+          postal: document.getElementById("a_postal").value.trim(),
+          country: document.getElementById("a_country").value.trim() || "Greece"
+        };
+      }
+      function validAddr(a){
+        if (!a || typeof a !== "object") return false;
+        const norm = {
+          name: (a.name||"").trim(),
+          phone: (a.phone||"").trim(),
+          postal: (a.postal||"").trim(),
+          country: (a.country||"Greece").trim() || "Greece"
+        };
+        return !!(norm.name && norm.phone && norm.postal && norm.country);
+      }
+
+      function openAddr(force=false){ openDialog('addrModal', 'addrModal'); if (!force) document.getElementById("addrErr").textContent=""; }
+      function closeAddr(){ closeDialog('addrModal', 'addrModal'); document.getElementById("addrErr").textContent=""; }
+
+      document.getElementById("addrCancel").addEventListener("click", closeAddr);
+      document.getElementById("addrSave").addEventListener("click", async ()=>{
+        if (!__user){ openAuth(); return; }
+        const a = readAddrForm();
+        if (!validAddr(a)){
+          const d = i18n[lang()]||i18n.en;
+          document.getElementById("addrErr").textContent = d.contactRequired || "Full name, phone, postal code and country are required";
+          return;
+        }
+        try{
+          const resp = await authedFetch("/saveShipping", {
+            method: "POST",
+            body: JSON.stringify({ shipping: a })
+          });
+          if (!resp.ok) {
+            const e = await resp.json().catch(()=> ({}));
+            throw new Error(e.error || `Save failed (${resp.status})`);
+          }
+          Cookie.set("grubz_shipto", JSON.stringify(a));
+          closeAddr();
+          if (__reopenReviewAfterAddr) {
+            __reopenReviewAfterAddr = false;
+            __currentReviewAddress = a;
+            openReview(a);
+          }
+        } catch(e){
+          document.getElementById("addrErr").textContent = e.message || "Failed to save";
+        }
+      });
+
+      async function ensureSignedIn(){
+        if (__user) return __user;
+        openAuth();
+        return new Promise(resolve=>{
+          const off = auth().onAuthStateChanged(u=>{ if(u){ off(); resolve(u); }});
+        });
+      }
+      async function getSavedAddress() {
+        if (__user) {
+          try {
+            const resp = await authedFetch("/getProfile", { method: "GET" });
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data && data.shipping && validAddr(data.shipping)) {
+                Cookie.set("grubz_shipto", JSON.stringify(data.shipping));
+                return data.shipping;
+              }
+            }
+          } catch (e) { /* ignore */ }
+        }
+        try {
+          const raw = Cookie.get("grubz_shipto");
+          if (raw) return JSON.parse(raw);
+        } catch {}
+        return null;
+      }
+
+      async function ensureAddress(){
+        let a = await getSavedAddress();
+        if (a && validAddr(a)) return a;
+        openAddr(true);
+        return new Promise(resolve=>{
+          const handler = async ()=>{
+            a = readAddrForm();
+            if (validAddr(a)) {
+              document.getElementById("addrSave").removeEventListener("click", handler);
+              resolve(a);
+            }
+          };
+          document.getElementById("addrSave").addEventListener("click", handler);
+        });
+      }
+
+      let __currentReviewAddress = null;
+      let __reopenReviewAfterAddr = false;
+
+      function boxNowLockerLines(locker){
+        if (!locker) return [];
+        return [
+          locker.name || "",
+          locker.id ? `ID: ${locker.id}` : "",
+          locker.addressLine1 || "",
+          locker.addressLine2 || "",
+          locker.postalCode || ""
+        ].filter(Boolean);
+      }
+
+      function hasBoxNowLocker(locker = __boxNowLocker){
+        return Boolean(locker && String(locker.id || "").trim());
+      }
+
+      function renderBoxNowSelection(){
+        const dict = i18n[lang()] || i18n.en;
+        const selected = document.getElementById("boxnowSelected");
+        const choose = document.getElementById("boxnowChoose");
+        if (!selected || !choose) return;
+        if (hasBoxNowLocker()) {
+          selected.textContent = boxNowLockerLines(__boxNowLocker).join("\n");
+          choose.textContent = dict.boxnowChange || "Change locker";
+        } else {
+          selected.textContent = dict.boxnowNone || "No locker selected.";
+          choose.textContent = dict.boxnowChoose || "Choose locker";
+        }
+      }
+
+      function invalidateBoxNowFee(){
+        __boxNowFee = null;
+        __boxNowFeeKey = "";
+        __boxNowFeePromise = null;
+        if (typeof renderBoxNowFee === "function") renderBoxNowFee();
+      }
+
+      function boxNowFeeKey(addr){
+        return JSON.stringify({
+          items: Array.from(cart.entries()).map(([id, qty]) => ({ id, qty })),
+          locker: hasBoxNowLocker() ? __boxNowLocker.id : "",
+          postal: __boxNowLocker?.postalCode || addr?.postal || ""
+        });
+      }
+
+      function renderBoxNowFee(){
+        const dict = i18n[lang()] || i18n.en;
+        const row = document.getElementById("reviewDeliveryRow");
+        const value = document.getElementById("reviewDeliveryValue");
+        const msg = document.getElementById("reviewDeliveryMsg");
+        if (!row || !value || !msg) return;
+
+        if (!hasBoxNowLocker()) {
+          row.classList.add("hidden");
+          msg.textContent = "";
+          return;
+        }
+
+        row.classList.remove("hidden");
+        if (__boxNowFee) {
+          value.textContent = nf((__boxNowFee.amount || 0) / 100);
+          msg.textContent = __boxNowFee.source === "fallback"
+            ? (dict.boxnowFeeUnavailable || "Delivery fee will be confirmed at checkout.")
+            : "";
+        } else if (__boxNowFeePromise) {
+          value.textContent = "…";
+          msg.textContent = dict.boxnowFeeLoading || "Calculating delivery fee...";
+        } else {
+          value.textContent = "—";
+          msg.textContent = dict.boxnowFeeUnavailable || "Delivery fee will be confirmed at checkout.";
+        }
+      }
+
+      async function refreshBoxNowFee(addr){
+        if (!hasBoxNowLocker()) {
+          invalidateBoxNowFee();
+          return null;
+        }
+        const key = boxNowFeeKey(addr);
+        if (__boxNowFee && __boxNowFeeKey === key) return __boxNowFee;
+        if (__boxNowFeePromise && __boxNowFeeKey === key) return __boxNowFeePromise;
+
+        __boxNowFeeKey = key;
+        __boxNowFee = null;
+        const items = Array.from(cart.entries()).map(([id, qty]) => ({ id, qty }));
+        __boxNowFeePromise = authedFetch("/getBoxNowFee", {
+          method: "POST",
+          body: JSON.stringify({
+            items,
+            shipping: { ...(addr || __currentReviewAddress || {}), deliveryMethod: "boxnow", boxNow: __boxNowLocker }
+          })
+        })
+          .then(async resp => {
+            const data = await resp.json().catch(()=> ({}));
+            if (!resp.ok) throw new Error(data.error || "BOX NOW fee unavailable");
+            __boxNowFee = {
+              amount: Number(data.amount || 0),
+              currency: data.currency || "eur",
+              source: data.source || "boxnow"
+            };
+            return __boxNowFee;
+          })
+          .catch(err => {
+            console.warn("BOX NOW fee unavailable", err);
+            __boxNowFee = null;
+            return null;
+          })
+          .finally(() => {
+            __boxNowFeePromise = null;
+            if (typeof renderReview === "function") renderReview(__currentReviewAddress);
+          });
+
+        renderBoxNowFee();
+        return __boxNowFeePromise;
+      }
+
+      function buildBoxNowWidgetUrl(addr){
+        const url = new URL(BOXNOW_WIDGET_BASE);
+        url.searchParams.set("language", lang() === "el" ? "el" : "en");
+        url.searchParams.set("size", BOXNOW_PARCEL_SIZE);
+        url.searchParams.set("islands", "yes");
+        url.searchParams.set("gps", "no");
+        if (BOXNOW_PARTNER_ID) url.searchParams.set("partnerId", BOXNOW_PARTNER_ID);
+        const postal = String(addr?.postal || "").replace(/\s+/g, "");
+        if (postal) url.searchParams.set("zip", postal);
+        if (hasBoxNowLocker()) url.searchParams.set("lockerId", __boxNowLocker.id);
+        return url.toString();
+      }
+
+      function openBoxNowWidget(){
+        const err = document.getElementById("boxnowErr");
+        if (err) err.textContent = "";
+        const frame = document.getElementById("boxnowFrame");
+        frame.src = buildBoxNowWidgetUrl(__currentReviewAddress);
+        openDialog("boxnowModal", "boxnowModal", document.getElementById("boxnowChoose"));
+      }
+
+      function closeBoxNowWidget(){
+        closeDialog("boxnowModal", "boxnowModal");
+      }
+
+      function acceptBoxNowLocker(data){
+        const lockerId = String(data.boxnowLockerId || "").trim();
+        if (!lockerId) return;
+        __boxNowLocker = {
+          id: lockerId,
+          name: String(data.boxnowLockerName || "").trim(),
+          postalCode: String(data.boxnowLockerPostalCode || "").trim(),
+          addressLine1: String(data.boxnowLockerAddressLine1 || "").trim(),
+          addressLine2: String(data.boxnowLockerAddressLine2 || "").trim(),
+          lat: data.boxnowLockerLat || "",
+          lng: data.boxnowLockerLng || ""
+        };
+        Cookie.set("grubz_boxnow_locker", JSON.stringify(__boxNowLocker));
+        invalidateBoxNowFee();
+        renderBoxNowSelection();
+        refreshBoxNowFee(__currentReviewAddress);
+        closeBoxNowWidget();
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.origin !== "https://widget-v5.boxnow.gr") return;
+        const data = event.data || {};
+        if (data.boxnowClose === "yes") {
+          closeBoxNowWidget();
+          return;
+        }
+        if (data.boxnowLockerId) acceptBoxNowLocker(data);
+      });
+
+      function openReview(addr){
+        __currentReviewAddress = addr || __currentReviewAddress;
+        renderReview(__currentReviewAddress);
+        openDialog('reviewModal', 'reviewPanel');
+        const backdrop = document.getElementById("reviewBackdrop"), panel = document.getElementById("reviewPanel");
+        requestAnimationFrame(()=>{
+          backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
+          panel.classList.remove("opacity-0","scale-95"); panel.classList.add("opacity-100","scale-100");
+        });
+      }
+      function closeReview(){
+        const backdrop = document.getElementById("reviewBackdrop"), panel = document.getElementById("reviewPanel");
+        backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
+        panel.classList.add("opacity-0","scale-95"); panel.classList.remove("opacity-100","scale-100");
+        setTimeout(()=> closeDialog('reviewModal', 'reviewPanel'), 150);
+      }
+
+      function setReviewLoading(on){
+        const d = i18n[lang()]||i18n.en;
+        const b = document.getElementById("reviewConfirm");
+        if (!b) return;
+        b.disabled = on;
+        b.classList.toggle("opacity-60", on);
+        b.classList.toggle("pointer-events-none", on);
+        b.textContent = on ? "Processing…" : d.reviewConfirmPay;
+      }
+
+      function renderReview(addr){
+        const a = addr || {};
+        const lines = [
+          a.name || "",
+          a.phone ? `📞 ${a.phone}` : "",
+          [a.postal, a.country || "Greece"].filter(Boolean).join(", ")
+        ].filter(Boolean);
+        document.getElementById("reviewAddr").textContent = lines.join("\n");
+
+        const dict = i18n[lang()] || i18n.en;
+        const ul = document.getElementById("reviewItems"); ul.innerHTML = "";
+        for (const [id, qty] of cart){
+          const p = CATALOG[id]; if (!p) continue;
+          const li = document.createElement("li");
+          li.className = "py-3 flex items-center justify-between gap-3";
+          li.innerHTML = `
+            <div class="min-w-0">
+              <div class="font-medium">${dict[p.nameKey] || id}</div>
+              <div class="text-xs text-zinc-500">${dict.cartQty}: <span class="font-semibold">${qty}</span></div>
+            </div>
+            <div class="font-semibold">${nf(gross(p.price) * qty)}</div>
+          `;
+          ul.appendChild(li);
+        }
+        const { grand, discount } = cartTotals();
+        document.querySelector("[data-i18n='reviewTotal']").textContent =
+          (i18n[lang()]||i18n.en).totalInclVAT;
+        const deliveryFee = __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0;
+        document.getElementById("reviewSubtotal").textContent = nf(grand + deliveryFee);
+        renderBoxNowSelection();
+        renderBoxNowFee();
+        refreshBoxNowFee(__currentReviewAddress);
+
+        const row = document.getElementById("reviewDiscountRow");
+        const val = document.getElementById("reviewDiscountValue");
+        if (discount > 0){
+          row.classList.remove("hidden");
+          val.textContent = "-" + nf(discount);
+        } else {
+          row.classList.add("hidden");
+        }
+      }
+
+      (function wireReview(){
+        document.getElementById("reviewBackdrop").addEventListener("click", closeReview);
+        window.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeReview(); });
+        document.getElementById("reviewClose").addEventListener("click", closeReview);
+        document.getElementById("reviewCancel").addEventListener("click", closeReview);
+        document.getElementById("reviewEdit").addEventListener("click", () => {
+          __reopenReviewAfterAddr = true;
+          closeReview();
+          openAddr(true);
+        });
+        document.getElementById("boxnowChoose").addEventListener("click", openBoxNowWidget);
+        document.getElementById("boxnowBackdrop").addEventListener("click", closeBoxNowWidget);
+        document.getElementById("boxnowClose").addEventListener("click", closeBoxNowWidget);
+        document.getElementById("reviewConfirm").addEventListener("click", async () => {
+          if (!__currentReviewAddress) { openAddr(true); return; }
+          if (!hasBoxNowLocker()) {
+            document.getElementById("boxnowErr").textContent = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
+            openBoxNowWidget();
+            return;
+          }
+          setReviewLoading(true);
+          try {
+            await refreshBoxNowFee(__currentReviewAddress);
+            await createCheckout({ ...__currentReviewAddress, deliveryMethod: "boxnow", boxNow: __boxNowLocker });
+          } finally {
+            setReviewLoading(false);
+          }
+        });
+      })();
+
+      function setCheckoutLoading(on){
+        const ids = ["checkout","cartCheckout"];
+        const label = (i18n[lang()]||i18n.en).cartCheckout;
+        ids.forEach(id=>{
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.disabled = on;
+          b.classList.toggle("opacity-60", on);
+          b.classList.toggle("pointer-events-none", on);
+          b.textContent = on ? "Processing…" : label;
+        });
+      }
+
+      // ===== Coupon state & helpers (frontend preview) =====
+      function currentSubtotal(){
+        let net = 0;
+        for (const [id, qty] of cart){
+          const p = CATALOG[id]; if (!p) continue;
+          net += (p.price * qty);
+        }
+        return net;
+      }
+      function currentDiscount(){
+        const sub = currentSubtotal();
+        const d = Math.max(0, Number(__coupon?.discount || 0));
+        return Math.min(d, sub);
+      }
+
+      // FINAL: apply coupon -> store promotionCodeId (returned by backend)
+      async function applyCouponFromInput(){
+        const codeEl = document.getElementById("couponCode");
+        const msgEl  = document.getElementById("couponMsg");
+        const dict = i18n[lang()] || i18n.en;
+        const code = (codeEl?.value || "").trim();
+        if (!code) return;
+
+        try{
+          const items = Array.from(cart.entries()).map(([id, qty]) => ({ id, qty }));
+          const resp = await authedFetch("/validateCoupon", {
+            method: "POST",
+            body: JSON.stringify({ code, items })
+          });
+          const data = await resp.json().catch(()=> ({}));
+
+          if (resp.ok && data && data.ok){
+            __coupon = {
+              code: data.code || code,
+              promotionCodeId: data.promotionCodeId || null,
+              discount: Number(data.discount || 0)
+            };
+            msgEl.className = "text-sm text-green-700";
+            msgEl.textContent = dict.couponApplied || "Coupon applied";
+            document.getElementById("removeCoupon")?.classList.remove("hidden");
+            document.getElementById("applyCoupon")?.classList.add("hidden");
+          } else {
+            __coupon = null;
+            msgEl.className = "text-sm text-red-600";
+            msgEl.textContent =
+              (data && data.error === "Conditions not met")
+              ? (dict.couponConditions || "Coupon conditions not met")
+              : (dict.couponInvalid || "Invalid coupon");
+            document.getElementById("removeCoupon")?.classList.add("hidden");
+            document.getElementById("applyCoupon")?.classList.remove("hidden");
+          }
+        } catch(e){
+          __coupon = null;
+          if (msgEl){
+            msgEl.className = "text-sm text-red-600";
+            msgEl.textContent = (i18n[lang()]||i18n.en).couponInvalid || "Invalid coupon";
+          }
+          document.getElementById("removeCoupon")?.classList.add("hidden");
+          document.getElementById("applyCoupon")?.classList.remove("hidden");
+        }
+
+        renderCart();
+        if (typeof renderReview === "function") renderReview(__currentReviewAddress);
+      }
+
+      function removeCoupon(){
+        __coupon = null;
+        const msgEl = document.getElementById("couponMsg");
+        if (msgEl){ msgEl.textContent = ""; msgEl.className = "text-sm"; }
+        document.getElementById("removeCoupon")?.classList.add("hidden");
+        document.getElementById("applyCoupon")?.classList.remove("hidden");
+        renderCart();
+        if (typeof renderReview === "function") renderReview(__currentReviewAddress);
+      }
+      document.getElementById("applyCoupon")?.addEventListener("click", applyCouponFromInput);
+      document.getElementById("couponCode")?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyCouponFromInput(); });
+      document.getElementById("removeCoupon")?.addEventListener("click", removeCoupon);
+
+      // FINAL: create checkout -> pass promotionCodeId only (no discounts array on frontend)
+      async function createCheckout(shipping) {
+        const CLIENT_TO_SERVER_ID = {
+          "grubz-100g":"grubz-100g",
+          "grubz-300g":"grubz-300g",
+          "grubz-500g":"grubz-500g",
+          "happy-chicken-1kg":"happy-chicken-1kg",
+          "happy-chicken-2kg":"happy-chicken-2kg",
+          "happy-chicken-3kg":"happy-chicken-3kg"
+        };
+
+        const items = Array.from(cart.entries())
+          .map(([id, qty]) => ({ id: CLIENT_TO_SERVER_ID[id] || id, qty }))
+          .filter(x => x.qty > 0);
+
+        if (!items.length) {
+          openCart();
+          alert((i18n[lang()]||i18n.en).cartEmpty);
+          return;
+        }
+
+        if (!hasBoxNowLocker(shipping?.boxNow)) {
+          document.getElementById("boxnowErr").textContent = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
+          openReview(shipping);
+          openBoxNowWidget();
+          return;
+        }
+
+        let idToken = null;
+        if (__user) {
+          try { idToken = await __user.getIdToken(true); }
+          catch(e){ console.warn("Failed to get ID token", e); }
+        }
+
+        const headers = { "Content-Type":"application/json" };
+        if (idToken) headers["Authorization"] = "Bearer " + idToken;
+
+        const promotionCodeId = __coupon?.promotionCodeId || null;
+
+        setCheckoutLoading(true);
+        try {
+          const resp = await authedFetch(
+            "/createCheckoutSession",
+            { method: "POST", body: JSON.stringify({ items, promotionCodeId, shipping }) }
+          );
+          const data = await resp.json().catch(()=> ({}));
+          if (!resp.ok) {
+            const msg = data.error || data.message || `Checkout failed (${resp.status})`;
+            throw new Error(msg);
+          }
+          if (!data || !data.url) throw new Error("No checkout URL returned.");
+          location.href = data.url;
+        } catch (e) {
+          console.error("Checkout error:", e);
+          alert(e.message || "Checkout failed.");
+        } finally {
+          setCheckoutLoading(false);
+        }
+      }
+
+      async function guardedCheckout(){
+        const u = await ensureSignedIn();
+        if (!u) return;
+        const addr = await ensureAddress();
+        if (!addr) return;
+        openReview(addr);
+      }
+
+      document.getElementById("checkout").addEventListener("click", guardedCheckout);
+      document.getElementById("cartCheckout").addEventListener("click", guardedCheckout);
+
+      (function heroCrossfade(){
+        const root = document.getElementById('heroSlider');
+        if (!root) return;
+
+        const slides = [
+          { src: 'images/chicken-rectangle.png',        alt: 'Chicken with GRUBZ' },
+          { src: 'images/bearded-dragon-rectangle.png', alt: 'Bearded dragon with GRUBZ' },
+          { src: 'images/budgerigar-rectangle.png',     alt: 'Budgerigar with GRUBZ' },
+          { src: 'images/leopard-gecko-rectangle.png',  alt: 'Leopard Gecko with GRUBZ' },
+          { src: 'images/cockatiel-rectangle.png',      alt: 'Cockatiel with GRUBZ' }
+        ];
+
+        root.setAttribute('role', 'region');
+        root.setAttribute('aria-roledescription', 'carousel');
+        root.setAttribute('aria-label', 'Featured animals enjoying GRUBZ');
+        root.tabIndex = 0;
+
+        const dotBar = root.querySelector('.fade-dots');
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const nodes = slides.map((s, idx) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'fade-slide' + (idx===0?' active':'');
+          wrap.setAttribute('role', 'group');
+          wrap.setAttribute('aria-roledescription', 'slide');
+          wrap.setAttribute('aria-label', `Slide ${idx+1} of ${slides.length}`);
+
+          const img = new Image();
+          img.src = s.src; img.alt = s.alt; img.decoding = 'async';
+          img.className = 'absolute inset-0 w-full h-full object-cover';
+          wrap.appendChild(img);
+          root.appendChild(wrap);
+
+          const dot = document.createElement('button');
+          dot.type = 'button';
+          dot.className = idx===0 ? 'active' : '';
+          dot.setAttribute('aria-label', `Go to slide ${idx+1}`);
+          dot.addEventListener('click', () => show(idx, true));
+          dotBar.appendChild(dot);
+
+          return wrap;
+        });
+
+        let i = 0, timer = null, hovering = false, visible = true;
+
+        function show(n, user=false){
+          nodes[i].classList.remove('active');
+          dotBar.children[i].classList.remove('active');
+          i = (n + nodes.length) % nodes.length;
+          nodes[i].classList.add('active');
+          dotBar.children[i].classList.add('active');
+          if (user) restart();
+        }
+        function next(){ show(i+1); }
+        function start(){ if(!timer && !prefersReduced) timer = setInterval(()=>{ if(!hovering && visible) next(); }, 5000); }
+        function stop(){ clearInterval(timer); timer = null; }
+        function restart(){ stop(); start(); }
+
+        root.addEventListener('mouseenter', ()=> hovering = true);
+        root.addEventListener('mouseleave', ()=> hovering = false);
+
+        root.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
+          if (e.key === 'ArrowLeft') { show(i-1); e.preventDefault(); }
+        });
+
+        new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: .2 }).observe(root);
+        start();
+      })();
+    </script>
+    <div id="a11y-live" class="sr-only" aria-live="polite"></div>
+  </body>
+</html>

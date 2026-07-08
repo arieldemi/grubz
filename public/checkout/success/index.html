@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Order Confirmed — GRUBZ</title>
+  <meta name="robots" content="noindex" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --grubz-1:#d04211; /* primary */
+      --grubz-2:#e37500; /* accent */
+      --grubz-3:#daa266; /* sand */
+      --grubz-4:#71391d; /* dark */
+    }
+    .bg-grubz{ background: linear-gradient(135deg,var(--grubz-1),var(--grubz-2)); }
+    .btn{ background: var(--grubz-1); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
+    .btn:hover{ filter: brightness(.95) }
+    .btn-outline{ border:2px solid var(--grubz-1); color:var(--grubz-1); background:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
+  </style>
+
+  <!-- ADDED: Firebase (compat) for Auth so we can attach the ID token to verifyCheckout -->
+  <script src="/__/firebase/12.2.1/firebase-app-compat.js"></script>
+  <script src="/__/firebase/12.2.1/firebase-auth-compat.js"></script>
+  <script>
+    (function initFirebase() {
+      if (!window.firebase) return;
+      firebase.initializeApp({
+        apiKey: "AIzaSyCD6CZjOOrYn6YD71jGhtPSstuCq0R4PMU",
+        authDomain: "grubz-99b84.firebaseapp.com",
+        projectId: "grubz-99b84",
+        storageBucket: "grubz-99b84.appspot.com",
+        messagingSenderId: "712952743006",
+        appId: "1:712952743006:web:c84d1eef919f5029bba0cf",
+        measurementId: "G-TWQQC1WD7R"
+      });
+    })();
+  </script>
+</head>
+<body class="antialiased text-zinc-800">
+
+  <!-- Top bar -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-zinc-200">
+      <!-- top ribbon -->
+      <div class="bg-grubz text-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-2 text-sm flex items-center justify-between">
+          <div class="inline-flex items-center gap-2">
+            <img src="../../images/greece-flag-40.png" class="h-3.5" alt="GR flag" />
+            <span data-i18n="madeInGr">Made in Greece</span>
+          </div>
+
+          <!-- language + cart -->
+          <div class="flex items-center gap-2">
+            <button id="lang-en" class="px-2 py-1 rounded chip">EN</button>
+            <button id="lang-el" class="px-2 py-1 rounded chip">ΕΛ</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- main nav -->
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="../../images/grubz-icon-80.png" alt="GRUBZ icon" class="h-14 w-14"/>
+          <span class="text-2xl font-extrabold tracking-tight" style="color:var(--grubz-4)">GRUBZ</span>
+        </div>
+      </div>
+    </header>
+
+  <!-- Content -->
+  <main class="max-w-3xl mx-auto px-4 py-14">
+    <div class="text-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-5" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--grubz-1)">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <h1 class="text-3xl font-extrabold mb-2" data-i18n="title">Payment successful</h1>
+      <p class="text-zinc-600" data-i18n="subtitle">Thanks for your order! We’re getting it ready.</p>
+
+      <div class="mt-6 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 text-sm">
+        <span class="text-zinc-500" data-i18n="sessionLabel">Reference (Session ID):</span>
+        <code id="sid" class="font-mono text-zinc-800"></code>
+      </div>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-3">
+        <a href="/#products" class="btn" data-i18n="back">Back to shop</a>
+        <a href="mailto:info@grubz.gr" class="btn-outline" data-i18n="support">Contact support</a>
+      </div>
+
+      <p class="mt-6 text-xs text-zinc-500" data-i18n="note">
+        If email receipts are enabled, you’ll receive one shortly.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    // --- i18n ---
+    const i18n = {
+      en: {
+        title: "Payment successful",
+        subtitle: "Thanks for your order! We’re getting it ready.",
+        sessionLabel: "Reference (Session ID):",
+        back: "Back to shop",
+        support: "Contact support",
+        note: "If email receipts are enabled, you’ll receive one shortly.",
+        madeInGr: "Made in Greece"
+      },
+      el: {
+        title: "Η πληρωμή ολοκληρώθηκε",
+        subtitle: "Ευχαριστούμε για την παραγγελία! Τη προετοιμάζουμε.",
+        sessionLabel: "Αναφορά (Session ID):",
+        back: "Επιστροφή στο κατάστημα",
+        support: "Υποστήριξη",
+        note: "Αν οι αποδείξεις email είναι ενεργές, θα τη λάβετε σύντομα.",
+        madeInGr: "Παράγεται στην Ελλάδα"
+      }
+    };
+    const $$ = s=>document.querySelectorAll(s);
+    function applyLang(lang){
+      const t = i18n[lang] || i18n.en;
+      $$("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (t[key]) el.textContent = t[key];
+      });
+      localStorage.setItem("grubz_lang", lang);
+      document.documentElement.lang = (lang === "el" ? "el" : "en");
+    }
+    const saved = localStorage.getItem("grubz_lang") || (navigator.language.startsWith("el") ? "el" : "en");
+    applyLang(saved);
+    document.getElementById("lang-en").onclick = () => applyLang("en");
+    document.getElementById("lang-el").onclick = () => applyLang("el");
+
+    // --- Helpers for clearing cart via backend verification ---
+    const API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+    let __user = null;
+
+    function removeCookie(name){
+      document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;
+    }
+
+    async function waitForAuthInit(timeout = 4000){
+      return new Promise(resolve => {
+        let settled = false;
+        const t = setTimeout(() => { if (!settled) { settled = true; resolve(); } }, timeout);
+        firebase.auth().onAuthStateChanged(u => {
+          __user = u || null;
+          if (!settled) { settled = true; clearTimeout(t); resolve(); }
+        });
+      });
+    }
+
+    async function authedFetch(path, options = {}){
+      const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+      if (__user) {
+        try {
+          const tok = await __user.getIdToken(/*force*/ true);
+          headers.Authorization = "Bearer " + tok;
+        } catch {}
+      }
+      return fetch(`${API_BASE}${path}`, { ...options, headers, mode: "cors" });
+    }
+
+    async function maybeClearCartOnSuccess(){
+      // Support both ?sid=... and Stripe's ?session_id=...
+      const qs = new URLSearchParams(location.search);
+      const sid = qs.get("sid") || qs.get("session_id");
+      if (!sid) return;
+
+      // Show the reference to the user
+      const sidEl = document.getElementById("sid");
+      if (sidEl) sidEl.textContent = sid;
+
+      // Wait for Firebase auth to pick up the persisted session
+      await waitForAuthInit();
+
+      try {
+        const resp = await authedFetch(`/verifyCheckout?sid=${encodeURIComponent(sid)}`, { method: "GET" });
+        const data = await resp.json().catch(()=> ({}));
+
+        if (resp.ok && data.paid) {
+          // Clear the cart cookie set by the shop page
+          removeCookie("grubz_cart");
+
+          // Remove the query param so refreshes don't re-run the check
+          try {
+            const url = new URL(location.href);
+            url.search = "";
+            history.replaceState({}, "", url.toString());
+          } catch {}
+        } else {
+          console.warn("verifyCheckout not paid or failed:", data);
+        }
+      } catch (e) {
+        console.warn("verifyCheckout error:", e);
+      }
+    }
+
+    // Initial display of the session id (fallback to em dash if missing)
+    const sidParam = new URLSearchParams(location.search).get("sid") || new URLSearchParams(location.search).get("session_id");
+    document.getElementById("sid").textContent = sidParam || "—";
+
+    // Kick off the clear-cart flow
+    maybeClearCartOnSuccess();
+  </script>
+</body>
+</html>
