@@ -1,7 +1,7 @@
 {
   "firestore": {
-    "database": "(default)",
-    "location": "us-central1",
+    "database": "grubz",
+    "location": "europe-west1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
@@ -37,6 +37,14 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/api/createCheckoutSession", "function": { "functionId": "createCheckoutSession", "region": "europe-west1" } },
+      { "source": "/api/getProducts", "function": { "functionId": "getProducts", "region": "europe-west1" } },
+      { "source": "/api/getStock", "function": { "functionId": "getStock", "region": "europe-west1" } },
+      { "source": "/api/getBoxNowFee", "function": { "functionId": "getBoxNowFee", "region": "europe-west1" } },
+      { "source": "/api/validateCoupon", "function": { "functionId": "validateCoupon", "region": "europe-west1" } },
+      { "source": "/api/adminProducts", "function": { "functionId": "adminProducts", "region": "europe-west1" } },
+      { "source": "/api/adminProductImage", "function": { "functionId": "adminProductImage", "region": "europe-west1" } },
+      { "source": "/api/adminOrders", "function": { "functionId": "adminOrders", "region": "europe-west1" } },
+      { "source": "/api/adminSettings", "function": { "functionId": "adminSettings", "region": "europe-west1" } },
       { "source": "/api/stripe/webhook", "function": { "functionId": "stripeWebhook", "region": "europe-west1" } },
       { "source": "**", "destination": "/index.html" }
     ],

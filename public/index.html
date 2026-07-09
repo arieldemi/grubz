@@ -25,6 +25,15 @@
       .text-shadow{ text-shadow:0 2px 8px rgba(0,0,0,.25) }
       .chip{ background: rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25) }
       .card{ border-radius:1rem; box-shadow: 0 10px 30px rgba(0,0,0,.08) }
+      button:not(:disabled),
+      a[href],
+      [role="button"],
+      [data-product],
+      [data-product-details],
+      [data-suggest-product],
+      [data-suggest-add],
+      [data-suggest-details],
+      .cursor-pointer{ cursor:pointer !important; }
       .btn{
         background: var(--grubz-1); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700;
         transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
@@ -40,8 +49,11 @@
       .input{ border:1px solid #e5e5e5; border-radius:.75rem; padding:.65rem .8rem; width:100%; }
       .label{ font-size:.8rem; color:#525252 }
       .cookie-banner{ box-shadow: 0 -10px 30px rgba(0,0,0,.12) }
+      button:disabled,
+      button[disabled],
       .btn:disabled,
-      .btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+      .btn[disabled],
+      [aria-disabled="true"]{ opacity:.5; cursor:not-allowed !important; transform:none; box-shadow:none; }
       .fade-slider { position: relative; border-radius: 1rem; overflow: hidden; }
       .fade-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; }
       .fade-slide.active { opacity: 1; }
@@ -68,6 +80,8 @@
       .cart-ping{ position:absolute; inset:-6px; border-radius:12px; pointer-events:none; box-shadow:0 0 0 0 rgba(255,255,255,.9); animation:cart-ping 700ms ease-out forwards }
       @keyframes cart-ping{ 0%{box-shadow:0 0 0 0 rgba(255,255,255,.9); opacity:1} 100%{box-shadow:0 0 0 12px rgba(255,255,255,0); opacity:0} }
       .product-card { position: relative; }
+      .details-btn{ border:1px solid #e5e5e5; background:#fff; color:#71391d; border-radius:.75rem; padding:.7rem 1rem; font-weight:700; }
+      .details-btn:hover{ background:#fff7f2; border-color:#f2b48d; }
       .badge-oos{ position:absolute; top:.75rem; left:.75rem; background:#111; color:#fff; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .badge-low{ position:absolute; top:.75rem; right:.75rem; background:#eab308; color:#111; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .boxnow-frame{ width:100%; height:min(76vh,720px); border:0; }
@@ -95,7 +109,7 @@
 
             <button id="cartBtn" class="relative ml-2 rounded-lg px-3 py-1.5 bg-white/10 hover:bg-white/20 transition"
                     aria-label="Open cart" aria-haspopup="dialog" aria-controls="cartModal">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 3h2l.4 2M7 13h10l3-7H6.4M7 13l-1.3 5.2A1 1 0 007 20h10m-9 0a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 110 2 1 1 0 010-2z"/>
               </svg>
@@ -197,87 +211,8 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="productsTitle">Products</h2>
 
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-
-            <article class="card border p-5 h-full flex flex-col product-card" data-id="happy-chicken-1kg">
-              <div class="product-thumb mb-4 rounded-lg bg-[url('images/happy-chicken-1kg.png')] bg-cover bg-center"></div>
-              <h3 class="font-bold" data-i18n="p4Name">Happy Chicken - 1KG</h3>
-              <p class="text-sm opacity-80 mt-1" data-i18n="p4Desc">Dried BSF larvae for chickens.</p>
-              <div class="mt-auto pt-4 flex items-center justify-between">
-                <div class="leading-tight">
-                  <span class="font-extrabold price" data-id="happy-chicken-1kg" style="color:var(--grubz-1)"></span>
-                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
-                </div>
-                <button class="btn text-sm" data-product="happy-chicken-1kg" data-i18n="btnAdd">Add to cart</button>
-              </div>
-            </article>
-
-            <article class="card border p-5 h-full flex flex-col product-card" data-id="happy-chicken-2kg">
-              <div class="product-thumb mb-4 rounded-lg bg-[url('images/happy-chicken-2kg.png')] bg-cover bg-center"></div>
-              <h3 class="font-bold" data-i18n="p5Name">Happy Chicken - 2KG</h3>
-              <p class="text-sm opacity-80 mt-1" data-i18n="p5Desc">Value pack of dried BSF larvae for chickens.</p>
-              <div class="mt-auto pt-4 flex items-center justify-between">
-                <div class="leading-tight">
-                  <span class="font-extrabold price" data-id="happy-chicken-2kg" style="color:var(--grubz-1)"></span>
-                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
-                </div>
-                <button class="btn text-sm" data-product="happy-chicken-2kg" data-i18n="btnAdd">Add to cart</button>
-              </div>
-            </article>
-
-            <article class="card border p-5 h-full flex flex-col product-card" data-id="happy-chicken-3kg">
-              <div class="product-thumb mb-4 rounded-lg bg-[url('images/happy-chicken-3kg.png')] bg-cover bg-center"></div>
-              <h3 class="font-bold" data-i18n="p6Name">Happy Chicken - 3KG</h3>
-              <p class="text-sm opacity-80 mt-1" data-i18n="p6Desc">Large pack of dried BSF larvae for chickens.</p>
-              <div class="mt-auto pt-4 flex items-center justify-between">
-                <div class="leading-tight">
-                  <span class="font-extrabold price" data-id="happy-chicken-3kg" style="color:var(--grubz-1)"></span>
-                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
-                </div>
-                <button class="btn text-sm" data-product="happy-chicken-3kg" data-i18n="btnAdd">Add to cart</button>
-              </div>
-            </article>
-
-            <article class="card border p-5 h-full flex flex-col product-card" data-id="grubz-100g">
-              <div class="product-thumb mb-4 rounded-lg bg-[url('images/grubz-product-100g.png')] bg-cover bg-center"></div>
-              <h3 class="font-bold" data-i18n="p1Name">GRUBZ Dried BSF Larvae 100g</h3>
-              <p class="text-sm opacity-80 mt-1" data-i18n="p1Desc">Crispy dried larvae for reptiles, birds & fish.</p>
-              <div class="mt-auto pt-4 flex items-center justify-between">
-                <div class="leading-tight">
-                  <span class="font-extrabold price" data-id="grubz-100g" style="color:var(--grubz-1)"></span>
-                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
-                </div>
-                <button class="btn text-sm" data-product="grubz-100g" data-i18n="btnAdd">Add to cart</button>
-              </div>
-            </article>
-
-            <article class="card border p-5 h-full flex flex-col product-card" data-id="grubz-300g">
-              <div class="product-thumb mb-4 rounded-lg bg-[url('images/grubz-product-300g.png')] bg-cover bg-center"></div>
-              <h3 class="font-bold" data-i18n="p2Name">GRUBZ Premium Dried</h3>
-              <p class="text-sm opacity-80 mt-1" data-i18n="p2Desc">Larger larvae, extra crunch, top pick for adults.</p>
-              <div class="mt-auto pt-4 flex items-center justify-between">
-                <div class="leading-tight">
-                  <span class="font-extrabold price" data-id="grubz-300g" style="color:var(--grubz-1)"></span>
-                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
-                </div>
-                <button class="btn text-sm" data-product="grubz-300g" data-i18n="btnAdd">Add to cart</button>
-              </div>
-            </article>
-
-            <article class="card border p-5 h-full flex flex-col product-card" data-id="grubz-500g">
-              <div class="product-thumb mb-4 rounded-lg bg-[url('images/grubz-product-500g.png')] bg-cover bg-center"></div>
-              <h3 class="font-bold" data-i18n="p3Name">GRUBZ Mixed Treat</h3>
-              <p class="text-sm opacity-80 mt-1" data-i18n="p3Desc">Dried BSF with herbs for picky eaters.</p>
-              <div class="mt-auto pt-4 flex items-center justify-between">
-                <div class="leading-tight">
-                  <span class="font-extrabold price" data-id="grubz-500g" style="color:var(--grubz-1)"></span>
-                  <span class="text-xs opacity-60 ml-1" data-i18n="inclVATRate">incl. VAT 24%</span>
-                </div>
-                <button class="btn text-sm" data-product="grubz-500g" data-i18n="btnAdd">Add to cart</button>
-              </div>
-            </article>
-
-            
+          <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr" aria-live="polite">
+            <p class="text-sm text-zinc-600">Loading products...</p>
           </div>
 
           <div class="mt-10 flex flex-wrap gap-3">
@@ -334,7 +269,7 @@
     </div>
 
     <!-- CART POPUP -->
-    <div id="cartModal" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+    <div id="cartModal" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-describedby="cartBody">
       <div id="cartBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
       <div id="cartPanel" class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2
                                 bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition">
@@ -345,7 +280,7 @@
 
         <div id="cartBody" class="max-h-[55vh] overflow-y-auto p-4">
           <p id="cartEmpty" class="text-sm text-zinc-500" data-i18n="cartEmpty">Your cart is empty.</p>
-          <ul id="cartItems" class="divide-y hidden"></ul>
+          <ul id="cartItems" class="divide-y hidden" aria-live="polite"></ul>
           <div id="cartSuggestions" class="hidden mt-5 border-t pt-4">
             <h4 class="text-sm font-extrabold mb-3" data-i18n="cartSuggestionsTitle">You may like</h4>
             <div id="cartSuggestionsList" class="grid gap-3"></div>
@@ -360,11 +295,12 @@
 
           <!-- COUPON UI -->
           <div id="couponRow" class="mb-3 flex gap-2 items-center">
+            <label class="sr-only" for="couponCode" data-i18n="couponPlaceholder">Coupon code</label>
             <input id="couponCode" class="input flex-1" placeholder="Coupon code" autocomplete="off" />
             <button id="applyCoupon" class="btn-soft text-sm">Apply</button>
             <button id="removeCoupon" class="btn-soft text-sm hidden">Remove</button>
           </div>
-          <p id="couponMsg" class="text-sm"></p>
+          <p id="couponMsg" class="text-sm" role="status" aria-live="polite"></p>
 
           <!-- Discount line -->
           <div id="cartDiscountRow" class="hidden flex items-center justify-between mb-3">
@@ -383,7 +319,7 @@
     </div>
 
     <!-- AUTH MODAL -->
-    <div id="authModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div id="authModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-describedby="authErr">
       <div class="absolute inset-0 bg-black/40"></div>
       <div class="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
         <div class="p-5 border-b">
@@ -392,17 +328,17 @@
         <div class="p-5 space-y-3">
           <div>
             <label class="label" for="authEmail" data-i18n="email">Email</label>
-            <input id="authEmail" type="email" class="input" autocomplete="email" />
+            <input id="authEmail" type="email" class="input" autocomplete="email" required aria-describedby="authErr" />
           </div>
           <div>
             <label class="label" for="authPass" data-i18n="password">Password</label>
-            <input id="authPass" type="password" class="input" autocomplete="current-password" />
+            <input id="authPass" type="password" class="input" autocomplete="current-password" required aria-describedby="authErr" />
           </div>
           <div class="flex gap-2">
             <button id="doSignIn" class="btn flex-1" data-i18n="signIn">Sign in</button>
             <button id="doSignUp" class="btn-outline flex-1" data-i18n="createAccount">Create account</button>
           </div>
-          <p id="authErr" class="text-sm text-red-600"></p>
+          <p id="authErr" class="text-sm text-red-600" role="alert"></p>
         </div>
         <div class="p-4 border-t bg-zinc-50 text-right">
           <button id="authClose" class="btn-soft" data-i18n="cancel">Cancel</button>
@@ -411,7 +347,7 @@
     </div>
 
     <!-- ADDRESS MODAL -->
-    <div id="addrModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle">
+    <div id="addrModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle" aria-describedby="addrErr">
       <div class="absolute inset-0 bg-black/40"></div>
       <div class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
         <div class="p-5 border-b">
@@ -420,10 +356,10 @@
         <div class="p-5 grid sm:grid-cols-2 gap-3">
           <div class="sm:col-span-1">
             <label class="label" for="a_name" data-i18n="fullName">Full name</label>
-            <input id="a_name" class="input" autocomplete="name"></div>
+            <input id="a_name" class="input" autocomplete="name" required aria-describedby="addrErr"></div>
           <div class="sm:col-span-1">
             <label class="label" for="a_phone" data-i18n="phone">Phone</label>
-            <input id="a_phone" class="input" autocomplete="tel"></div>
+            <input id="a_phone" class="input" autocomplete="tel" required aria-describedby="addrErr"></div>
           <div class="sm:col-span-2 hidden">
             <label class="label" for="a_line1" data-i18n="line1">Address line 1</label>
             <input id="a_line1" class="input" autocomplete="address-line1"></div>
@@ -438,11 +374,11 @@
             <input id="a_region" class="input" autocomplete="address-level1"></div>
           <div>
             <label class="label" for="a_postal" data-i18n="postal">Postal code</label>
-            <input id="a_postal" class="input" autocomplete="postal-code"></div>
+            <input id="a_postal" class="input" autocomplete="postal-code" required aria-describedby="addrErr"></div>
           <div>
             <label class="label" for="a_country" data-i18n="country">Country</label>
-            <input id="a_country" class="input" autocomplete="country" value="Greece"></div>
-          <p id="addrErr" class="sm:col-span-2 text-sm text-red-600"></p>
+            <input id="a_country" class="input" autocomplete="country" value="Greece" required aria-describedby="addrErr"></div>
+          <p id="addrErr" class="sm:col-span-2 text-sm text-red-600" role="alert"></p>
         </div>
         <div class="p-4 border-t bg-zinc-50 flex items-center justify-end gap-2">
           <button id="addrCancel" class="btn-soft" data-i18n="cancel">Cancel</button>
@@ -452,7 +388,7 @@
     </div>
 
     <!-- REVIEW MODAL -->
-    <div id="reviewModal" class="fixed inset-0 z-[85] hidden" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+    <div id="reviewModal" class="fixed inset-0 z-[85] hidden" role="dialog" aria-modal="true" aria-labelledby="reviewTitle" aria-describedby="reviewAddr">
       <div id="reviewBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
 
       <div id="reviewPanel"
@@ -480,7 +416,7 @@
               <button id="boxnowChoose" class="btn-soft text-sm" type="button" data-i18n="boxnowChoose">Choose locker</button>
             </div>
             <div id="boxnowSelected" class="mt-2 text-sm text-zinc-700 whitespace-pre-line" data-i18n="boxnowNone">No locker selected.</div>
-            <p id="boxnowErr" class="mt-2 text-sm text-red-600"></p>
+            <p id="boxnowErr" class="mt-2 text-sm text-red-600" role="alert"></p>
           </section>
 
           <section class="border rounded-xl p-4">
@@ -526,7 +462,7 @@
     </div>
 
     <!-- PRODUCT DETAIL MODAL -->
-    <div id="productModal" class="fixed inset-0 z-[88] hidden" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+    <div id="productModal" class="fixed inset-0 z-[88] hidden" role="dialog" aria-modal="true" aria-labelledby="productModalTitle" aria-describedby="productDetailText">
       <div id="productBackdrop" class="absolute inset-0 bg-black/40"></div>
       <div id="productPanel"
            class="absolute left-1/2 top-1/2 w-[min(94vw,860px)] max-h-[90vh] -translate-x-1/2 -translate-y-1/2
@@ -550,7 +486,10 @@
                 <div id="productPrice" class="text-2xl font-extrabold" style="color:var(--grubz-1)"></div>
                 <div class="text-xs text-zinc-500" data-i18n="inclVATRate">incl. VAT 24%</div>
               </div>
-              <button id="productAdd" class="btn" type="button" data-product-detail-add data-i18n="btnAdd">Add to cart</button>
+              <div class="flex items-center gap-2 flex-wrap justify-end">
+                <button id="productViewCart" class="btn-soft" type="button" data-i18n="productViewCart">View cart</button>
+                <button id="productAdd" class="btn" type="button" data-product-detail-add data-i18n="btnAdd">Add to cart</button>
+              </div>
             </div>
             <div>
               <h5 class="font-bold mb-2" data-i18n="productDetailsTitle">Details</h5>
@@ -585,7 +524,11 @@
     measurementId: "G-TWQQC1WD7R"
   });
 })();
-const API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+const FUNCTION_API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+      const API_BASE = (location.protocol === "file:" || LOCAL_HOSTS.has(location.hostname))
+        ? FUNCTION_API_BASE
+        : "/api";
 const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
 const BOXNOW_PARTNER_ID = "";
 const BOXNOW_PARCEL_SIZE = "3";
@@ -625,6 +568,7 @@ async function authedFetch(path, options = {}) {
         __modalLockCount += 1;
         if (__modalLockCount > 1) return;
         __modalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+        setBackgroundInert(true);
         const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
         document.body.style.position = 'fixed';
         document.body.style.top = `-${__modalScrollY}px`;
@@ -645,6 +589,7 @@ async function authedFetch(path, options = {}) {
         document.body.style.width = '';
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
+        setBackgroundInert(false);
         window.scrollTo(0, __modalScrollY);
       }
 
@@ -654,6 +599,7 @@ async function authedFetch(path, options = {}) {
         if (!modal || !panel) return;
         if (!modal.classList.contains('hidden')) return;
         modal.dataset.openerId = openerEl?.id || '';
+        if (!panel.hasAttribute('tabindex')) panel.setAttribute('tabindex', '-1');
         modal.classList.remove('hidden');
         lockPageScroll();
         trapFocus(modal, panel);
@@ -735,18 +681,6 @@ async function authedFetch(path, options = {}) {
           b3Title:"Made in Greece", b3Text:"Fresh, local production you can trust.",
           b4Title:"Sustainable", b4Text:"Lower footprint vs. traditional protein sources.",
           productsTitle:"Products",
-          p1Name:"GRUBZ SNACK (100g)", p1Desc:"Crispy dried larvae for reptiles, birds & fish.",
-          p2Name:"GRUBZ PREMIUM (300g)", p2Desc:"Larger larvae, extra crunch, top pick for adults.",
-          p3Name:"GRUBZ JUMBO (500g)", p3Desc:"Dried BSF with herbs for picky eaters.",
-          p4Name:"Happy Chicken - 1KG", p4Desc:"Dried BSF larvae for chickens.",
-          p5Name:"Happy Chicken VALUE PACK - 2KG", p5Desc:"Value pack of dried BSF larvae for chickens.",
-          p6Name:"Happy Chicken LARGE PACK - 3KG", p6Desc:"Large pack of dried BSF larvae for chickens.",
-          p1Detail:"A compact pack of dried black soldier fly larvae for everyday feeding. High in protein and naturally rich in calcium, suitable for reptiles, birds and fish as part of a balanced diet.",
-          p2Detail:"A larger premium pack with extra crunch and strong feeding response. Ideal when you feed regularly and want more value without moving to the jumbo size.",
-          p3Detail:"A jumbo 500g pack for keepers who feed often or manage multiple animals. Dried BSF larvae keep well when sealed and stored in a cool, dry place.",
-          p4Detail:"A 1kg chicken treat pack made with dried BSF larvae. A simple protein-rich supplement for flock enrichment and natural pecking behavior.",
-          p5Detail:"A 2kg value pack for regular chicken feeding. Built for better value per kilo while keeping the same dried BSF larvae quality.",
-          p6Detail:"A 3kg large pack for bigger flocks or frequent feeding. Convenient for stocking up on dried BSF larvae treats.",
           btnAdd:"Add to cart", btnCheckout:"Checkout", btnClear:"Clear cart",
           faqTitle:"FAQ",
           q1:"What animals can eat GRUBZ?", a1:"Reptiles (bearded dragons, geckos), birds (chickens, songbirds), and most aquarium & pond fish.",
@@ -815,6 +749,8 @@ async function authedFetch(path, options = {}) {
           readMore: "Read more…",
           productDetailsTitle:"Details",
           productDetailsAria:"Product details",
+          productDetailsButton:"Details",
+          productViewCart:"View cart",
           inStock:"In stock",
 
           // Coupons
@@ -841,18 +777,6 @@ async function authedFetch(path, options = {}) {
           b3Title:"Ελληνικής Παραγωγής", b3Text:"Φρέσκια, τοπική παραγωγή που εμπιστεύεστε.",
           b4Title:"Βιώσιμο", b4Text:"Μικρότερο αποτύπωμα σε σχέση με παραδοσιακές πηγές πρωτεΐνης.",
           productsTitle:"Προϊόντα",
-          p1Name:"GRUBZ SNACK (100g)", p1Desc:"Τραγανές προνύμφες για ερπετά, πτηνά & ψάρια.",
-          p2Name:"GRUBZ PREMIUM (300g)", p2Desc:"Μεγαλύτερες προνύμφες, έξτρα τραγανές.",
-          p3Name:"GRUBZ JUMBO (500g)", p3Desc:"Αποξηραμένες BSF με βότανα για δύσκολους τρώγοντες.",
-          p4Name:"Happy Chicken - 1kg", p4Desc:"Αποξηραμένες προνύμφες BSF για κότες.",
-          p5Name:"Happy Chicken - 2kg", p5Desc:"Οικονομική συσκευασία αποξηραμένων προνυμφών BSF για κότες.",
-          p6Name:"Happy Chicken - 3kg", p6Desc:"Μεγάλη συσκευασία αποξηραμένων προνυμφών BSF για κότες.",
-          p1Detail:"Μικρή συσκευασία αποξηραμένων προνυμφών black soldier fly για καθημερινή χρήση. Υψηλή σε πρωτεΐνη και φυσικά πλούσια σε ασβέστιο, κατάλληλη για ερπετά, πτηνά και ψάρια ως μέρος ισορροπημένης διατροφής.",
-          p2Detail:"Μεγαλύτερη premium συσκευασία με έξτρα τραγανή υφή. Ιδανική για συχνή χρήση και καλύτερη αξία χωρίς να περάσετε στη jumbo συσκευασία.",
-          p3Detail:"Jumbo συσκευασία 500g για όσους ταΐζουν συχνά ή έχουν περισσότερα ζώα. Οι αποξηραμένες προνύμφες BSF διατηρούνται καλά όταν μένουν κλειστές σε δροσερό και ξηρό μέρος.",
-          p4Detail:"Συσκευασία 1kg για κότες με αποξηραμένες προνύμφες BSF. Ένα απλό, πλούσιο σε πρωτεΐνη συμπλήρωμα για εμπλουτισμό και φυσική συμπεριφορά τσιμπολογήματος.",
-          p5Detail:"Οικονομική συσκευασία 2kg για τακτική χρήση σε κότες. Προσφέρει καλύτερη αξία ανά κιλό με την ίδια ποιότητα αποξηραμένων προνυμφών BSF.",
-          p6Detail:"Μεγάλη συσκευασία 3kg για μεγαλύτερα κοπάδια ή συχνή χρήση. Πρακτική επιλογή για να έχετε πάντα διαθέσιμες αποξηραμένες προνύμφες BSF.",
           btnAdd:"Προσθήκη στο καλάθι", btnCheckout:"Ολοκλήρωση αγοράς", btnClear:"Καθαρισμός καλαθιού",
           faqTitle:"Συχνές Ερωτήσεις",
           q1:"Ποια ζώα τρώνε GRUBZ;", a1:"Ερπετά (π.χ. beardies, geckos), πουλιά και τα περισσότερα ψάρια.",
@@ -921,6 +845,8 @@ async function authedFetch(path, options = {}) {
           readMore: "Περισσότερα…",
           productDetailsTitle:"Λεπτομέρειες",
           productDetailsAria:"Λεπτομέρειες προϊόντος",
+          productDetailsButton:"Λεπτομέρειες",
+          productViewCart:"Προβολή καλαθιού",
           inStock:"Διαθέσιμο",
 
           // Coupons
@@ -939,6 +865,20 @@ async function authedFetch(path, options = {}) {
         if (!live) return;
         live.textContent = '';
         setTimeout(()=>{ live.textContent = msg; }, 10);
+      }
+
+      function setBackgroundInert(on){
+        ["header", "main", "footer", "#cookieBanner"].forEach(selector => {
+          const el = selector.startsWith("#") ? document.querySelector(selector) : document.querySelector(selector);
+          if (!el) return;
+          if (on) {
+            el.setAttribute("aria-hidden", "true");
+            if ("inert" in el) el.inert = true;
+          } else {
+            el.removeAttribute("aria-hidden");
+            if ("inert" in el) el.inert = false;
+          }
+        });
       }
 
       function morphAddButton(btn){
@@ -990,6 +930,8 @@ async function authedFetch(path, options = {}) {
         const ap = document.getElementById("applyCoupon"); if (ap) ap.textContent = dict.couponApply || "Apply";
         const rm = document.getElementById("removeCoupon"); if (rm) rm.textContent = dict.couponRemove || "Remove";
         if (typeof applyStockStatus === "function") applyStockStatus();
+        if (typeof wireProductCards === "function") wireProductCards();
+        if (typeof renderProducts === "function") renderProducts();
         document.documentElement.lang = (l==='el'?'el':'en');
         if (window.__cartReady && typeof renderCart === 'function') renderCart();
         if (typeof renderBoxNowSelection === "function") renderBoxNowSelection();
@@ -1012,6 +954,7 @@ async function authedFetch(path, options = {}) {
       const cart = new Map();
       try { const rawCart = Cookie.get('grubz_cart'); if (rawCart) Object.entries(JSON.parse(rawCart)).forEach(([k,v]) => cart.set(k, v)); } catch {}
       function writeCartCookie(){ Cookie.set('grubz_cart', JSON.stringify(Object.fromEntries(cart.entries()))); }
+      function cartItemCount(){ return Array.from(cart.values()).reduce((a,b)=>a+b,0); }
 
       function setCheckoutEnabled(enabled){
         ["checkout","cartCheckout", "clearCart"].forEach(id=>{
@@ -1023,10 +966,19 @@ async function authedFetch(path, options = {}) {
         });
       }
       function updateCartInfo(){
-        const totalItems = Array.from(cart.values()).reduce((a,b)=>a+b,0);
+        const totalItems = cartItemCount();
         const badge = document.getElementById("cartCount");
+        const cartBtn = document.getElementById("cartBtn");
         if (totalItems) { badge.textContent = totalItems; badge.classList.remove("hidden"); }
         else { badge.classList.add("hidden"); }
+        if (cartBtn) {
+          cartBtn.setAttribute(
+            "aria-label",
+            totalItems
+              ? (lang()==='el' ? `Άνοιγμα καλαθιού, ${totalItems} προϊόντα` : `Open cart, ${totalItems} item(s)`)
+              : (lang()==='el' ? "Άνοιγμα καλαθιού, άδειο" : "Open cart, empty")
+          );
+        }
         writeCartCookie();
         if (typeof invalidateBoxNowFee === "function") invalidateBoxNowFee();
         setCheckoutEnabled(totalItems > 0);
@@ -1035,18 +987,117 @@ async function authedFetch(path, options = {}) {
         const msg = totalItems
           ? (lang()==='el' ? `${totalItems} προϊόντα στο καλάθι` : `${totalItems} item(s) in cart`)
           : (lang()==='el' ? 'Το καλάθι είναι άδειο' : 'Cart is empty');
-        const live = document.getElementById('a11y-live');
-        if (live) live.textContent = msg;
+        announce(msg);
       }
 
-      const CATALOG = {
-        "grubz-100g": { price: 6.90,  img:"images/grubz-product-100g.png", bg:"#6f4b2e", nameKey:"p1Name", descKey:"p1Desc", detailKey:"p1Detail" },
-        "grubz-300g": { price: 17.90, img:"images/grubz-product-300g.png", bg:"#28330c", nameKey:"p2Name", descKey:"p2Desc", detailKey:"p2Detail" },
-        "grubz-500g": { price: 36.90, img:"images/grubz-product-500g.png", bg:"#94632e", nameKey:"p3Name", descKey:"p3Desc", detailKey:"p3Detail" },
-        "happy-chicken-1kg": { price: 5.90, img:"images/happy-chicken-1kg.png", bg:"#f8f1eb", nameKey:"p4Name", descKey:"p4Desc", detailKey:"p4Detail" },
-        "happy-chicken-2kg": { price: 11.90, img:"images/happy-chicken-2kg.png", bg:"#f8f1eb", nameKey:"p5Name", descKey:"p5Desc", detailKey:"p5Detail" },
-        "happy-chicken-3kg": { price: 15.90, img:"images/happy-chicken-3kg.png", bg:"#f8f1eb", nameKey:"p6Name", descKey:"p6Desc", detailKey:"p6Detail" }
-      };
+      const CATALOG = {};
+      let __productsLoaded = false;
+      let __productsLoadError = "";
+
+      function catalogText(id, field, keyField, dict = i18n[lang()] || i18n.en){
+        const p = CATALOG[id] || {};
+        if (lang() === "el" && p[`${field}El`]) return p[`${field}El`];
+        if (p[field]) return p[field];
+        if (p[keyField] && dict[p[keyField]]) return dict[p[keyField]];
+        return "";
+      }
+
+      function productName(id, dict = i18n[lang()] || i18n.en){
+        return catalogText(id, "name", "nameKey", dict) || id;
+      }
+
+      function productDescription(id, dict = i18n[lang()] || i18n.en){
+        return catalogText(id, "description", "descKey", dict);
+      }
+
+      function productDetail(id, dict = i18n[lang()] || i18n.en){
+        return catalogText(id, "detail", "detailKey", dict) || productDescription(id, dict);
+      }
+
+      function escapeHtml(value){
+        return String(value ?? "").replace(/[&<>"']/g, ch => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        }[ch]));
+      }
+
+      function setCatalogProducts(products){
+        for (const key of Object.keys(CATALOG)) delete CATALOG[key];
+        products.forEach((p) => {
+          CATALOG[p.id] = {
+            price: Number(p.amount || 0) / 100,
+            amount: Number(p.amount || 0),
+            currency: p.currency || "eur",
+            img: p.image || "",
+            bg: p.imageBg || "#f8f1eb",
+            name: p.name || p.id,
+            nameEl: p.nameEl || p.name || p.id,
+            description: p.description || "",
+            descriptionEl: p.descriptionEl || p.description || "",
+            detail: p.detail || p.description || "",
+            detailEl: p.detailEl || p.detail || p.descriptionEl || "",
+            weightGrams: Number(p.weightGrams || 0),
+            stripeProductId: p.stripeProductId || "",
+            stripePriceId: p.stripePriceId || "",
+            active: p.active !== false,
+            sortOrder: Number(p.sortOrder || 0),
+          };
+        });
+      }
+
+      function renderProducts(){
+        const grid = document.getElementById("productGrid");
+        if (!grid) return;
+        const dict = i18n[lang()] || i18n.en;
+        const products = Object.entries(CATALOG)
+          .filter(([, p]) => p.active !== false)
+          .sort((a, b) => (a[1].sortOrder || 0) - (b[1].sortOrder || 0) || productName(a[0], dict).localeCompare(productName(b[0], dict)));
+        if (!products.length) {
+          const msg = __productsLoadError
+            ? (lang() === "el" ? "Τα προϊόντα δεν είναι διαθέσιμα αυτή τη στιγμή." : "Products are not available right now.")
+            : (lang() === "el" ? "Φόρτωση προϊόντων..." : "Loading products...");
+          grid.innerHTML = `<p class="text-sm text-zinc-600 sm:col-span-2 lg:col-span-3">${escapeHtml(msg)}</p>`;
+          return;
+        }
+        grid.innerHTML = products.map(([id, p]) => `
+          <article class="card border p-5 h-full flex flex-col product-card" data-id="${escapeHtml(id)}">
+            <div class="product-thumb mb-4 rounded-lg bg-cover bg-center" style="background-image:url('${escapeHtml(p.img || "")}')" aria-hidden="true"></div>
+            <h3 class="font-bold">${escapeHtml(productName(id, dict))}</h3>
+            <p class="text-sm opacity-80 mt-1">${escapeHtml(productDescription(id, dict))}</p>
+            <div class="mt-auto pt-4 flex items-center justify-between gap-2 flex-wrap">
+              <div class="leading-tight">
+                <span class="font-extrabold price" data-id="${escapeHtml(id)}" style="color:var(--grubz-1)">${nf(gross(p.price))}</span>
+                <span class="text-xs opacity-60 ml-1">${escapeHtml(dict.inclVATRate || "incl. VAT 24%")}</span>
+              </div>
+              <button class="btn text-sm" data-product="${escapeHtml(id)}">${escapeHtml(dict.btnAdd || "Add to cart")}</button>
+            </div>
+          </article>
+        `).join("");
+        wireProductCards();
+        applyStockStatus();
+      }
+
+      async function loadProducts(){
+        try {
+          const resp = await fetch(`${API_BASE}/getProducts`, { method: "GET", mode: "cors" });
+          if (!resp.ok) throw new Error(`Products fetch failed (${resp.status})`);
+          const data = await resp.json();
+          if (!Array.isArray(data.products)) throw new Error("Products response is invalid");
+          setCatalogProducts(data.products);
+          __productsLoaded = true;
+          __productsLoadError = data.products.length ? "" : "empty";
+          renderProducts();
+        } catch (err) {
+          __productsLoaded = false;
+          __productsLoadError = err.message || "products_unavailable";
+          for (const key of Object.keys(CATALOG)) delete CATALOG[key];
+          renderProducts();
+          console.warn("Products unavailable", err);
+        }
+      }
 
       let __stockReady = false; // <-- important
 
@@ -1103,12 +1154,14 @@ async function authedFetch(path, options = {}) {
         if (!addBtn) return;
 
         const ldict = (i18n[lang()] || i18n.en);
+        const name = productName(id, ldict);
 
         if (!stockIsKnown(id)) {
           // Unknown yet → optimistic UI: enable button, no badges
           addBtn.disabled = false;
           addBtn.setAttribute("aria-disabled","false");
           addBtn.textContent = ldict.btnAdd || "Add to cart";
+          addBtn.setAttribute("aria-label", `${ldict.btnAdd || "Add to cart"}: ${name}`);
           return;
         }
 
@@ -1117,6 +1170,7 @@ async function authedFetch(path, options = {}) {
           addBtn.disabled = true;
           addBtn.setAttribute("aria-disabled","true");
           addBtn.textContent = ldict.outOfStock || "Out of stock";
+          addBtn.setAttribute("aria-label", `${ldict.outOfStock || "Out of stock"}: ${name}`);
           const b = document.createElement("span");
           b.className = "badge-oos";
           b.textContent = ldict.outOfStock || "Out of stock";
@@ -1125,6 +1179,7 @@ async function authedFetch(path, options = {}) {
           addBtn.disabled = false;
           addBtn.setAttribute("aria-disabled","false");
           addBtn.textContent = ldict.btnAdd || "Add to cart";
+          addBtn.setAttribute("aria-label", `${ldict.btnAdd || "Add to cart"}: ${name}`);
           if (Number.isFinite(available) && available <= LOW_STOCK_CUTOFF){
             const b = document.createElement("span");
             b.className = "badge-low";
@@ -1156,7 +1211,7 @@ async function authedFetch(path, options = {}) {
       }
       setCardPrices();
       applyStockStatus();      // will show optimistic buttons
-      loadStockFromStripe();   // later flips __stockReady and re-renders
+      loadProducts().then(() => loadStockFromStripe());   // later flips __stockReady and re-renders
       const _initialLang = lang();
       applyLang(_initialLang);
       setLangButtons(_initialLang);
@@ -1180,16 +1235,16 @@ async function authedFetch(path, options = {}) {
         pingCart();
 
         const dict = i18n[lang()] || i18n.en;
-        const name = (CATALOG[id] && dict[CATALOG[id].nameKey]) || id;
+        const name = productName(id, dict);
         announce(lang()==='el' ? `Προστέθηκε στο καλάθι: ${name}` : `Added to cart: ${name}`);
         return true;
       }
 
-      document.querySelectorAll("[data-product]").forEach(btn=>{
-        btn.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          addProductToCart(btn.getAttribute("data-product"), btn);
-        });
+      document.addEventListener("click", (e)=>{
+        const btn = e.target.closest("[data-product]");
+        if (!btn) return;
+        e.stopPropagation();
+        addProductToCart(btn.getAttribute("data-product"), btn);
       });
 
       function productStockLabel(id){
@@ -1209,15 +1264,18 @@ async function authedFetch(path, options = {}) {
         const dict = i18n[lang()] || i18n.en;
         const available = getStock(id);
         const addBtn = document.getElementById("productAdd");
+        const viewCartBtn = document.getElementById("productViewCart");
 
         document.getElementById("productModalTitle").textContent = dict.productDetailsAria || "Product details";
-        document.getElementById("productName").textContent = dict[p.nameKey] || id;
-        document.getElementById("productDesc").textContent = dict[p.descKey] || "";
-        document.getElementById("productDetailText").textContent = dict[p.detailKey] || dict[p.descKey] || "";
+        document.getElementById("productName").textContent = productName(id, dict);
+        document.getElementById("productDesc").textContent = productDescription(id, dict);
+        document.getElementById("productDetailText").textContent = productDetail(id, dict);
         document.getElementById("productPrice").textContent = nf(gross(p.price));
         document.getElementById("productStock").textContent = productStockLabel(id);
         document.getElementById("productImageWrap").style.backgroundColor = p.bg || "#f8f1eb";
         const productImage = document.getElementById("productImage");
+        productImage.setAttribute("role", "img");
+        productImage.setAttribute("aria-label", productName(id, dict));
         productImage.style.backgroundColor = p.bg || "#f8f1eb";
         productImage.style.backgroundImage = `url('${p.img}')`;
 
@@ -1225,6 +1283,11 @@ async function authedFetch(path, options = {}) {
         addBtn.disabled = available <= 0;
         addBtn.setAttribute("aria-disabled", String(available <= 0));
         addBtn.textContent = available <= 0 ? (dict.outOfStock || "Out of stock") : (dict.btnAdd || "Add to cart");
+        addBtn.setAttribute("aria-label", `${addBtn.textContent}: ${productName(id, dict)}`);
+        if (viewCartBtn) {
+          viewCartBtn.textContent = dict.productViewCart || dict.cartTitle || "View cart";
+          viewCartBtn.setAttribute("aria-label", `${viewCartBtn.textContent}: ${cartItemCount()} ${dict.cartQty || "Qty"}`);
+        }
       }
 
       function openProductModal(id, openerEl){
@@ -1237,17 +1300,46 @@ async function authedFetch(path, options = {}) {
         closeDialog("productModal", "productPanel");
       }
 
-      document.querySelectorAll(".product-card[data-id]").forEach(card=>{
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-        card.classList.add("cursor-pointer");
-        card.addEventListener("click", () => openProductModal(card.dataset.id, card));
-        card.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openProductModal(card.dataset.id, card);
+      function wireProductCards(){
+        const dict = i18n[lang()] || i18n.en;
+        document.querySelectorAll(".product-card[data-id]").forEach(card=>{
+          const id = card.dataset.id;
+          const addBtn = card.querySelector(`[data-product="${id}"]`);
+          card.removeAttribute("role");
+          card.removeAttribute("tabindex");
+          card.classList.add("cursor-pointer");
+
+          let detailsBtn = card.querySelector("[data-product-details]");
+          if (!detailsBtn && addBtn) {
+            addBtn.parentElement.classList.add("gap-2", "flex-wrap");
+            detailsBtn = document.createElement("button");
+            detailsBtn.type = "button";
+            detailsBtn.className = "details-btn text-sm";
+            detailsBtn.dataset.productDetails = id;
+            addBtn.parentElement.insertBefore(detailsBtn, addBtn);
+          }
+          if (detailsBtn) {
+            const name = productName(id, dict);
+            detailsBtn.textContent = dict.productDetailsButton || "Details";
+            detailsBtn.setAttribute("aria-label", `${dict.productDetailsButton || "Details"}: ${name}`);
+          }
+
+          if (!card.dataset.productCardWired) {
+            card.dataset.productCardWired = "true";
+            card.addEventListener("click", (e) => {
+              if (e.target.closest("button, a, input, select, textarea")) return;
+              openProductModal(id, card);
+            });
           }
         });
+      }
+
+      wireProductCards();
+      document.addEventListener("click", (e)=>{
+        const btn = e.target.closest("[data-product-details]");
+        if (!btn) return;
+        e.stopPropagation();
+        openProductModal(btn.dataset.productDetails, btn);
       });
 
       document.getElementById("productBackdrop").addEventListener("click", closeProductModal);
@@ -1258,6 +1350,10 @@ async function authedFetch(path, options = {}) {
           addProductToCart(id, e.currentTarget);
           renderProductModal(id);
         }
+      });
+      document.getElementById("productViewCart").addEventListener("click", ()=>{
+        closeProductModal();
+        setTimeout(openCart, 160);
       });
 
       function clearCart({ close = false } = {}){
@@ -1322,12 +1418,13 @@ async function authedFetch(path, options = {}) {
               item.dataset.suggestProduct = id;
               item.className = "w-full rounded-lg border border-zinc-200 p-3 flex items-center gap-3 hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer";
               item.innerHTML = `
-                <img src="${p.img}" alt="" class="w-14 h-14 rounded-md object-cover bg-zinc-100 flex-none">
+              <img src="${escapeHtml(p.img)}" alt="" class="w-14 h-14 rounded-md object-cover bg-zinc-100 flex-none">
                 <span class="min-w-0 flex-1">
-                  <span class="block font-semibold truncate">${dict[p.nameKey] || id}</span>
+                  <span class="block font-semibold truncate">${escapeHtml(productName(id, dict))}</span>
                   <span class="block text-sm font-bold mt-0.5" style="color:var(--grubz-1)">${nf(gross(p.price))}</span>
                 </span>
-                <button type="button" class="btn text-sm px-3 py-2 flex-none" data-suggest-add="${id}">${dict.btnAdd || "Add"}</button>
+                <button type="button" class="details-btn text-sm px-3 py-2 flex-none" data-suggest-details="${escapeHtml(id)}" aria-label="${escapeHtml(dict.productDetailsButton || "Details")}: ${escapeHtml(productName(id, dict))}">${escapeHtml(dict.productDetailsButton || "Details")}</button>
+                <button type="button" class="btn text-sm px-3 py-2 flex-none" data-suggest-add="${escapeHtml(id)}" aria-label="${escapeHtml(dict.btnAdd || "Add to cart")}: ${escapeHtml(productName(id, dict))}">${escapeHtml(dict.btnAdd || "Add")}</button>
               `;
               suggestionsList.appendChild(item);
             });
@@ -1345,28 +1442,28 @@ async function authedFetch(path, options = {}) {
             } else {
               // stock unknown → keep current qty, don’t delete
             }
-            const p = CATALOG[id] || { price:0, img:"", nameKey:"" };
-            const name = dict[p.nameKey] || id;
+            const p = CATALOG[id] || { price:0, img:"" };
+            const name = productName(id, dict);
             const li = document.createElement("li");
             li.className = "py-4 flex gap-3";
             li.dataset.id = id;
             li.innerHTML = `
-              <img src="${p.img}" alt="" class="w-16 h-16 rounded-lg object-cover bg-zinc-100">
+              <img src="${escapeHtml(p.img)}" alt="" class="w-16 h-16 rounded-lg object-cover bg-zinc-100">
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2">
                   <div>
-                    <div class="font-medium">${name}</div>
-                    <div class="text-xs text-zinc-500">${dict.cartQty}: <span class="font-semibold">${qty}</span></div>
+                    <div class="font-medium">${escapeHtml(name)}</div>
+                    <div class="text-xs text-zinc-500">${escapeHtml(dict.cartQty)}: <span class="font-semibold">${qty}</span></div>
                   </div>
                   <div class="text-right">
                     <div class="font-semibold">${nf(gross(p.price) * qty)}</div>
-                    <button class="text-xs text-red-600 hover:underline remove">${dict.cartRemove}</button>
+                    <button class="text-xs text-red-600 hover:underline remove" aria-label="${escapeHtml(dict.cartRemove)}: ${escapeHtml(name)}">${escapeHtml(dict.cartRemove)}</button>
                   </div>
                 </div>
                 <div class="mt-2 inline-flex items-center gap-2">
-                  <button class="px-2 py-1 rounded border dec" aria-label="decrease">−</button>
+                  <button class="px-2 py-1 rounded border dec" aria-label="${escapeHtml(lang()==='el' ? 'Μείωση ποσότητας' : 'Decrease quantity')}: ${escapeHtml(name)}">−</button>
                   <span class="w-6 text-center font-semibold">${qty}</span>
-                  <button class="px-2 py-1 rounded border inc" aria-label="increase">+</button>
+                  <button class="px-2 py-1 rounded border inc" aria-label="${escapeHtml(lang()==='el' ? 'Αύξηση ποσότητας' : 'Increase quantity')}: ${escapeHtml(name)}">+</button>
                 </div>
               </div>
             `;
@@ -1421,6 +1518,13 @@ async function authedFetch(path, options = {}) {
           addProductToCart(addBtn.dataset.suggestAdd, addBtn);
           return;
         }
+        const detailsBtn = e.target.closest("[data-suggest-details]");
+        if (detailsBtn) {
+          e.stopPropagation();
+          closeCart();
+          setTimeout(() => openProductModal(detailsBtn.dataset.suggestDetails, detailsBtn), 180);
+          return;
+        }
         const item = e.target.closest("[data-suggest-product]");
         if (!item) return;
         closeCart();
@@ -1459,7 +1563,9 @@ async function authedFetch(path, options = {}) {
             'auth/user-not-found': 'No user found with this email.',
             'auth/wrong-password': 'Incorrect password.'
           };
-          document.getElementById("authErr").textContent = m[e.code] || e.message || "Sign-in failed";
+          const msg = m[e.code] || e.message || "Sign-in failed";
+          document.getElementById("authErr").textContent = msg;
+          announce(msg);
         }
       }
       async function signUp(email, pass){
@@ -1476,7 +1582,9 @@ async function authedFetch(path, options = {}) {
             'auth/invalid-email': 'Invalid email address.',
             'auth/weak-password': 'Password is too weak (min 6 characters).'
           };
-          document.getElementById("authErr").textContent = m[e.code] || e.message || "Sign-up failed";
+          const msg = m[e.code] || e.message || "Sign-up failed";
+          document.getElementById("authErr").textContent = msg;
+          announce(msg);
         }
       }
       document.getElementById("doSignIn").addEventListener("click", ()=>signIn(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
@@ -1546,7 +1654,9 @@ async function authedFetch(path, options = {}) {
         const a = readAddrForm();
         if (!validAddr(a)){
           const d = i18n[lang()]||i18n.en;
-          document.getElementById("addrErr").textContent = d.contactRequired || "Full name, phone, postal code and country are required";
+          const msg = d.contactRequired || "Full name, phone, postal code and country are required";
+          document.getElementById("addrErr").textContent = msg;
+          announce(msg);
           return;
         }
         try{
@@ -1566,7 +1676,9 @@ async function authedFetch(path, options = {}) {
             openReview(a);
           }
         } catch(e){
-          document.getElementById("addrErr").textContent = e.message || "Failed to save";
+          const msg = e.message || "Failed to save";
+          document.getElementById("addrErr").textContent = msg;
+          announce(msg);
         }
       });
 
@@ -1829,7 +1941,7 @@ async function authedFetch(path, options = {}) {
           li.className = "py-3 flex items-center justify-between gap-3";
           li.innerHTML = `
             <div class="min-w-0">
-              <div class="font-medium">${dict[p.nameKey] || id}</div>
+              <div class="font-medium">${escapeHtml(productName(id, dict))}</div>
               <div class="text-xs text-zinc-500">${dict.cartQty}: <span class="font-semibold">${qty}</span></div>
             </div>
             <div class="font-semibold">${nf(gross(p.price) * qty)}</div>
@@ -1871,7 +1983,9 @@ async function authedFetch(path, options = {}) {
         document.getElementById("reviewConfirm").addEventListener("click", async () => {
           if (!__currentReviewAddress) { openAddr(true); return; }
           if (!hasBoxNowLocker()) {
-            document.getElementById("boxnowErr").textContent = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
+            const msg = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
+            document.getElementById("boxnowErr").textContent = msg;
+            announce(msg);
             openBoxNowWidget();
             return;
           }
@@ -1937,6 +2051,7 @@ async function authedFetch(path, options = {}) {
             };
             msgEl.className = "text-sm text-green-700";
             msgEl.textContent = dict.couponApplied || "Coupon applied";
+            announce(msgEl.textContent);
             document.getElementById("removeCoupon")?.classList.remove("hidden");
             document.getElementById("applyCoupon")?.classList.add("hidden");
           } else {
@@ -1946,6 +2061,7 @@ async function authedFetch(path, options = {}) {
               (data && data.error === "Conditions not met")
               ? (dict.couponConditions || "Coupon conditions not met")
               : (dict.couponInvalid || "Invalid coupon");
+            announce(msgEl.textContent);
             document.getElementById("removeCoupon")?.classList.add("hidden");
             document.getElementById("applyCoupon")?.classList.remove("hidden");
           }
@@ -1954,6 +2070,7 @@ async function authedFetch(path, options = {}) {
           if (msgEl){
             msgEl.className = "text-sm text-red-600";
             msgEl.textContent = (i18n[lang()]||i18n.en).couponInvalid || "Invalid coupon";
+            announce(msgEl.textContent);
           }
           document.getElementById("removeCoupon")?.classList.add("hidden");
           document.getElementById("applyCoupon")?.classList.remove("hidden");
@@ -1993,12 +2110,14 @@ async function authedFetch(path, options = {}) {
 
         if (!items.length) {
           openCart();
-          alert((i18n[lang()]||i18n.en).cartEmpty);
+          announce((i18n[lang()]||i18n.en).cartEmpty);
           return;
         }
 
         if (!hasBoxNowLocker(shipping?.boxNow)) {
-          document.getElementById("boxnowErr").textContent = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
+          const msg = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
+          document.getElementById("boxnowErr").textContent = msg;
+          announce(msg);
           openReview(shipping);
           openBoxNowWidget();
           return;
@@ -2030,7 +2149,9 @@ async function authedFetch(path, options = {}) {
           location.href = data.url;
         } catch (e) {
           console.error("Checkout error:", e);
-          alert(e.message || "Checkout failed.");
+          const msg = e.message || "Checkout failed.";
+          announce(msg);
+          alert(msg);
         } finally {
           setCheckoutLoading(false);
         }
@@ -2117,6 +2238,5 @@ async function authedFetch(path, options = {}) {
         start();
       })();
     </script>
-    <div id="a11y-live" class="sr-only" aria-live="polite"></div>
   </body>
 </html>

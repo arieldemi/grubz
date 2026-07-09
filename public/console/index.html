@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GRUBZ Console</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/images/favicon/site.webmanifest">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root{--grubz:#d04211;--ink:#18181b}
+      body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      button,a,[role="button"]{cursor:pointer}
+      button:disabled{cursor:not-allowed;opacity:.55}
+      .btn{background:var(--grubz);color:#fff;border-radius:8px;padding:.65rem .9rem;font-weight:700}
+      .btn:hover{background:#bd3a0f}
+      .btn-soft{border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:650}
+      .btn-danger{border:1px solid #dc2626;color:#dc2626;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:700}
+      .input{width:100%;border:1px solid #d4d4d8;border-radius:8px;padding:.55rem .65rem;background:#fff}
+      .label{font-size:.75rem;font-weight:700;color:#52525b}
+	      .panel{border:1px solid #e4e4e7;background:#fff;border-radius:8px}
+	      .modal-backdrop{position:fixed;inset:0;background:rgba(24,24,27,.5)}
+	      .modal-panel{position:relative;background:#fff;border-radius:8px;width:min(96vw,880px);max-height:90vh;overflow:auto}
+	      .thumb{width:72px;height:54px;object-fit:contain;border-radius:6px;border:1px solid #e4e4e7;background:#f4f4f5}
+	      .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      :focus-visible{outline:3px solid #111;outline-offset:2px}
+    </style>
+  </head>
+  <body class="bg-zinc-100 text-zinc-900">
+    <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <main class="min-h-screen">
+      <section id="loadingView" class="min-h-screen grid place-items-center p-4">
+        <div class="panel w-full max-w-sm p-5 text-center">
+          <h1 class="text-xl font-extrabold">GRUBZ Console</h1>
+          <p class="text-sm text-zinc-600 mt-1">Checking your session...</p>
+        </div>
+      </section>
+
+      <section id="loginView" class="hidden min-h-screen place-items-center p-4">
+        <form id="loginForm" class="panel w-full max-w-sm p-5 space-y-4" aria-labelledby="loginTitle">
+          <div>
+            <h1 id="loginTitle" class="text-xl font-extrabold">GRUBZ Console</h1>
+            <p class="text-sm text-zinc-600 mt-1">Sign in with an admin account.</p>
+          </div>
+          <div>
+            <label class="label" for="email">Email</label>
+            <input id="email" class="input" type="email" autocomplete="email" required>
+          </div>
+          <div>
+            <label class="label" for="password">Password</label>
+            <input id="password" class="input" type="password" autocomplete="current-password" required>
+          </div>
+          <p id="loginError" class="text-sm text-red-700" role="alert"></p>
+          <button class="btn w-full" type="submit">Sign in</button>
+        </form>
+      </section>
+
+      <section id="appView" class="hidden">
+        <header class="sticky top-0 z-20 bg-white border-b border-zinc-200">
+          <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+            <div>
+              <h1 class="font-extrabold text-lg">GRUBZ Console</h1>
+              <p id="adminEmail" class="text-xs text-zinc-500"></p>
+            </div>
+            <nav class="ml-auto flex gap-2" aria-label="Console sections">
+              <button id="tabProducts" class="btn-soft" type="button">Products</button>
+              <button id="tabOrders" class="btn-soft" type="button">Orders</button>
+              <button id="tabSettings" class="btn-soft" type="button">Settings</button>
+              <button id="refreshBtn" class="btn-soft" type="button">Refresh</button>
+              <button id="signOutBtn" class="btn-danger" type="button">Sign out</button>
+            </nav>
+          </div>
+        </header>
+
+	        <div class="max-w-7xl mx-auto p-4">
+	          <section id="productsSection" class="space-y-4">
+	            <div class="flex items-center justify-between gap-3">
+	              <h2 class="text-xl font-extrabold">Product Manager</h2>
+	              <button id="newProductBtn" class="btn" type="button">New product</button>
+	            </div>
+	            <div class="panel overflow-hidden">
+	              <table class="w-full text-sm">
+	                <thead class="bg-zinc-50 text-left">
+	                  <tr>
+	                    <th class="p-3">Image</th>
+	                    <th class="p-3">Product</th>
+	                    <th class="p-3">Price</th>
+	                    <th class="p-3">Stock</th>
+	                    <th class="p-3">Stripe</th>
+	                    <th class="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTable" class="divide-y"></tbody>
+	              </table>
+	            </div>
+	          </section>
+
+	          <section id="ordersSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex items-center justify-between gap-3">
+	              <h2 class="text-xl font-extrabold">Orders Manager</h2>
+	              <button id="refreshOrdersBtn" class="btn-soft" type="button">Refresh orders</button>
+	            </div>
+	            <div class="panel overflow-hidden">
+	              <table class="w-full text-sm">
+	                <thead class="bg-zinc-50 text-left">
+	                  <tr>
+	                    <th class="p-3">Order</th>
+	                    <th class="p-3">Customer</th>
+	                    <th class="p-3">Total</th>
+	                    <th class="p-3">Status</th>
+	                    <th class="p-3">BOX NOW</th>
+	                  </tr>
+	                </thead>
+	                <tbody id="ordersTable" class="divide-y"></tbody>
+	              </table>
+	            </div>
+	            <p id="orderMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          </section>
+
+          <section id="settingsSection" class="hidden lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-xl font-extrabold">Settings</h2>
+            </div>
+            <div class="panel p-4 max-w-xl space-y-4">
+              <div>
+                <h3 class="font-extrabold text-lg">Shipping</h3>
+              </div>
+              <label class="inline-flex items-center gap-2 font-semibold">
+                <input id="boxnowOverrideEnabled" type="checkbox" class="h-4 w-4">
+                Override BOX NOW shipping cost
+              </label>
+              <div>
+                <label class="label" for="boxnowOverrideAmount">BOX NOW cost override</label>
+                <div class="flex items-center gap-2">
+                  <input id="boxnowOverrideAmount" class="input" type="number" min="0" step="0.01" inputmode="decimal">
+                  <span class="font-bold text-zinc-600">EUR</span>
+                </div>
+              </div>
+              <p id="settingsMsg" class="text-sm" role="status" aria-live="polite"></p>
+              <div class="flex justify-end">
+                <button id="saveSettingsBtn" class="btn" type="button">Save settings</button>
+              </div>
+            </div>
+	          </section>
+	        </div>
+	      </section>
+
+	      <div id="productModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="productEditorTitle">
+	        <div class="modal-backdrop" data-close-modal="productModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <h2 id="productEditorTitle" class="text-lg font-extrabold">Edit product</h2>
+	            <button id="closeProductModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div class="grid md:grid-cols-[220px_minmax(0,1fr)] gap-4">
+	            <div class="space-y-3">
+	              <div id="productImagePreviewWrap" class="panel grid place-items-center p-3 min-h-[170px]"></div>
+	              <div>
+	                <label class="label" for="p_upload">Upload product image</label>
+	                <input id="p_upload" class="input" type="file" accept="image/png,image/jpeg,image/webp">
+	              </div>
+	              <button id="uploadProductImageBtn" class="btn-soft w-full" type="button">Upload image</button>
+	            </div>
+	            <div class="grid sm:grid-cols-2 gap-3">
+	              <div>
+	                <label class="label" for="p_id">ID</label>
+	                <input id="p_id" class="input" placeholder="happy-chicken-1kg">
+	              </div>
+	              <div>
+	                <label class="label" for="p_sort">Sort order</label>
+	                <input id="p_sort" class="input" type="number" step="1">
+	              </div>
+	              <div>
+	                <label class="label" for="p_name">Name</label>
+	                <input id="p_name" class="input">
+	              </div>
+	              <div>
+	                <label class="label" for="p_nameEl">Name EL</label>
+	                <input id="p_nameEl" class="input">
+	              </div>
+	              <div class="sm:col-span-2">
+	                <label class="label" for="p_desc">Description</label>
+	                <textarea id="p_desc" class="input" rows="2"></textarea>
+	              </div>
+	              <div class="sm:col-span-2">
+	                <label class="label" for="p_descEl">Description EL</label>
+	                <textarea id="p_descEl" class="input" rows="2"></textarea>
+	              </div>
+	              <div class="sm:col-span-2">
+	                <label class="label" for="p_detail">Details</label>
+	                <textarea id="p_detail" class="input" rows="3"></textarea>
+	              </div>
+	              <div class="sm:col-span-2">
+	                <label class="label" for="p_detailEl">Details EL</label>
+	                <textarea id="p_detailEl" class="input" rows="3"></textarea>
+	              </div>
+	              <div>
+	                <label class="label" for="p_amount">Price cents</label>
+	                <input id="p_amount" class="input" type="number" step="1">
+	              </div>
+	              <div>
+	                <label class="label" for="p_weight">Weight grams</label>
+	                <input id="p_weight" class="input" type="number" step="1">
+	              </div>
+	              <div>
+	                <label class="label" for="p_stock">Stock</label>
+	                <input id="p_stock" class="input" type="number" step="1">
+	              </div>
+	              <div>
+	                <label class="label" for="p_currency">Currency</label>
+	                <input id="p_currency" class="input" value="eur">
+	              </div>
+	              <div>
+	                <label class="label" for="p_bg">Image background</label>
+	                <input id="p_bg" class="input" placeholder="#f8f1eb">
+	              </div>
+	              <div class="flex items-end">
+	                <label class="inline-flex items-center gap-2 font-semibold">
+	                  <input id="p_active" type="checkbox" class="h-4 w-4"> Active
+	                </label>
+	              </div>
+	              <div>
+	                <label class="label" for="p_stripeProduct">Stripe product ID</label>
+	                <input id="p_stripeProduct" class="input" placeholder="prod_...">
+	              </div>
+	              <div>
+	                <label class="label" for="p_stripePrice">Stripe price ID</label>
+	                <input id="p_stripePrice" class="input" placeholder="price_...">
+	              </div>
+	            </div>
+	          </div>
+	          <p id="productMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          <div class="flex gap-2 justify-end">
+	            <button id="deleteProductBtn" class="btn-danger" type="button">Delete</button>
+	            <button id="saveProductBtn" class="btn" type="button">Save product</button>
+	          </div>
+	        </section>
+	      </div>
+
+	      <div id="orderModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
+	        <div class="modal-backdrop" data-close-modal="orderModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <h3 id="orderModalTitle" class="font-extrabold text-lg">Order details</h3>
+	            <button id="closeOrderModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div id="orderDetails" class="text-sm text-zinc-600">Select an order.</div>
+	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div>
+	              <label class="label" for="o_status">Payment/status</label>
+	              <input id="o_status" class="input">
+	            </div>
+	            <div>
+	              <label class="label" for="o_fulfillment">Fulfillment</label>
+	              <select id="o_fulfillment" class="input">
+	                <option value="new">New</option>
+	                <option value="processing">Processing</option>
+	                <option value="packed">Packed</option>
+	                <option value="shipped">Shipped</option>
+	                <option value="delivered">Delivered</option>
+	                <option value="cancelled">Cancelled</option>
+	              </select>
+	            </div>
+	            <div>
+	              <label class="label" for="o_tracking">Tracking number</label>
+	              <input id="o_tracking" class="input">
+	            </div>
+	            <div>
+	              <label class="label" for="o_trackingUrl">Tracking URL</label>
+	              <input id="o_trackingUrl" class="input">
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="o_notes">Notes</label>
+	              <textarea id="o_notes" class="input" rows="3"></textarea>
+	            </div>
+	          </div>
+	          <button id="saveOrderBtn" class="btn w-full" type="button">Save order</button>
+	        </section>
+	      </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+    <script>
+      firebase.initializeApp({
+        apiKey: "AIzaSyCD6CZjOOrYn6YD71jGhtPSstuCq0R4PMU",
+        authDomain: "grubz-99b84.firebaseapp.com",
+        projectId: "grubz-99b84",
+        storageBucket: "grubz-99b84.appspot.com",
+        messagingSenderId: "712952743006",
+        appId: "1:712952743006:web:c84d1eef919f5029bba0cf"
+      });
+
+      const FUNCTION_API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+      const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+      const API_BASE = (location.protocol === "file:" || LOCAL_HOSTS.has(location.hostname))
+        ? FUNCTION_API_BASE
+        : "/api";
+	      const auth = firebase.auth();
+	      let products = [];
+	      let orders = [];
+	      let selectedOrder = null;
+	      let productApiReady = false;
+	      let currentProductImage = "";
+	      let shippingSettings = { boxnowFeeOverrideEnabled:false, boxnowFeeOverrideCents:0 };
+
+      const $ = id => document.getElementById(id);
+	      const money = (cents, currency = "eur") => new Intl.NumberFormat("en-GB", { style:"currency", currency: currency.toUpperCase() }).format((Number(cents)||0)/100);
+	      const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
+	      const orderNumber = o => o?.orderNumber || o?.internalOrderId || o?.id || "";
+	      const imageSrc = src => {
+	        const value = String(src || "").trim();
+	        if (!value) return "";
+	        if (/^(https?:|data:|\/)/.test(value)) return value;
+	        return `/${value.replace(/^\/+/, "")}`;
+	      };
+	      const fileAsDataUrl = file => new Promise((resolve, reject) => {
+	        const reader = new FileReader();
+	        reader.onload = () => resolve(String(reader.result || ""));
+	        reader.onerror = () => reject(new Error("Could not read image file."));
+	        reader.readAsDataURL(file);
+	      });
+      const boxNowRows = o => {
+        const s = o?.shipping || {};
+        const b = s.boxNow || {};
+        const fee = o?.boxnowFee || {};
+        return [
+          ["Delivery method", s.deliveryMethod || "boxnow"],
+          ["Recipient name", s.name || ""],
+          ["Recipient phone", s.phone || ""],
+          ["Locker ID", b.id || ""],
+          ["Locker name", b.name || ""],
+          ["Address line 1", b.addressLine1 || ""],
+          ["Address line 2", b.addressLine2 || ""],
+          ["Postal code", b.postalCode || ""],
+          ["Latitude", b.lat || ""],
+          ["Longitude", b.lng || ""],
+          ["BOX NOW fee", fee.amount ? money(fee.amount, fee.currency || o?.currency) : ""],
+          ["Stripe shipping", o?.amountShipping ? money(o.amountShipping, o?.currency) : ""],
+          ["Fee source", fee.source || ""],
+          ["Shipment weight", fee.weightGrams ? `${fee.weightGrams}g` : ""],
+        ];
+      };
+      const boxNowDetailsHtml = o => `
+        <dl class="grid grid-cols-[120px_minmax(0,1fr)] gap-x-3 gap-y-1">
+          ${boxNowRows(o).map(([label, value]) => `
+            <dt class="font-semibold text-zinc-700">${esc(label)}</dt>
+            <dd class="break-words">${esc(value || "-")}</dd>
+          `).join("")}
+        </dl>
+      `;
+      function announce(msg){ $("live").textContent = ""; setTimeout(() => $("live").textContent = msg, 10); }
+      function setMsg(id, msg, ok = true){ const el = $(id); el.className = `text-sm ${ok ? "text-green-700" : "text-red-700"}`; el.textContent = msg; announce(msg); }
+	      function setProductWritesEnabled(enabled){
+	        productApiReady = enabled;
+	        $("newProductBtn").disabled = !enabled;
+	        $("saveProductBtn").disabled = !enabled;
+	        $("deleteProductBtn").disabled = !enabled;
+	        $("uploadProductImageBtn").disabled = !enabled;
+	      }
+	      function openModal(id){
+	        const el = $(id);
+	        el.classList.remove("hidden");
+	        el.classList.add("flex");
+	        document.body.style.overflow = "hidden";
+	      }
+	      function closeModal(id){
+	        const el = $(id);
+	        el.classList.add("hidden");
+	        el.classList.remove("flex");
+	        if (!$("productModal").classList.contains("flex") && !$("orderModal").classList.contains("flex")) {
+	          document.body.style.overflow = "";
+	        }
+	      }
+      function showLogin(message = ""){
+        $("loadingView").classList.add("hidden");
+        $("loginView").classList.remove("hidden");
+        $("loginView").classList.add("grid");
+        $("appView").classList.add("hidden");
+        $("loginError").textContent = message;
+      }
+      function showApp(user){
+        $("loadingView").classList.add("hidden");
+        $("loginView").classList.add("hidden");
+        $("loginView").classList.remove("grid");
+        $("appView").classList.remove("hidden");
+        $("adminEmail").textContent = user.email || user.uid;
+        $("loginError").textContent = "";
+      }
+      function apiUnavailableMessage(area){
+        return `${area} could not load. If this is the live site, the admin functions may not be deployed yet.`;
+      }
+      function ts(value){
+        if (!value) return "";
+        if (value._seconds) return new Date(value._seconds * 1000).toLocaleString();
+        if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
+        return "";
+      }
+      async function token(){ return (await auth.currentUser.getIdToken(true)); }
+      async function api(path, options = {}){
+        if (!auth.currentUser) throw new Error("Please sign in again.");
+        const headers = { "Content-Type":"application/json", ...(options.headers || {}) };
+        headers.Authorization = `Bearer ${await token()}`;
+        let resp;
+        try {
+          resp = await fetch(`${API_BASE}${path}`, { ...options, headers, mode:"cors" });
+        } catch (err) {
+          throw new Error("Could not reach the admin API. Check that the functions are deployed and CORS is available.");
+        }
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          if (resp.status === 404) throw new Error("Admin API endpoint was not found. The admin functions may not be deployed yet.");
+          throw new Error(data.error || `Request failed (${resp.status})`);
+        }
+        return data;
+      }
+
+      function requireAdminUser(user){
+        if (!user) return false;
+        return user.getIdTokenResult(true).then(result => {
+          if (!result.claims.admin) throw new Error("This account is signed in, but it does not have the admin claim.");
+          return true;
+        });
+      }
+
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => {
+        console.warn("Could not set auth persistence", err);
+      });
+
+      $("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        $("loginError").textContent = "";
+        try {
+          await auth.signInWithEmailAndPassword($("email").value.trim(), $("password").value);
+        } catch (err) {
+          $("loginError").textContent = err.message || "Sign-in failed";
+        }
+      });
+
+      auth.onAuthStateChanged(async user => {
+        if (!user) {
+          showLogin();
+          return;
+        }
+        try {
+          await requireAdminUser(user);
+          showApp(user);
+        } catch (err) {
+          await auth.signOut();
+          showLogin(err.message || "Admin access denied");
+          return;
+        }
+        await refreshConsoleData();
+      });
+
+	      $("signOutBtn").addEventListener("click", () => auth.signOut().then(() => showLogin()));
+	      $("refreshBtn").addEventListener("click", refreshConsoleData);
+	      $("refreshOrdersBtn").addEventListener("click", () => loadOrders().catch(() => {}));
+	      $("closeProductModal").addEventListener("click", () => closeModal("productModal"));
+	      $("closeOrderModal").addEventListener("click", () => closeModal("orderModal"));
+	      document.querySelectorAll("[data-close-modal]").forEach(el => {
+	        el.addEventListener("click", () => closeModal(el.dataset.closeModal));
+	      });
+	      document.addEventListener("keydown", e => {
+	        if (e.key !== "Escape") return;
+	        closeModal("productModal");
+	        closeModal("orderModal");
+	      });
+	      $("tabProducts").addEventListener("click", () => {
+	        $("productsSection").classList.remove("hidden");
+	        $("ordersSection").classList.add("hidden");
+	        $("settingsSection").classList.add("hidden");
+	      });
+	      $("tabOrders").addEventListener("click", () => {
+	        $("productsSection").classList.add("hidden");
+	        $("ordersSection").classList.remove("hidden");
+	        $("settingsSection").classList.add("hidden");
+	      });
+	      $("tabSettings").addEventListener("click", () => {
+	        $("productsSection").classList.add("hidden");
+	        $("ordersSection").classList.add("hidden");
+	        $("settingsSection").classList.remove("hidden");
+	      });
+
+      async function loadProducts(){
+        try {
+          setProductWritesEnabled(false);
+          setMsg("productMsg", "Loading products...");
+          const data = await api("/adminProducts");
+	          products = data.products || [];
+	          setProductWritesEnabled(true);
+	          renderProducts();
+	          setMsg("productMsg", products.length ? `${products.length} products loaded` : "No products found");
+        } catch (err) {
+          products = [];
+          setProductWritesEnabled(false);
+          renderProducts();
+          setMsg("productMsg", err.message || apiUnavailableMessage("Products"), false);
+          throw err;
+        }
+      }
+
+      function renderProducts(){
+	        if (!products.length) {
+	          $("productsTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="6">No products to display.</td></tr>`;
+	          return;
+	        }
+	        $("productsTable").innerHTML = products.map(p => `
+	          <tr class="hover:bg-zinc-50" data-product-id="${esc(p.id)}">
+	            <td class="p-3">
+	              ${p.image ? `<img class="thumb" src="${esc(imageSrc(p.image))}" alt="${esc(p.name || p.id)}">` : `<div class="thumb grid place-items-center text-xs text-zinc-400">No image</div>`}
+	            </td>
+	            <td class="p-3">
+	              <button class="font-bold text-left hover:underline" data-edit-product="${esc(p.id)}">${esc(p.name)}</button>
+	              <div class="text-xs text-zinc-500">${esc(p.id)}</div>
+            </td>
+            <td class="p-3">${money(p.amount, p.currency)}</td>
+            <td class="p-3">${p.stock ?? ""}</td>
+            <td class="p-3 text-xs">${esc(p.stripeProductId || "")}<br>${esc(p.stripePriceId || "")}</td>
+            <td class="p-3">${p.active ? "Active" : "Hidden"}</td>
+          </tr>
+        `).join("");
+      }
+
+      $("productsTable").addEventListener("click", e => {
+	        const btn = e.target.closest("[data-edit-product]");
+	        if (!btn) return;
+	        openProduct(products.find(p => p.id === btn.dataset.editProduct));
+	      });
+
+	      function renderProductImagePreview(){
+	        const src = imageSrc(currentProductImage);
+	        $("productImagePreviewWrap").innerHTML = src
+	          ? `<img src="${esc(src)}" alt="" class="max-w-full max-h-[190px] object-contain">`
+	          : `<div class="text-sm text-zinc-500">No product image</div>`;
+	      }
+
+	      function openProduct(p = {}){
+	        fillProduct(p);
+	        openModal("productModal");
+	        setTimeout(() => $("p_id").focus(), 0);
+	      }
+
+	      function fillProduct(p = {}){
+	        $("p_id").value = p.id || "";
+        $("p_sort").value = p.sortOrder ?? 0;
+        $("p_name").value = p.name || "";
+        $("p_nameEl").value = p.nameEl || "";
+        $("p_desc").value = p.description || "";
+        $("p_descEl").value = p.descriptionEl || "";
+        $("p_detail").value = p.detail || "";
+        $("p_detailEl").value = p.detailEl || "";
+        $("p_amount").value = p.amount ?? 0;
+	        $("p_weight").value = p.weightGrams ?? 0;
+	        $("p_stock").value = p.stock ?? "";
+	        $("p_currency").value = p.currency || "eur";
+	        currentProductImage = p.image || "";
+	        $("p_bg").value = p.imageBg || "#f8f1eb";
+	        $("p_active").checked = p.active !== false;
+	        $("p_stripeProduct").value = p.stripeProductId || "";
+	        $("p_stripePrice").value = p.stripePriceId || "";
+	        $("p_upload").value = "";
+	        renderProductImagePreview();
+	        if (productApiReady) $("productMsg").textContent = "";
+	      }
+
+	      $("newProductBtn").addEventListener("click", () => openProduct({ active:true, currency:"eur", imageBg:"#f8f1eb" }));
+	      $("uploadProductImageBtn").addEventListener("click", async () => {
+	        if (!productApiReady) return setMsg("productMsg", "Product API is unavailable, so product images cannot be uploaded right now.", false);
+	        const id = $("p_id").value.trim();
+	        const file = $("p_upload").files && $("p_upload").files[0];
+	        if (!id) return setMsg("productMsg", "Save or enter a product ID before uploading an image.", false);
+	        if (!file) return setMsg("productMsg", "Choose an image first.", false);
+	        try {
+	          setMsg("productMsg", "Uploading image...");
+	          const imageDataUrl = await fileAsDataUrl(file);
+	          const data = await api("/adminProductImage", { method:"POST", body: JSON.stringify({ productId:id, imageDataUrl }) });
+	          currentProductImage = data.image || "";
+	          renderProductImagePreview();
+	          setMsg("productMsg", "Image uploaded");
+	          await loadProducts();
+	        } catch (err) {
+	          setMsg("productMsg", err.message || "Image upload failed", false);
+	        }
+	      });
+	      $("saveProductBtn").addEventListener("click", async () => {
+        if (!productApiReady) return setMsg("productMsg", "Product API is unavailable, so Firestore products cannot be saved right now.", false);
+        try {
+          const product = {
+            id: $("p_id").value.trim(),
+            sortOrder: Number($("p_sort").value || 0),
+            name: $("p_name").value.trim(),
+            nameEl: $("p_nameEl").value.trim(),
+            description: $("p_desc").value.trim(),
+            descriptionEl: $("p_descEl").value.trim(),
+            detail: $("p_detail").value.trim(),
+            detailEl: $("p_detailEl").value.trim(),
+            amount: Number($("p_amount").value || 0),
+            weightGrams: Number($("p_weight").value || 0),
+            stock: $("p_stock").value === "" ? null : Number($("p_stock").value),
+            currency: $("p_currency").value.trim() || "eur",
+	            image: currentProductImage,
+            imageBg: $("p_bg").value.trim() || "#f8f1eb",
+            active: $("p_active").checked,
+            stripeProductId: $("p_stripeProduct").value.trim(),
+            stripePriceId: $("p_stripePrice").value.trim(),
+          };
+	          await api("/adminProducts", { method:"POST", body: JSON.stringify({ product }) });
+	          setMsg("productMsg", "Product saved");
+	          await loadProducts();
+	          fillProduct(products.find(p => p.id === product.id));
+        } catch (err) {
+          setMsg("productMsg", err.message || "Save failed", false);
+        }
+      });
+      $("deleteProductBtn").addEventListener("click", async () => {
+        if (!productApiReady) return setMsg("productMsg", "Product API is unavailable, so Firestore products cannot be deleted right now.", false);
+        const id = $("p_id").value.trim();
+        if (!id || !confirm(`Delete ${id}?`)) return;
+        try {
+	          await api(`/adminProducts?id=${encodeURIComponent(id)}`, { method:"DELETE" });
+	          setMsg("productMsg", "Product deleted");
+	          closeModal("productModal");
+	          await loadProducts();
+        } catch (err) {
+          setMsg("productMsg", err.message || "Delete failed", false);
+        }
+      });
+
+      async function loadOrders(){
+        try {
+          setMsg("orderMsg", "Loading orders...");
+          const data = await api("/adminOrders?limit=100");
+          orders = data.orders || [];
+          renderOrders();
+          setMsg("orderMsg", orders.length ? `${orders.length} orders loaded` : "No orders found");
+        } catch (err) {
+          orders = [];
+          renderOrders();
+          setMsg("orderMsg", err.message || apiUnavailableMessage("Orders"), false);
+          throw err;
+        }
+      }
+
+	      async function refreshConsoleData(){
+	        const results = await Promise.allSettled([loadProducts(), loadOrders(), loadSettings()]);
+	        const failures = results.filter(result => result.status === "rejected");
+	        if (failures.length) {
+	          announce("Some console data could not load.");
+	        }
+	      }
+
+	      async function loadSettings(){
+	        try {
+	          setMsg("settingsMsg", "Loading settings...");
+	          const data = await api("/adminSettings");
+	          shippingSettings = data.shipping || shippingSettings;
+	          renderSettings();
+	          setMsg("settingsMsg", "Settings loaded");
+	        } catch (err) {
+	          setMsg("settingsMsg", err.message || apiUnavailableMessage("Settings"), false);
+	          throw err;
+	        }
+	      }
+
+	      function renderSettings(){
+	        $("boxnowOverrideEnabled").checked = shippingSettings.boxnowFeeOverrideEnabled === true;
+	        $("boxnowOverrideAmount").value = ((Number(shippingSettings.boxnowFeeOverrideCents || 0)) / 100).toFixed(2);
+	      }
+
+	      $("saveSettingsBtn").addEventListener("click", async () => {
+	        try {
+	          const euros = Number($("boxnowOverrideAmount").value || 0);
+	          if (!Number.isFinite(euros) || euros < 0) throw new Error("Enter a valid BOX NOW override amount.");
+	          const shipping = {
+	            boxnowFeeOverrideEnabled: $("boxnowOverrideEnabled").checked,
+	            boxnowFeeOverrideCents: Math.round(euros * 100),
+	          };
+	          await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ shipping }) });
+	          shippingSettings = shipping;
+	          renderSettings();
+	          setMsg("settingsMsg", "Settings saved");
+	        } catch (err) {
+	          setMsg("settingsMsg", err.message || "Settings save failed", false);
+	        }
+	      });
+
+	      function renderOrders(){
+	        if (!orders.length) {
+	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders to display.</td></tr>`;
+	          return;
+	        }
+        $("ordersTable").innerHTML = orders.map(o => `
+          <tr class="hover:bg-zinc-50">
+            <td class="p-3">
+              <button class="font-bold text-left hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>
+              <div class="text-xs text-zinc-500">${esc(ts(o.createdAt))}</div>
+            </td>
+            <td class="p-3">${esc(o.customer?.name || "")}<div class="text-xs text-zinc-500">${esc(o.customer?.email || "")}</div></td>
+            <td class="p-3">${money(o.amountTotal, o.currency)}</td>
+            <td class="p-3">${esc(o.status || "")}<div class="text-xs text-zinc-500">${esc(o.fulfillmentStatus || "")}</div></td>
+            <td class="p-3">${esc(o.shipping?.boxNow?.name || o.shipping?.boxNow?.id || "")}</td>
+          </tr>
+        `).join("");
+      }
+
+	      $("ordersTable").addEventListener("click", e => {
+	        const btn = e.target.closest("[data-order-doc-id]");
+	        if (!btn) return;
+	        selectedOrder = orders.find(o => o.id === btn.dataset.orderDocId);
+	        openOrder(selectedOrder);
+	      });
+
+	      function openOrder(o){
+	        fillOrder(o);
+	        openModal("orderModal");
+	        setTimeout(() => $("o_status").focus(), 0);
+	      }
+
+	      function fillOrder(o){
+	        if (!o) return;
+        $("orderDetails").innerHTML = `
+          <div class="space-y-2">
+            <div><strong>Order:</strong> ${esc(orderNumber(o))}</div>
+            <div><strong>Customer:</strong> ${esc(o.customer?.name || "")} ${esc(o.customer?.phone || "")}<br>${esc(o.customer?.email || "")}</div>
+            <div><strong>Amounts:</strong><br>Subtotal: ${money(o.amountSubtotal, o.currency)}<br>Shipping: ${money(o.amountShipping, o.currency)}<br>Total: ${money(o.amountTotal, o.currency)}</div>
+            <div><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
+            <div><strong>Items:</strong><ul class="list-disc ml-5">${(o.items || []).map(i => `<li>${esc(i.quantity)} x ${esc(i.name)} - ${money(i.totalAmount, i.currency)}</li>`).join("")}</ul></div>
+            <div><strong>Stripe session:</strong> ${esc(o.stripeSessionId || "")}</div>
+            <div><strong>Stripe payment intent:</strong> ${esc(o.stripePaymentIntentId || "")}</div>
+          </div>
+        `;
+        $("o_status").value = o.status || "";
+        $("o_fulfillment").value = o.fulfillmentStatus || "new";
+        $("o_tracking").value = o.shipping?.trackingNumber || "";
+        $("o_trackingUrl").value = o.shipping?.trackingUrl || "";
+        $("o_notes").value = o.notes || "";
+      }
+
+      $("saveOrderBtn").addEventListener("click", async () => {
+        if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
+        try {
+          await api("/adminOrders", {
+            method:"PATCH",
+            body: JSON.stringify({
+              id: selectedOrder.id,
+              status: $("o_status").value.trim(),
+              fulfillmentStatus: $("o_fulfillment").value,
+              trackingNumber: $("o_tracking").value.trim(),
+              trackingUrl: $("o_trackingUrl").value.trim(),
+              notes: $("o_notes").value.trim(),
+            }),
+          });
+	          setMsg("orderMsg", "Order saved");
+	          await loadOrders();
+	          selectedOrder = orders.find(o => o.id === selectedOrder.id) || selectedOrder;
+	          fillOrder(selectedOrder);
+	        } catch (err) {
+          setMsg("orderMsg", err.message || "Order save failed", false);
+        }
+      });
+    </script>
+  </body>
+</html>

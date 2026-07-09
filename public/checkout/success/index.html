@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Order Confirmed — GRUBZ</title>
   <meta name="robots" content="noindex" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/images/favicon/site.webmanifest">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root{
@@ -76,7 +80,7 @@
       <p class="text-zinc-600" data-i18n="subtitle">Thanks for your order! We’re getting it ready.</p>
 
       <div class="mt-6 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 text-sm">
-        <span class="text-zinc-500" data-i18n="sessionLabel">Reference (Session ID):</span>
+        <span id="referenceLabel" class="text-zinc-500" data-i18n="sessionLabel">Reference (Session ID):</span>
         <code id="sid" class="font-mono text-zinc-800"></code>
       </div>
 
@@ -97,6 +101,7 @@
       en: {
         title: "Payment successful",
         subtitle: "Thanks for your order! We’re getting it ready.",
+        orderLabel: "Order ID:",
         sessionLabel: "Reference (Session ID):",
         back: "Back to shop",
         support: "Contact support",
@@ -106,6 +111,7 @@
       el: {
         title: "Η πληρωμή ολοκληρώθηκε",
         subtitle: "Ευχαριστούμε για την παραγγελία! Τη προετοιμάζουμε.",
+        orderLabel: "Αριθμός παραγγελίας:",
         sessionLabel: "Αναφορά (Session ID):",
         back: "Επιστροφή στο κατάστημα",
         support: "Υποστήριξη",
@@ -176,6 +182,14 @@
         const data = await resp.json().catch(()=> ({}));
 
         if (resp.ok && data.paid) {
+          if (data.orderNumber) {
+            sidEl.textContent = data.orderNumber;
+            const label = document.getElementById("referenceLabel");
+            if (label) {
+              label.setAttribute("data-i18n", "orderLabel");
+              label.textContent = (i18n[localStorage.getItem("grubz_lang") || "en"] || i18n.en).orderLabel;
+            }
+          }
           // Clear the cart cookie set by the shop page
           removeCookie("grubz_cart");
 
