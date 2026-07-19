@@ -15,9 +15,17 @@
     <meta property="og:title" content="GRUBZ — High-Protein BSF Snacks" />
     <meta property="og:description" content="Natural protein. Sustainable nutrition. Made in Greece." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.grubz.gr/" />
+    <meta property="og:image" content="https://www.grubz.gr/images/social-share.png" />
+    <meta property="og:image:secure_url" content="https://www.grubz.gr/images/social-share.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://www.grubz.gr/images/social-share.png" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles/tailwind.css">
 
     <style>
       :root{ --grubz-1:#d04211; --grubz-2:#e37500; --grubz-3:#daa266; --grubz-4:#71391d; }
@@ -242,8 +250,42 @@
         </div>
         <div>
           <h4 class="font-bold mb-2" data-i18n="footContact">Contact</h4>
-          <p class="text-sm opacity-90"><a href="mailto:info@grubz.gr">info@grubz.gr</a></p>
-          <p class="text-sm opacity-90">Thessaloniki, Greece</p>
+          <div class="space-y-2 text-sm opacity-90">
+            <a class="flex items-center gap-2 hover:underline" href="mailto:info@grubz.gr">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a2 2 0 0 1-2.06 0L2 7"></path>
+              </svg>
+              <span>info@grubz.gr</span>
+            </a>
+            <a class="flex items-center gap-2 hover:underline" href="https://www.instagram.com/grubz.gr/" target="_blank" rel="noopener noreferrer">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <path d="M17.5 6.5h.01"></path>
+              </svg>
+              <span>Instagram</span>
+            </a>
+            <a class="flex items-center gap-2 hover:underline" href="https://www.facebook.com/profile.php?id=61592265444268" target="_blank" rel="noopener noreferrer">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.49-3.91 3.77-3.91 1.09 0 2.23.2 2.23.2v2.47h-1.26c-1.24 0-1.63.78-1.63 1.57v1.88h2.77l-.44 2.91h-2.33V22C18.34 21.24 22 17.08 22 12.06z"></path>
+              </svg>
+              <span>Facebook</span>
+            </a>
+            <a class="flex items-center gap-2 hover:underline" href="https://www.tiktok.com/@grubz.gr" target="_blank" rel="noopener noreferrer">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16.6 5.82c1.1.8 2.43 1.28 3.87 1.34v3.05a8.35 8.35 0 0 1-3.8-.92v5.8c0 3.77-3.06 6.83-6.83 6.83A6.84 6.84 0 0 1 8.7 8.34c.39-.07.79-.11 1.2-.11.35 0 .69.03 1.02.09v3.14a3.74 3.74 0 1 0 2.73 3.6V2h2.95c.2 1.54 1.05 2.89 2.25 3.82z"></path>
+              </svg>
+              <span>TikTok</span>
+            </a>
+            <p class="flex items-center gap-2">
+              <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 4.99-5.55 10.18-7.4 11.78a.92.92 0 0 1-1.2 0C9.55 20.18 4 14.99 4 10a8 8 0 0 1 16 0"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span>Thessaloniki, Greece</span>
+            </p>
+          </div>
         </div>
       </div>
       <div class="border-t border-white/10">
@@ -416,6 +458,13 @@
               <button id="boxnowChoose" class="btn-soft text-sm" type="button" data-i18n="boxnowChoose">Choose locker</button>
             </div>
             <div id="boxnowSelected" class="mt-2 text-sm text-zinc-700 whitespace-pre-line" data-i18n="boxnowNone">No locker selected.</div>
+            <label class="mt-4 flex items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm text-zinc-700">
+              <input id="boxnowCod" type="checkbox" class="mt-1 h-4 w-4 rounded border-zinc-300" />
+              <span>
+                <span class="font-semibold text-zinc-900" data-i18n="boxnowCodLabel">Cash on delivery</span>
+                <span class="block text-xs text-zinc-500" data-i18n="boxnowCodHelp">Mark this order as cash-on-delivery.</span>
+              </span>
+            </label>
             <p id="boxnowErr" class="mt-2 text-sm text-red-600" role="alert"></p>
           </section>
 
@@ -500,38 +549,71 @@
       </div>
     </div>
 
+    <!-- CHAT WIDGET -->
+    <div id="chatWidget" class="fixed bottom-4 right-4 z-[95]">
+      <button id="chatToggle" class="grid h-14 w-14 place-items-center rounded-full bg-[#9a2f0c] text-white shadow-2xl ring-2 ring-white/80 transition hover:bg-[#7f270a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9a2f0c]" type="button" aria-label="Open GRUBZ chat" aria-expanded="false" aria-controls="chatPanel">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+          <path d="M8 9h8"></path>
+          <path d="M8 13h5"></path>
+        </svg>
+      </button>
+      <section id="chatPanel" class="hidden mt-3 w-[min(92vw,380px)] rounded-2xl border border-zinc-200 bg-white shadow-2xl overflow-hidden" aria-label="GRUBZ chat">
+        <div class="flex items-center justify-between gap-3 border-b p-3">
+          <div>
+            <h3 class="font-extrabold">GRUBZ chat</h3>
+            <p class="text-xs text-zinc-500">Ask us anything about your order or products.</p>
+          </div>
+          <button id="chatClose" class="btn-soft text-sm" type="button">Close</button>
+        </div>
+        <div id="chatMessages" class="h-72 overflow-y-auto bg-zinc-50 p-3 space-y-2 text-sm"></div>
+        <div class="border-t p-3 space-y-2">
+          <div id="chatGuestFields" class="grid grid-cols-2 gap-2">
+            <input id="chatName" class="input text-sm" autocomplete="name" placeholder="Name">
+            <input id="chatEmail" class="input text-sm" autocomplete="email" placeholder="Email">
+          </div>
+          <textarea id="chatInput" class="input text-sm" rows="3" placeholder="Write your message..."></textarea>
+          <div class="flex items-center gap-2">
+            <p id="chatStatus" class="text-xs text-zinc-500 flex-1" role="status" aria-live="polite"></p>
+            <button id="chatSend" class="btn" type="button">Send</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <!-- Firebase SDKs (compat) -->
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
 
     <!-- Define critical globals ONCE to avoid TDZ/duplicate errors -->
     <script>
       let __user = null;   // Firebase auth user
-      let __coupon = null; // { code, promotionCodeId, discount }
+      let __coupon = null; // { code, discount, discountCents }
     </script>
 
     <script>
 (function initFirebase() {
   if (!window.firebase) { console.error("Firebase SDK not loaded"); return; }
-  firebase.initializeApp({
-    apiKey: "AIzaSyCD6CZjOOrYn6YD71jGhtPSstuCq0R4PMU",
-    authDomain: "grubz-99b84.firebaseapp.com",
-    projectId: "grubz-99b84",
-    storageBucket: "grubz-99b84.appspot.com",
-    messagingSenderId: "712952743006",
-    appId: "1:712952743006:web:c84d1eef919f5029bba0cf",
-    measurementId: "G-TWQQC1WD7R"
-  });
+  if (!firebase.apps.length && window.GRUBZ_FIREBASE_CONFIG) {
+    firebase.initializeApp(window.GRUBZ_FIREBASE_CONFIG);
+  }
 })();
 const FUNCTION_API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+const LOCAL_FUNCTION_API_BASE = "http://127.0.0.1:5101/grubz-99b84/europe-west1";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
       const API_BASE = (location.protocol === "file:" || LOCAL_HOSTS.has(location.hostname))
-        ? FUNCTION_API_BASE
+        ? (location.port === "5100" ? "/api" : FUNCTION_API_BASE)
         : "/api";
+      const CHAT_API_BASE = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
 const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
 const BOXNOW_PARTNER_ID = "";
-const BOXNOW_PARCEL_SIZE = "3";
+const BOXNOW_PARCEL_SIZES = [
+  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60 },
+  { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
+  { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
+];
 async function authedFetch(path, options = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
   if (__user) {
@@ -541,6 +623,21 @@ async function authedFetch(path, options = {}) {
     } catch (e) { /* ignore */ }
   }
   return fetch(`${API_BASE}${path}`, { ...options, headers, mode: "cors" });
+}
+
+async function chatFetch(path, options = {}) {
+  const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+  if (__user) {
+    try {
+      headers.Authorization = "Bearer " + await __user.getIdToken(true);
+    } catch (e) { /* ignore */ }
+  }
+  const resp = await fetch(`${CHAT_API_BASE}${path}`, { ...options, headers, mode: "cors" });
+  const contentType = resp.headers.get("content-type") || "";
+  if (contentType.includes("text/html")) {
+    throw new Error("Chat API is not available. Restart the local Firebase emulator or deploy the new chat functions.");
+  }
+  return resp;
 }
     </script>
 
@@ -732,6 +829,7 @@ async function authedFetch(path, options = {}) {
           reviewTotal:"Subtotal",
           reviewCancel:"Back",
           reviewConfirmPay:"Confirm & Pay",
+          reviewConfirmOrder:"Confirm order",
           boxnowTitle:"BOX NOW locker",
           boxnowChoose:"Choose locker",
           boxnowChange:"Change locker",
@@ -741,6 +839,8 @@ async function authedFetch(path, options = {}) {
           boxnowFeeLabel:"BOX NOW delivery",
           boxnowFeeLoading:"Calculating delivery fee...",
           boxnowFeeUnavailable:"Delivery fee will be confirmed at checkout.",
+          boxnowCodLabel:"Cash on delivery",
+          boxnowCodHelp:"Mark this order as cash-on-delivery.",
           inclVATRate: "incl. VAT 24%",
           totalInclVAT: "Total (incl. VAT)",
           outOfStock: "Out of stock",
@@ -828,6 +928,7 @@ async function authedFetch(path, options = {}) {
           reviewTotal:"Μερικό σύνολο",
           reviewCancel:"Πίσω",
           reviewConfirmPay:"Επιβεβαίωση & Πληρωμή",
+          reviewConfirmOrder:"Επιβεβαίωση παραγγελίας",
           boxnowTitle:"BOX NOW locker",
           boxnowChoose:"Επιλογή locker",
           boxnowChange:"Αλλαγή locker",
@@ -837,6 +938,8 @@ async function authedFetch(path, options = {}) {
           boxnowFeeLabel:"BOX NOW αποστολή",
           boxnowFeeLoading:"Υπολογισμός κόστους αποστολής...",
           boxnowFeeUnavailable:"Το κόστος αποστολής θα επιβεβαιωθεί στο checkout.",
+          boxnowCodLabel:"Αντικαταβολή",
+          boxnowCodHelp:"Σημειώστε την παραγγελία ως αντικαταβολή.",
           inclVATRate: "με ΦΠΑ 24%",
           totalInclVAT: "Σύνολο (με ΦΠΑ)",
           outOfStock: "Μη διαθέσιμο",
@@ -1024,6 +1127,144 @@ async function authedFetch(path, options = {}) {
         }[ch]));
       }
 
+      const CHAT_GUEST_KEY = "grubz_chat_guest";
+      const CHAT_CONVERSATION_KEY = "grubz_chat_conversation";
+      const CHAT_NAME_KEY = "grubz_chat_name";
+      const CHAT_EMAIL_KEY = "grubz_chat_email";
+      let __chatConversationId = localStorage.getItem(CHAT_CONVERSATION_KEY) || "";
+      let __chatPollTimer = null;
+
+      function chatGuestId(){
+        let id = localStorage.getItem(CHAT_GUEST_KEY);
+        if (!id) {
+          id = crypto.randomUUID ? crypto.randomUUID() : `guest-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+          localStorage.setItem(CHAT_GUEST_KEY, id);
+        }
+        return id;
+      }
+
+      function chatTime(value){
+        const seconds = value?._seconds || value?.seconds || 0;
+        return seconds ? new Date(seconds * 1000).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : "";
+      }
+
+      function renderChatMessages(messages = []){
+        const box = document.getElementById("chatMessages");
+        if (!messages.length) {
+          box.innerHTML = `<div class="rounded-xl bg-white border border-zinc-200 p-3 text-zinc-500">Send us a message and we will reply here.</div>`;
+          return;
+        }
+        box.innerHTML = messages.map(message => {
+          const mine = message.sender === "customer";
+          return `
+            <div class="flex ${mine ? "justify-end" : "justify-start"}">
+              <div class="max-w-[82%] rounded-2xl px-3 py-2 ${mine ? "bg-[var(--grubz-1)] text-white" : "bg-white border border-zinc-200 text-zinc-800"}">
+                <div class="mb-1 text-[10px] font-bold ${mine ? "text-white/80" : "text-zinc-500"}">${escapeHtml(message.senderName || (mine ? "You" : "GRUBZ"))}</div>
+                <div class="whitespace-pre-wrap">${escapeHtml(message.text || "")}</div>
+                <div class="mt-1 text-[10px] ${mine ? "text-white/75" : "text-zinc-400"}">${escapeHtml(chatTime(message.createdAt))}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+        box.scrollTop = box.scrollHeight;
+      }
+
+      async function refreshChat(){
+        if (!__chatConversationId) {
+          renderChatMessages([]);
+          return;
+        }
+        const params = new URLSearchParams({ conversationId: __chatConversationId, guestId: chatGuestId() });
+        const resp = await chatFetch(`/chat?${params.toString()}`, { method:"GET" });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data.error || "Could not load chat");
+        renderChatMessages(data.messages || []);
+      }
+
+      function setChatStatus(message, ok = true){
+        const el = document.getElementById("chatStatus");
+        el.className = `text-xs ${ok ? "text-zinc-500" : "text-red-600"} flex-1`;
+        el.textContent = message;
+      }
+
+      function updateChatAuthFields(){
+        document.getElementById("chatGuestFields").classList.toggle("hidden", Boolean(__user));
+        if (!__user) {
+          document.getElementById("chatName").value = localStorage.getItem(CHAT_NAME_KEY) || "";
+          document.getElementById("chatEmail").value = localStorage.getItem(CHAT_EMAIL_KEY) || "";
+          setChatStatus(document.getElementById("chatName").value.trim() ? "" : "Please add your name to start.");
+        }
+      }
+
+      async function sendChatMessage(){
+        const input = document.getElementById("chatInput");
+        const text = input.value.trim();
+        if (!text) return;
+        const name = __user ? (__user.displayName || __user.email || "Customer") : document.getElementById("chatName").value.trim();
+        const email = __user ? (__user.email || "") : document.getElementById("chatEmail").value.trim();
+        if (!name) {
+          setChatStatus("Please add your name before sending.", false);
+          document.getElementById("chatName").focus();
+          return;
+        }
+        try {
+          document.getElementById("chatSend").disabled = true;
+          setChatStatus("Sending...");
+          localStorage.setItem(CHAT_NAME_KEY, name);
+          if (email) localStorage.setItem(CHAT_EMAIL_KEY, email);
+          const body = {
+            conversationId: __chatConversationId,
+            guestId: chatGuestId(),
+            message: text,
+            customer: {
+              name,
+              email,
+            },
+          };
+          const resp = await chatFetch("/chat", { method:"POST", body: JSON.stringify(body) });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || "Message failed");
+          __chatConversationId = data.conversation?.id || __chatConversationId;
+          if (__chatConversationId) localStorage.setItem(CHAT_CONVERSATION_KEY, __chatConversationId);
+          input.value = "";
+          renderChatMessages(data.messages || []);
+          setChatStatus("Message sent");
+        } catch (err) {
+          setChatStatus(err.message || "Message failed", false);
+        } finally {
+          document.getElementById("chatSend").disabled = false;
+        }
+      }
+
+      function openChat(){
+        document.getElementById("chatPanel").classList.remove("hidden");
+        document.getElementById("chatToggle").setAttribute("aria-expanded", "true");
+        updateChatAuthFields();
+        refreshChat().catch(() => {});
+        clearInterval(__chatPollTimer);
+        __chatPollTimer = setInterval(() => refreshChat().catch(() => {}), 20000);
+        setTimeout(() => document.getElementById("chatInput").focus(), 0);
+        if (!__user && !document.getElementById("chatName").value.trim()) {
+          setTimeout(() => document.getElementById("chatName").focus(), 0);
+        }
+      }
+
+      function closeChat(){
+        document.getElementById("chatPanel").classList.add("hidden");
+        document.getElementById("chatToggle").setAttribute("aria-expanded", "false");
+        clearInterval(__chatPollTimer);
+      }
+
+      document.getElementById("chatToggle").addEventListener("click", () => {
+        const panel = document.getElementById("chatPanel");
+        panel.classList.contains("hidden") ? openChat() : closeChat();
+      });
+      document.getElementById("chatClose").addEventListener("click", closeChat);
+      document.getElementById("chatSend").addEventListener("click", sendChatMessage);
+      document.getElementById("chatInput").addEventListener("keydown", event => {
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) sendChatMessage();
+      });
+
       function setCatalogProducts(products){
         for (const key of Object.keys(CATALOG)) delete CATALOG[key];
         products.forEach((p) => {
@@ -1040,6 +1281,7 @@ async function authedFetch(path, options = {}) {
             detail: p.detail || p.description || "",
             detailEl: p.detailEl || p.detail || p.descriptionEl || "",
             weightGrams: Number(p.weightGrams || 0),
+            parcel: p.parcel || {},
             stripeProductId: p.stripeProductId || "",
             stripePriceId: p.stripePriceId || "",
             active: p.active !== false,
@@ -1571,6 +1813,10 @@ async function authedFetch(path, options = {}) {
       async function signUp(email, pass){
         try {
           await auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          const existingMethods = await auth().fetchSignInMethodsForEmail(email);
+          if (existingMethods.length) {
+            throw { code: "auth/email-already-in-use" };
+          }
           await auth().createUserWithEmailAndPassword(email, pass);
           closeAuth();
           openAddr(true);
@@ -1579,10 +1825,11 @@ async function authedFetch(path, options = {}) {
             'auth/configuration-not-found': 'Project config missing.',
             'auth/operation-not-allowed': 'Email/Password provider is disabled in Console.',
             'auth/email-already-in-use': 'That email is already registered.',
+            'auth/email-already-exists': 'That email is already registered.',
             'auth/invalid-email': 'Invalid email address.',
             'auth/weak-password': 'Password is too weak (min 6 characters).'
           };
-          const msg = m[e.code] || e.message || "Sign-up failed";
+          const msg = m[e.code] || (/already registered|already exists|already in use/i.test(e.message || "") ? "That email is already registered." : e.message) || "Sign-up failed";
           document.getElementById("authErr").textContent = msg;
           announce(msg);
         }
@@ -1596,6 +1843,7 @@ async function authedFetch(path, options = {}) {
         const btn = document.getElementById("authBtn");
         if (u) {
           btn.textContent = dict.signOut;
+          updateChatAuthFields();
           try {
             const resp = await authedFetch("/getProfile", { method: "GET" });
             if (resp.ok) {
@@ -1608,6 +1856,7 @@ async function authedFetch(path, options = {}) {
           } catch (e) { /* ignore */ }
         } else {
           btn.textContent = dict.signIn;
+          updateChatAuthFields();
         }
       });
 
@@ -1767,9 +2016,124 @@ async function authedFetch(path, options = {}) {
       function boxNowFeeKey(addr){
         return JSON.stringify({
           items: Array.from(cart.entries()).map(([id, qty]) => ({ id, qty })),
+          parcelSize: currentBoxNowParcel().code,
           locker: hasBoxNowLocker() ? __boxNowLocker.id : "",
           postal: __boxNowLocker?.postalCode || addr?.postal || ""
         });
+      }
+
+      function fallbackParcelHeightCm(product = {}){
+        const weightGrams = Math.max(0, Number(product.weightGrams || 0));
+        if (!weightGrams) return 2;
+        return Math.max(2, Math.ceil((weightGrams / 1000) * 8));
+      }
+
+      function productParcelDimensions(product = {}){
+        const parcel = product.parcel || {};
+        return {
+          heightCm: Number(parcel.heightCm || 0) || fallbackParcelHeightCm(product),
+          widthCm: Number(parcel.widthCm || 0) || 45,
+          lengthCm: Number(parcel.lengthCm || 0) || 60,
+        };
+      }
+
+      function canPackParcelItems(itemHeights, parcelSizes){
+        const remaining = parcelSizes.map(size => Number(size.heightCm || 0)).sort((a, b) => b - a);
+        const heights = [...itemHeights].sort((a, b) => b - a);
+        function place(index){
+          if (index >= heights.length) return true;
+          const height = heights[index];
+          let previousRemaining = -1;
+          for (let i = 0; i < remaining.length; i += 1) {
+            if (remaining[i] < height || remaining[i] === previousRemaining) continue;
+            remaining[i] -= height;
+            if (place(index + 1)) return true;
+            remaining[i] += height;
+            previousRemaining = remaining[i];
+            if (remaining[i] === height) break;
+          }
+          return false;
+        }
+        return place(0);
+      }
+
+      function parcelCombinationLabel(parcels){
+        const counts = parcels.reduce((acc, parcel) => {
+          acc[parcel.label] = (acc[parcel.label] || 0) + 1;
+          return acc;
+        }, {});
+        return ["Small", "Medium", "Large"]
+          .filter(label => counts[label])
+          .map(label => counts[label] > 1 ? `${counts[label]}x ${label}` : label)
+          .join(" + ");
+      }
+
+      function cheapestParcelCombination(itemHeights){
+        if (!itemHeights.length) return [];
+        const totalHeightCm = itemHeights.reduce((sum, height) => sum + height, 0);
+        const maxSmall = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[0].heightCm) + 1;
+        const maxMedium = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[1].heightCm) + 1;
+        const maxLarge = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[2].heightCm) + 1;
+        let best = null;
+        for (let small = 0; small <= maxSmall; small += 1) {
+          for (let medium = 0; medium <= maxMedium; medium += 1) {
+            for (let large = 0; large <= maxLarge; large += 1) {
+              const parcels = [
+                ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
+                ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
+                ...Array.from({ length: large }, () => BOXNOW_PARCEL_SIZES[2]),
+              ];
+              if (!parcels.length) continue;
+              const capacity = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
+              if (capacity < totalHeightCm) continue;
+              const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
+              const count = parcels.length;
+              if (
+                best &&
+                (amount > best.amount ||
+                  (amount === best.amount && count > best.count) ||
+                  (amount === best.amount && count === best.count && capacity >= best.capacity))
+              ) {
+                continue;
+              }
+              if (!canPackParcelItems(itemHeights, parcels)) continue;
+              best = { parcels, amount, count, capacity };
+            }
+          }
+        }
+        return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
+      }
+
+      function currentBoxNowParcel(){
+        const parcelItems = [];
+        let maxItemWidthCm = 0;
+        let maxItemLengthCm = 0;
+        for (const [id, qty] of cart) {
+          const product = CATALOG[id];
+          if (!product) continue;
+          const dimensions = productParcelDimensions(product);
+          for (let i = 0; i < Math.max(1, Math.round(Number(qty || 0))); i += 1) {
+            parcelItems.push(dimensions);
+          }
+          maxItemWidthCm = Math.max(maxItemWidthCm, dimensions.widthCm);
+          maxItemLengthCm = Math.max(maxItemLengthCm, dimensions.lengthCm);
+        }
+        const itemHeights = parcelItems.map(item => item.heightCm);
+        const requiredHeightCm = itemHeights.reduce((sum, height) => sum + height, 0);
+        const parcels = cheapestParcelCombination(itemHeights);
+        const largestParcel = parcels.reduce((largest, parcel) => (
+          parcel.heightCm > largest.heightCm ? parcel : largest
+        ), parcels[0] || BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]);
+        return {
+          ...largestParcel,
+          amount: parcels.reduce((sum, parcel) => sum + parcel.amount, 0),
+          label: parcelCombinationLabel(parcels) || largestParcel.label,
+          count: parcels.length,
+          parcels,
+          requiredHeightCm: Math.ceil(requiredHeightCm * 10) / 10,
+          maxItemWidthCm: Math.ceil(maxItemWidthCm * 10) / 10,
+          maxItemLengthCm: Math.ceil(maxItemLengthCm * 10) / 10,
+        };
       }
 
       function renderBoxNowFee(){
@@ -1825,7 +2189,8 @@ async function authedFetch(path, options = {}) {
             __boxNowFee = {
               amount: Number(data.amount || 0),
               currency: data.currency || "eur",
-              source: data.source || "boxnow"
+              source: data.source || "boxnow",
+              parcel: data.parcel || null
             };
             return __boxNowFee;
           })
@@ -1846,7 +2211,7 @@ async function authedFetch(path, options = {}) {
       function buildBoxNowWidgetUrl(addr){
         const url = new URL(BOXNOW_WIDGET_BASE);
         url.searchParams.set("language", lang() === "el" ? "el" : "en");
-        url.searchParams.set("size", BOXNOW_PARCEL_SIZE);
+        url.searchParams.set("size", currentBoxNowParcel().code);
         url.searchParams.set("islands", "yes");
         url.searchParams.set("gps", "no");
         if (BOXNOW_PARTNER_ID) url.searchParams.set("partnerId", BOXNOW_PARTNER_ID);
@@ -1921,7 +2286,19 @@ async function authedFetch(path, options = {}) {
         b.disabled = on;
         b.classList.toggle("opacity-60", on);
         b.classList.toggle("pointer-events-none", on);
-        b.textContent = on ? "Processing…" : d.reviewConfirmPay;
+        b.textContent = on ? "Processing…" : reviewConfirmLabel();
+      }
+
+      function reviewConfirmLabel(){
+        const d = i18n[lang()]||i18n.en;
+        return document.getElementById("boxnowCod")?.checked === true
+          ? (d.reviewConfirmOrder || "Confirm order")
+          : d.reviewConfirmPay;
+      }
+
+      function refreshReviewConfirmLabel(){
+        const b = document.getElementById("reviewConfirm");
+        if (b && !b.disabled) b.textContent = reviewConfirmLabel();
       }
 
       function renderReview(addr){
@@ -1955,6 +2332,7 @@ async function authedFetch(path, options = {}) {
         document.getElementById("reviewSubtotal").textContent = nf(grand + deliveryFee);
         renderBoxNowSelection();
         renderBoxNowFee();
+        refreshReviewConfirmLabel();
         refreshBoxNowFee(__currentReviewAddress);
 
         const row = document.getElementById("reviewDiscountRow");
@@ -1978,6 +2356,7 @@ async function authedFetch(path, options = {}) {
           openAddr(true);
         });
         document.getElementById("boxnowChoose").addEventListener("click", openBoxNowWidget);
+        document.getElementById("boxnowCod").addEventListener("change", refreshReviewConfirmLabel);
         document.getElementById("boxnowBackdrop").addEventListener("click", closeBoxNowWidget);
         document.getElementById("boxnowClose").addEventListener("click", closeBoxNowWidget);
         document.getElementById("reviewConfirm").addEventListener("click", async () => {
@@ -1992,7 +2371,12 @@ async function authedFetch(path, options = {}) {
           setReviewLoading(true);
           try {
             await refreshBoxNowFee(__currentReviewAddress);
-            await createCheckout({ ...__currentReviewAddress, deliveryMethod: "boxnow", boxNow: __boxNowLocker });
+            await createCheckout({
+              ...__currentReviewAddress,
+              deliveryMethod: "boxnow",
+              boxNow: __boxNowLocker,
+              cashOnDelivery: document.getElementById("boxnowCod")?.checked === true
+            });
           } finally {
             setReviewLoading(false);
           }
@@ -2027,7 +2411,7 @@ async function authedFetch(path, options = {}) {
         return Math.min(d, sub);
       }
 
-      // FINAL: apply coupon -> store promotionCodeId (returned by backend)
+      // FINAL: apply coupon -> store the normalized code and preview discount
       async function applyCouponFromInput(){
         const codeEl = document.getElementById("couponCode");
         const msgEl  = document.getElementById("couponMsg");
@@ -2046,8 +2430,8 @@ async function authedFetch(path, options = {}) {
           if (resp.ok && data && data.ok){
             __coupon = {
               code: data.code || code,
-              promotionCodeId: data.promotionCodeId || null,
-              discount: Number(data.discount || 0)
+              discount: Number(data.discount || 0),
+              discountCents: Number(data.discountCents || 0)
             };
             msgEl.className = "text-sm text-green-700";
             msgEl.textContent = dict.couponApplied || "Coupon applied";
@@ -2093,7 +2477,7 @@ async function authedFetch(path, options = {}) {
       document.getElementById("couponCode")?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyCouponFromInput(); });
       document.getElementById("removeCoupon")?.addEventListener("click", removeCoupon);
 
-      // FINAL: create checkout -> pass promotionCodeId only (no discounts array on frontend)
+      // FINAL: create checkout -> pass coupon code; backend validates and applies it
       async function createCheckout(shipping) {
         const CLIENT_TO_SERVER_ID = {
           "grubz-100g":"grubz-100g",
@@ -2132,13 +2516,13 @@ async function authedFetch(path, options = {}) {
         const headers = { "Content-Type":"application/json" };
         if (idToken) headers["Authorization"] = "Bearer " + idToken;
 
-        const promotionCodeId = __coupon?.promotionCodeId || null;
+        const couponCode = __coupon?.code || "";
 
         setCheckoutLoading(true);
         try {
           const resp = await authedFetch(
             "/createCheckoutSession",
-            { method: "POST", body: JSON.stringify({ items, promotionCodeId, shipping }) }
+            { method: "POST", body: JSON.stringify({ items, couponCode, shipping }) }
           );
           const data = await resp.json().catch(()=> ({}));
           if (!resp.ok) {

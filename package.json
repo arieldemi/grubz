@@ -1,5 +1,11 @@
 {
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/tailwind.css -o ./public/styles/tailwind.css --minify"
+  },
   "dependencies": {
     "firebase": "^12.2.1"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }

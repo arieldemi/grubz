@@ -34,6 +34,9 @@
   },
   "hosting": {
     "public": "public",
+    "predeploy": [
+      "npm run build:css"
+    ],
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/api/createCheckoutSession", "function": { "functionId": "createCheckoutSession", "region": "europe-west1" } },
@@ -41,11 +44,19 @@
       { "source": "/api/getStock", "function": { "functionId": "getStock", "region": "europe-west1" } },
       { "source": "/api/getBoxNowFee", "function": { "functionId": "getBoxNowFee", "region": "europe-west1" } },
       { "source": "/api/validateCoupon", "function": { "functionId": "validateCoupon", "region": "europe-west1" } },
+      { "source": "/api/chat", "function": { "functionId": "chat", "region": "europe-west1" } },
       { "source": "/api/adminProducts", "function": { "functionId": "adminProducts", "region": "europe-west1" } },
       { "source": "/api/adminProductImage", "function": { "functionId": "adminProductImage", "region": "europe-west1" } },
+      { "source": "/api/adminCoupons", "function": { "functionId": "adminCoupons", "region": "europe-west1" } },
       { "source": "/api/adminOrders", "function": { "functionId": "adminOrders", "region": "europe-west1" } },
+      { "source": "/api/adminCustomers", "function": { "functionId": "adminCustomers", "region": "europe-west1" } },
+      { "source": "/api/adminChat", "function": { "functionId": "adminChat", "region": "europe-west1" } },
+      { "source": "/api/adminSocialAgent", "function": { "functionId": "adminSocialAgent", "region": "europe-west1" } },
       { "source": "/api/adminSettings", "function": { "functionId": "adminSettings", "region": "europe-west1" } },
+      { "source": "/api/adminBoxNow", "function": { "functionId": "adminBoxNow", "region": "europe-west1" } },
+      { "source": "/api/social-agent/webhook", "function": { "functionId": "socialAgentWebhook", "region": "europe-west1" } },
       { "source": "/api/stripe/webhook", "function": { "functionId": "stripeWebhook", "region": "europe-west1" } },
+      { "source": "/api/boxnow/webhook", "function": { "functionId": "boxNowWebhook", "region": "europe-west1" } },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [

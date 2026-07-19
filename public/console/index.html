@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
     <link rel="manifest" href="/images/favicon/site.webmanifest">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles/tailwind.css">
     <style>
       :root{--grubz:#d04211;--ink:#18181b}
       body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -58,24 +58,33 @@
         </form>
       </section>
 
-      <section id="appView" class="hidden">
-        <header class="sticky top-0 z-20 bg-white border-b border-zinc-200">
-          <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <section id="appView" class="hidden min-h-screen lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside class="sticky top-0 z-20 bg-white border-b border-zinc-200 lg:h-screen lg:border-b-0 lg:border-r lg:border-zinc-200">
+          <div class="px-4 py-3 lg:flex lg:h-full lg:flex-col lg:gap-4">
             <div>
-              <h1 class="font-extrabold text-lg">GRUBZ Console</h1>
+              <a href="/" class="inline-flex items-center gap-3" aria-label="GRUBZ home">
+                <img src="/images/grubz-icon-80.png" alt="GRUBZ icon" class="h-12 w-12">
+                <span class="text-2xl font-extrabold tracking-tight" style="color:#71391d">GRUBZ</span>
+              </a>
+              <h1 class="mt-2 font-extrabold text-sm text-zinc-700">Console</h1>
               <p id="adminEmail" class="text-xs text-zinc-500"></p>
             </div>
-            <nav class="ml-auto flex gap-2" aria-label="Console sections">
-              <button id="tabProducts" class="btn-soft" type="button">Products</button>
-              <button id="tabOrders" class="btn-soft" type="button">Orders</button>
-              <button id="tabSettings" class="btn-soft" type="button">Settings</button>
-              <button id="refreshBtn" class="btn-soft" type="button">Refresh</button>
-              <button id="signOutBtn" class="btn-danger" type="button">Sign out</button>
+            <nav class="mt-3 flex gap-2 overflow-x-auto pb-1 lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0" aria-label="Console sections">
+              <button id="tabProducts" class="btn-soft text-left shrink-0" type="button" data-section-tab="products">Products</button>
+              <button id="tabCoupons" class="btn-soft text-left shrink-0" type="button" data-section-tab="coupons">Coupons</button>
+              <button id="tabOrders" class="btn-soft text-left shrink-0" type="button" data-section-tab="orders">Orders</button>
+              <button id="tabCustomers" class="btn-soft text-left shrink-0" type="button" data-section-tab="customers">Customers</button>
+              <button id="tabMessages" class="btn-soft text-left shrink-0" type="button" data-section-tab="messages">Messages</button>
+              <button id="tabSocialAgent" class="btn-soft text-left shrink-0" type="button" data-section-tab="social">Social Agent</button>
+              <button id="tabBoxNow" class="btn-soft text-left shrink-0" type="button" data-section-tab="boxnow">BOX NOW</button>
+              <button id="tabSettings" class="btn-soft text-left shrink-0" type="button" data-section-tab="settings">Settings</button>
+              <button id="refreshBtn" class="btn-soft text-left shrink-0 lg:mt-auto" type="button">Refresh</button>
+              <button id="signOutBtn" class="btn-danger text-left shrink-0" type="button">Sign out</button>
             </nav>
           </div>
-        </header>
+        </aside>
 
-	        <div class="max-w-7xl mx-auto p-4">
+	        <div class="min-w-0 p-4 lg:p-6">
 	          <section id="productsSection" class="space-y-4">
 	            <div class="flex items-center justify-between gap-3">
 	              <h2 class="text-xl font-extrabold">Product Manager</h2>
@@ -96,6 +105,31 @@
                 <tbody id="productsTable" class="divide-y"></tbody>
 	              </table>
 	            </div>
+	          </section>
+
+	          <section id="couponsSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex items-center justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Coupons</h2>
+	                <p class="text-sm text-zinc-500">Discount codes for checkout, cash on delivery, and Stripe card orders.</p>
+	              </div>
+	              <button id="newCouponBtn" class="btn" type="button">New coupon</button>
+	            </div>
+	            <div class="panel overflow-hidden">
+	              <table class="w-full text-sm">
+	                <thead class="bg-zinc-50 text-left">
+	                  <tr>
+	                    <th class="p-3">Code</th>
+	                    <th class="p-3">Discount</th>
+	                    <th class="p-3">Rules</th>
+	                    <th class="p-3">Redemptions</th>
+	                    <th class="p-3">Status</th>
+	                  </tr>
+	                </thead>
+	                <tbody id="couponsTable" class="divide-y"></tbody>
+	              </table>
+	            </div>
+	            <p id="couponAdminMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
 	          <section id="ordersSection" class="hidden lg:col-span-2 space-y-4">
@@ -120,24 +154,426 @@
 	            <p id="orderMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
+	          <section id="customersSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex flex-wrap items-end justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Customers</h2>
+	                <p class="text-sm text-zinc-500">Profiles, order activity, and saved delivery details.</p>
+	              </div>
+	              <div class="flex items-end gap-2">
+	                <div>
+	                  <label class="label" for="customerSearch">Search</label>
+	                  <input id="customerSearch" class="input min-w-[240px]" placeholder="Name, email, phone">
+	                </div>
+	                <button id="refreshCustomersBtn" class="btn-soft" type="button">Refresh customers</button>
+	              </div>
+	            </div>
+	            <div class="panel overflow-hidden">
+	              <table class="w-full text-sm">
+	                <thead class="bg-zinc-50 text-left">
+	                  <tr>
+	                    <th class="p-3">Customer</th>
+	                    <th class="p-3">Orders</th>
+	                    <th class="p-3">Total spent</th>
+	                    <th class="p-3">Last order</th>
+	                    <th class="p-3">Tags</th>
+	                  </tr>
+	                </thead>
+	                <tbody id="customersTable" class="divide-y"></tbody>
+	              </table>
+	            </div>
+	            <p id="customerMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          </section>
+
+	          <section id="messagesSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex flex-wrap items-center justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Messages</h2>
+	                <p class="text-sm text-zinc-500">Read and reply to website chat conversations.</p>
+	              </div>
+	              <button id="refreshMessagesBtn" class="btn-soft" type="button">Refresh messages</button>
+	            </div>
+	            <div class="grid lg:grid-cols-[360px_minmax(0,1fr)] gap-4 items-start">
+	              <div class="panel overflow-hidden">
+	                <div id="chatConversationList" class="divide-y"></div>
+	              </div>
+	              <div class="panel p-4 space-y-3">
+	                <div class="flex flex-wrap items-start justify-between gap-3">
+	                  <div>
+	                    <h3 id="chatAdminTitle" class="font-extrabold text-lg">Select a conversation</h3>
+	                    <p id="chatAdminMeta" class="text-xs text-zinc-500"></p>
+	                  </div>
+	                  <button id="toggleChatStatusBtn" class="btn-soft hidden" type="button">Close conversation</button>
+	                </div>
+	                <div id="chatAdminMessages" class="h-[460px] overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-2 text-sm"></div>
+	                <div class="grid gap-2">
+	                  <label class="label" for="chatAdminReply">Reply</label>
+	                  <textarea id="chatAdminReply" class="input" rows="4" placeholder="Write a reply..."></textarea>
+	                  <button id="sendChatReplyBtn" class="btn justify-self-end" type="button">Send reply</button>
+	                </div>
+	                <p id="chatAdminMsg" class="text-sm" role="status" aria-live="polite"></p>
+	              </div>
+	            </div>
+	          </section>
+
+	          <section id="socialSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex flex-wrap items-center justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Social Agent</h2>
+	                <p class="text-sm text-zinc-500">Scan relevant public conversations and prepare GRUBZ-aware comments for review.</p>
+	              </div>
+	              <div class="flex flex-wrap gap-2">
+	                <button id="refreshSocialAgentBtn" class="btn-soft" type="button">Refresh</button>
+	                <button id="scanSocialAgentBtn" class="btn" type="button">Scan now</button>
+	              </div>
+	            </div>
+	            <div class="grid xl:grid-cols-[420px_minmax(0,1fr)] gap-4 items-start">
+	              <div class="panel p-4 space-y-3">
+	                <div class="flex items-center justify-between gap-3">
+	                  <h3 class="font-extrabold text-lg">Agent settings</h3>
+	                  <label class="flex items-center gap-2 text-sm font-semibold">
+	                    <input id="socialEnabled" type="checkbox" class="h-4 w-4">
+	                    Enabled
+	                  </label>
+	                </div>
+	                <div class="grid sm:grid-cols-2 gap-2">
+	                  <div>
+	                    <label class="label" for="socialMinScore">Minimum score</label>
+	                    <input id="socialMinScore" class="input" type="number" min="1" max="20" step="1">
+	                  </div>
+	                  <div>
+	                    <label class="label" for="socialMaxResults">Max results</label>
+	                    <input id="socialMaxResults" class="input" type="number" min="5" max="50" step="1">
+	                  </div>
+	                </div>
+	                <div>
+	                  <label class="label" for="socialProductLink">Product link</label>
+	                  <input id="socialProductLink" class="input" type="url">
+	                </div>
+	                <div>
+	                  <label class="label" for="socialBrandContext">Brand context</label>
+	                  <textarea id="socialBrandContext" class="input" rows="4"></textarea>
+	                </div>
+	                <div>
+	                  <label class="label" for="socialKeywords">Keywords, one per line</label>
+	                  <textarea id="socialKeywords" class="input font-mono text-xs" rows="7"></textarea>
+	                </div>
+	                <div>
+	                  <label class="label" for="socialNegativeKeywords">Negative keywords, one per line</label>
+	                  <textarea id="socialNegativeKeywords" class="input font-mono text-xs" rows="4"></textarea>
+	                </div>
+	                <div>
+	                  <label class="label" for="socialSources">Scan sources, one per line: Label | https://feed-url</label>
+	                  <textarea id="socialSources" class="input font-mono text-xs" rows="7"></textarea>
+	                </div>
+	                <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600">
+	                  <div class="font-bold text-zinc-900">Webhook intake</div>
+	                  <div class="mt-1 font-mono break-all">POST https://www.grubz.gr/api/social-agent/webhook</div>
+	                  <div class="mt-1">Send <span class="font-mono">x-grubz-social-secret</span> or <span class="font-mono">Authorization: Bearer ...</span>. Payload can contain <span class="font-mono">items</span>, <span class="font-mono">posts</span>, or one post with <span class="font-mono">title</span>, <span class="font-mono">text</span>, <span class="font-mono">url</span>, and <span class="font-mono">groupName</span>.</div>
+	                </div>
+	                <button id="saveSocialAgentBtn" class="btn w-full" type="button">Save Social Agent</button>
+	                <p id="socialMsg" class="text-sm" role="status" aria-live="polite"></p>
+	              </div>
+	              <div class="panel p-4 space-y-3">
+	                <div class="flex flex-wrap items-center justify-between gap-3">
+	                  <h3 class="font-extrabold text-lg">Opportunities</h3>
+	                  <p id="socialScanSummary" class="text-sm text-zinc-500"></p>
+	                </div>
+	                <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-2">
+	                  <div>
+	                    <label class="label" for="facebookManualInput">Facebook group intake</label>
+	                    <textarea id="facebookManualInput" class="input text-sm" rows="5" placeholder="Paste Facebook group posts here. Separate multiple posts with a blank line. Include the post URL when you have it."></textarea>
+	                  </div>
+	                  <button id="importFacebookPostsBtn" class="btn-soft" type="button">Analyze pasted posts</button>
+	                </div>
+	                <div id="socialOpportunities" class="space-y-3"></div>
+	              </div>
+	            </div>
+	          </section>
+
+          <section id="boxNowSection" class="hidden lg:col-span-2 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-extrabold">BOX NOW Integration</h2>
+                <p class="text-sm text-zinc-500">Credentials, manual shipment creation, and staging tests.</p>
+              </div>
+              <button id="refreshBoxNowBtn" class="btn-soft" type="button">Refresh settings</button>
+            </div>
+            <div class="flex flex-wrap gap-2" role="tablist" aria-label="BOX NOW sections">
+              <button id="boxNowTabSettings" class="btn-soft" type="button" data-boxnow-tab="settings">Settings</button>
+              <button id="boxNowTabPacking" class="btn-soft" type="button" data-boxnow-tab="packing">Packing</button>
+              <button id="boxNowTabPlayground" class="btn-soft" type="button" data-boxnow-tab="playground">Playground</button>
+            </div>
+            <div class="space-y-4">
+              <div id="boxNowPanelSettings" class="panel p-4 space-y-4" data-boxnow-panel="settings">
+                <div class="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label class="label" for="boxNowActiveEnvironment">Active environment</label>
+                    <select id="boxNowActiveEnvironment" class="input min-w-[180px]">
+                      <option value="stage">Stage</option>
+                      <option value="production">Production</option>
+                    </select>
+                    <p id="boxNowModeNote" class="mt-1 text-xs text-zinc-500"></p>
+                  </div>
+                  <button id="saveBoxNowSettingsBtn" class="btn" type="button">Save BOX NOW settings</button>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="border border-zinc-200 rounded-md p-3 space-y-3">
+                    <h3 class="font-extrabold">Stage credentials</h3>
+                    <p id="boxNowStageMask" class="text-xs text-zinc-500"></p>
+                    <div>
+                      <label class="label" for="boxNowStageClientId">Client ID</label>
+                      <input id="boxNowStageClientId" class="input" autocomplete="off" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowStageClientSecret">Client secret</label>
+                      <input id="boxNowStageClientSecret" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowStagePartnerId">Partner ID</label>
+                      <input id="boxNowStagePartnerId" class="input" autocomplete="off" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowStageWebhookSecret">Webhook secret</label>
+                      <input id="boxNowStageWebhookSecret" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowStageOriginId">Origin location ID</label>
+                      <input id="boxNowStageOriginId" class="input" autocomplete="off">
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="label" for="boxNowStageOriginName">Origin contact</label>
+                        <input id="boxNowStageOriginName" class="input">
+                      </div>
+                      <div>
+                        <label class="label" for="boxNowStageOriginPhone">Origin phone</label>
+                        <input id="boxNowStageOriginPhone" class="input">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowStageOriginEmail">Origin email</label>
+                      <input id="boxNowStageOriginEmail" class="input" type="email">
+                    </div>
+                  </div>
+
+                  <div class="border border-zinc-200 rounded-md p-3 space-y-3">
+                    <h3 class="font-extrabold">Production credentials</h3>
+                    <p id="boxNowProductionMask" class="text-xs text-zinc-500"></p>
+                    <div>
+                      <label class="label" for="boxNowProductionClientId">Client ID</label>
+                      <input id="boxNowProductionClientId" class="input" autocomplete="off" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowProductionClientSecret">Client secret</label>
+                      <input id="boxNowProductionClientSecret" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowProductionPartnerId">Partner ID</label>
+                      <input id="boxNowProductionPartnerId" class="input" autocomplete="off" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowProductionWebhookSecret">Webhook secret</label>
+                      <input id="boxNowProductionWebhookSecret" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current">
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowProductionOriginId">Origin location ID</label>
+                      <input id="boxNowProductionOriginId" class="input" autocomplete="off">
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="label" for="boxNowProductionOriginName">Origin contact</label>
+                        <input id="boxNowProductionOriginName" class="input">
+                      </div>
+                      <div>
+                        <label class="label" for="boxNowProductionOriginPhone">Origin phone</label>
+                        <input id="boxNowProductionOriginPhone" class="input">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowProductionOriginEmail">Origin email</label>
+                      <input id="boxNowProductionOriginEmail" class="input" type="email">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="boxNowPanelPacking" class="panel p-4 space-y-3 hidden" data-boxnow-panel="packing">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 class="font-extrabold text-lg">Packing calculator</h3>
+                      <p class="text-sm text-zinc-500">Estimate the cheapest BOX NOW compartment combination from packed package dimensions.</p>
+                    </div>
+                    <button id="packingAddRowBtn" class="btn-soft" type="button">Add package</button>
+                  </div>
+                  <div id="packingRows" class="space-y-2"></div>
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <button id="packingResetBtn" class="btn-soft" type="button">Reset</button>
+                    <button id="packingCalculateBtn" class="btn" type="button">Calculate packing</button>
+                  </div>
+                  <div id="packingResult" class="rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700"></div>
+              </div>
+
+              <div id="boxNowPanelPlayground" class="panel p-4 hidden" data-boxnow-panel="playground">
+                <div class="grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] gap-4">
+                  <div class="space-y-3">
+                    <h3 class="font-extrabold text-lg">API Playground</h3>
+                    <div>
+                      <label class="label" for="boxNowTestEnvironment">Test environment</label>
+                      <select id="boxNowTestEnvironment" class="input">
+                        <option value="stage">Stage</option>
+                        <option value="production">Production</option>
+                      </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button class="btn-soft" type="button" data-boxnow-action="testAuth">Test auth</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="listOrigins">List origins</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="listDestinations">List lockers</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="buildOrderDeliveryPayload">Preview order payload</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="checkAddressDelivery">Check address</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="createOrderDelivery">Create order delivery</button>
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowPlaygroundOrderId">Order ID for payload tests</label>
+                      <input id="boxNowPlaygroundOrderId" class="input" placeholder="Order document ID">
+                    </div>
+                    <div class="grid sm:grid-cols-3 gap-2">
+                      <div>
+                        <label class="label" for="boxNowDestinationLatLng">Lat,lng</label>
+                        <input id="boxNowDestinationLatLng" class="input" placeholder="37.98,23.72">
+                      </div>
+                      <div>
+                        <label class="label" for="boxNowDestinationRadius">Radius</label>
+                        <input id="boxNowDestinationRadius" class="input" type="number" placeholder="1000">
+                      </div>
+                      <div>
+                        <label class="label" for="boxNowDestinationSize">Size</label>
+                        <select id="boxNowDestinationSize" class="input">
+                          <option value="">Any</option>
+                          <option value="1">Small</option>
+                          <option value="2">Medium</option>
+                          <option value="3">Large</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="label" for="boxNowParcelId">Parcel ID</label>
+                        <input id="boxNowParcelId" class="input">
+                      </div>
+                      <div>
+                        <label class="label" for="boxNowLabelOrderNumber">Order number</label>
+                        <input id="boxNowLabelOrderNumber" class="input">
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                      <button class="btn-soft" type="button" data-boxnow-action="fetchParcelLabel">Parcel label</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="fetchOrderLabel">Order label</button>
+                      <button class="btn-soft" type="button" data-boxnow-action="cancelParcel">Cancel parcel</button>
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowPlaygroundPayload">Custom request JSON</label>
+                      <textarea id="boxNowPlaygroundPayload" class="input font-mono text-xs" rows="4" placeholder='{"addressLine1":"Iera Odos 116","postalCode":"10447","country":"GR"}'></textarea>
+                    </div>
+                    <div>
+                      <label class="label" for="boxNowWebhookSample">Webhook sample JSON</label>
+                      <textarea id="boxNowWebhookSample" class="input font-mono text-xs" rows="5" placeholder='{"datasignature":"...","data":{"event":"new"}}'></textarea>
+                    </div>
+                    <button class="btn-soft w-full" type="button" data-boxnow-action="verifyWebhookSample">Verify webhook sample</button>
+                  </div>
+                  <div class="space-y-3">
+                    <h3 class="font-extrabold text-lg">Results</h3>
+                    <p id="boxNowMsg" class="text-sm" role="status" aria-live="polite"></p>
+                    <pre id="boxNowResult" class="bg-zinc-950 text-zinc-100 text-xs rounded-md p-3 overflow-auto min-h-[520px] max-h-[720px]"></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <section id="settingsSection" class="hidden lg:col-span-2 space-y-4">
             <div class="flex items-center justify-between gap-3">
               <h2 class="text-xl font-extrabold">Settings</h2>
             </div>
-            <div class="panel p-4 max-w-xl space-y-4">
-              <div>
-                <h3 class="font-extrabold text-lg">Shipping</h3>
-              </div>
-              <label class="inline-flex items-center gap-2 font-semibold">
-                <input id="boxnowOverrideEnabled" type="checkbox" class="h-4 w-4">
-                Override BOX NOW shipping cost
-              </label>
-              <div>
-                <label class="label" for="boxnowOverrideAmount">BOX NOW cost override</label>
-                <div class="flex items-center gap-2">
-                  <input id="boxnowOverrideAmount" class="input" type="number" min="0" step="0.01" inputmode="decimal">
-                  <span class="font-bold text-zinc-600">EUR</span>
+            <div class="flex flex-wrap gap-2" role="tablist" aria-label="Settings sections">
+              <button id="settingsTabStripe" class="btn-soft" type="button" data-settings-tab="stripe">Stripe</button>
+              <button id="settingsTabShipping" class="btn-soft" type="button" data-settings-tab="shipping">Shipping</button>
+              <button id="settingsTabEmails" class="btn-soft" type="button" data-settings-tab="emails">Emails</button>
+            </div>
+            <div class="panel p-4 max-w-2xl space-y-4">
+              <div id="settingsPanelStripe" class="space-y-4" data-settings-panel="stripe">
+                <div>
+                  <h3 class="font-extrabold text-lg">Stripe</h3>
+                  <p id="stripeModeNote" class="text-xs text-zinc-500"></p>
                 </div>
+                <fieldset class="space-y-2">
+                  <legend class="label">Checkout mode</legend>
+                  <label class="flex items-start gap-2 font-semibold">
+                    <input id="stripeModeTest" name="stripeMode" type="radio" value="test" class="mt-1 h-4 w-4">
+                    <span>
+                      Test
+                      <span class="block text-xs font-normal text-zinc-500">Use Stripe test keys and test-mode products/prices.</span>
+                    </span>
+                  </label>
+                  <label class="flex items-start gap-2 font-semibold">
+                    <input id="stripeModeLive" name="stripeMode" type="radio" value="live" class="mt-1 h-4 w-4">
+                    <span>
+                      Production
+                      <span class="block text-xs font-normal text-zinc-500">Use Stripe live keys and live-mode products/prices.</span>
+                    </span>
+                  </label>
+                </fieldset>
+              </div>
+              <div id="settingsPanelShipping" class="space-y-4 hidden" data-settings-panel="shipping">
+                <div>
+                  <h3 class="font-extrabold text-lg">Shipping</h3>
+                </div>
+                <label class="inline-flex items-center gap-2 font-semibold">
+                  <input id="boxnowOverrideEnabled" type="checkbox" class="h-4 w-4">
+                  Override BOX NOW shipping cost
+                </label>
+                <div>
+                  <label class="label" for="boxnowOverrideAmount">BOX NOW cost override</label>
+                  <div class="flex items-center gap-2">
+                    <input id="boxnowOverrideAmount" class="input" type="number" min="0" step="0.01" inputmode="decimal">
+                    <span class="font-bold text-zinc-600">EUR</span>
+                  </div>
+                </div>
+              </div>
+              <div id="settingsPanelEmails" class="space-y-3 hidden" data-settings-panel="emails">
+                <h3 class="font-extrabold text-lg">Order fulfillment emails</h3>
+                <label class="inline-flex items-center gap-2 font-semibold">
+                  <input id="templateEnabled" type="checkbox" class="h-4 w-4" checked>
+                  Enabled
+                </label>
+                <div>
+                  <label class="label" for="templateStatus">Fulfillment</label>
+                  <select id="templateStatus" class="input">
+                    <option value="new">New</option>
+                    <option value="processing">Processing</option>
+                    <option value="packed">Packed</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label" for="templateSubject">Subject</label>
+                  <input id="templateSubject" class="input" placeholder="Your GRUBZ order {orderNumber} is now {fulfillmentStatus}">
+                </div>
+                <div>
+                  <label class="label" for="templateBody">Email body</label>
+                  <textarea id="templateBody" class="input" rows="7" placeholder="Hi {customerName},&#10;&#10;Your GRUBZ order {orderNumber} is now {fulfillmentStatus}.&#10;&#10;{orderDetails}&#10;&#10;GRUBZ"></textarea>
+                </div>
+                <div class="text-xs text-zinc-500">
+                  {orderNumber} {customerName} {customerEmail} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
+                </div>
+                <div class="flex flex-wrap justify-end gap-2">
+                  <button id="clearTemplateBtn" class="btn-soft" type="button">Clear</button>
+                  <button id="addTemplateBtn" class="btn-soft" type="button">Add template</button>
+                </div>
+                <div id="templateList" class="space-y-2"></div>
               </div>
               <p id="settingsMsg" class="text-sm" role="status" aria-live="polite"></p>
               <div class="flex justify-end">
@@ -201,13 +637,28 @@
 	                <label class="label" for="p_amount">Price cents</label>
 	                <input id="p_amount" class="input" type="number" step="1">
 	              </div>
-	              <div>
-	                <label class="label" for="p_weight">Weight grams</label>
-	                <input id="p_weight" class="input" type="number" step="1">
-	              </div>
-	              <div>
-	                <label class="label" for="p_stock">Stock</label>
-	                <input id="p_stock" class="input" type="number" step="1">
+              <div>
+                <label class="label" for="p_weight">Weight grams</label>
+                <input id="p_weight" class="input" type="number" step="1">
+              </div>
+              <div class="sm:col-span-2 border-t border-zinc-200 pt-3">
+                <h3 class="font-extrabold text-sm">Packed dimensions</h3>
+              </div>
+              <div>
+                <label class="label" for="p_parcelHeight">Height cm</label>
+                <input id="p_parcelHeight" class="input" type="number" min="0" step="0.1" placeholder="auto">
+              </div>
+              <div>
+                <label class="label" for="p_parcelWidth">Width cm</label>
+                <input id="p_parcelWidth" class="input" type="number" min="0" step="0.1" placeholder="45">
+              </div>
+              <div>
+                <label class="label" for="p_parcelLength">Length cm</label>
+                <input id="p_parcelLength" class="input" type="number" min="0" step="0.1" placeholder="60">
+              </div>
+              <div>
+                <label class="label" for="p_stock">Stock</label>
+                <input id="p_stock" class="input" type="number" step="1">
 	              </div>
 	              <div>
 	                <label class="label" for="p_currency">Currency</label>
@@ -222,13 +673,27 @@
 	                  <input id="p_active" type="checkbox" class="h-4 w-4"> Active
 	                </label>
 	              </div>
-	              <div>
-	                <label class="label" for="p_stripeProduct">Stripe product ID</label>
-	                <input id="p_stripeProduct" class="input" placeholder="prod_...">
+	              <div class="sm:col-span-2 border-t border-zinc-200 pt-3">
+	                <h3 class="font-extrabold text-sm">Stripe test</h3>
 	              </div>
 	              <div>
-	                <label class="label" for="p_stripePrice">Stripe price ID</label>
-	                <input id="p_stripePrice" class="input" placeholder="price_...">
+	                <label class="label" for="p_stripeTestProduct">Test product ID</label>
+	                <input id="p_stripeTestProduct" class="input" placeholder="prod_...">
+	              </div>
+	              <div>
+	                <label class="label" for="p_stripeTestPrice">Test price ID</label>
+	                <input id="p_stripeTestPrice" class="input" placeholder="price_...">
+	              </div>
+	              <div class="sm:col-span-2 border-t border-zinc-200 pt-3">
+	                <h3 class="font-extrabold text-sm">Stripe production</h3>
+	              </div>
+	              <div>
+	                <label class="label" for="p_stripeLiveProduct">Production product ID</label>
+	                <input id="p_stripeLiveProduct" class="input" placeholder="prod_...">
+	              </div>
+	              <div>
+	                <label class="label" for="p_stripeLivePrice">Production price ID</label>
+	                <input id="p_stripeLivePrice" class="input" placeholder="price_...">
 	              </div>
 	            </div>
 	          </div>
@@ -236,6 +701,82 @@
 	          <div class="flex gap-2 justify-end">
 	            <button id="deleteProductBtn" class="btn-danger" type="button">Delete</button>
 	            <button id="saveProductBtn" class="btn" type="button">Save product</button>
+	          </div>
+	        </section>
+	      </div>
+
+	      <div id="couponModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="couponEditorTitle">
+	        <div class="modal-backdrop" data-close-modal="couponModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <h2 id="couponEditorTitle" class="text-lg font-extrabold">Edit coupon</h2>
+	            <button id="closeCouponModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div>
+	              <label class="label" for="couponCodeEditor">Code</label>
+	              <input id="couponCodeEditor" class="input" placeholder="WELCOME10" autocomplete="off">
+	            </div>
+	            <div class="flex items-end">
+	              <label class="inline-flex items-center gap-2 font-semibold">
+	                <input id="couponActive" type="checkbox" class="h-4 w-4" checked>
+	                Active
+	              </label>
+	            </div>
+	            <div>
+	              <label class="label" for="couponType">Discount type</label>
+	              <select id="couponType" class="input">
+	                <option value="percent">Percent</option>
+	                <option value="fixed">Fixed amount</option>
+	              </select>
+	            </div>
+	            <div>
+	              <label class="label" for="couponPercent">Percent off</label>
+	              <input id="couponPercent" class="input" type="number" min="0" max="100" step="0.01" placeholder="10">
+	            </div>
+	            <div>
+	              <label class="label" for="couponAmountEuro">Fixed amount</label>
+	              <div class="flex items-center gap-2">
+	                <input id="couponAmountEuro" class="input" type="number" min="0" step="0.01" inputmode="decimal" placeholder="5.00">
+	                <span class="font-bold text-zinc-600">EUR</span>
+	              </div>
+	            </div>
+	            <div>
+	              <label class="label" for="couponMinimumEuro">Minimum subtotal</label>
+	              <div class="flex items-center gap-2">
+	                <input id="couponMinimumEuro" class="input" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+	                <span class="font-bold text-zinc-600">EUR</span>
+	              </div>
+	            </div>
+	            <div>
+	              <label class="label" for="couponMaxRedemptions">Max redemptions</label>
+	              <input id="couponMaxRedemptions" class="input" type="number" min="0" step="1" placeholder="0 = unlimited">
+	            </div>
+	            <div>
+	              <label class="label" for="couponMaxPerCustomer">Max per customer</label>
+	              <input id="couponMaxPerCustomer" class="input" type="number" min="0" step="1" placeholder="0 = unlimited">
+	            </div>
+	            <div>
+	              <label class="label" for="couponStartsAt">Starts at</label>
+	              <input id="couponStartsAt" class="input" type="datetime-local">
+	            </div>
+	            <div>
+	              <label class="label" for="couponEndsAt">Ends at</label>
+	              <input id="couponEndsAt" class="input" type="datetime-local">
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="couponProductIds">Allowed product IDs</label>
+	              <input id="couponProductIds" class="input" placeholder="Leave blank for all products, or use comma-separated product IDs">
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="couponDescription">Internal description</label>
+	              <textarea id="couponDescription" class="input" rows="3"></textarea>
+	            </div>
+	          </div>
+	          <p id="couponModalMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          <div class="flex gap-2 justify-end">
+	            <button id="deleteCouponBtn" class="btn-danger" type="button">Delete</button>
+	            <button id="saveCouponBtn" class="btn" type="button">Save coupon</button>
 	          </div>
 	        </section>
 	      </div>
@@ -248,6 +789,16 @@
 	            <button id="closeOrderModal" class="btn-soft" type="button">Close</button>
 	          </div>
 	          <div id="orderDetails" class="text-sm text-zinc-600">Select an order.</div>
+	          <div class="panel p-3 space-y-2">
+	            <div class="flex flex-wrap items-center justify-between gap-2">
+	              <div>
+	                <h4 class="font-extrabold">BOX NOW shipment</h4>
+	                <p id="orderBoxNowShipmentSummary" class="text-xs text-zinc-500"></p>
+	              </div>
+	              <button id="createBoxNowShipmentBtn" class="btn-soft" type="button">Create BOX NOW delivery</button>
+	            </div>
+	            <pre id="orderBoxNowResult" class="hidden bg-zinc-950 text-zinc-100 text-xs rounded-md p-3 overflow-auto max-h-[260px]"></pre>
+	          </div>
 	          <div class="grid sm:grid-cols-2 gap-3">
 	            <div>
 	              <label class="label" for="o_status">Payment/status</label>
@@ -280,37 +831,175 @@
 	          <button id="saveOrderBtn" class="btn w-full" type="button">Save order</button>
 	        </section>
 	      </div>
+
+	      <div id="customerModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+	        <div class="modal-backdrop" data-close-modal="customerModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <h3 id="customerModalTitle" class="font-extrabold text-lg">Customer details</h3>
+	            <button id="closeCustomerModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div id="customerDetails" class="text-sm text-zinc-600">Select a customer.</div>
+	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div>
+	              <label class="label" for="c_tags">Tags</label>
+	              <input id="c_tags" class="input" placeholder="vip, wholesale">
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="c_notes">Notes</label>
+	              <textarea id="c_notes" class="input" rows="4"></textarea>
+	            </div>
+	          </div>
+	          <button id="saveCustomerBtn" class="btn w-full" type="button">Save customer notes</button>
+	        </section>
+	      </div>
     </main>
 
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
     <script>
-      firebase.initializeApp({
-        apiKey: "AIzaSyCD6CZjOOrYn6YD71jGhtPSstuCq0R4PMU",
-        authDomain: "grubz-99b84.firebaseapp.com",
-        projectId: "grubz-99b84",
-        storageBucket: "grubz-99b84.appspot.com",
-        messagingSenderId: "712952743006",
-        appId: "1:712952743006:web:c84d1eef919f5029bba0cf"
-      });
+      if (!firebase.apps.length && window.GRUBZ_FIREBASE_CONFIG) {
+        firebase.initializeApp(window.GRUBZ_FIREBASE_CONFIG);
+      }
 
       const FUNCTION_API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
-      const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
-      const API_BASE = (location.protocol === "file:" || LOCAL_HOSTS.has(location.hostname))
+      const LOCAL_FUNCTION_API_BASE = "http://127.0.0.1:5101/grubz-99b84/europe-west1";
+      const API_BASE = location.protocol === "file:"
         ? FUNCTION_API_BASE
         : "/api";
+      const ADMIN_CHAT_API_BASE = ["localhost", "127.0.0.1"].includes(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
 	      const auth = firebase.auth();
 	      let products = [];
+	      let coupons = [];
 	      let orders = [];
+	      let customers = [];
+	      let chatConversations = [];
+	      let chatMessages = [];
+	      let chatPollTimer = null;
+	      let selectedCoupon = null;
 	      let selectedOrder = null;
+	      let selectedCustomer = null;
+	      let selectedChatConversation = null;
 	      let productApiReady = false;
 	      let currentProductImage = "";
 	      let shippingSettings = { boxnowFeeOverrideEnabled:false, boxnowFeeOverrideCents:0 };
+	      let stripeSettings = { mode:"test" };
+	      let orderEmailSettings = { templates:[] };
+	      let boxNowSettings = { activeEnvironment:"stage", environments:{} };
+	      let socialAgentSettings = { enabled:true, keywords:[], negativeKeywords:[], sources:[] };
+	      let socialOpportunities = [];
+	      let editingTemplateIndex = -1;
+	      const defaultSocialAgentSettings = {
+	        productLink: "https://www.grubz.gr/#products",
+	        brandContext: "GRUBZ is a Greece-based brand selling dried black soldier fly larvae snacks for reptiles, backyard chickens, birds, aquarium fish, and pond fish. The agent should look for helpful, non-pushy opportunities to mention BSFL as a high-protein treat or feeder option, especially when people ask about nutrition, variety, mealworm alternatives, picky eaters, or natural animal snacks. Comments must be transparent, practical, and friendly, with disclosure when linking to GRUBZ.",
+	        keywords: [
+	          "black soldier fly larvae", "black soldier fly larva", "black soldier fly", "bsfl", "calci worms", "phoenix worms",
+	          "dried larvae", "dried insects", "feeder insects", "feeder insect", "insect protein", "high protein treats",
+	          "mealworms alternative", "mealworm alternative", "dried mealworms", "bearded dragon food", "bearded dragon treats",
+	          "bearded dragon diet", "gecko food", "leopard gecko food", "reptile food", "reptile treats", "reptile feeder",
+	          "chicken protein", "chicken treats", "hen treats", "backyard chickens", "poultry treats", "bird treats",
+	          "wild bird food", "parrot treats", "aquarium fish food", "fish treats", "pond fish food", "koi food",
+	          "turtle food", "natural pet treats", "sustainable pet food",
+	        ],
+	        negativeKeywords: [
+	          "human food", "for people", "recipe", "restaurant", "allergy", "pest control", "maggots in house",
+	          "infestation", "fly problem", "compost bin problem", "medical", "disease", "parasite", "gross",
+	          "spam", "giveaway", "job", "hiring",
+	        ],
+	        sources: [
+	          { label:"Reddit reptiles BSFL search", url:"https://www.reddit.com/r/reptiles/search.rss?q=black%20soldier%20fly%20larvae%20OR%20bsfl%20OR%20feeder%20insects&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit bearded dragons food", url:"https://www.reddit.com/r/BeardedDragons/search.rss?q=food%20OR%20treats%20OR%20bsfl%20OR%20mealworms&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit geckos feeders", url:"https://www.reddit.com/r/geckos/search.rss?q=food%20OR%20feeder%20OR%20bsfl%20OR%20mealworms&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit backyard chickens treats", url:"https://www.reddit.com/r/BackYardChickens/search.rss?q=treats%20OR%20protein%20OR%20mealworms&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit chickens protein", url:"https://www.reddit.com/r/chickens/search.rss?q=treats%20OR%20protein%20OR%20mealworms%20OR%20bsfl&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit aquariums food", url:"https://www.reddit.com/r/Aquariums/search.rss?q=fish%20food%20OR%20protein%20OR%20dried%20insects&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit ponds koi food", url:"https://www.reddit.com/r/ponds/search.rss?q=koi%20food%20OR%20fish%20food%20OR%20protein%20OR%20treats&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Reddit parrots treats", url:"https://www.reddit.com/r/parrots/search.rss?q=treats%20OR%20protein%20OR%20dried%20insects&restrict_sr=1&sort=new", enabled:true },
+	          { label:"Google News BSFL pet food", url:"https://news.google.com/rss/search?q=%22black%20soldier%20fly%22%20pet%20food%20OR%20BSFL%20pet%20food&hl=en&gl=US&ceid=US:en", enabled:true },
+	          { label:"Google News insect protein pets", url:"https://news.google.com/rss/search?q=%22insect%20protein%22%20pets%20OR%20reptiles%20OR%20chickens%20OR%20fish&hl=en&gl=US&ceid=US:en", enabled:true },
+	        ],
+	      };
 
       const $ = id => document.getElementById(id);
 	      const money = (cents, currency = "eur") => new Intl.NumberFormat("en-GB", { style:"currency", currency: currency.toUpperCase() }).format((Number(cents)||0)/100);
 	      const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
 	      const orderNumber = o => o?.orderNumber || o?.internalOrderId || o?.id || "";
+	      const statusKey = value => String(value || "").trim().toLowerCase();
+	      const normalizeCouponCode = value => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+	      const customerLabel = c => c?.name || c?.email || c?.uid || "Guest customer";
+	      const customerSearchText = c => [
+	        c?.name,
+	        c?.email,
+	        c?.phone,
+	        c?.uid,
+	        ...(Array.isArray(c?.tags) ? c.tags : []),
+	      ].join(" ").toLowerCase();
+	      const prettyJson = value => JSON.stringify(value, null, 2);
+	      const centsToEuro = cents => ((Number(cents || 0)) / 100).toFixed(2);
+	      function couponTimestampToInput(value){
+	        if (!value) return "";
+	        const ms = value._seconds ? value._seconds * 1000 : value.seconds ? value.seconds * 1000 : 0;
+	        if (!ms) return "";
+	        const date = new Date(ms);
+	        const offsetMs = date.getTimezoneOffset() * 60000;
+	        return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+	      }
+	      const boxNowEnvIds = {
+	        stage: {
+	          clientId: "boxNowStageClientId",
+	          clientSecret: "boxNowStageClientSecret",
+	          partnerId: "boxNowStagePartnerId",
+	          webhookSecret: "boxNowStageWebhookSecret",
+	          originLocationId: "boxNowStageOriginId",
+	          originContactName: "boxNowStageOriginName",
+	          originContactEmail: "boxNowStageOriginEmail",
+	          originContactNumber: "boxNowStageOriginPhone",
+	          mask: "boxNowStageMask",
+	        },
+	        production: {
+	          clientId: "boxNowProductionClientId",
+	          clientSecret: "boxNowProductionClientSecret",
+	          partnerId: "boxNowProductionPartnerId",
+	          webhookSecret: "boxNowProductionWebhookSecret",
+	          originLocationId: "boxNowProductionOriginId",
+	          originContactName: "boxNowProductionOriginName",
+	          originContactEmail: "boxNowProductionOriginEmail",
+	          originContactNumber: "boxNowProductionOriginPhone",
+	          mask: "boxNowProductionMask",
+	        },
+	      };
+	      const boxNowParcelSizes = [
+	        { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60 },
+	        { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
+	        { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
+	      ];
+	      const packingPresets = [
+	        { id: "happy-chicken-1kg-bag", label: "Happy Chicken 1KG ziplock bag", heightCm: 10, widthCm: 27, lengthCm: 28 },
+	        { id: "happy-chicken-2kg-order", label: "Happy Chicken 2KG order", heightCm: 14, widthCm: 24, lengthCm: 41 },
+	        { id: "custom", label: "Custom item", heightCm: 0, widthCm: 0, lengthCm: 0 },
+	      ];
+	      const orderItemsSubtotal = o => (Array.isArray(o?.items) ? o.items : []).reduce((sum, item = {}) => {
+	        const totalAmount = Number(item.totalAmount);
+	        if (Number.isFinite(totalAmount) && totalAmount > 0) return sum + totalAmount;
+	        const unitAmount = Number(item.unitAmount || 0);
+	        const quantity = Math.max(1, Number(item.quantity || 1));
+	        return sum + (unitAmount * quantity);
+	      }, 0);
+	      const orderPricing = o => {
+	        const itemSubtotal = orderItemsSubtotal(o);
+	        const storedSubtotal = Number(o?.amountSubtotal || 0);
+	        const shipping = Number(o?.amountShipping || o?.boxnowFee?.amount || 0);
+	        const storedTotal = Number(o?.amountTotal || 0);
+	        const subtotal = itemSubtotal > 0 ? itemSubtotal : (
+	          storedSubtotal > 0 && !(shipping > 0 && storedSubtotal === storedTotal)
+	            ? storedSubtotal
+	            : Math.max(0, storedTotal - shipping)
+	        );
+	        const total = storedTotal > 0 ? storedTotal : subtotal + shipping;
+	        const discount = Math.max(0, subtotal + shipping - total);
+	        return { subtotal, shipping, discount, total };
+	      };
 	      const imageSrc = src => {
 	        const value = String(src || "").trim();
 	        if (!value) return "";
@@ -327,8 +1016,14 @@
         const s = o?.shipping || {};
         const b = s.boxNow || {};
         const fee = o?.boxnowFee || {};
+        const shipment = o?.boxNowShipment || {};
         return [
+          ["Delivery request", shipment.deliveryRequestId || ""],
+          ["Shipment environment", shipment.environment || ""],
+          ["Shipment status", shipment.lastEvent || shipment.status || ""],
+          ["Parcel IDs", Array.isArray(shipment.parcelIds) ? shipment.parcelIds.join(", ") : ""],
           ["Delivery method", s.deliveryMethod || "boxnow"],
+          ["Cash on delivery", s.cashOnDelivery ? "Yes" : "No"],
           ["Recipient name", s.name || ""],
           ["Recipient phone", s.phone || ""],
           ["Locker ID", b.id || ""],
@@ -339,6 +1034,9 @@
           ["Latitude", b.lat || ""],
           ["Longitude", b.lng || ""],
           ["BOX NOW fee", fee.amount ? money(fee.amount, fee.currency || o?.currency) : ""],
+          ["Parcel size", fee.parcelLabel || fee.parcelSize || ""],
+          ["Parcel count", fee.parcelCount || ""],
+          ["Required height", fee.requiredHeightCm ? `${fee.requiredHeightCm}cm` : ""],
           ["Stripe shipping", o?.amountShipping ? money(o.amountShipping, o?.currency) : ""],
           ["Fee source", fee.source || ""],
           ["Shipment weight", fee.weightGrams ? `${fee.weightGrams}g` : ""],
@@ -371,7 +1069,12 @@
 	        const el = $(id);
 	        el.classList.add("hidden");
 	        el.classList.remove("flex");
-	        if (!$("productModal").classList.contains("flex") && !$("orderModal").classList.contains("flex")) {
+	        if (
+	          !$("productModal").classList.contains("flex") &&
+	          !$("couponModal").classList.contains("flex") &&
+	          !$("orderModal").classList.contains("flex") &&
+	          !$("customerModal").classList.contains("flex")
+	        ) {
 	          document.body.style.overflow = "";
 	        }
 	      }
@@ -418,6 +1121,25 @@
         return data;
       }
 
+      async function chatAdminApi(path, options = {}){
+        if (!auth.currentUser) throw new Error("Please sign in again.");
+        const headers = { "Content-Type":"application/json", ...(options.headers || {}) };
+        headers.Authorization = `Bearer ${await token()}`;
+        let resp;
+        try {
+          resp = await fetch(`${ADMIN_CHAT_API_BASE}${path}`, { ...options, headers, mode:"cors" });
+        } catch (err) {
+          throw new Error("Could not reach the chat API. Restart the local Firebase functions emulator or deploy the chat functions.");
+        }
+        const contentType = resp.headers.get("content-type") || "";
+        if (contentType.includes("text/html")) {
+          throw new Error("Chat API is not available. Restart the local Firebase emulator or deploy the new chat functions.");
+        }
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data.error || `Chat request failed (${resp.status})`);
+        return data;
+      }
+
       function requireAdminUser(user){
         if (!user) return false;
         return user.getIdTokenResult(true).then(result => {
@@ -459,31 +1181,89 @@
 	      $("signOutBtn").addEventListener("click", () => auth.signOut().then(() => showLogin()));
 	      $("refreshBtn").addEventListener("click", refreshConsoleData);
 	      $("refreshOrdersBtn").addEventListener("click", () => loadOrders().catch(() => {}));
+	      $("refreshCustomersBtn").addEventListener("click", () => loadCustomers().catch(() => {}));
+	      $("refreshMessagesBtn").addEventListener("click", () => loadChatConversations(selectedChatConversation?.id || "").catch(() => {}));
+	      $("refreshSocialAgentBtn").addEventListener("click", () => loadSocialAgent().catch(() => {}));
+	      $("refreshBoxNowBtn").addEventListener("click", () => loadSettings().catch(() => {}));
 	      $("closeProductModal").addEventListener("click", () => closeModal("productModal"));
+	      $("closeCouponModal").addEventListener("click", () => closeModal("couponModal"));
 	      $("closeOrderModal").addEventListener("click", () => closeModal("orderModal"));
+	      $("closeCustomerModal").addEventListener("click", () => closeModal("customerModal"));
 	      document.querySelectorAll("[data-close-modal]").forEach(el => {
 	        el.addEventListener("click", () => closeModal(el.dataset.closeModal));
 	      });
 	      document.addEventListener("keydown", e => {
 	        if (e.key !== "Escape") return;
 	        closeModal("productModal");
+	        closeModal("couponModal");
 	        closeModal("orderModal");
+	        closeModal("customerModal");
 	      });
-	      $("tabProducts").addEventListener("click", () => {
-	        $("productsSection").classList.remove("hidden");
-	        $("ordersSection").classList.add("hidden");
-	        $("settingsSection").classList.add("hidden");
+	      const consoleSections = ["products", "coupons", "orders", "customers", "messages", "social", "boxnow", "settings"];
+	      const consoleTabStorageKey = "grubz_console_tab";
+	      function savedConsoleSection(){
+	        const saved = localStorage.getItem(consoleTabStorageKey);
+	        return consoleSections.includes(saved) ? saved : "products";
+	      }
+	      function showSection(section, options = {}){
+	        const active = consoleSections.includes(section) ? section : "products";
+	        $("productsSection").classList.toggle("hidden", active !== "products");
+	        $("couponsSection").classList.toggle("hidden", active !== "coupons");
+	        $("ordersSection").classList.toggle("hidden", active !== "orders");
+	        $("customersSection").classList.toggle("hidden", active !== "customers");
+	        $("messagesSection").classList.toggle("hidden", active !== "messages");
+	        $("socialSection").classList.toggle("hidden", active !== "social");
+	        $("boxNowSection").classList.toggle("hidden", active !== "boxnow");
+	        $("settingsSection").classList.toggle("hidden", active !== "settings");
+	        document.querySelectorAll("[data-section-tab]").forEach(button => {
+	          const isActive = button.dataset.sectionTab === active;
+	          button.classList.toggle("btn", isActive);
+	          button.classList.toggle("btn-soft", !isActive);
+	          button.setAttribute("aria-current", isActive ? "page" : "false");
+	        });
+	        if (options.persist !== false) localStorage.setItem(consoleTabStorageKey, active);
+	        clearInterval(chatPollTimer);
+	        if (active === "messages") {
+	          chatPollTimer = setInterval(() => loadChatConversations(selectedChatConversation?.id || "").catch(() => {}), 15000);
+	        }
+	      }
+	      function showBoxNowTab(tab = "settings"){
+	        const active = ["settings", "packing", "playground"].includes(tab) ? tab : "settings";
+	        document.querySelectorAll("[data-boxnow-panel]").forEach(panel => {
+	          panel.classList.toggle("hidden", panel.dataset.boxnowPanel !== active);
+	        });
+	        document.querySelectorAll("[data-boxnow-tab]").forEach(button => {
+	          const isActive = button.dataset.boxnowTab === active;
+	          button.classList.toggle("btn", isActive);
+	          button.classList.toggle("btn-soft", !isActive);
+	          button.setAttribute("aria-selected", isActive ? "true" : "false");
+	        });
+	      }
+	      document.querySelectorAll("[data-boxnow-tab]").forEach(button => {
+	        button.addEventListener("click", () => showBoxNowTab(button.dataset.boxnowTab));
 	      });
-	      $("tabOrders").addEventListener("click", () => {
-	        $("productsSection").classList.add("hidden");
-	        $("ordersSection").classList.remove("hidden");
-	        $("settingsSection").classList.add("hidden");
+	      showBoxNowTab("settings");
+	      function showSettingsTab(tab = "stripe"){
+	        const active = ["stripe", "shipping", "emails"].includes(tab) ? tab : "stripe";
+	        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
+	          panel.classList.toggle("hidden", panel.dataset.settingsPanel !== active);
+	        });
+	        document.querySelectorAll("[data-settings-tab]").forEach(button => {
+	          const isActive = button.dataset.settingsTab === active;
+	          button.classList.toggle("btn", isActive);
+	          button.classList.toggle("btn-soft", !isActive);
+	          button.setAttribute("aria-selected", isActive ? "true" : "false");
+	        });
+	      }
+	      document.querySelectorAll("[data-settings-tab]").forEach(button => {
+	        button.addEventListener("click", () => showSettingsTab(button.dataset.settingsTab));
 	      });
-	      $("tabSettings").addEventListener("click", () => {
-	        $("productsSection").classList.add("hidden");
-	        $("ordersSection").classList.add("hidden");
-	        $("settingsSection").classList.remove("hidden");
+	      showSettingsTab("stripe");
+	      document.querySelectorAll("[data-section-tab]").forEach(button => {
+	        button.addEventListener("click", () => showSection(button.dataset.sectionTab));
 	      });
+	      showSection(savedConsoleSection(), { persist:false });
+	      $("customerSearch").addEventListener("input", renderCustomers);
 
       async function loadProducts(){
         try {
@@ -506,6 +1286,7 @@
       function renderProducts(){
 	        if (!products.length) {
 	          $("productsTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="6">No products to display.</td></tr>`;
+	          refreshPackingPresetSelects();
 	          return;
 	        }
 	        $("productsTable").innerHTML = products.map(p => `
@@ -519,10 +1300,14 @@
             </td>
             <td class="p-3">${money(p.amount, p.currency)}</td>
             <td class="p-3">${p.stock ?? ""}</td>
-            <td class="p-3 text-xs">${esc(p.stripeProductId || "")}<br>${esc(p.stripePriceId || "")}</td>
+            <td class="p-3 text-xs">
+              <div><strong>Test</strong> ${esc(p.stripe?.test?.priceId || p.stripePriceId || "")}</div>
+              <div><strong>Live</strong> ${esc(p.stripe?.live?.priceId || "")}</div>
+            </td>
             <td class="p-3">${p.active ? "Active" : "Hidden"}</td>
           </tr>
         `).join("");
+        refreshPackingPresetSelects();
       }
 
       $("productsTable").addEventListener("click", e => {
@@ -553,15 +1338,20 @@
         $("p_descEl").value = p.descriptionEl || "";
         $("p_detail").value = p.detail || "";
         $("p_detailEl").value = p.detailEl || "";
-        $("p_amount").value = p.amount ?? 0;
+	        $("p_amount").value = p.amount ?? 0;
 	        $("p_weight").value = p.weightGrams ?? 0;
+	        $("p_parcelHeight").value = p.parcel?.heightCm || "";
+	        $("p_parcelWidth").value = p.parcel?.widthCm || "";
+	        $("p_parcelLength").value = p.parcel?.lengthCm || "";
 	        $("p_stock").value = p.stock ?? "";
 	        $("p_currency").value = p.currency || "eur";
 	        currentProductImage = p.image || "";
 	        $("p_bg").value = p.imageBg || "#f8f1eb";
 	        $("p_active").checked = p.active !== false;
-	        $("p_stripeProduct").value = p.stripeProductId || "";
-	        $("p_stripePrice").value = p.stripePriceId || "";
+	        $("p_stripeTestProduct").value = p.stripe?.test?.productId || p.stripeProductId || "";
+	        $("p_stripeTestPrice").value = p.stripe?.test?.priceId || p.stripePriceId || "";
+	        $("p_stripeLiveProduct").value = p.stripe?.live?.productId || "";
+	        $("p_stripeLivePrice").value = p.stripe?.live?.priceId || "";
 	        $("p_upload").value = "";
 	        renderProductImagePreview();
 	        if (productApiReady) $("productMsg").textContent = "";
@@ -600,13 +1390,28 @@
             detailEl: $("p_detailEl").value.trim(),
             amount: Number($("p_amount").value || 0),
             weightGrams: Number($("p_weight").value || 0),
+            parcel: {
+              heightCm: Number($("p_parcelHeight").value || 0),
+              widthCm: Number($("p_parcelWidth").value || 0),
+              lengthCm: Number($("p_parcelLength").value || 0),
+            },
             stock: $("p_stock").value === "" ? null : Number($("p_stock").value),
             currency: $("p_currency").value.trim() || "eur",
 	            image: currentProductImage,
             imageBg: $("p_bg").value.trim() || "#f8f1eb",
             active: $("p_active").checked,
-            stripeProductId: $("p_stripeProduct").value.trim(),
-            stripePriceId: $("p_stripePrice").value.trim(),
+            stripeProductId: $("p_stripeTestProduct").value.trim(),
+            stripePriceId: $("p_stripeTestPrice").value.trim(),
+            stripe: {
+              test: {
+                productId: $("p_stripeTestProduct").value.trim(),
+                priceId: $("p_stripeTestPrice").value.trim(),
+              },
+              live: {
+                productId: $("p_stripeLiveProduct").value.trim(),
+                priceId: $("p_stripeLivePrice").value.trim(),
+              },
+            },
           };
 	          await api("/adminProducts", { method:"POST", body: JSON.stringify({ product }) });
 	          setMsg("productMsg", "Product saved");
@@ -630,6 +1435,138 @@
         }
       });
 
+      async function loadCoupons(){
+        try {
+          setMsg("couponAdminMsg", "Loading coupons...");
+          const data = await api("/adminCoupons");
+          coupons = data.coupons || [];
+          renderCoupons();
+          setMsg("couponAdminMsg", coupons.length ? `${coupons.length} coupons loaded` : "No coupons found");
+        } catch (err) {
+          coupons = [];
+          renderCoupons();
+          setMsg("couponAdminMsg", err.message || apiUnavailableMessage("Coupons"), false);
+          throw err;
+        }
+      }
+
+      function couponDiscountLabel(coupon){
+        if (coupon.type === "fixed") return money(coupon.amountOffCents, coupon.currency || "eur");
+        return `${Number(coupon.percentOff || 0)}%`;
+      }
+
+      function couponRulesLabel(coupon){
+        const rules = [];
+        if (coupon.minimumSubtotalCents) rules.push(`Min ${money(coupon.minimumSubtotalCents, coupon.currency || "eur")}`);
+        if (Array.isArray(coupon.allowedProductIds) && coupon.allowedProductIds.length) {
+          rules.push(`${coupon.allowedProductIds.length} products`);
+        }
+        if (coupon.startsAt) rules.push(`Starts ${ts(coupon.startsAt)}`);
+        if (coupon.endsAt) rules.push(`Ends ${ts(coupon.endsAt)}`);
+        return rules.join(" | ") || "All products";
+      }
+
+      function renderCoupons(){
+        if (!coupons.length) {
+          $("couponsTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No coupons to display.</td></tr>`;
+          return;
+        }
+        $("couponsTable").innerHTML = coupons.map(coupon => {
+          const redemptions = Number(coupon.redemptionCount || 0);
+          const max = Number(coupon.maxRedemptions || 0);
+          return `
+            <tr class="hover:bg-zinc-50">
+              <td class="p-3">
+                <button class="font-bold text-left hover:underline" data-edit-coupon="${esc(coupon.id)}">${esc(coupon.code)}</button>
+                <div class="text-xs text-zinc-500">${esc(coupon.description || "")}</div>
+              </td>
+              <td class="p-3">${esc(couponDiscountLabel(coupon))}</td>
+              <td class="p-3 text-xs">${esc(couponRulesLabel(coupon))}</td>
+              <td class="p-3">${redemptions}${max ? ` / ${max}` : ""}</td>
+              <td class="p-3">${coupon.active ? "Active" : "Disabled"}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function openCoupon(coupon = {}){
+        selectedCoupon = coupon.id ? coupon : null;
+        $("couponEditorTitle").textContent = coupon.id ? `Edit ${coupon.code}` : "New coupon";
+        $("couponCodeEditor").value = coupon.code || "";
+        $("couponActive").checked = coupon.active !== false;
+        $("couponType").value = coupon.type === "fixed" ? "fixed" : "percent";
+        $("couponPercent").value = coupon.percentOff || "";
+        $("couponAmountEuro").value = coupon.amountOffCents ? centsToEuro(coupon.amountOffCents) : "";
+        $("couponMinimumEuro").value = coupon.minimumSubtotalCents ? centsToEuro(coupon.minimumSubtotalCents) : "";
+        $("couponMaxRedemptions").value = coupon.maxRedemptions || "";
+        $("couponMaxPerCustomer").value = coupon.maxRedemptionsPerCustomer || "";
+        $("couponStartsAt").value = couponTimestampToInput(coupon.startsAt);
+        $("couponEndsAt").value = couponTimestampToInput(coupon.endsAt);
+        $("couponProductIds").value = Array.isArray(coupon.allowedProductIds) ? coupon.allowedProductIds.join(", ") : "";
+        $("couponDescription").value = coupon.description || "";
+        $("couponModalMsg").textContent = "";
+        openModal("couponModal");
+        setTimeout(() => $("couponCodeEditor").focus(), 0);
+      }
+
+      function couponFromEditor(){
+        const code = normalizeCouponCode($("couponCodeEditor").value);
+        const type = $("couponType").value === "fixed" ? "fixed" : "percent";
+        return {
+          id: selectedCoupon?.id || "",
+          code,
+          active: $("couponActive").checked,
+          type,
+          percentOff: type === "percent" ? Number($("couponPercent").value || 0) : 0,
+          amountOffCents: type === "fixed" ? Math.round(Number($("couponAmountEuro").value || 0) * 100) : 0,
+          minimumSubtotalCents: Math.round(Number($("couponMinimumEuro").value || 0) * 100),
+          maxRedemptions: Number($("couponMaxRedemptions").value || 0),
+          maxRedemptionsPerCustomer: Number($("couponMaxPerCustomer").value || 0),
+          startsAt: $("couponStartsAt").value || "",
+          endsAt: $("couponEndsAt").value || "",
+          allowedProductIds: $("couponProductIds").value.split(",").map(id => id.trim()).filter(Boolean),
+          description: $("couponDescription").value.trim(),
+          currency: "eur",
+        };
+      }
+
+      $("newCouponBtn").addEventListener("click", () => openCoupon({ active:true, type:"percent", currency:"eur" }));
+      $("couponsTable").addEventListener("click", e => {
+        const btn = e.target.closest("[data-edit-coupon]");
+        if (!btn) return;
+        openCoupon(coupons.find(coupon => coupon.id === btn.dataset.editCoupon));
+      });
+      $("saveCouponBtn").addEventListener("click", async () => {
+        try {
+          const coupon = couponFromEditor();
+          if (!coupon.code) throw new Error("Enter a coupon code.");
+          setMsg("couponModalMsg", "Saving coupon...");
+          const data = await api("/adminCoupons", {
+            method:"POST",
+            body: JSON.stringify({ id: selectedCoupon?.id || "", coupon }),
+          });
+          setMsg("couponModalMsg", "Coupon saved");
+          selectedCoupon = data.coupon || coupon;
+          await loadCoupons();
+          openCoupon(coupons.find(item => item.id === selectedCoupon.id) || selectedCoupon);
+        } catch (err) {
+          setMsg("couponModalMsg", err.message || "Coupon save failed", false);
+        }
+      });
+      $("deleteCouponBtn").addEventListener("click", async () => {
+        const id = selectedCoupon?.id || "";
+        if (!id || !confirm(`Delete coupon ${selectedCoupon.code}?`)) return;
+        try {
+          setMsg("couponModalMsg", "Deleting coupon...");
+          await api(`/adminCoupons?id=${encodeURIComponent(id)}`, { method:"DELETE" });
+          closeModal("couponModal");
+          setMsg("couponAdminMsg", "Coupon deleted");
+          await loadCoupons();
+        } catch (err) {
+          setMsg("couponModalMsg", err.message || "Coupon delete failed", false);
+        }
+      });
+
       async function loadOrders(){
         try {
           setMsg("orderMsg", "Loading orders...");
@@ -645,8 +1582,392 @@
         }
       }
 
+      async function loadCustomers(){
+        try {
+          setMsg("customerMsg", "Loading customers...");
+          const data = await api("/adminCustomers?limit=250&orderLimit=750");
+          customers = data.customers || [];
+          renderCustomers();
+          setMsg("customerMsg", customers.length ? `${customers.length} customers loaded` : "No customers found");
+        } catch (err) {
+          customers = [];
+          renderCustomers();
+          setMsg("customerMsg", err.message || apiUnavailableMessage("Customers"), false);
+          throw err;
+        }
+      }
+
+	      function chatLabel(conversation = {}){
+	        return conversation.customer?.name || conversation.customer?.email || conversation.customer?.uid || conversation.customer?.guestId || "Guest chat";
+	      }
+
+	      function chatTime(value){
+	        if (!value) return "";
+	        const seconds = value._seconds || value.seconds || 0;
+	        return seconds ? new Date(seconds * 1000).toLocaleString() : "";
+	      }
+
+	      function renderChatConversationList(){
+	        if (!chatConversations.length) {
+	          $("chatConversationList").innerHTML = `<div class="p-3 text-sm text-zinc-500">No chat conversations yet.</div>`;
+	          return;
+	        }
+	        $("chatConversationList").innerHTML = chatConversations.map(conversation => {
+	          const active = selectedChatConversation?.id === conversation.id;
+	          return `
+	            <button class="block w-full p-3 text-left hover:bg-zinc-50 ${active ? "bg-zinc-100" : ""}" type="button" data-chat-conversation="${esc(conversation.id)}">
+	              <div class="flex items-center justify-between gap-3">
+	                <span class="font-bold">${esc(chatLabel(conversation))}</span>
+	                ${conversation.unreadAdmin ? `<span class="rounded-full bg-[var(--grubz)] px-2 py-0.5 text-xs font-bold text-white">${Number(conversation.unreadAdmin)}</span>` : ""}
+	              </div>
+	              <div class="mt-1 truncate text-xs text-zinc-500">${esc(conversation.lastMessageText || "")}</div>
+	              <div class="mt-1 flex items-center justify-between gap-2 text-[11px] text-zinc-400">
+	                <span>${esc(chatTime(conversation.lastMessageAt))}</span>
+	                <span>${esc(conversation.status || "open")}</span>
+	              </div>
+	            </button>
+	          `;
+	        }).join("");
+	      }
+
+	      function renderChatAdminMessages(){
+	        if (!selectedChatConversation) {
+	          $("chatAdminTitle").textContent = "Select a conversation";
+	          $("chatAdminMeta").textContent = "";
+	          $("toggleChatStatusBtn").classList.add("hidden");
+	          $("chatAdminMessages").innerHTML = `<div class="text-zinc-500">Choose a conversation from the list.</div>`;
+	          return;
+	        }
+	        $("chatAdminTitle").textContent = chatLabel(selectedChatConversation);
+	        $("chatAdminMeta").textContent = [
+	          selectedChatConversation.customer?.email || "",
+	          selectedChatConversation.customer?.uid ? `UID: ${selectedChatConversation.customer.uid}` : "",
+	          selectedChatConversation.customer?.guestId && !selectedChatConversation.customer?.uid ? `Guest: ${selectedChatConversation.customer.guestId}` : "",
+	        ].filter(Boolean).join(" | ");
+	        $("toggleChatStatusBtn").classList.remove("hidden");
+	        $("toggleChatStatusBtn").textContent = selectedChatConversation.status === "closed" ? "Reopen conversation" : "Close conversation";
+	        if (!chatMessages.length) {
+	          $("chatAdminMessages").innerHTML = `<div class="text-zinc-500">No messages in this conversation yet.</div>`;
+	          return;
+	        }
+	        $("chatAdminMessages").innerHTML = chatMessages.map(message => {
+	          const admin = message.sender === "admin";
+	          return `
+	            <div class="flex ${admin ? "justify-end" : "justify-start"}">
+	              <div class="max-w-[78%] rounded-md px-3 py-2 ${admin ? "bg-[var(--grubz)] text-white" : "bg-white border border-zinc-200 text-zinc-800"}">
+	                <div class="mb-1 text-[10px] font-bold ${admin ? "text-white/75" : "text-zinc-500"}">${esc(message.senderName || (admin ? "GRUBZ" : chatLabel(selectedChatConversation)))}</div>
+	                <div class="whitespace-pre-wrap">${esc(message.text || "")}</div>
+	                <div class="mt-1 text-[10px] ${admin ? "text-white/75" : "text-zinc-400"}">${esc(chatTime(message.createdAt))}</div>
+	              </div>
+	            </div>
+	          `;
+	        }).join("");
+	        $("chatAdminMessages").scrollTop = $("chatAdminMessages").scrollHeight;
+	      }
+
+	      async function loadChatConversations(conversationId = ""){
+	        try {
+	          setMsg("chatAdminMsg", "Loading messages...");
+	          const qs = conversationId ? `?limit=50&conversationId=${encodeURIComponent(conversationId)}` : "?limit=50";
+	          const data = await chatAdminApi(`/adminChat${qs}`);
+	          chatConversations = data.conversations || [];
+	          if (conversationId) {
+	            selectedChatConversation = chatConversations.find(conversation => conversation.id === conversationId) || selectedChatConversation;
+	            chatMessages = data.messages || [];
+	          } else if (!selectedChatConversation && chatConversations.length) {
+	            selectedChatConversation = chatConversations[0];
+	            await loadChatConversations(selectedChatConversation.id);
+	            return;
+	          }
+	          renderChatConversationList();
+	          renderChatAdminMessages();
+	          setMsg("chatAdminMsg", chatConversations.length ? `${chatConversations.length} conversations loaded` : "No conversations found");
+	        } catch (err) {
+	          chatConversations = [];
+	          chatMessages = [];
+	          renderChatConversationList();
+	          renderChatAdminMessages();
+	          setMsg("chatAdminMsg", err.message || apiUnavailableMessage("Messages"), false);
+	          throw err;
+	        }
+	      }
+
+	      async function sendChatReply(){
+	        if (!selectedChatConversation) return setMsg("chatAdminMsg", "Select a conversation first", false);
+	        const message = $("chatAdminReply").value.trim();
+	        if (!message) return setMsg("chatAdminMsg", "Write a reply first", false);
+	        try {
+	          $("sendChatReplyBtn").disabled = true;
+	          setMsg("chatAdminMsg", "Sending reply...");
+	          const data = await chatAdminApi("/adminChat", {
+	            method: "POST",
+	            body: JSON.stringify({ conversationId: selectedChatConversation.id, message }),
+	          });
+	          $("chatAdminReply").value = "";
+	          selectedChatConversation = data.conversation || selectedChatConversation;
+	          chatMessages = data.messages || chatMessages;
+	          await loadChatConversations(selectedChatConversation.id);
+	          setMsg("chatAdminMsg", "Reply sent");
+	        } catch (err) {
+	          setMsg("chatAdminMsg", err.message || "Reply failed", false);
+	        } finally {
+	          $("sendChatReplyBtn").disabled = false;
+	        }
+	      }
+
+	      async function toggleChatStatus(){
+	        if (!selectedChatConversation) return;
+	        const status = selectedChatConversation.status === "closed" ? "open" : "closed";
+	        try {
+	          setMsg("chatAdminMsg", "Updating conversation...");
+	          const data = await chatAdminApi("/adminChat", {
+	            method: "POST",
+	            body: JSON.stringify({ conversationId: selectedChatConversation.id, status }),
+	          });
+	          selectedChatConversation = data.conversation || selectedChatConversation;
+	          chatMessages = data.messages || chatMessages;
+	          await loadChatConversations(selectedChatConversation.id);
+	          setMsg("chatAdminMsg", status === "closed" ? "Conversation closed" : "Conversation reopened");
+	        } catch (err) {
+	          setMsg("chatAdminMsg", err.message || "Conversation update failed", false);
+	        }
+	      }
+
+	      $("chatConversationList").addEventListener("click", async event => {
+	        const btn = event.target.closest("[data-chat-conversation]");
+	        if (!btn) return;
+	        selectedChatConversation = chatConversations.find(conversation => conversation.id === btn.dataset.chatConversation) || null;
+	        await loadChatConversations(btn.dataset.chatConversation).catch(() => {});
+	      });
+	      $("sendChatReplyBtn").addEventListener("click", sendChatReply);
+	      $("toggleChatStatusBtn").addEventListener("click", toggleChatStatus);
+
+	      function socialLines(value){
+	        return String(value || "").split(/\r?\n|,/).map(line => line.trim()).filter(Boolean);
+	      }
+
+	      function socialSourcesToText(sources = []){
+	        return (Array.isArray(sources) ? sources : []).map(source => {
+	          const enabled = source.enabled === false ? " | off" : "";
+	          return `${source.label || source.id || "Source"} | ${source.url || ""}${enabled}`;
+	        }).join("\n");
+	      }
+
+	      function socialSourcesFromText(value){
+	        return String(value || "").split(/\r?\n/).map((line, index) => {
+	          const cleanLine = line.trim().replace(/^[-*]\s+/, "");
+	          const parts = cleanLine.split("|").map(part => part.trim()).filter(Boolean);
+	          if (!parts.length) return null;
+	          const urlMatch = cleanLine.match(/https:\/\/\S+/i);
+	          const url = parts.find(part => /^https:\/\//i.test(part)) || urlMatch?.[0] || "";
+	          if (!url) return null;
+	          const label = parts[0] === url || /^https:\/\//i.test(parts[0]) ? `Source ${index + 1}` : parts[0].replace(url, "").trim() || `Source ${index + 1}`;
+	          const enabled = !parts.some(part => /^off|disabled|false$/i.test(part));
+	          return {
+	            id: label.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || `source-${index + 1}`,
+	            label,
+	            url,
+	            enabled,
+	          };
+	        }).filter(Boolean);
+	      }
+
+	      function socialSettingsPayload(){
+	        return {
+	          enabled: $("socialEnabled").checked,
+	          minScore: Number($("socialMinScore").value || 4),
+	          maxResultsPerScan: Number($("socialMaxResults").value || 25),
+	          productLink: $("socialProductLink").value.trim(),
+	          brandContext: $("socialBrandContext").value.trim(),
+	          keywords: socialLines($("socialKeywords").value),
+	          negativeKeywords: socialLines($("socialNegativeKeywords").value),
+	          sources: socialSourcesFromText($("socialSources").value),
+	        };
+	      }
+
+	      function renderSocialAgent(){
+	        const settings = socialAgentSettings || {};
+	        $("socialEnabled").checked = settings.enabled !== false;
+	        $("socialMinScore").value = settings.minScore || 4;
+	        $("socialMaxResults").value = settings.maxResultsPerScan || 25;
+	        const keywords = Array.isArray(settings.keywords) && settings.keywords.length ? settings.keywords : defaultSocialAgentSettings.keywords;
+	        const negativeKeywords = Array.isArray(settings.negativeKeywords) && settings.negativeKeywords.length ? settings.negativeKeywords : defaultSocialAgentSettings.negativeKeywords;
+	        const sources = Array.isArray(settings.sources) && settings.sources.length ? settings.sources : defaultSocialAgentSettings.sources;
+	        $("socialProductLink").value = settings.productLink || defaultSocialAgentSettings.productLink;
+	        $("socialBrandContext").value = settings.brandContext || defaultSocialAgentSettings.brandContext;
+	        $("socialKeywords").value = keywords.join("\n");
+	        $("socialNegativeKeywords").value = negativeKeywords.join("\n");
+	        $("socialSources").value = socialSourcesToText(sources);
+	        renderSocialOpportunities();
+	      }
+
+	      function renderSocialOpportunities(){
+	        $("socialScanSummary").textContent = socialOpportunities.length ? `${socialOpportunities.length} opportunities` : "No opportunities yet";
+	        if (!socialOpportunities.length) {
+	          $("socialOpportunities").innerHTML = `<div class="text-sm text-zinc-500 border border-dashed border-zinc-300 rounded-md p-3">Run a scan to find relevant conversations.</div>`;
+	          return;
+	        }
+	        $("socialOpportunities").innerHTML = socialOpportunities.map(item => `
+	          <article class="rounded-md border border-zinc-200 p-3 space-y-3" data-social-id="${esc(item.id)}">
+	            <div class="flex flex-wrap items-start justify-between gap-3">
+	              <div class="min-w-0">
+	                <a class="font-extrabold hover:underline break-words" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.title)}</a>
+	                <div class="mt-1 text-xs text-zinc-500">${esc(item.sourceLabel || item.sourceId)}${item.publishedAt ? ` | ${esc(item.publishedAt)}` : ""}</div>
+	              </div>
+	              <div class="text-right text-xs">
+	                <div class="font-extrabold text-zinc-900">Score ${Number(item.score || 0)}</div>
+	                <div class="mt-1 inline-block rounded border border-zinc-300 px-2 py-1">${esc(item.status || "new")}</div>
+	              </div>
+	            </div>
+	            <p class="text-sm text-zinc-600">${esc(item.summary || "").slice(0, 360)}</p>
+	            <div class="text-xs text-zinc-500">Matched: ${(Array.isArray(item.matchedKeywords) ? item.matchedKeywords : []).map(kw => esc(kw)).join(", ") || "-"}</div>
+	            <textarea class="input text-sm social-draft" rows="6">${esc(item.draftComment || "")}</textarea>
+	            <div>
+	              <label class="label">Notes</label>
+	              <input class="input social-notes" value="${esc(item.notes || "")}">
+	            </div>
+	            <div class="flex flex-wrap gap-2">
+	              <button class="btn-soft" type="button" data-social-copy="${esc(item.id)}">Copy draft</button>
+	              <button class="btn-soft" type="button" data-social-status="approved">Approve</button>
+	              <button class="btn-soft" type="button" data-social-status="posted">Mark posted</button>
+	              <button class="btn-danger" type="button" data-social-status="skipped">Skip</button>
+	            </div>
+	          </article>
+	        `).join("");
+	      }
+
+	      async function loadSocialAgent(){
+	        try {
+	          setMsg("socialMsg", "Loading Social Agent...");
+	          const data = await api("/adminSocialAgent?limit=50");
+	          socialAgentSettings = data.settings || socialAgentSettings;
+	          socialOpportunities = data.opportunities || [];
+	          renderSocialAgent();
+	          setMsg("socialMsg", "Social Agent loaded");
+	        } catch (err) {
+	          socialOpportunities = [];
+	          renderSocialOpportunities();
+	          setMsg("socialMsg", err.message || apiUnavailableMessage("Social Agent"), false);
+	          throw err;
+	        }
+	      }
+
+	      async function saveSocialAgent(){
+	        try {
+	          setMsg("socialMsg", "Saving Social Agent...");
+	          const settings = socialSettingsPayload();
+	          const data = await api("/adminSocialAgent", {
+	            method: "PATCH",
+	            body: JSON.stringify({ settings }),
+	          });
+	          socialAgentSettings = { ...settings, ...(data.settings || {}) };
+	          setMsg("socialMsg", "Social Agent saved");
+	        } catch (err) {
+	          setMsg("socialMsg", err.message || "Social Agent save failed", false);
+	        }
+	      }
+
+	      async function scanSocialAgent(){
+	        try {
+	          setMsg("socialMsg", "Scanning sources...");
+	          const data = await api("/adminSocialAgent", {
+	            method: "POST",
+	            body: JSON.stringify({ action:"scan" }),
+	          });
+	          socialAgentSettings = data.settings || socialAgentSettings;
+	          socialOpportunities = data.opportunities || [];
+	          renderSocialAgent();
+	          const errors = data.scan?.errors || [];
+	          setMsg("socialMsg", errors.length ? `Scan complete with ${errors.length} source error(s)` : "Scan complete", !errors.length);
+	        } catch (err) {
+	          setMsg("socialMsg", err.message || "Social Agent scan failed", false);
+	        }
+	      }
+
+	      function parseFacebookManualInput(value){
+	        return String(value || "").split(/\n\s*\n/g).map((block, index) => {
+	          const text = block.trim();
+	          if (!text) return null;
+	          const url = text.match(/https?:\/\/\S+/i)?.[0] || "";
+	          const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+	          const title = lines.find(line => !/^https?:\/\//i.test(line)) || `Facebook group post ${index + 1}`;
+	          return {
+	            title: title.slice(0, 180),
+	            url,
+	            summary: text.replace(url, "").trim(),
+	            sourceLabel: "Facebook group manual intake",
+	          };
+	        }).filter(Boolean);
+	      }
+
+	      async function importFacebookPosts(){
+	        const items = parseFacebookManualInput($("facebookManualInput").value);
+	        if (!items.length) {
+	          setMsg("socialMsg", "Paste at least one Facebook group post first.", false);
+	          return;
+	        }
+	        try {
+	          setMsg("socialMsg", "Analyzing pasted Facebook posts...");
+	          const data = await api("/adminSocialAgent", {
+	            method: "POST",
+	            body: JSON.stringify({ action:"importManual", items }),
+	          });
+	          socialAgentSettings = data.settings || socialAgentSettings;
+	          socialOpportunities = data.opportunities || [];
+	          renderSocialAgent();
+	          $("facebookManualInput").value = "";
+	          setMsg("socialMsg", `${data.imported?.length || 0} Facebook post(s) analyzed`);
+	        } catch (err) {
+	          setMsg("socialMsg", err.message || "Facebook post analysis failed", false);
+	        }
+	      }
+
+	      async function updateSocialOpportunity(article, status){
+	        const id = article.dataset.socialId;
+	        const notes = article.querySelector(".social-notes")?.value || "";
+	        try {
+	          setMsg("socialMsg", "Updating opportunity...");
+	          await api("/adminSocialAgent", {
+	            method: "POST",
+	            body: JSON.stringify({ action:"updateOpportunity", id, status, notes }),
+	          });
+	          const item = socialOpportunities.find(opportunity => opportunity.id === id);
+	          if (item) {
+	            item.status = status;
+	            item.notes = notes;
+	          }
+	          renderSocialOpportunities();
+	          setMsg("socialMsg", "Opportunity updated");
+	        } catch (err) {
+	          setMsg("socialMsg", err.message || "Opportunity update failed", false);
+	        }
+	      }
+
+	      $("saveSocialAgentBtn").addEventListener("click", saveSocialAgent);
+	      $("scanSocialAgentBtn").addEventListener("click", scanSocialAgent);
+	      $("importFacebookPostsBtn").addEventListener("click", importFacebookPosts);
+	      $("socialOpportunities").addEventListener("click", async event => {
+	        const article = event.target.closest("[data-social-id]");
+	        if (!article) return;
+	        const copyBtn = event.target.closest("[data-social-copy]");
+	        if (copyBtn) {
+	          const text = article.querySelector(".social-draft")?.value || "";
+	          try {
+	            await navigator.clipboard.writeText(text);
+	            setMsg("socialMsg", "Draft copied");
+	          } catch {
+	            setMsg("socialMsg", "Could not copy automatically; select the draft text manually.", false);
+	          }
+	          return;
+	        }
+	        const statusBtn = event.target.closest("[data-social-status]");
+	        if (statusBtn) {
+	          await updateSocialOpportunity(article, statusBtn.dataset.socialStatus);
+	        }
+	      });
+
 	      async function refreshConsoleData(){
-	        const results = await Promise.allSettled([loadProducts(), loadOrders(), loadSettings()]);
+	        const results = await Promise.allSettled([loadProducts(), loadCoupons(), loadOrders(), loadCustomers(), loadChatConversations(), loadSocialAgent(), loadSettings()]);
 	        const failures = results.filter(result => result.status === "rejected");
 	        if (failures.length) {
 	          announce("Some console data could not load.");
@@ -658,6 +1979,9 @@
 	          setMsg("settingsMsg", "Loading settings...");
 	          const data = await api("/adminSettings");
 	          shippingSettings = data.shipping || shippingSettings;
+	          stripeSettings = data.stripe || stripeSettings;
+	          orderEmailSettings = data.orderEmails || orderEmailSettings;
+	          boxNowSettings = data.boxNow || boxNowSettings;
 	          renderSettings();
 	          setMsg("settingsMsg", "Settings loaded");
 	        } catch (err) {
@@ -667,9 +1991,525 @@
 	      }
 
 	      function renderSettings(){
+	        const mode = (stripeSettings.localEnvironmentForced ? stripeSettings.savedMode : stripeSettings.mode) === "live" ? "live" : "test";
+	        $("stripeModeTest").checked = mode === "test";
+	        $("stripeModeLive").checked = mode === "live";
+	        $("stripeModeNote").textContent = stripeSettings.localEnvironmentForced
+	          ? `Localhost detected: using Stripe test mode. Saved console mode is ${stripeSettings.savedMode || "test"}.`
+	          : "";
 	        $("boxnowOverrideEnabled").checked = shippingSettings.boxnowFeeOverrideEnabled === true;
 	        $("boxnowOverrideAmount").value = ((Number(shippingSettings.boxnowFeeOverrideCents || 0)) / 100).toFixed(2);
+	        renderOrderEmailTemplates();
+	        renderBoxNowSettings();
 	      }
+
+	      function renderBoxNowSettings(){
+	        const active = (boxNowSettings.localEnvironmentForced ? boxNowSettings.savedActiveEnvironment : boxNowSettings.activeEnvironment) === "production" ? "production" : "stage";
+	        $("boxNowActiveEnvironment").value = active;
+	        $("boxNowTestEnvironment").value = active;
+	        $("boxNowModeNote").textContent = boxNowSettings.localEnvironmentForced
+	          ? `Localhost detected: using BOX NOW stage. Saved console environment is ${boxNowSettings.savedActiveEnvironment || "stage"}.`
+	          : "";
+	        for (const env of Object.keys(boxNowEnvIds)) {
+	          const ids = boxNowEnvIds[env];
+	          const config = boxNowSettings.environments?.[env] || {};
+	          $(ids.clientId).value = "";
+	          $(ids.clientSecret).value = "";
+	          $(ids.partnerId).value = "";
+	          $(ids.webhookSecret).value = "";
+	          $(ids.originLocationId).value = config.originLocationId || "";
+	          $(ids.originContactName).value = config.originContactName || "GRUBZ";
+	          $(ids.originContactEmail).value = config.originContactEmail || "info@grubz.gr";
+	          $(ids.originContactNumber).value = config.originContactNumber || "";
+	          $(ids.mask).textContent = [
+	            `Client ID: ${config.clientIdSet ? config.clientIdMasked : "not set"}`,
+	            `Secret: ${config.clientSecretSet ? config.clientSecretMasked : "not set"}`,
+	            `Partner: ${config.partnerIdSet ? config.partnerIdMasked : "not set"}`,
+	            `Webhook: ${config.webhookSecretSet ? config.webhookSecretMasked : "not set"}`,
+	          ].join(" | ");
+	        }
+	      }
+
+	      function boxNowSettingsPayload(){
+	        const payload = { activeEnvironment: $("boxNowActiveEnvironment").value };
+	        for (const env of Object.keys(boxNowEnvIds)) {
+	          const ids = boxNowEnvIds[env];
+	          payload[env] = {
+	            originLocationId: $(ids.originLocationId).value.trim(),
+	            originContactName: $(ids.originContactName).value.trim(),
+	            originContactEmail: $(ids.originContactEmail).value.trim(),
+	            originContactNumber: $(ids.originContactNumber).value.trim(),
+	          };
+	          for (const key of ["clientId", "clientSecret", "partnerId", "webhookSecret"]) {
+	            const value = $(ids[key]).value.trim();
+	            if (value) payload[env][key] = value;
+	          }
+	        }
+	        return payload;
+	      }
+
+	      function packingPresetOptions(selected = "custom"){
+	        const productOptions = products.map(product => {
+	          const parcel = product.parcel || {};
+	          const heightCm = Number(parcel.heightCm || 0);
+	          const widthCm = Number(parcel.widthCm || 0);
+	          const lengthCm = Number(parcel.lengthCm || 0);
+	          if (!heightCm && !widthCm && !lengthCm) return "";
+	          const value = `product:${product.id}`;
+	          return `<option value="${esc(value)}" ${selected === value ? "selected" : ""}>Product: ${esc(product.name || product.id)}</option>`;
+	        }).filter(Boolean).join("");
+	        return [
+	          ...packingPresets.map(preset => `<option value="${esc(preset.id)}" ${selected === preset.id ? "selected" : ""}>${esc(preset.label)}</option>`),
+	          productOptions,
+	        ].join("");
+	      }
+
+	      function packingPresetById(id){
+	        if (String(id || "").startsWith("product:")) {
+	          const productId = String(id).slice("product:".length);
+	          const product = products.find(item => item.id === productId) || {};
+	          const parcel = product.parcel || {};
+	          return {
+	            label: product.name || productId,
+	            heightCm: Number(parcel.heightCm || 0),
+	            widthCm: Number(parcel.widthCm || 0),
+	            lengthCm: Number(parcel.lengthCm || 0),
+	          };
+	        }
+	        return packingPresets.find(preset => preset.id === id) || packingPresets[packingPresets.length - 1];
+	      }
+
+	      function refreshPackingPresetSelects(){
+	        document.querySelectorAll(".packing-preset").forEach(select => {
+	          const value = select.value || "custom";
+	          select.innerHTML = packingPresetOptions(value);
+	          select.value = value;
+	        });
+	      }
+
+	      function addPackingRow(row = {}){
+	        const wrap = document.createElement("div");
+	        wrap.className = "grid sm:grid-cols-[minmax(0,1.4fr)_90px_90px_90px_90px_auto] gap-2 items-end";
+	        wrap.innerHTML = `
+	          <div>
+	            <label class="label">Preset or label</label>
+	            <select class="input packing-preset">${packingPresetOptions(row.preset || "custom")}</select>
+	          </div>
+	          <div>
+	            <label class="label">Qty</label>
+	            <input class="input packing-qty" type="number" min="1" step="1" value="${esc(row.qty || 1)}">
+	          </div>
+	          <div>
+	            <label class="label">H cm</label>
+	            <input class="input packing-height" type="number" min="0" step="0.1" value="${esc(row.heightCm || "")}">
+	          </div>
+	          <div>
+	            <label class="label">W cm</label>
+	            <input class="input packing-width" type="number" min="0" step="0.1" value="${esc(row.widthCm || "")}">
+	          </div>
+	          <div>
+	            <label class="label">L cm</label>
+	            <input class="input packing-length" type="number" min="0" step="0.1" value="${esc(row.lengthCm || "")}">
+	          </div>
+	          <button class="btn-soft packing-remove sm:self-end" type="button">Remove</button>
+	        `;
+	        $("packingRows").appendChild(wrap);
+	        const preset = wrap.querySelector(".packing-preset");
+	        preset.addEventListener("change", () => {
+	          const selected = packingPresetById(preset.value);
+	          wrap.querySelector(".packing-height").value = selected.heightCm || "";
+	          wrap.querySelector(".packing-width").value = selected.widthCm || "";
+	          wrap.querySelector(".packing-length").value = selected.lengthCm || "";
+	        });
+	        wrap.querySelector(".packing-remove").addEventListener("click", () => {
+	          wrap.remove();
+	          calculatePacking();
+	        });
+	        return wrap;
+	      }
+
+	      function resetPackingRows(){
+	        $("packingRows").innerHTML = "";
+	        addPackingRow({ preset:"happy-chicken-2kg-order", qty:1, heightCm:14, widthCm:24, lengthCm:41 });
+	        calculatePacking();
+	      }
+
+	      function packingItemsFromRows(){
+	        const items = [];
+	        document.querySelectorAll("#packingRows > div").forEach(row => {
+	          const preset = packingPresetById(row.querySelector(".packing-preset").value);
+	          const qty = Math.max(1, Math.round(Number(row.querySelector(".packing-qty").value || 0)));
+	          const heightCm = Number(row.querySelector(".packing-height").value || 0);
+	          const widthCm = Number(row.querySelector(".packing-width").value || 0);
+	          const lengthCm = Number(row.querySelector(".packing-length").value || 0);
+	          if (!heightCm || !widthCm || !lengthCm) return;
+	          for (let i = 0; i < qty; i += 1) {
+	            items.push({ label: preset.label || "Custom item", heightCm, widthCm, lengthCm });
+	          }
+	        });
+	        return items;
+	      }
+
+	      function packingFootprintFits(item, parcel){
+	        const w = Number(item.widthCm || 0);
+	        const l = Number(item.lengthCm || 0);
+	        return (w <= parcel.widthCm && l <= parcel.lengthCm) || (l <= parcel.widthCm && w <= parcel.lengthCm);
+	      }
+
+	      function packageFitsParcel(item, parcel){
+	        return Number(item.heightCm || 0) <= Number(parcel.heightCm || 0) && packingFootprintFits(item, parcel);
+	      }
+
+	      function canPackItemsInParcels(items, parcels){
+	        const available = parcels.map(parcel => ({ ...parcel, used: false }));
+	        const orderedItems = [...items].sort((a, b) => {
+	          const aVolume = Number(a.heightCm || 0) * Number(a.widthCm || 0) * Number(a.lengthCm || 0);
+	          const bVolume = Number(b.heightCm || 0) * Number(b.widthCm || 0) * Number(b.lengthCm || 0);
+	          return bVolume - aVolume;
+	        });
+	        if (orderedItems.length > available.length) return false;
+	        if (orderedItems.some(item => !available.some(parcel => packageFitsParcel(item, parcel)))) {
+	          return false;
+	        }
+	        function place(index){
+	          if (index >= orderedItems.length) return true;
+	          const item = orderedItems[index];
+	          const seen = new Set();
+	          for (let i = 0; i < available.length; i += 1) {
+	            const parcel = available[i];
+	            if (parcel.used || !packageFitsParcel(item, parcel)) continue;
+	            const key = `${parcel.code}:${parcel.heightCm}:${parcel.widthCm}:${parcel.lengthCm}`;
+	            if (seen.has(key)) continue;
+	            seen.add(key);
+	            parcel.used = true;
+	            if (place(index + 1)) return true;
+	            parcel.used = false;
+	          }
+	          return false;
+	        }
+	        return place(0);
+	      }
+
+	      function packingCombinationLabel(parcels){
+	        const counts = parcels.reduce((acc, parcel) => {
+	          acc[parcel.label] = (acc[parcel.label] || 0) + 1;
+	          return acc;
+	        }, {});
+	        return ["Small", "Medium", "Large"]
+	          .filter(label => counts[label])
+	          .map(label => counts[label] > 1 ? `${counts[label]}x ${label}` : label)
+	          .join(" + ");
+	      }
+
+	      function cheapestPackingCombination(items){
+	        if (!items.length) return null;
+	        const maxParcels = Math.max(1, items.length);
+	        let best = null;
+	        for (let small = 0; small <= maxParcels; small += 1) {
+	          for (let medium = 0; medium <= maxParcels; medium += 1) {
+	            for (let large = 0; large <= maxParcels; large += 1) {
+	              const parcels = [
+	                ...Array.from({ length: small }, () => boxNowParcelSizes[0]),
+	                ...Array.from({ length: medium }, () => boxNowParcelSizes[1]),
+	                ...Array.from({ length: large }, () => boxNowParcelSizes[2]),
+	              ];
+	              if (!parcels.length) continue;
+	              if (parcels.length < items.length) continue;
+	              if (!canPackItemsInParcels(items, parcels)) continue;
+	              const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
+	              const count = parcels.length;
+	              const capacity = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
+	              if (
+	                best &&
+	                (amount > best.amount ||
+	                  (amount === best.amount && count > best.count) ||
+	                  (amount === best.amount && count === best.count && capacity >= best.capacity))
+	              ) {
+	                continue;
+	              }
+	              best = { parcels, amount, count, capacity };
+	            }
+	          }
+	        }
+	        return best;
+	      }
+
+	      function calculatePacking(){
+	        const items = packingItemsFromRows();
+	        const result = $("packingResult");
+	        if (!items.length) {
+	          result.innerHTML = `<div class="text-zinc-500">Enter at least one packed package with dimensions.</div>`;
+	          return;
+	        }
+	        const maxHeight = Math.max(...items.map(item => Number(item.heightCm || 0)));
+	        const best = cheapestPackingCombination(items);
+	        const singleRows = boxNowParcelSizes.map(parcel => {
+	          const fits = items.every(item => packageFitsParcel(item, parcel));
+	          return `<tr>
+	            <td class="py-1 pr-3 font-semibold">${esc(parcel.label)}</td>
+	            <td class="py-1 pr-3">${money(parcel.amount, "eur")}</td>
+	            <td class="py-1 pr-3">${parcel.heightCm} x ${parcel.widthCm} x ${parcel.lengthCm} cm</td>
+	            <td class="py-1 ${fits ? "text-emerald-700" : "text-red-700"}">${fits ? "Fits each" : "No"}</td>
+	          </tr>`;
+	        }).join("");
+	        if (!best) {
+	          result.innerHTML = `
+	            <div class="font-bold text-red-700">No BOX NOW combination fits these dimensions.</div>
+	            <div class="mt-1">Packages: ${items.length}, max package height: ${Math.ceil(maxHeight * 10) / 10} cm.</div>
+	            <table class="mt-3 text-xs"><tbody>${singleRows}</tbody></table>
+	          `;
+	          return;
+	        }
+	        result.innerHTML = `
+	          <div class="font-extrabold text-zinc-900">Recommended: ${esc(packingCombinationLabel(best.parcels))} (${money(best.amount, "eur")})</div>
+	          <div class="mt-1">Packages: ${items.length}, max package height: ${Math.ceil(maxHeight * 10) / 10} cm.</div>
+	          <div class="mt-1 text-xs text-zinc-500">Each row is treated as a packed package. Qty creates multiple identical packages; each package is matched to one BOX NOW compartment and can rotate inside the ${boxNowParcelSizes[0].widthCm} x ${boxNowParcelSizes[0].lengthCm} cm footprint.</div>
+	          <table class="mt-3 text-xs"><tbody>${singleRows}</tbody></table>
+	        `;
+	      }
+
+	      $("packingAddRowBtn").addEventListener("click", () => addPackingRow({ preset:"custom", qty:1 }));
+	      $("packingResetBtn").addEventListener("click", resetPackingRows);
+	      $("packingCalculateBtn").addEventListener("click", calculatePacking);
+	      resetPackingRows();
+
+	      function resetTemplateEditor(){
+	        editingTemplateIndex = -1;
+	        $("templateEnabled").checked = true;
+	        $("templateStatus").value = "new";
+	        $("templateSubject").value = "";
+	        $("templateBody").value = "";
+	        $("addTemplateBtn").textContent = "Add template";
+	      }
+
+	      function renderOrderEmailTemplates(){
+	        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
+	        if (!templates.length) {
+	          $("templateList").innerHTML = `<div class="text-sm text-zinc-500 border border-dashed border-zinc-300 rounded-md p-3">No fulfillment email templates yet.</div>`;
+	          return;
+	        }
+	        $("templateList").innerHTML = templates.map((template, index) => `
+	          <div class="border border-zinc-200 rounded-md p-3 space-y-2">
+	            <div class="flex items-start justify-between gap-3">
+	              <div>
+	                <div class="font-extrabold">${esc(template.fulfillmentStatus || template.status || "")}</div>
+	                <div class="text-sm text-zinc-600">${esc(template.subject || "")}</div>
+	                <div class="text-xs ${template.enabled === false ? "text-red-600" : "text-emerald-700"}">${template.enabled === false ? "Disabled" : "Enabled"}</div>
+	              </div>
+	              <div class="flex gap-2 shrink-0">
+	                <button class="btn-soft" type="button" data-template-test="${index}">Send test</button>
+	                <button class="btn-soft" type="button" data-template-edit="${index}">Edit</button>
+	                <button class="btn-soft" type="button" data-template-delete="${index}">Delete</button>
+	              </div>
+	            </div>
+	          </div>
+	        `).join("");
+	      }
+
+	      function currentTemplateFromEditor(){
+	        const fulfillmentStatus = $("templateStatus").value.trim();
+	        const subject = $("templateSubject").value.trim();
+	        const body = $("templateBody").value.trim();
+	        if (!fulfillmentStatus) throw new Error("Choose the fulfillment status for this email template.");
+	        if (!subject) throw new Error("Enter an email subject.");
+	        if (!body) throw new Error("Enter an email body.");
+	        return {
+	          enabled: $("templateEnabled").checked,
+	          fulfillmentStatus,
+	          status: fulfillmentStatus,
+	          subject,
+	          body,
+	        };
+	      }
+
+	      async function saveOrderEmailTemplates(templates){
+	        const orderEmails = { templates };
+	        const data = await api("/adminSettings", {
+	          method:"PATCH",
+	          body: JSON.stringify({ orderEmails }),
+	        });
+	        orderEmailSettings = data.orderEmails || orderEmails;
+	        return orderEmailSettings;
+	      }
+
+	      function templateIndexForUpsert(templates, template){
+	        const existingIndex = templates.findIndex(item => {
+	            return statusKey(item.fulfillmentStatus || item.status) === statusKey(template.fulfillmentStatus);
+	          });
+	        return editingTemplateIndex >= 0 ? editingTemplateIndex : existingIndex;
+	      }
+
+	      function upsertTemplateInList(template){
+	        const templates = Array.isArray(orderEmailSettings.templates) ? [...orderEmailSettings.templates] : [];
+	        const targetIndex = templateIndexForUpsert(templates, template);
+	        if (targetIndex >= 0) {
+	          templates[targetIndex] = template;
+	        } else {
+	          templates.push(template);
+	        }
+	        orderEmailSettings = { templates };
+	        return templates;
+	      }
+
+	      $("addTemplateBtn").addEventListener("click", async () => {
+	        try {
+	          const template = currentTemplateFromEditor();
+	          const templates = upsertTemplateInList(template);
+	          setMsg("settingsMsg", "Saving template...");
+	          await saveOrderEmailTemplates(templates);
+	          resetTemplateEditor();
+	          renderOrderEmailTemplates();
+	          setMsg("settingsMsg", "Template saved");
+	        } catch (err) {
+	          setMsg("settingsMsg", err.message || "Template update failed", false);
+	        }
+	      });
+
+	      $("clearTemplateBtn").addEventListener("click", () => {
+	        resetTemplateEditor();
+	        setMsg("settingsMsg", "");
+	      });
+
+	      $("templateList").addEventListener("click", async event => {
+	        const testBtn = event.target.closest("[data-template-test]");
+	        const editBtn = event.target.closest("[data-template-edit]");
+	        const deleteBtn = event.target.closest("[data-template-delete]");
+	        const templates = Array.isArray(orderEmailSettings.templates) ? [...orderEmailSettings.templates] : [];
+	        if (testBtn) {
+	          const index = Number(testBtn.dataset.templateTest);
+	          let template = templates[index];
+	          if (!template) return;
+	          if (editingTemplateIndex === index) {
+	            try {
+	              template = currentTemplateFromEditor();
+	              const updatedTemplates = upsertTemplateInList(template);
+	              setMsg("settingsMsg", "Saving template before sending test...");
+	              await saveOrderEmailTemplates(updatedTemplates);
+	            } catch (err) {
+	              setMsg("settingsMsg", err.message || "Template update failed", false);
+	              return;
+	            }
+	          }
+	          await sendTemplateTest(template, testBtn);
+	          renderOrderEmailTemplates();
+	        }
+	        if (editBtn) {
+	          const index = Number(editBtn.dataset.templateEdit);
+	          const template = templates[index];
+	          if (!template) return;
+	          editingTemplateIndex = index;
+	          $("templateEnabled").checked = template.enabled !== false;
+	          $("templateStatus").value = template.fulfillmentStatus || template.status || "new";
+	          $("templateSubject").value = template.subject || "";
+	          $("templateBody").value = template.body || "";
+	          $("addTemplateBtn").textContent = "Update template";
+	        }
+	        if (deleteBtn) {
+	          const index = Number(deleteBtn.dataset.templateDelete);
+	          templates.splice(index, 1);
+	          orderEmailSettings = { templates };
+	          try {
+	            setMsg("settingsMsg", "Removing template...");
+	            await saveOrderEmailTemplates(templates);
+	            resetTemplateEditor();
+	            renderOrderEmailTemplates();
+	            setMsg("settingsMsg", "Template removed");
+	          } catch (err) {
+	            renderOrderEmailTemplates();
+	            setMsg("settingsMsg", err.message || "Template delete failed", false);
+	          }
+	        }
+	      });
+
+	      async function sendTemplateTest(template, button){
+	        try {
+	          button.disabled = true;
+	          button.textContent = "Sending...";
+	          setMsg("settingsMsg", "Sending test email...");
+	          await api("/adminSettings", {
+	            method:"POST",
+	            body: JSON.stringify({
+	              action: "sendOrderStatusTestEmail",
+	              template,
+	            }),
+	          });
+	          setMsg("settingsMsg", "Test email sent to info@grubz.gr");
+	        } catch (err) {
+	          setMsg("settingsMsg", err.message || "Test email failed", false);
+	        } finally {
+	          button.disabled = false;
+	          button.textContent = "Send test";
+	        }
+	      }
+
+	      $("saveBoxNowSettingsBtn").addEventListener("click", async () => {
+	        try {
+	          setMsg("boxNowMsg", "Saving BOX NOW settings...");
+	          const data = await api("/adminSettings", {
+	            method:"PATCH",
+	            body: JSON.stringify({ boxNow: boxNowSettingsPayload() }),
+	          });
+	          boxNowSettings = data.boxNow || boxNowSettings;
+	          renderBoxNowSettings();
+	          setMsg("boxNowMsg", "BOX NOW settings saved");
+	        } catch (err) {
+	          setMsg("boxNowMsg", err.message || "BOX NOW settings save failed", false);
+	        }
+	      });
+
+	      function playgroundPayload(action){
+	        const body = {
+	          action,
+	          environment: $("boxNowTestEnvironment").value,
+	        };
+	        if (action === "listDestinations") {
+	          body.latlng = $("boxNowDestinationLatLng").value.trim();
+	          body.radius = $("boxNowDestinationRadius").value.trim();
+	          body.requiredSize = $("boxNowDestinationSize").value;
+	        }
+	        if (action === "buildOrderDeliveryPayload" || action === "createOrderDelivery") {
+	          body.orderId = $("boxNowPlaygroundOrderId").value.trim();
+	        }
+	        if (action === "checkAddressDelivery") {
+	          body.payload = JSON.parse($("boxNowPlaygroundPayload").value || "{}");
+	        }
+	        if (action === "fetchParcelLabel" || action === "cancelParcel") {
+	          body.parcelId = $("boxNowParcelId").value.trim();
+	        }
+	        if (action === "fetchOrderLabel") {
+	          body.orderNumber = $("boxNowLabelOrderNumber").value.trim();
+	        }
+	        if (action === "verifyWebhookSample") {
+	          body.payload = JSON.parse($("boxNowWebhookSample").value || "{}");
+	        }
+	        return body;
+	      }
+
+	      async function runBoxNowPlayground(action, button){
+	        try {
+	          if (action === "createOrderDelivery" && !confirm("Create a real BOX NOW delivery request for this order in the selected environment?")) return;
+	          button.disabled = true;
+	          setMsg("boxNowMsg", `Running ${action}...`);
+	          $("boxNowResult").textContent = "";
+	          showBoxNowTab("playground");
+	          const result = await api("/adminBoxNow", {
+	            method:"POST",
+	            body: JSON.stringify(playgroundPayload(action)),
+	          });
+	          $("boxNowResult").textContent = prettyJson(result);
+	          setMsg("boxNowMsg", result.ok === false ? "BOX NOW action returned an error" : "BOX NOW action complete", result.ok !== false);
+	        } catch (err) {
+	          showBoxNowTab("playground");
+	          $("boxNowResult").textContent = prettyJson({ error: err.message || "BOX NOW action failed" });
+	          setMsg("boxNowMsg", err.message || "BOX NOW action failed", false);
+	        } finally {
+	          button.disabled = false;
+	        }
+	      }
+
+	      document.querySelectorAll("[data-boxnow-action]").forEach(button => {
+	        button.addEventListener("click", () => runBoxNowPlayground(button.dataset.boxnowAction, button));
+	      });
 
 	      $("saveSettingsBtn").addEventListener("click", async () => {
 	        try {
@@ -679,12 +2519,139 @@
 	            boxnowFeeOverrideEnabled: $("boxnowOverrideEnabled").checked,
 	            boxnowFeeOverrideCents: Math.round(euros * 100),
 	          };
-	          await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ shipping }) });
+	          const stripe = {
+	            mode: $("stripeModeLive").checked ? "live" : "test",
+	          };
+	          const orderEmails = {
+	            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
+	          };
+	          await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ shipping, stripe, orderEmails }) });
 	          shippingSettings = shipping;
+	          stripeSettings = stripe;
+	          orderEmailSettings = orderEmails;
 	          renderSettings();
 	          setMsg("settingsMsg", "Settings saved");
 	        } catch (err) {
 	          setMsg("settingsMsg", err.message || "Settings save failed", false);
+	        }
+	      });
+
+	      function filteredCustomers(){
+	        const query = $("customerSearch").value.trim().toLowerCase();
+	        if (!query) return customers;
+	        return customers.filter(customer => customerSearchText(customer).includes(query));
+	      }
+
+	      function renderCustomers(){
+	        const visibleCustomers = filteredCustomers();
+	        if (!visibleCustomers.length) {
+	          $("customersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No customers to display.</td></tr>`;
+	          return;
+	        }
+	        $("customersTable").innerHTML = visibleCustomers.map(c => `
+	          <tr class="hover:bg-zinc-50">
+	            <td class="p-3">
+	              <button class="font-bold text-left hover:underline" data-customer-key="${esc(c.key)}">${esc(customerLabel(c))}</button>
+	              <div class="text-xs text-zinc-500">${esc(c.email || "")}</div>
+	              <div class="text-xs text-zinc-500">${esc(c.phone || "")}</div>
+	            </td>
+	            <td class="p-3">${Number(c.orderCount || 0)}</td>
+	            <td class="p-3">${money(c.totalSpent, c.currency || "eur")}</td>
+	            <td class="p-3">${esc(ts(c.lastOrderAt))}</td>
+	            <td class="p-3 text-xs">${(Array.isArray(c.tags) ? c.tags : []).map(tag => `<span class="inline-block border border-zinc-300 rounded px-2 py-1 mr-1 mb-1">${esc(tag)}</span>`).join("")}</td>
+	          </tr>
+	        `).join("");
+	      }
+
+	      $("customersTable").addEventListener("click", e => {
+	        const btn = e.target.closest("[data-customer-key]");
+	        if (!btn) return;
+	        selectedCustomer = customers.find(c => c.key === btn.dataset.customerKey);
+	        openCustomer(selectedCustomer);
+	      });
+
+	      function openCustomer(customer){
+	        fillCustomer(customer);
+	        openModal("customerModal");
+	        setTimeout(() => $("c_notes").focus(), 0);
+	      }
+
+	      function shippingSummary(shipping = {}){
+	        const boxNow = shipping?.boxNow || {};
+	        return [
+	          ["Name", shipping?.name || ""],
+	          ["Phone", shipping?.phone || ""],
+	          ["Locker", boxNow.name || boxNow.id || ""],
+	          ["Address", [boxNow.addressLine1, boxNow.addressLine2, boxNow.postalCode].filter(Boolean).join(", ")],
+	        ].filter(([, value]) => value);
+	      }
+
+	      function fillCustomer(customer){
+	        if (!customer) return;
+	        const recentOrders = Array.isArray(customer.recentOrders) ? customer.recentOrders : [];
+	        const shippingRows = shippingSummary(customer.shipping);
+	        $("customerModalTitle").textContent = customerLabel(customer);
+	        $("customerDetails").innerHTML = `
+	          <div class="space-y-3">
+	            <div>
+	              <div><strong>Email:</strong> ${esc(customer.email || "-")}</div>
+	              <div><strong>Phone:</strong> ${esc(customer.phone || "-")}</div>
+	              <div><strong>UID:</strong> ${esc(customer.uid || "-")}</div>
+	              <div><strong>Created:</strong> ${esc(ts(customer.createdAt) || "-")}</div>
+	            </div>
+	            <div>
+	              <strong>Activity:</strong><br>
+	              Orders: ${Number(customer.orderCount || 0)}<br>
+	              Total spent: ${money(customer.totalSpent, customer.currency || "eur")}<br>
+	              Last order: ${esc(ts(customer.lastOrderAt) || "-")}
+	            </div>
+	            <div>
+	              <strong>Saved delivery:</strong><br>
+	              ${shippingRows.length ? shippingRows.map(([label, value]) => `${esc(label)}: ${esc(value)}`).join("<br>") : "-"}
+	            </div>
+	            <div>
+	              <strong>Recent orders:</strong>
+	              <ul class="list-disc ml-5">
+	                ${recentOrders.length ? recentOrders.map(order => `
+	                  <li>
+	                    <button class="font-semibold hover:underline" type="button" data-customer-order-id="${esc(order.id)}">${esc(order.orderNumber || order.id)}</button>
+	                    ${money(order.amountTotal, order.currency || "eur")} - ${esc(order.status || "")} - ${esc(order.fulfillmentStatus || "")}
+	                  </li>
+	                `).join("") : "<li>No recent orders.</li>"}
+	              </ul>
+	            </div>
+	          </div>
+	        `;
+	        $("c_tags").value = (Array.isArray(customer.tags) ? customer.tags : []).join(", ");
+	        $("c_notes").value = customer.notes || "";
+	        $("saveCustomerBtn").disabled = !customer.uid;
+	      }
+
+	      $("customerDetails").addEventListener("click", e => {
+	        const btn = e.target.closest("[data-customer-order-id]");
+	        if (!btn) return;
+	        const order = orders.find(item => item.id === btn.dataset.customerOrderId);
+	        if (!order) return;
+	        closeModal("customerModal");
+	        selectedOrder = order;
+	        openOrder(order);
+	      });
+
+	      $("saveCustomerBtn").addEventListener("click", async () => {
+	        if (!selectedCustomer?.uid) return setMsg("customerMsg", "Only registered customer profiles can be updated.", false);
+	        try {
+	          const tags = $("c_tags").value.split(",").map(tag => tag.trim()).filter(Boolean);
+	          const notes = $("c_notes").value;
+	          await api("/adminCustomers", {
+	            method:"PATCH",
+	            body: JSON.stringify({ uid: selectedCustomer.uid, tags, notes }),
+	          });
+	          setMsg("customerMsg", "Customer saved");
+	          await loadCustomers();
+	          selectedCustomer = customers.find(c => c.uid === selectedCustomer.uid) || selectedCustomer;
+	          fillCustomer(selectedCustomer);
+	        } catch (err) {
+	          setMsg("customerMsg", err.message || "Customer save failed", false);
 	        }
 	      });
 
@@ -722,11 +2689,14 @@
 
 	      function fillOrder(o){
 	        if (!o) return;
+	        const pricing = orderPricing(o);
+	        const discountLine = pricing.discount > 0 ? `<br>Discount: -${money(pricing.discount, o.currency)}` : "";
         $("orderDetails").innerHTML = `
           <div class="space-y-2">
             <div><strong>Order:</strong> ${esc(orderNumber(o))}</div>
             <div><strong>Customer:</strong> ${esc(o.customer?.name || "")} ${esc(o.customer?.phone || "")}<br>${esc(o.customer?.email || "")}</div>
-            <div><strong>Amounts:</strong><br>Subtotal: ${money(o.amountSubtotal, o.currency)}<br>Shipping: ${money(o.amountShipping, o.currency)}<br>Total: ${money(o.amountTotal, o.currency)}</div>
+            <div><strong>Payment:</strong> ${esc(o.paymentMethod || "card")}<br>${esc(o.paymentStatus || "")}</div>
+            <div><strong>Amounts:</strong><br>Subtotal: ${money(pricing.subtotal, o.currency)}<br>Shipping: ${money(pricing.shipping, o.currency)}${discountLine}<br>Total: ${money(pricing.total, o.currency)}</div>
             <div><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
             <div><strong>Items:</strong><ul class="list-disc ml-5">${(o.items || []).map(i => `<li>${esc(i.quantity)} x ${esc(i.name)} - ${money(i.totalAmount, i.currency)}</li>`).join("")}</ul></div>
             <div><strong>Stripe session:</strong> ${esc(o.stripeSessionId || "")}</div>
@@ -738,23 +2708,76 @@
         $("o_tracking").value = o.shipping?.trackingNumber || "";
         $("o_trackingUrl").value = o.shipping?.trackingUrl || "";
         $("o_notes").value = o.notes || "";
+        $("boxNowPlaygroundOrderId").value = o.id || "";
+        $("boxNowLabelOrderNumber").value = orderNumber(o);
+        $("boxNowParcelId").value = Array.isArray(o.boxNowShipment?.parcelIds) && o.boxNowShipment.parcelIds[0]
+          ? o.boxNowShipment.parcelIds[0]
+          : (o.shipping?.trackingNumber || "");
+        const shipment = o.boxNowShipment || {};
+        $("orderBoxNowShipmentSummary").textContent = shipment.deliveryRequestId
+          ? `Created in ${shipment.environment || "BOX NOW"}: ${shipment.deliveryRequestId}`
+          : "No BOX NOW delivery request has been created for this order yet.";
+        $("createBoxNowShipmentBtn").disabled = Boolean(shipment.deliveryRequestId);
+        $("orderBoxNowResult").classList.add("hidden");
+        $("orderBoxNowResult").textContent = "";
       }
+
+      $("createBoxNowShipmentBtn").addEventListener("click", async () => {
+        if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
+        const env = boxNowSettings.activeEnvironment === "production" ? "production" : "stage";
+        if (!confirm(`Create a BOX NOW delivery for ${orderNumber(selectedOrder)} in ${env}?`)) return;
+        try {
+          $("createBoxNowShipmentBtn").disabled = true;
+          setMsg("orderMsg", "Creating BOX NOW delivery...");
+          const result = await api("/adminBoxNow", {
+            method:"POST",
+            body: JSON.stringify({
+              action: "createOrderDelivery",
+              environment: env,
+              orderId: selectedOrder.id,
+            }),
+          });
+          $("orderBoxNowResult").classList.remove("hidden");
+          $("orderBoxNowResult").textContent = prettyJson(result);
+          setMsg("orderMsg", "BOX NOW delivery created");
+          await loadOrders();
+          selectedOrder = orders.find(o => o.id === selectedOrder.id) || selectedOrder;
+          fillOrder(selectedOrder);
+        } catch (err) {
+          $("orderBoxNowResult").classList.remove("hidden");
+          $("orderBoxNowResult").textContent = prettyJson({ error: err.message || "BOX NOW delivery failed" });
+          setMsg("orderMsg", err.message || "BOX NOW delivery failed", false);
+          $("createBoxNowShipmentBtn").disabled = Boolean(selectedOrder?.boxNowShipment?.deliveryRequestId);
+        }
+      });
 
       $("saveOrderBtn").addEventListener("click", async () => {
         if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
         try {
-          await api("/adminOrders", {
+          const nextFulfillmentStatus = $("o_fulfillment").value;
+          const fulfillmentChanged = statusKey(nextFulfillmentStatus) !== statusKey(selectedOrder.fulfillmentStatus || "new");
+          const sendFulfillmentEmail = fulfillmentChanged
+            ? window.confirm("Update Customer?\n\nSend the fulfillment email to the customer and BCC info@grubz.gr?")
+            : false;
+          const result = await api("/adminOrders", {
             method:"PATCH",
             body: JSON.stringify({
               id: selectedOrder.id,
               status: $("o_status").value.trim(),
-              fulfillmentStatus: $("o_fulfillment").value,
+              fulfillmentStatus: nextFulfillmentStatus,
+              sendFulfillmentEmail,
               trackingNumber: $("o_tracking").value.trim(),
               trackingUrl: $("o_trackingUrl").value.trim(),
               notes: $("o_notes").value.trim(),
             }),
           });
-	          setMsg("orderMsg", "Order saved");
+	          const statusEmail = result.statusEmail || {};
+	          const emailNote = statusEmail.failed
+	            ? " Fulfillment email failed."
+	            : statusEmail.skipped
+	              ? ""
+	              : " Fulfillment email sent to the customer with info@grubz.gr in BCC.";
+	          setMsg("orderMsg", `Order saved.${emailNote}`, !statusEmail.failed);
 	          await loadOrders();
 	          selectedOrder = orders.find(o => o.id === selectedOrder.id) || selectedOrder;
 	          fillOrder(selectedOrder);

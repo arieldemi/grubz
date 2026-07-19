@@ -16,7 +16,7 @@
   <meta property="og:type" content="article" />
   <meta property="og:locale" content="en_GB" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles/tailwind.css">
 
   <style>
     :root{ --grubz-1:#d04211; --grubz-2:#e37500; --grubz-3:#daa266; --grubz-4:#71391d; }
@@ -318,8 +318,42 @@
       </div>
       <div>
         <h4 class="font-bold mb-2" data-i18n="footContact">Contact</h4>
-        <p class="text-sm opacity-90"><a href="mailto:info@grubz.gr">info@grubz.gr</a></p>
-        <p class="text-sm opacity-90">Thessaloniki, Greece</p>
+        <div class="space-y-2 text-sm opacity-90">
+          <a class="flex items-center gap-2 hover:underline" href="mailto:info@grubz.gr">
+            <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a2 2 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            <span>info@grubz.gr</span>
+          </a>
+          <a class="flex items-center gap-2 hover:underline" href="https://www.instagram.com/grubz.gr/" target="_blank" rel="noopener noreferrer">
+            <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="20" x="2" y="2" rx="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <path d="M17.5 6.5h.01"></path>
+            </svg>
+            <span>Instagram</span>
+          </a>
+          <a class="flex items-center gap-2 hover:underline" href="https://www.facebook.com/profile.php?id=61592265444268" target="_blank" rel="noopener noreferrer">
+            <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.49-3.91 3.77-3.91 1.09 0 2.23.2 2.23.2v2.47h-1.26c-1.24 0-1.63.78-1.63 1.57v1.88h2.77l-.44 2.91h-2.33V22C18.34 21.24 22 17.08 22 12.06z"></path>
+            </svg>
+            <span>Facebook</span>
+          </a>
+          <a class="flex items-center gap-2 hover:underline" href="https://www.tiktok.com/@grubz.gr" target="_blank" rel="noopener noreferrer">
+            <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16.6 5.82c1.1.8 2.43 1.28 3.87 1.34v3.05a8.35 8.35 0 0 1-3.8-.92v5.8c0 3.77-3.06 6.83-6.83 6.83A6.84 6.84 0 0 1 8.7 8.34c.39-.07.79-.11 1.2-.11.35 0 .69.03 1.02.09v3.14a3.74 3.74 0 1 0 2.73 3.6V2h2.95c.2 1.54 1.05 2.89 2.25 3.82z"></path>
+            </svg>
+            <span>TikTok</span>
+          </a>
+          <p class="flex items-center gap-2">
+            <svg class="h-4 w-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 10c0 4.99-5.55 10.18-7.4 11.78a.92.92 0 0 1-1.2 0C9.55 20.18 4 14.99 4 10a8 8 0 0 1 16 0"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>Thessaloniki, Greece</span>
+          </p>
+        </div>
       </div>
     </div>
     <div class="border-t border-white/10">

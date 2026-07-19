@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
   <link rel="manifest" href="/images/favicon/site.webmanifest">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles/tailwind.css">
   <style>
     :root{
       --grubz-1:#d04211; /* primary */
@@ -26,18 +26,13 @@
   <!-- ADDED: Firebase (compat) for Auth so we can attach the ID token to verifyCheckout -->
   <script src="/__/firebase/12.2.1/firebase-app-compat.js"></script>
   <script src="/__/firebase/12.2.1/firebase-auth-compat.js"></script>
+  <script src="/__/firebase/init.js"></script>
   <script>
     (function initFirebase() {
       if (!window.firebase) return;
-      firebase.initializeApp({
-        apiKey: "AIzaSyCD6CZjOOrYn6YD71jGhtPSstuCq0R4PMU",
-        authDomain: "grubz-99b84.firebaseapp.com",
-        projectId: "grubz-99b84",
-        storageBucket: "grubz-99b84.appspot.com",
-        messagingSenderId: "712952743006",
-        appId: "1:712952743006:web:c84d1eef919f5029bba0cf",
-        measurementId: "G-TWQQC1WD7R"
-      });
+      if (!firebase.apps.length && window.GRUBZ_FIREBASE_CONFIG) {
+        firebase.initializeApp(window.GRUBZ_FIREBASE_CONFIG);
+      }
     })();
   </script>
 </head>
@@ -100,7 +95,9 @@
     const i18n = {
       en: {
         title: "Payment successful",
+        codTitle: "Order confirmed",
         subtitle: "Thanks for your order! We’re getting it ready.",
+        codSubtitle: "Thanks for your order! You selected cash on delivery.",
         orderLabel: "Order ID:",
         sessionLabel: "Reference (Session ID):",
         back: "Back to shop",
@@ -110,7 +107,9 @@
       },
       el: {
         title: "Η πληρωμή ολοκληρώθηκε",
+        codTitle: "Η παραγγελία επιβεβαιώθηκε",
         subtitle: "Ευχαριστούμε για την παραγγελία! Τη προετοιμάζουμε.",
+        codSubtitle: "Ευχαριστούμε για την παραγγελία! Επιλέξατε αντικαταβολή.",
         orderLabel: "Αριθμός παραγγελίας:",
         sessionLabel: "Αναφορά (Session ID):",
         back: "Επιστροφή στο κατάστημα",
@@ -167,6 +166,37 @@
     async function maybeClearCartOnSuccess(){
       // Support both ?sid=... and Stripe's ?session_id=...
       const qs = new URLSearchParams(location.search);
+      const cod = qs.get("cod") === "1";
+      const orderNumber = qs.get("order") || "";
+      if (cod) {
+        const lang = localStorage.getItem("grubz_lang") || "en";
+        const t = i18n[lang] || i18n.en;
+        const title = document.querySelector("[data-i18n='title']");
+        const subtitle = document.querySelector("[data-i18n='subtitle']");
+        const label = document.getElementById("referenceLabel");
+        const sidEl = document.getElementById("sid");
+        if (title) {
+          title.setAttribute("data-i18n", "codTitle");
+          title.textContent = t.codTitle;
+        }
+        if (subtitle) {
+          subtitle.setAttribute("data-i18n", "codSubtitle");
+          subtitle.textContent = t.codSubtitle;
+        }
+        if (label) {
+          label.setAttribute("data-i18n", "orderLabel");
+          label.textContent = t.orderLabel;
+        }
+        if (sidEl) sidEl.textContent = orderNumber || "—";
+        removeCookie("grubz_cart");
+        try {
+          const url = new URL(location.href);
+          url.search = "";
+          history.replaceState({}, "", url.toString());
+        } catch {}
+        return;
+      }
+
       const sid = qs.get("sid") || qs.get("session_id");
       if (!sid) return;
 
