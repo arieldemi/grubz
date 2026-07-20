@@ -165,6 +165,10 @@
 	                  <label class="label" for="customerSearch">Search</label>
 	                  <input id="customerSearch" class="input min-w-[240px]" placeholder="Name, email, phone">
 	                </div>
+	                <button id="selectVisibleCustomersBtn" class="btn-soft" type="button">Select visible</button>
+	                <button id="deselectAllCustomersBtn" class="btn-soft" type="button">Deselect all</button>
+	                <button id="clearSelectedCustomersBtn" class="btn-soft" type="button">Clear</button>
+	                <button id="emailSelectedCustomersBtn" class="btn" type="button">Email selected</button>
 	                <button id="refreshCustomersBtn" class="btn-soft" type="button">Refresh customers</button>
 	              </div>
 	            </div>
@@ -172,6 +176,9 @@
 	              <table class="w-full text-sm">
 	                <thead class="bg-zinc-50 text-left">
 	                  <tr>
+	                    <th class="p-3 w-10">
+	                      <span class="sr-only">Select</span>
+	                    </th>
 	                    <th class="p-3">Customer</th>
 	                    <th class="p-3">Orders</th>
 	                    <th class="p-3">Total spent</th>
@@ -182,6 +189,7 @@
 	                <tbody id="customersTable" class="divide-y"></tbody>
 	              </table>
 	            </div>
+	            <p id="customerSelectionMsg" class="text-xs text-zinc-500" role="status" aria-live="polite"></p>
 	            <p id="customerMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
@@ -407,6 +415,45 @@
                     </div>
                     <button id="packingAddRowBtn" class="btn-soft" type="button">Add package</button>
                   </div>
+                  <div class="grid sm:grid-cols-[minmax(0,1fr)_auto] gap-2 items-end rounded-md border border-zinc-200 bg-zinc-50 p-3">
+                    <div>
+                      <label class="label" for="packingKg">Order kg</label>
+                      <input id="packingKg" class="input" type="number" min="1" step="1" placeholder="e.g. 9">
+                    </div>
+                    <button id="packingKgBtn" class="btn-soft" type="button">Tell me how to pack</button>
+                  </div>
+                  <div class="rounded-md border border-zinc-200 overflow-hidden">
+                    <table class="w-full text-sm">
+                      <thead class="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
+                        <tr>
+                          <th class="p-2">Reference</th>
+                          <th class="p-2">Height</th>
+                          <th class="p-2">Width</th>
+                          <th class="p-2">Length</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y">
+                        <tr>
+                          <td class="p-2 font-semibold">3x 1KG zip-lock bags</td>
+                          <td class="p-2">11cm</td>
+                          <td class="p-2">24cm</td>
+                          <td class="p-2">58cm</td>
+                        </tr>
+                        <tr>
+                          <td class="p-2 font-semibold">2KG order</td>
+                          <td class="p-2">14cm</td>
+                          <td class="p-2">24cm</td>
+                          <td class="p-2">41cm</td>
+                        </tr>
+                        <tr>
+                          <td class="p-2 font-semibold">3x flattened 1KG bags</td>
+                          <td class="p-2">16cm</td>
+                          <td class="p-2">30cm</td>
+                          <td class="p-2">28cm</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                   <div id="packingRows" class="space-y-2"></div>
                   <div class="flex flex-wrap justify-end gap-2">
                     <button id="packingResetBtn" class="btn-soft" type="button">Reset</button>
@@ -542,13 +589,13 @@
                 </div>
               </div>
               <div id="settingsPanelEmails" class="space-y-3 hidden" data-settings-panel="emails">
-                <h3 class="font-extrabold text-lg">Order fulfillment emails</h3>
+                <h3 class="font-extrabold text-lg">Email templates</h3>
                 <label class="inline-flex items-center gap-2 font-semibold">
                   <input id="templateEnabled" type="checkbox" class="h-4 w-4" checked>
                   Enabled
                 </label>
                 <div>
-                  <label class="label" for="templateStatus">Fulfillment</label>
+                  <label class="label" for="templateStatus">Template type</label>
                   <select id="templateStatus" class="input">
                     <option value="new">New</option>
                     <option value="processing">Processing</option>
@@ -556,6 +603,14 @@
                     <option value="shipped">Shipped</option>
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
+                    <option value="abandoned_signup">Signed up, no order</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label" for="templateLanguage">Language</label>
+                  <select id="templateLanguage" class="input">
+                    <option value="en">English</option>
+                    <option value="el">Greek</option>
                   </select>
                 </div>
                 <div>
@@ -567,7 +622,7 @@
                   <textarea id="templateBody" class="input" rows="7" placeholder="Hi {customerName},&#10;&#10;Your GRUBZ order {orderNumber} is now {fulfillmentStatus}.&#10;&#10;{orderDetails}&#10;&#10;GRUBZ"></textarea>
                 </div>
                 <div class="text-xs text-zinc-500">
-                  {orderNumber} {customerName} {customerEmail} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
+                  {orderNumber} {customerName} {customerEmail} {coupon} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
                 </div>
                 <div class="flex flex-wrap justify-end gap-2">
                   <button id="clearTemplateBtn" class="btn-soft" type="button">Clear</button>
@@ -853,6 +908,51 @@
 	          <button id="saveCustomerBtn" class="btn w-full" type="button">Save customer notes</button>
 	        </section>
 	      </div>
+
+	      <div id="bulkEmailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="bulkEmailModalTitle">
+	        <div class="modal-backdrop" data-close-modal="bulkEmailModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <div>
+	              <h3 id="bulkEmailModalTitle" class="font-extrabold text-lg">Email customers</h3>
+	              <p id="bulkEmailRecipientSummary" class="text-sm text-zinc-500"></p>
+	            </div>
+	            <button id="closeBulkEmailModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div>
+	            <label class="label" for="bulkEmailTemplate">Email template</label>
+	            <select id="bulkEmailTemplate" class="input">
+	              <option value="">Custom message</option>
+	            </select>
+	          </div>
+	          <div>
+	            <label class="label" for="bulkEmailLanguage">Language</label>
+	            <select id="bulkEmailLanguage" class="input">
+	              <option value="en">English</option>
+	              <option value="el">Greek</option>
+	            </select>
+	          </div>
+	          <div>
+	            <label class="label" for="bulkEmailCoupon">Coupon</label>
+	            <select id="bulkEmailCoupon" class="input">
+	              <option value="">No coupon</option>
+	            </select>
+	          </div>
+	          <div>
+	            <label class="label" for="bulkEmailSubject">Subject</label>
+	            <input id="bulkEmailSubject" class="input" maxlength="180" placeholder="News from GRUBZ">
+	          </div>
+	          <div>
+	            <label class="label" for="bulkEmailBody">Message</label>
+	            <textarea id="bulkEmailBody" class="input" rows="10" maxlength="12000" placeholder="Hi {customerName},"></textarea>
+	          </div>
+	          <p class="text-xs text-zinc-500">Available fields: {customerName} {customerEmail} {customerPhone} {coupon}</p>
+	          <p id="bulkEmailMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          <div class="flex justify-end gap-2">
+	            <button id="sendBulkEmailBtn" class="btn" type="button">Send email</button>
+	          </div>
+	        </section>
+	      </div>
     </main>
 
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
@@ -864,11 +964,11 @@
       }
 
       const FUNCTION_API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
-      const LOCAL_FUNCTION_API_BASE = "http://127.0.0.1:5101/grubz-99b84/europe-west1";
-      const API_BASE = location.protocol === "file:"
-        ? FUNCTION_API_BASE
+      const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+      const API_BASE = (location.protocol === "file:" || LOCAL_HOSTS.has(location.hostname))
+        ? (location.port === "5100" ? "/api" : FUNCTION_API_BASE)
         : "/api";
-      const ADMIN_CHAT_API_BASE = ["localhost", "127.0.0.1"].includes(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
+      const ADMIN_CHAT_API_BASE = API_BASE;
 	      const auth = firebase.auth();
 	      let products = [];
 	      let coupons = [];
@@ -880,6 +980,7 @@
 	      let selectedCoupon = null;
 	      let selectedOrder = null;
 	      let selectedCustomer = null;
+	      let selectedCustomerKeys = new Set();
 	      let selectedChatConversation = null;
 	      let productApiReady = false;
 	      let currentProductImage = "";
@@ -975,9 +1076,15 @@
 	        { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
 	      ];
 	      const packingPresets = [
-	        { id: "happy-chicken-1kg-bag", label: "Happy Chicken 1KG ziplock bag", heightCm: 10, widthCm: 27, lengthCm: 28 },
-	        { id: "happy-chicken-2kg-order", label: "Happy Chicken 2KG order", heightCm: 14, widthCm: 24, lengthCm: 41 },
+	        { id: "happy-chicken-1kg", label: "Happy Chicken 1KG", heightCm: 3.67, widthCm: 24, lengthCm: 58 },
+	        { id: "happy-chicken-2kg", label: "Happy Chicken 2KG", heightCm: 14, widthCm: 24, lengthCm: 41 },
+	        { id: "happy-chicken-3kg-flat", label: "3x 1KG flattened bags", heightCm: 16, widthCm: 30, lengthCm: 28 },
 	        { id: "custom", label: "Custom item", heightCm: 0, widthCm: 0, lengthCm: 0 },
+	      ];
+	      const packingKgPresets = [
+	        { kg: 3, preset: "happy-chicken-3kg-flat" },
+	        { kg: 2, preset: "happy-chicken-2kg" },
+	        { kg: 1, preset: "happy-chicken-1kg" },
 	      ];
 	      const orderItemsSubtotal = o => (Array.isArray(o?.items) ? o.items : []).reduce((sum, item = {}) => {
 	        const totalAmount = Number(item.totalAmount);
@@ -1073,7 +1180,8 @@
 	          !$("productModal").classList.contains("flex") &&
 	          !$("couponModal").classList.contains("flex") &&
 	          !$("orderModal").classList.contains("flex") &&
-	          !$("customerModal").classList.contains("flex")
+	          !$("customerModal").classList.contains("flex") &&
+	          !$("bulkEmailModal").classList.contains("flex")
 	        ) {
 	          document.body.style.overflow = "";
 	        }
@@ -1189,6 +1297,7 @@
 	      $("closeCouponModal").addEventListener("click", () => closeModal("couponModal"));
 	      $("closeOrderModal").addEventListener("click", () => closeModal("orderModal"));
 	      $("closeCustomerModal").addEventListener("click", () => closeModal("customerModal"));
+	      $("closeBulkEmailModal").addEventListener("click", () => closeModal("bulkEmailModal"));
 	      document.querySelectorAll("[data-close-modal]").forEach(el => {
 	        el.addEventListener("click", () => closeModal(el.dataset.closeModal));
 	      });
@@ -1198,6 +1307,7 @@
 	        closeModal("couponModal");
 	        closeModal("orderModal");
 	        closeModal("customerModal");
+	        closeModal("bulkEmailModal");
 	      });
 	      const consoleSections = ["products", "coupons", "orders", "customers", "messages", "social", "boxnow", "settings"];
 	      const consoleTabStorageKey = "grubz_console_tab";
@@ -1264,6 +1374,22 @@
 	      });
 	      showSection(savedConsoleSection(), { persist:false });
 	      $("customerSearch").addEventListener("input", renderCustomers);
+	      $("selectVisibleCustomersBtn").addEventListener("click", () => {
+	        filteredCustomers().filter(c => c.email).forEach(c => selectedCustomerKeys.add(c.key));
+	        renderCustomers();
+	      });
+	      $("clearSelectedCustomersBtn").addEventListener("click", () => {
+	        selectedCustomerKeys.clear();
+	        renderCustomers();
+	      });
+	      $("deselectAllCustomersBtn").addEventListener("click", () => {
+	        selectedCustomerKeys.clear();
+	        renderCustomers();
+	      });
+	      $("emailSelectedCustomersBtn").addEventListener("click", openBulkEmailModal);
+	      $("sendBulkEmailBtn").addEventListener("click", sendBulkCustomerEmail);
+	      $("bulkEmailTemplate").addEventListener("change", applyBulkEmailTemplate);
+	      $("bulkEmailLanguage").addEventListener("change", applyBulkEmailTemplate);
 
       async function loadProducts(){
         try {
@@ -1441,10 +1567,12 @@
           const data = await api("/adminCoupons");
           coupons = data.coupons || [];
           renderCoupons();
+          renderBulkEmailCouponOptions();
           setMsg("couponAdminMsg", coupons.length ? `${coupons.length} coupons loaded` : "No coupons found");
         } catch (err) {
           coupons = [];
           renderCoupons();
+          renderBulkEmailCouponOptions();
           setMsg("couponAdminMsg", err.message || apiUnavailableMessage("Coupons"), false);
           throw err;
         }
@@ -1453,6 +1581,11 @@
       function couponDiscountLabel(coupon){
         if (coupon.type === "fixed") return money(coupon.amountOffCents, coupon.currency || "eur");
         return `${Number(coupon.percentOff || 0)}%`;
+      }
+
+      function couponSelectLabel(coupon){
+        const state = coupon.active ? "active" : "disabled";
+        return `${coupon.code} - ${couponDiscountLabel(coupon)} (${state})`;
       }
 
       function couponRulesLabel(coupon){
@@ -1584,10 +1717,12 @@
 
       async function loadCustomers(){
         try {
-          setMsg("customerMsg", "Loading customers...");
-          const data = await api("/adminCustomers?limit=250&orderLimit=750");
-          customers = data.customers || [];
-          renderCustomers();
+	          setMsg("customerMsg", "Loading customers...");
+	          const data = await api("/adminCustomers?limit=250&orderLimit=750");
+	          customers = data.customers || [];
+	          const loadedKeys = new Set(customers.map(customer => customer.key));
+	          selectedCustomerKeys = new Set([...selectedCustomerKeys].filter(key => loadedKeys.has(key)));
+	          renderCustomers();
           setMsg("customerMsg", customers.length ? `${customers.length} customers loaded` : "No customers found");
         } catch (err) {
           customers = [];
@@ -2000,6 +2135,7 @@
 	        $("boxnowOverrideEnabled").checked = shippingSettings.boxnowFeeOverrideEnabled === true;
 	        $("boxnowOverrideAmount").value = ((Number(shippingSettings.boxnowFeeOverrideCents || 0)) / 100).toFixed(2);
 	        renderOrderEmailTemplates();
+	        renderBulkEmailTemplateOptions();
 	        renderBoxNowSettings();
 	      }
 
@@ -2130,7 +2266,38 @@
 
 	      function resetPackingRows(){
 	        $("packingRows").innerHTML = "";
-	        addPackingRow({ preset:"happy-chicken-2kg-order", qty:1, heightCm:14, widthCm:24, lengthCm:41 });
+	        addPackingRow({ preset:"happy-chicken-3kg-flat", qty:1, heightCm:16, widthCm:30, lengthCm:28 });
+	        calculatePacking();
+	      }
+
+	      function packingRowsForKg(totalKg){
+	        let remaining = Math.max(0, Math.round(Number(totalKg || 0)));
+	        const rows = [];
+	        for (const option of packingKgPresets) {
+	          const qty = Math.floor(remaining / option.kg);
+	          if (!qty) continue;
+	          const preset = packingPresetById(option.preset);
+	          rows.push({
+	            preset: option.preset,
+	            qty,
+	            heightCm: preset.heightCm,
+	            widthCm: preset.widthCm,
+	            lengthCm: preset.lengthCm,
+	          });
+	          remaining -= qty * option.kg;
+	        }
+	        return rows;
+	      }
+
+	      function fillPackingRowsFromKg(){
+	        const kg = Math.round(Number($("packingKg").value || 0));
+	        if (!kg || kg < 1) {
+	          $("packingResult").innerHTML = `<div class="text-red-700 font-semibold">Enter a whole kg amount.</div>`;
+	          return;
+	        }
+	        const rows = packingRowsForKg(kg);
+	        $("packingRows").innerHTML = "";
+	        rows.forEach(addPackingRow);
 	        calculatePacking();
 	      }
 
@@ -2150,24 +2317,127 @@
 	        return items;
 	      }
 
-	      function packingFootprintFits(item, parcel){
-	        const w = Number(item.widthCm || 0);
-	        const l = Number(item.lengthCm || 0);
-	        return (w <= parcel.widthCm && l <= parcel.lengthCm) || (l <= parcel.widthCm && w <= parcel.lengthCm);
+	      function packingOrientationsForParcel(item, parcel){
+	        const dimensions = [
+	          Number(item.heightCm || 0),
+	          Number(item.widthCm || 0),
+	          Number(item.lengthCm || 0),
+	        ].filter(Boolean);
+	        const orientations = [];
+	        const seen = new Set();
+	        for (let verticalIndex = 0; verticalIndex < dimensions.length; verticalIndex += 1) {
+	          const verticalCm = dimensions[verticalIndex];
+	          const base = dimensions.filter((_, index) => index !== verticalIndex);
+	          const variants = [
+	            { widthCm: base[0], lengthCm: base[1] },
+	            { widthCm: base[1], lengthCm: base[0] },
+	          ];
+	          for (const variant of variants) {
+	            const key = `${verticalCm}:${variant.widthCm}:${variant.lengthCm}`;
+	            if (seen.has(key)) continue;
+	            seen.add(key);
+	            if (
+	              verticalCm <= Number(parcel.heightCm || 0) &&
+	              variant.widthCm <= Number(parcel.widthCm || 0) &&
+	              variant.lengthCm <= Number(parcel.lengthCm || 0)
+	            ) {
+	              orientations.push({ verticalCm, widthCm: variant.widthCm, lengthCm: variant.lengthCm });
+	            }
+	          }
+	        }
+	        return orientations.sort((a, b) => a.verticalCm - b.verticalCm);
 	      }
 
 	      function packageFitsParcel(item, parcel){
-	        return Number(item.heightCm || 0) <= Number(parcel.heightCm || 0) && packingFootprintFits(item, parcel);
+	        return packingOrientationsForParcel(item, parcel).length > 0;
+	      }
+
+	      function rectsFitInBase(rects, widthCm, lengthCm){
+	        if (!rects.length) return true;
+	        const ordered = [...rects].sort((a, b) => (b.widthCm * b.lengthCm) - (a.widthCm * a.lengthCm));
+	        function place(index, spaces){
+	          if (index >= ordered.length) return true;
+	          const rect = ordered[index];
+	          const variants = [
+	            { widthCm: rect.widthCm, lengthCm: rect.lengthCm },
+	            { widthCm: rect.lengthCm, lengthCm: rect.widthCm },
+	          ];
+	          for (let spaceIndex = 0; spaceIndex < spaces.length; spaceIndex += 1) {
+	            const space = spaces[spaceIndex];
+	            for (const variant of variants) {
+	              if (variant.widthCm > space.widthCm || variant.lengthCm > space.lengthCm) continue;
+	              const nextSpaces = [
+	                ...spaces.slice(0, spaceIndex),
+	                ...spaces.slice(spaceIndex + 1),
+	                {
+	                  x: space.x + variant.widthCm,
+	                  y: space.y,
+	                  widthCm: space.widthCm - variant.widthCm,
+	                  lengthCm: variant.lengthCm,
+	                },
+	                {
+	                  x: space.x,
+	                  y: space.y + variant.lengthCm,
+	                  widthCm: space.widthCm,
+	                  lengthCm: space.lengthCm - variant.lengthCm,
+	                },
+	              ].filter(item => item.widthCm > 0 && item.lengthCm > 0);
+	              if (place(index + 1, nextSpaces)) return true;
+	            }
+	          }
+	          return false;
+	        }
+	        return place(0, [{ x: 0, y: 0, widthCm, lengthCm }]);
+	      }
+
+	      function itemsFitSingleLayerInParcel(items, parcel){
+	        const orientedItems = [];
+	        function choose(index){
+	          if (index >= items.length) {
+	            return rectsFitInBase(orientedItems, Number(parcel.widthCm || 0), Number(parcel.lengthCm || 0));
+	          }
+	          for (const orientation of packingOrientationsForParcel(items[index], parcel)) {
+	            orientedItems.push({ widthCm: orientation.widthCm, lengthCm: orientation.lengthCm });
+	            if (choose(index + 1)) return true;
+	            orientedItems.pop();
+	          }
+	          return false;
+	        }
+	        return choose(0);
+	      }
+
+	      function itemsFitStackedInParcel(items, parcel){
+	        const chosen = [];
+	        function choose(index){
+	          if (index >= items.length) {
+	            const totalHeight = chosen.reduce((sum, item) => sum + item.verticalCm, 0);
+	            const maxWidth = chosen.reduce((max, item) => Math.max(max, item.widthCm), 0);
+	            const maxLength = chosen.reduce((max, item) => Math.max(max, item.lengthCm), 0);
+	            return totalHeight <= Number(parcel.heightCm || 0) &&
+	              ((maxWidth <= Number(parcel.widthCm || 0) && maxLength <= Number(parcel.lengthCm || 0)) ||
+	                (maxLength <= Number(parcel.widthCm || 0) && maxWidth <= Number(parcel.lengthCm || 0)));
+	          }
+	          for (const orientation of packingOrientationsForParcel(items[index], parcel)) {
+	            chosen.push(orientation);
+	            if (choose(index + 1)) return true;
+	            chosen.pop();
+	          }
+	          return false;
+	        }
+	        return choose(0);
+	      }
+
+	      function itemsFitInParcel(items, parcel){
+	        return itemsFitSingleLayerInParcel(items, parcel) || itemsFitStackedInParcel(items, parcel);
 	      }
 
 	      function canPackItemsInParcels(items, parcels){
-	        const available = parcels.map(parcel => ({ ...parcel, used: false }));
+	        const available = parcels.map(parcel => ({ ...parcel, items: [] }));
 	        const orderedItems = [...items].sort((a, b) => {
 	          const aVolume = Number(a.heightCm || 0) * Number(a.widthCm || 0) * Number(a.lengthCm || 0);
 	          const bVolume = Number(b.heightCm || 0) * Number(b.widthCm || 0) * Number(b.lengthCm || 0);
 	          return bVolume - aVolume;
 	        });
-	        if (orderedItems.length > available.length) return false;
 	        if (orderedItems.some(item => !available.some(parcel => packageFitsParcel(item, parcel)))) {
 	          return false;
 	        }
@@ -2177,13 +2447,12 @@
 	          const seen = new Set();
 	          for (let i = 0; i < available.length; i += 1) {
 	            const parcel = available[i];
-	            if (parcel.used || !packageFitsParcel(item, parcel)) continue;
-	            const key = `${parcel.code}:${parcel.heightCm}:${parcel.widthCm}:${parcel.lengthCm}`;
+	            const key = `${parcel.code}:${parcel.items.length}:${parcel.items.map(placed => placed.label).join("|")}`;
 	            if (seen.has(key)) continue;
 	            seen.add(key);
-	            parcel.used = true;
-	            if (place(index + 1)) return true;
-	            parcel.used = false;
+	            parcel.items.push(item);
+	            if (itemsFitInParcel(parcel.items, parcel) && place(index + 1)) return true;
+	            parcel.items.pop();
 	          }
 	          return false;
 	        }
@@ -2214,7 +2483,6 @@
 	                ...Array.from({ length: large }, () => boxNowParcelSizes[2]),
 	              ];
 	              if (!parcels.length) continue;
-	              if (parcels.length < items.length) continue;
 	              if (!canPackItemsInParcels(items, parcels)) continue;
 	              const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
 	              const count = parcels.length;
@@ -2234,6 +2502,17 @@
 	        return best;
 	      }
 
+	      function packingRecipeLabel(items){
+	        const counts = items.reduce((acc, item) => {
+	          const label = item.label || "Custom item";
+	          acc[label] = (acc[label] || 0) + 1;
+	          return acc;
+	        }, {});
+	        return Object.entries(counts)
+	          .map(([label, count]) => count > 1 ? `${count}x ${label}` : label)
+	          .join(" + ");
+	      }
+
 	      function calculatePacking(){
 	        const items = packingItemsFromRows();
 	        const result = $("packingResult");
@@ -2241,7 +2520,11 @@
 	          result.innerHTML = `<div class="text-zinc-500">Enter at least one packed package with dimensions.</div>`;
 	          return;
 	        }
-	        const maxHeight = Math.max(...items.map(item => Number(item.heightCm || 0)));
+	        const maxDimension = Math.max(...items.flatMap(item => [
+	          Number(item.heightCm || 0),
+	          Number(item.widthCm || 0),
+	          Number(item.lengthCm || 0),
+	        ]));
 	        const best = cheapestPackingCombination(items);
 	        const singleRows = boxNowParcelSizes.map(parcel => {
 	          const fits = items.every(item => packageFitsParcel(item, parcel));
@@ -2255,20 +2538,25 @@
 	        if (!best) {
 	          result.innerHTML = `
 	            <div class="font-bold text-red-700">No BOX NOW combination fits these dimensions.</div>
-	            <div class="mt-1">Packages: ${items.length}, max package height: ${Math.ceil(maxHeight * 10) / 10} cm.</div>
+	            <div class="mt-1">Packages: ${items.length}, largest package side: ${Math.ceil(maxDimension * 10) / 10} cm.</div>
 	            <table class="mt-3 text-xs"><tbody>${singleRows}</tbody></table>
 	          `;
 	          return;
 	        }
 	        result.innerHTML = `
 	          <div class="font-extrabold text-zinc-900">Recommended: ${esc(packingCombinationLabel(best.parcels))} (${money(best.amount, "eur")})</div>
-	          <div class="mt-1">Packages: ${items.length}, max package height: ${Math.ceil(maxHeight * 10) / 10} cm.</div>
-	          <div class="mt-1 text-xs text-zinc-500">Each row is treated as a packed package. Qty creates multiple identical packages; each package is matched to one BOX NOW compartment and can rotate inside the ${boxNowParcelSizes[0].widthCm} x ${boxNowParcelSizes[0].lengthCm} cm footprint.</div>
+	          <div class="mt-1">Pack as: ${esc(packingRecipeLabel(items))}</div>
+	          <div class="mt-1">Packages: ${items.length}, largest package side: ${Math.ceil(maxDimension * 10) / 10} cm.</div>
+	          <div class="mt-1 text-xs text-zinc-500">Packages can rotate to fit BOX NOW height, width, and length limits, then stack by the chosen vertical side.</div>
 	          <table class="mt-3 text-xs"><tbody>${singleRows}</tbody></table>
 	        `;
 	      }
 
 	      $("packingAddRowBtn").addEventListener("click", () => addPackingRow({ preset:"custom", qty:1 }));
+	      $("packingKgBtn").addEventListener("click", fillPackingRowsFromKg);
+	      $("packingKg").addEventListener("keydown", e => {
+	        if (e.key === "Enter") fillPackingRowsFromKg();
+	      });
 	      $("packingResetBtn").addEventListener("click", resetPackingRows);
 	      $("packingCalculateBtn").addEventListener("click", calculatePacking);
 	      resetPackingRows();
@@ -2277,9 +2565,34 @@
 	        editingTemplateIndex = -1;
 	        $("templateEnabled").checked = true;
 	        $("templateStatus").value = "new";
+	        $("templateLanguage").value = "en";
 	        $("templateSubject").value = "";
 	        $("templateBody").value = "";
 	        $("addTemplateBtn").textContent = "Add template";
+	      }
+
+	      function templateContent(template = {}, language = "en"){
+	        const lang = language === "el" ? "el" : "en";
+	        const translated = lang !== "en" ? template.translations?.[lang] : null;
+	        return {
+	          subject: translated?.subject || template.subject || "",
+	          body: translated?.body || template.body || "",
+	        };
+	      }
+
+	      function templateByStatus(status){
+	        const key = statusKey(status);
+	        return (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
+	          .find(template => statusKey(template.fulfillmentStatus || template.status) === key);
+	      }
+
+	      function fillTemplateEditor(template = {}, language = $("templateLanguage").value){
+	        const content = templateContent(template, language);
+	        $("templateEnabled").checked = template.enabled !== false;
+	        $("templateStatus").value = template.fulfillmentStatus || template.status || "new";
+	        $("templateLanguage").value = language === "el" ? "el" : "en";
+	        $("templateSubject").value = content.subject || "";
+	        $("templateBody").value = content.body || "";
 	      }
 
 	      function renderOrderEmailTemplates(){
@@ -2294,7 +2607,7 @@
 	              <div>
 	                <div class="font-extrabold">${esc(template.fulfillmentStatus || template.status || "")}</div>
 	                <div class="text-sm text-zinc-600">${esc(template.subject || "")}</div>
-	                <div class="text-xs ${template.enabled === false ? "text-red-600" : "text-emerald-700"}">${template.enabled === false ? "Disabled" : "Enabled"}</div>
+	                <div class="text-xs ${template.enabled === false ? "text-red-600" : "text-emerald-700"}">${template.enabled === false ? "Disabled" : "Enabled"}${template.translations?.el ? " | Greek" : ""}</div>
 	              </div>
 	              <div class="flex gap-2 shrink-0">
 	                <button class="btn-soft" type="button" data-template-test="${index}">Send test</button>
@@ -2308,18 +2621,32 @@
 
 	      function currentTemplateFromEditor(){
 	        const fulfillmentStatus = $("templateStatus").value.trim();
+	        const language = $("templateLanguage").value === "el" ? "el" : "en";
+	        const existing = editingTemplateIndex >= 0
+	          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
+	          : (templateByStatus(fulfillmentStatus) || {});
 	        const subject = $("templateSubject").value.trim();
 	        const body = $("templateBody").value.trim();
 	        if (!fulfillmentStatus) throw new Error("Choose the fulfillment status for this email template.");
 	        if (!subject) throw new Error("Enter an email subject.");
 	        if (!body) throw new Error("Enter an email body.");
-	        return {
+	        const template = {
+	          ...existing,
 	          enabled: $("templateEnabled").checked,
 	          fulfillmentStatus,
 	          status: fulfillmentStatus,
-	          subject,
-	          body,
+	          translations: { ...(existing.translations || {}) },
 	        };
+	        if (language === "el") {
+	          if (!existing.subject || !existing.body) throw new Error("Save the English version before adding the Greek translation.");
+	          template.subject = existing.subject;
+	          template.body = existing.body;
+	          template.translations.el = { subject, body };
+	        } else {
+	          template.subject = subject;
+	          template.body = body;
+	        }
+	        return template;
 	      }
 
 	      async function saveOrderEmailTemplates(templates){
@@ -2370,6 +2697,26 @@
 	        setMsg("settingsMsg", "");
 	      });
 
+	      $("templateLanguage").addEventListener("change", () => {
+	        const template = editingTemplateIndex >= 0
+	          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
+	          : (templateByStatus($("templateStatus").value) || {});
+	        fillTemplateEditor(template, $("templateLanguage").value);
+	      });
+
+	      $("templateStatus").addEventListener("change", () => {
+	        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
+	        const key = statusKey($("templateStatus").value);
+	        const index = templates.findIndex(template => statusKey(template.fulfillmentStatus || template.status) === key);
+	        editingTemplateIndex = index;
+	        const template = templates[index] || {
+	          enabled: true,
+	          fulfillmentStatus: $("templateStatus").value,
+	          status: $("templateStatus").value,
+	        };
+	        fillTemplateEditor(template, $("templateLanguage").value);
+	      });
+
 	      $("templateList").addEventListener("click", async event => {
 	        const testBtn = event.target.closest("[data-template-test]");
 	        const editBtn = event.target.closest("[data-template-edit]");
@@ -2390,7 +2737,7 @@
 	              return;
 	            }
 	          }
-	          await sendTemplateTest(template, testBtn);
+	          await sendTemplateTest(template, testBtn, $("templateLanguage").value);
 	          renderOrderEmailTemplates();
 	        }
 	        if (editBtn) {
@@ -2398,10 +2745,7 @@
 	          const template = templates[index];
 	          if (!template) return;
 	          editingTemplateIndex = index;
-	          $("templateEnabled").checked = template.enabled !== false;
-	          $("templateStatus").value = template.fulfillmentStatus || template.status || "new";
-	          $("templateSubject").value = template.subject || "";
-	          $("templateBody").value = template.body || "";
+	          fillTemplateEditor(template, $("templateLanguage").value);
 	          $("addTemplateBtn").textContent = "Update template";
 	        }
 	        if (deleteBtn) {
@@ -2421,7 +2765,7 @@
 	        }
 	      });
 
-	      async function sendTemplateTest(template, button){
+	      async function sendTemplateTest(template, button, language = "en"){
 	        try {
 	          button.disabled = true;
 	          button.textContent = "Sending...";
@@ -2431,9 +2775,10 @@
 	            body: JSON.stringify({
 	              action: "sendOrderStatusTestEmail",
 	              template,
+	              language,
 	            }),
 	          });
-	          setMsg("settingsMsg", "Test email sent to info@grubz.gr");
+	          setMsg("settingsMsg", `Test email sent to info@grubz.gr (${language === "el" ? "Greek" : "English"})`);
 	        } catch (err) {
 	          setMsg("settingsMsg", err.message || "Test email failed", false);
 	        } finally {
@@ -2542,14 +2887,148 @@
 	        return customers.filter(customer => customerSearchText(customer).includes(query));
 	      }
 
+	      function selectedCustomerRecipients(){
+	        const byKey = new Map(customers.map(customer => [customer.key, customer]));
+	        const byEmail = new Map();
+	        const recipients = [];
+	        selectedCustomerKeys.forEach(key => {
+	          const customer = byKey.get(key);
+	          const email = String(customer?.email || "").trim().toLowerCase();
+	          if (!email || byEmail.has(email)) return;
+	          byEmail.set(email, true);
+	          recipients.push({
+	            key: customer.key,
+	            uid: customer.uid || "",
+	            email,
+	            name: customer.name || "",
+	            phone: customer.phone || "",
+	          });
+	        });
+	        return recipients;
+	      }
+
+	      function renderCustomerBulkState(){
+	        const recipients = selectedCustomerRecipients();
+	        const selectedCount = selectedCustomerKeys.size;
+	        $("customerSelectionMsg").textContent = selectedCount
+	          ? `${selectedCount} selected, ${recipients.length} with email addresses`
+	          : "";
+	        $("emailSelectedCustomersBtn").disabled = recipients.length === 0;
+	        $("clearSelectedCustomersBtn").disabled = selectedCount === 0;
+	        $("deselectAllCustomersBtn").disabled = selectedCount === 0;
+	      }
+
+	      function bulkEmailTemplates(){
+	        return (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
+	          .filter(template => template && (template.subject || template.body));
+	      }
+
+	      function bulkTemplateLabel(template){
+	        const status = template.fulfillmentStatus || template.status || "Template";
+	        const enabled = template.enabled === false ? "disabled" : "enabled";
+	        return `${status} - ${template.subject || "No subject"} (${enabled})`;
+	      }
+
+	      function renderBulkEmailTemplateOptions(){
+	        const templates = bulkEmailTemplates();
+	        $("bulkEmailTemplate").innerHTML = [
+	          `<option value="">Custom message</option>`,
+	          ...templates.map((template, index) => `<option value="${index}">${esc(bulkTemplateLabel(template))}</option>`),
+	        ].join("");
+	      }
+
+	      function renderBulkEmailCouponOptions(){
+	        const availableCoupons = Array.isArray(coupons) ? coupons : [];
+	        $("bulkEmailCoupon").innerHTML = [
+	          `<option value="">No coupon</option>`,
+	          ...availableCoupons.map(coupon => `<option value="${esc(coupon.code || "")}">${esc(couponSelectLabel(coupon))}</option>`),
+	        ].join("");
+	      }
+
+	      function customerBulkTemplateText(value = ""){
+	        return String(value || "")
+	          .replace(/\{(orderNumber|status|previousStatus|fulfillmentStatus|previousFulfillmentStatus|trackingNumber|trackingUrl|total|boxNowLocker|orderDetails)\}/g, "")
+	          .replace(/[ \t]+\n/g, "\n")
+	          .replace(/\n{3,}/g, "\n\n")
+	          .trim();
+	      }
+
+	      function applyBulkEmailTemplate(){
+	        const index = $("bulkEmailTemplate").value;
+	        if (index === "") return;
+	        const template = bulkEmailTemplates()[Number(index)];
+	        if (!template) return;
+	        const content = templateContent(template, $("bulkEmailLanguage").value);
+	        $("bulkEmailSubject").value = customerBulkTemplateText(content.subject || "");
+	        $("bulkEmailBody").value = customerBulkTemplateText(content.body || "");
+	      }
+
+	      function selectedBulkCouponCode(){
+	        return normalizeCouponCode($("bulkEmailCoupon").value);
+	      }
+
+	      function openBulkEmailModal(){
+	        const recipients = selectedCustomerRecipients();
+	        if (!recipients.length) return setMsg("customerMsg", "Select at least one customer with an email address.", false);
+	        renderBulkEmailTemplateOptions();
+	        renderBulkEmailCouponOptions();
+	        $("bulkEmailRecipientSummary").textContent = `${recipients.length} recipient${recipients.length === 1 ? "" : "s"}`;
+	        $("bulkEmailTemplate").value = "";
+	        $("bulkEmailLanguage").value = "en";
+	        $("bulkEmailCoupon").value = "";
+	        $("bulkEmailSubject").value = "";
+	        $("bulkEmailBody").value = "Hi {customerName},\n\n";
+	        $("bulkEmailMsg").textContent = "";
+	        $("sendBulkEmailBtn").disabled = false;
+	        openModal("bulkEmailModal");
+	        setTimeout(() => $("bulkEmailSubject").focus(), 0);
+	      }
+
+	      async function sendBulkCustomerEmail(){
+	        const recipients = selectedCustomerRecipients();
+	        if (!recipients.length) return setMsg("bulkEmailMsg", "Select at least one customer with an email address.", false);
+	        const subject = $("bulkEmailSubject").value.trim();
+	        const body = $("bulkEmailBody").value.trim();
+	        if (!subject || !body) return setMsg("bulkEmailMsg", "Enter a subject and message.", false);
+	        if (!confirm(`Send this email to ${recipients.length} customer${recipients.length === 1 ? "" : "s"}?`)) return;
+	        try {
+	          $("sendBulkEmailBtn").disabled = true;
+	          setMsg("bulkEmailMsg", "Sending email...");
+	          const result = await api("/adminCustomers", {
+	            method: "POST",
+	            body: JSON.stringify({ action: "sendEmail", recipients, subject, body, coupon: selectedBulkCouponCode(), language: $("bulkEmailLanguage").value }),
+	          });
+	          const summary = `${result.sent || 0} sent, ${result.skipped || 0} skipped, ${result.failed || 0} failed`;
+	          const firstError = Array.isArray(result.results)
+	            ? result.results.find(item => item.error)?.error || ""
+	            : "";
+	          const detail = firstError ? `${summary}: ${firstError}` : summary;
+	          setMsg("bulkEmailMsg", detail, !result.failed);
+	          setMsg("customerMsg", detail, !result.failed);
+	          if (!result.failed) {
+	            selectedCustomerKeys.clear();
+	            renderCustomers();
+	            setTimeout(() => closeModal("bulkEmailModal"), 700);
+	          }
+	        } catch (err) {
+	          setMsg("bulkEmailMsg", err.message || "Bulk email failed", false);
+	        } finally {
+	          $("sendBulkEmailBtn").disabled = false;
+	        }
+	      }
+
 	      function renderCustomers(){
 	        const visibleCustomers = filteredCustomers();
 	        if (!visibleCustomers.length) {
-	          $("customersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No customers to display.</td></tr>`;
+	          $("customersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="6">No customers to display.</td></tr>`;
+	          renderCustomerBulkState();
 	          return;
 	        }
 	        $("customersTable").innerHTML = visibleCustomers.map(c => `
 	          <tr class="hover:bg-zinc-50">
+	            <td class="p-3 align-top">
+	              <input type="checkbox" class="h-4 w-4" data-customer-select="${esc(c.key)}" ${selectedCustomerKeys.has(c.key) ? "checked" : ""} ${c.email ? "" : "disabled"} aria-label="Select ${esc(customerLabel(c))}">
+	            </td>
 	            <td class="p-3">
 	              <button class="font-bold text-left hover:underline" data-customer-key="${esc(c.key)}">${esc(customerLabel(c))}</button>
 	              <div class="text-xs text-zinc-500">${esc(c.email || "")}</div>
@@ -2561,9 +3040,17 @@
 	            <td class="p-3 text-xs">${(Array.isArray(c.tags) ? c.tags : []).map(tag => `<span class="inline-block border border-zinc-300 rounded px-2 py-1 mr-1 mb-1">${esc(tag)}</span>`).join("")}</td>
 	          </tr>
 	        `).join("");
+	        renderCustomerBulkState();
 	      }
 
 	      $("customersTable").addEventListener("click", e => {
+	        const checkbox = e.target.closest("[data-customer-select]");
+	        if (checkbox) {
+	          if (checkbox.checked) selectedCustomerKeys.add(checkbox.dataset.customerSelect);
+	          else selectedCustomerKeys.delete(checkbox.dataset.customerSelect);
+	          renderCustomerBulkState();
+	          return;
+	        }
 	        const btn = e.target.closest("[data-customer-key]");
 	        if (!btn) return;
 	        selectedCustomer = customers.find(c => c.key === btn.dataset.customerKey);

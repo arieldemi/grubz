@@ -614,6 +614,11 @@ const BOXNOW_PARCEL_SIZES = [
   { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
   { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
 ];
+const HAPPY_CHICKEN_PACKED_PARCELS = {
+  "happy-chicken-1kg": { heightCm: 11 / 3, widthCm: 24, lengthCm: 58 },
+  "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
+  "happy-chicken-3kg": { heightCm: 16, widthCm: 30, lengthCm: 28 },
+};
 async function authedFetch(path, options = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
   if (__user) {
@@ -2028,12 +2033,18 @@ async function chatFetch(path, options = {}) {
         return Math.max(2, Math.ceil((weightGrams / 1000) * 8));
       }
 
-      function productParcelDimensions(product = {}){
+      function packedParcelDimensionsForProduct(id = "", product = {}){
+        const productId = String(id || product.id || "").trim().toLowerCase();
+        return HAPPY_CHICKEN_PACKED_PARCELS[productId] || null;
+      }
+
+      function productParcelDimensions(product = {}, id = ""){
         const parcel = product.parcel || {};
+        const packed = packedParcelDimensionsForProduct(id, product);
         return {
-          heightCm: Number(parcel.heightCm || 0) || fallbackParcelHeightCm(product),
-          widthCm: Number(parcel.widthCm || 0) || 45,
-          lengthCm: Number(parcel.lengthCm || 0) || 60,
+          heightCm: Number(parcel.heightCm || 0) || packed?.heightCm || fallbackParcelHeightCm(product),
+          widthCm: Number(parcel.widthCm || 0) || packed?.widthCm || 45,
+          lengthCm: Number(parcel.lengthCm || 0) || packed?.lengthCm || 60,
         };
       }
 
@@ -2111,7 +2122,7 @@ async function chatFetch(path, options = {}) {
         for (const [id, qty] of cart) {
           const product = CATALOG[id];
           if (!product) continue;
-          const dimensions = productParcelDimensions(product);
+          const dimensions = productParcelDimensions(product, id);
           for (let i = 0; i < Math.max(1, Math.round(Number(qty || 0))); i += 1) {
             parcelItems.push(dimensions);
           }
@@ -2522,7 +2533,7 @@ async function chatFetch(path, options = {}) {
         try {
           const resp = await authedFetch(
             "/createCheckoutSession",
-            { method: "POST", body: JSON.stringify({ items, couponCode, shipping }) }
+            { method: "POST", body: JSON.stringify({ items, couponCode, shipping, language: lang() === "el" ? "el" : "en" }) }
           );
           const data = await resp.json().catch(()=> ({}));
           if (!resp.ok) {

@@ -1,0 +1,4 @@
+interface:
+  display_name: "GRUBZ Marketing Agent"
+  short_description: "Campaign, copy, and content help for GRUBZ"
+  default_prompt: "Use $grubz-marketing-agent to draft a launch campaign for a GRUBZ product."
