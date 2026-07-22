@@ -133,6 +133,40 @@ const products = [
     stripeProductId: "prod_T04orna0NLSofu",
     stripePriceId: "price_1SOKlECIlWvuSYE0VgEtLPoj",
   },
+  {
+    id: "frass",
+    active: false,
+    sortOrder: 70,
+    name: "Frass",
+    nameEl: "Frass",
+    description: "BSF frass soil amendment.",
+    descriptionEl: "Εδαφοβελτιωτικό frass από BSF.",
+    detail: "A natural soil amendment made from black soldier fly frass. Use it as a gentle nutrient boost for plants and soil life.",
+    detailEl: "Φυσικό εδαφοβελτιωτικό από frass μαύρης στρατιωτικής μύγας. Για ήπια ενίσχυση των φυτών και του εδάφους.",
+    amount: 0,
+    currency: "eur",
+    weightGrams: 1000,
+    parcel: {
+      heightCm: 8,
+      widthCm: 24,
+      lengthCm: 35,
+    },
+    stock: 0,
+    image: "images/livinsoil.png",
+    imageBg: "#f1f7ea",
+    stripeProductId: "",
+    stripePriceId: "",
+    stripe: {
+      test: {
+        productId: "",
+        priceId: "",
+      },
+      live: {
+        productId: "",
+        priceId: "",
+      },
+    },
+  },
 ];
 
 initializeApp({

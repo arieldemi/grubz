@@ -66,7 +66,7 @@ Respect privacy and platform rules. Do not scrape private groups, expose member 
 
 ### Bilingual EN/EL Support
 
-When asked for Greek copy, write natural customer-facing Greek, not literal English translation. Preserve the GRUBZ brand name and product-specific terms where they are clearer in English. When uncertain about terminology, provide one polished option and one slightly more literal option.
+For social media ideas and community post concepts, provide both Greek and English by default. Write natural customer-facing Greek, not literal English translation. Preserve the GRUBZ brand name and product-specific terms where they are clearer in English. When uncertain about terminology, provide one polished option and one slightly more literal option.
 
 ### Review And Optimization
 

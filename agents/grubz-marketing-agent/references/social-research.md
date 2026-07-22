@@ -60,7 +60,7 @@ Columns:
 - `language`: primary language.
 - `country_region`: country or region focus.
 - `audience`: backyard chickens, homesteading, poultry health, egg layers, etc.
-- `access`: approved, public, screenshot-only, export-only, unknown.
+- `post_status`: status of the specific tracked post named in the source sheet header, such as approved, pending approval, posted, rejected, or unknown. Do not treat this as group membership/access status.
 - `priority`: high, medium, low.
 - `notes`: anything useful, such as "very active", "Greek keepers", "strict no sales".
 
@@ -75,6 +75,8 @@ Google Sheet setup:
 If the user provides a Google Sheet link but no Google Sheets/Drive connector is available, ask the user to either install/connect Google Drive or export the `facebook_groups` tab as CSV and place it at `inputs/facebook-groups.csv`.
 
 If the user pastes raw links instead of filling a sheet or file, normalize them into this structure before research.
+
+For the `Chicken Related Facebook Groups` source sheet, the `Pages` tab column `Chicken Feed1` records whether that specific post was approved/published by the group admin. Use it as a signal for which groups accepted similar content, not as proof of whether the user has group access.
 
 ## What To Look For In Successful Chicken Posts
 

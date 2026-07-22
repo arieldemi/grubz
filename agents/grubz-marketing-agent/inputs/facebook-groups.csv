@@ -1,4 +1,4 @@
-id,group_name,url,language,country_region,audience,access,priority,notes
+id,group_name,url,language,country_region,audience,post_status,priority,notes
 G01,FACEBOOK GROUP,https://www.facebook.com/groups/1148221072028770,el,Greece,backyard chickens,approved,high,Imported from Google Sheet Pages row 2
 G02,Σπάνιες Ράτσες Πτηνών Β.Αιγαίου Χιος | Facebook,https://www.facebook.com/groups/559522291261470/,el,Greece,poultry and chickens,pending approval,low,Imported from Google Sheet Pages row 3
 G03,StekiOrnithotrofon,https://www.facebook.com/groups/StekiOrnithotrofon/,el,Greece,poultry and chickens,approved,high,Imported from Google Sheet Pages row 4

@@ -75,7 +75,7 @@
               <button id="tabOrders" class="btn-soft text-left shrink-0" type="button" data-section-tab="orders">Orders</button>
               <button id="tabCustomers" class="btn-soft text-left shrink-0" type="button" data-section-tab="customers">Customers</button>
               <button id="tabMessages" class="btn-soft text-left shrink-0" type="button" data-section-tab="messages">Messages</button>
-              <button id="tabSocialAgent" class="btn-soft text-left shrink-0" type="button" data-section-tab="social">Social Agent</button>
+              <button id="tabSocialAgent" class="btn-soft text-left shrink-0" type="button" data-section-tab="social">Marketing</button>
               <button id="tabBoxNow" class="btn-soft text-left shrink-0" type="button" data-section-tab="boxnow">BOX NOW</button>
               <button id="tabSettings" class="btn-soft text-left shrink-0" type="button" data-section-tab="settings">Settings</button>
               <button id="refreshBtn" class="btn-soft text-left shrink-0 lg:mt-auto" type="button">Refresh</button>
@@ -135,7 +135,10 @@
 	          <section id="ordersSection" class="hidden lg:col-span-2 space-y-4">
 	            <div class="flex items-center justify-between gap-3">
 	              <h2 class="text-xl font-extrabold">Orders Manager</h2>
-	              <button id="refreshOrdersBtn" class="btn-soft" type="button">Refresh orders</button>
+	              <div class="flex gap-2">
+	                <button id="newManualOrderBtn" class="btn" type="button">Manual order</button>
+	                <button id="refreshOrdersBtn" class="btn-soft" type="button">Refresh orders</button>
+	              </div>
 	            </div>
 	            <div class="panel overflow-hidden">
 	              <table class="w-full text-sm">
@@ -227,18 +230,24 @@
 	          <section id="socialSection" class="hidden lg:col-span-2 space-y-4">
 	            <div class="flex flex-wrap items-center justify-between gap-3">
 	              <div>
-	                <h2 class="text-xl font-extrabold">Social Agent</h2>
-	                <p class="text-sm text-zinc-500">Scan relevant public conversations and prepare GRUBZ-aware comments for review.</p>
+	                <h2 class="text-xl font-extrabold">Marketing</h2>
+	                <p class="text-sm text-zinc-500">Research audience conversations, plan soft GRUBZ content, and prepare brand-aware replies for review.</p>
 	              </div>
 	              <div class="flex flex-wrap gap-2">
 	                <button id="refreshSocialAgentBtn" class="btn-soft" type="button">Refresh</button>
 	                <button id="scanSocialAgentBtn" class="btn" type="button">Scan now</button>
 	              </div>
 	            </div>
-	            <div class="grid xl:grid-cols-[420px_minmax(0,1fr)] gap-4 items-start">
-	              <div class="panel p-4 space-y-3">
+	            <div class="flex flex-wrap gap-2" role="tablist" aria-label="Marketing sections">
+	              <button id="marketingTabSettings" class="btn-soft" type="button" data-marketing-tab="settings">Settings</button>
+	              <button id="marketingTabIntake" class="btn-soft" type="button" data-marketing-tab="intake">Intake</button>
+	              <button id="marketingTabIdeas" class="btn-soft" type="button" data-marketing-tab="ideas">Ideas</button>
+	              <button id="marketingTabOpportunities" class="btn-soft" type="button" data-marketing-tab="opportunities">Opportunities</button>
+	            </div>
+	            <div class="space-y-4">
+	              <div id="marketingPanelSettings" class="panel p-4 space-y-3" data-marketing-panel="settings">
 	                <div class="flex items-center justify-between gap-3">
-	                  <h3 class="font-extrabold text-lg">Agent settings</h3>
+	                  <h3 class="font-extrabold text-lg">Marketing settings</h3>
 	                  <label class="flex items-center gap-2 text-sm font-semibold">
 	                    <input id="socialEnabled" type="checkbox" class="h-4 w-4">
 	                    Enabled
@@ -279,13 +288,15 @@
 	                  <div class="mt-1 font-mono break-all">POST https://www.grubz.gr/api/social-agent/webhook</div>
 	                  <div class="mt-1">Send <span class="font-mono">x-grubz-social-secret</span> or <span class="font-mono">Authorization: Bearer ...</span>. Payload can contain <span class="font-mono">items</span>, <span class="font-mono">posts</span>, or one post with <span class="font-mono">title</span>, <span class="font-mono">text</span>, <span class="font-mono">url</span>, and <span class="font-mono">groupName</span>.</div>
 	                </div>
-	                <button id="saveSocialAgentBtn" class="btn w-full" type="button">Save Social Agent</button>
+	                <button id="saveSocialAgentBtn" class="btn w-full" type="button">Save Marketing</button>
 	                <p id="socialMsg" class="text-sm" role="status" aria-live="polite"></p>
 	              </div>
-	              <div class="panel p-4 space-y-3">
+	              <div id="marketingPanelIntake" class="panel p-4 space-y-3 hidden" data-marketing-panel="intake">
 	                <div class="flex flex-wrap items-center justify-between gap-3">
-	                  <h3 class="font-extrabold text-lg">Opportunities</h3>
-	                  <p id="socialScanSummary" class="text-sm text-zinc-500"></p>
+	                  <div>
+	                    <h3 class="font-extrabold text-lg">Facebook group intake</h3>
+	                    <p class="text-sm text-zinc-500">Paste group posts or exported notes to analyze them into reviewable opportunities.</p>
+	                  </div>
 	                </div>
 	                <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-2">
 	                  <div>
@@ -293,6 +304,80 @@
 	                    <textarea id="facebookManualInput" class="input text-sm" rows="5" placeholder="Paste Facebook group posts here. Separate multiple posts with a blank line. Include the post URL when you have it."></textarea>
 	                  </div>
 	                  <button id="importFacebookPostsBtn" class="btn-soft" type="button">Analyze pasted posts</button>
+	                </div>
+	              </div>
+	              <div id="marketingPanelIdeas" class="panel p-4 space-y-3 hidden" data-marketing-panel="ideas">
+	                <div class="rounded-md border border-zinc-200 bg-white p-3 space-y-3">
+	                  <div>
+	                    <h3 class="font-extrabold text-lg">Community post ideas</h3>
+	                    <p class="text-sm text-zinc-500">Bilingual soft GRUBZ promotion ideas based on actual Greek Facebook chicken and poultry group research.</p>
+	                  </div>
+	                  <div class="flex flex-wrap gap-2" role="tablist" aria-label="Weekly idea lists">
+	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-07-20">Week of 2026-07-20</button>
+	                  </div>
+	                  <div class="grid gap-2 text-sm">
+	                    <div data-idea-week-panel="2026-07-20" class="space-y-3">
+	                      <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600">
+	                        Researched 39 Facebook group rows through the logged-in browser. Strongest popularity patterns: marketplace availability, breed identity, hatching eggs/chicks, practical advice questions, coop routine/enrichment, trusted contributor/admin context, and short reaction/video posts. Member names and private post text are intentionally omitted.
+	                      </div>
+	                      <details class="rounded-md border border-zinc-200 p-3" open>
+	                        <summary class="cursor-pointer font-bold">High-engagement question posts</summary>
+	                        <ol class="mt-2 list-decimal space-y-3 pl-5 text-zinc-700">
+	                          <li><span class="font-semibold">Treat question:</span> EL: "Τι δίνετε στις κότες σας για λιχουδιά εκτός από σιτηρά;" / EN: "What do you give your hens as a treat besides grain?" <span class="text-zinc-500">Why it works: advice questions were present across nearly every group and invite easy comments.</span></li>
+	                          <li><span class="font-semibold">Serving method poll:</span> EL: "Μπολ, χούφτα ή πασπάλισμα; Πώς το προτιμούν οι δικές σας;" / EN: "Bowl, handful, or sprinkle? How do your hens prefer it?" <span class="text-zinc-500">Why it works: turns product usage into a keeper-to-keeper question.</span></li>
+	                          <li><span class="font-semibold">First-to-arrive prompt:</span> EL: "Ποια κότα φτάνει πάντα πρώτη όταν ακούσει τον κουβά;" / EN: "Which hen always arrives first when she hears the bucket?" <span class="text-zinc-500">Why it works: personal flock stories create comments without hard selling.</span></li>
+	                          <li><span class="font-semibold">Beginner help:</span> EL: "Νέος στο κοτέτσι; Ποια μικρή καθημερινή συνήθεια σας βοήθησε περισσότερο;" / EN: "New to chickens? What small daily habit helped you most?" <span class="text-zinc-500">Why it works: education groups reward practical experience.</span></li>
+	                          <li><span class="font-semibold">Breed behavior question:</span> EL: "Ποια ράτσα στο κοτέτσι σας είναι η πιο λαίμαργη;" / EN: "Which breed in your flock is the greediest?" <span class="text-zinc-500">Why it works: breed identity was one of the strongest recurring themes.</span></li>
+	                        </ol>
+	                      </details>
+	                      <details class="rounded-md border border-zinc-200 p-3">
+	                        <summary class="cursor-pointer font-bold">Breed, egg, and chick context</summary>
+	                        <ol class="mt-2 list-decimal space-y-3 pl-5 text-zinc-700" start="6">
+	                          <li><span class="font-semibold">Laying-hen routine:</span> EL: "Για κότες αυγοπαραγωγής, οι μικρές καθημερινές συνήθειες μετράνε." / EN: "For laying hens, small daily routines matter." <span class="text-zinc-500">Why it works: laying hens and eggs are dominant group interests.</span></li>
+	                          <li><span class="font-semibold">Hatching-season care:</span> EL: "Όταν μιλάμε για αυγά εκκόλαψης, η φροντίδα του κοτετσιού είναι καθημερινή." / EN: "When hatching eggs are the topic, everyday flock care matters." <span class="text-zinc-500">Why it works: connects GRUBZ softly to a very active hatching/chick conversation.</span></li>
+	                          <li><span class="font-semibold">Purebred keeper angle:</span> EL: "Καθαρόαιμες ή ντόπιες, όλες ψάχνουν κάτι νόστιμο στην αυλή." / EN: "Purebred or local, they all love finding something tasty in the yard." <span class="text-zinc-500">Why it works: bridges breed pride with natural foraging behavior.</span></li>
+	                          <li><span class="font-semibold">Chick-safe caveat post:</span> EL: "Για νεοσσούς ρωτάμε πάντα προσεκτικά. Για τις μεγάλες κότες, μικρή λιχουδιά και ποικιλία." / EN: "With chicks, always ask carefully. For adult hens, small treats can add variety." <span class="text-zinc-500">Why it works: respects sensitive chick-care discussions and avoids risky claims.</span></li>
+	                          <li><span class="font-semibold">Egg basket lifestyle:</span> EL: "Πρωινά αυγά, απογευματινή απασχόληση στο κοτέτσι." / EN: "Morning eggs, afternoon enrichment in the coop." <span class="text-zinc-500">Why it works: uses the egg theme without promising better production.</span></li>
+	                        </ol>
+	                      </details>
+	                      <details class="rounded-md border border-zinc-200 p-3">
+	                        <summary class="cursor-pointer font-bold">Marketplace-friendly soft posts</summary>
+	                        <ol class="mt-2 list-decimal space-y-3 pl-5 text-zinc-700" start="11">
+	                          <li><span class="font-semibold">Not selling birds:</span> EL: "Δεν πουλάμε κότες, μοιραζόμαστε μια ιδέα για πιο ενδιαφέρον τάισμα." / EN: "We are not selling hens, just sharing an idea for more interesting feeding." <span class="text-zinc-500">Why it works: many groups are sales-heavy, so this lowers resistance.</span></li>
+	                          <li><span class="font-semibold">Location prompt:</span> EL: "Από ποια περιοχή είναι το κοτέτσι σας;" / EN: "Where is your flock based?" <span class="text-zinc-500">Why it works: location and availability comments are common engagement triggers.</span></li>
+	                          <li><span class="font-semibold">Simple availability-adjacent post:</span> EL: "Διαθέσιμο GRUBZ για όσους θέλουν φυσική εντομοπρωτεΐνη ως λιχουδιά." / EN: "GRUBZ is available for keepers who want natural insect protein as a treat." <span class="text-zinc-500">Why it works: uses marketplace language but keeps the claim modest.</span></li>
+	                          <li><span class="font-semibold">Price-free value post:</span> EL: "Μικρή ποσότητα, μεγάλη αντίδραση στο κοτέτσι." / EN: "A small amount, a big flock reaction." <span class="text-zinc-500">Why it works: answers value concerns without leading with price.</span></li>
+	                          <li><span class="font-semibold">Comment-to-learn post:</span> EL: "Αν θέλετε να δείτε πώς το σερβίρουμε, γράψτε 'κοτέτσι'." / EN: "If you want to see how we serve it, comment 'coop'." <span class="text-zinc-500">Why it works: comment prompts perform better than passive product posts.</span></li>
+	                        </ol>
+	                      </details>
+	                      <details class="rounded-md border border-zinc-200 p-3">
+	                        <summary class="cursor-pointer font-bold">Video and routine ideas</summary>
+	                        <ol class="mt-2 list-decimal space-y-3 pl-5 text-zinc-700" start="16">
+	                          <li><span class="font-semibold">Reaction video:</span> EL: "Δεν πρόλαβα να ακουμπήσω τον κουβά..." / EN: "I barely put the bucket down..." <span class="text-zinc-500">Why it works: short reaction/video signals appeared repeatedly and show proof without a sales pitch.</span></li>
+	                          <li><span class="font-semibold">Scatter test:</span> EL: "Σε ποια γωνία τρέχουν πρώτα;" / EN: "Which corner do they run to first?" <span class="text-zinc-500">Why it works: turns serving into a mini experiment.</span></li>
+	                          <li><span class="font-semibold">Sound-on feed moment:</span> EL: "Βάλτε ήχο. Αυτό είναι το κοτέτσι όταν πέφτει λιχουδιά." / EN: "Sound on. This is the coop when the treat drops." <span class="text-zinc-500">Why it works: sensory posts earn attention fast in crowded feeds.</span></li>
+	                          <li><span class="font-semibold">Daily routine reel:</span> EL: "Το μικρό μας απογευματινό τελετουργικό." / EN: "Our little afternoon flock ritual." <span class="text-zinc-500">Why it works: routine content feels authentic and repeatable.</span></li>
+	                          <li><span class="font-semibold">Before/after energy:</span> EL: "Πριν το πασπάλισμα / μετά το πασπάλισμα." / EN: "Before the sprinkle / after the sprinkle." <span class="text-zinc-500">Why it works: simple contrast makes the benefit visible.</span></li>
+	                        </ol>
+	                      </details>
+	                      <details class="rounded-md border border-zinc-200 p-3">
+	                        <summary class="cursor-pointer font-bold">Authority and education posts</summary>
+	                        <ol class="mt-2 list-decimal space-y-3 pl-5 text-zinc-700" start="21">
+	                          <li><span class="font-semibold">Trust-first explanation:</span> EL: "Λιχουδιά, όχι αντικατάσταση τροφής." / EN: "A treat, not a feed replacement." <span class="text-zinc-500">Why it works: trusted/admin-style posts avoid exaggerated claims.</span></li>
+	                          <li><span class="font-semibold">Natural behavior explainer:</span> EL: "Οι κότες ψάχνουν έντομα από ένστικτο." / EN: "Chickens naturally search for insects." <span class="text-zinc-500">Why it works: aligns product with behavior the community already recognizes.</span></li>
+	                          <li><span class="font-semibold">Storage education:</span> EL: "Εύκολη αποθήκευση, χωρίς ζωντανή τροφή." / EN: "Easy to store, no live feeders needed." <span class="text-zinc-500">Why it works: practical convenience beats abstract brand claims.</span></li>
+	                          <li><span class="font-semibold">Mixed-poultry note:</span> EL: "Κότες, πάπιες, χήνες... κάθε κοπάδι έχει τις δικές του συνήθειες." / EN: "Hens, ducks, geese... every flock has its own habits." <span class="text-zinc-500">Why it works: several active groups include mixed poultry, not just hens.</span></li>
+	                          <li><span class="font-semibold">Greek-made soft trust:</span> EL: "Μια λιχουδιά για κότες, φτιαγμένη στην Ελλάδα." / EN: "A chicken treat made in Greece." <span class="text-zinc-500">Why it works: local trust matters, but it should be secondary to usefulness.</span></li>
+	                        </ol>
+	                      </details>
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
+	              <div id="marketingPanelOpportunities" class="panel p-4 space-y-3 hidden" data-marketing-panel="opportunities">
+	                <div class="flex flex-wrap items-center justify-between gap-3">
+	                  <h3 class="font-extrabold text-lg">Opportunities</h3>
+	                  <p id="socialScanSummary" class="text-sm text-zinc-500"></p>
 	                </div>
 	                <div id="socialOpportunities" class="space-y-3"></div>
 	              </div>
@@ -454,6 +539,9 @@
                       </tbody>
                     </table>
                   </div>
+                  <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                    Verified fit: up to 6KG fits in one Medium compartment by packing 2x 3KG flattened blocks as 16 x 30 x 28cm each, side by side: 16 <= 17cm, 30 <= 45cm, 28 + 28 <= 60cm.
+                  </div>
                   <div id="packingRows" class="space-y-2"></div>
                   <div class="flex flex-wrap justify-end gap-2">
                     <button id="packingResetBtn" class="btn-soft" type="button">Reset</button>
@@ -587,6 +675,17 @@
                     <span class="font-bold text-zinc-600">EUR</span>
                   </div>
                 </div>
+                <label class="inline-flex items-center gap-2 font-semibold">
+                  <input id="boxnowDiscountEnabled" type="checkbox" class="h-4 w-4">
+                  Apply BOX NOW shipping discount
+                </label>
+                <div>
+                  <label class="label" for="boxnowDiscountAmount">BOX NOW discount</label>
+                  <div class="flex items-center gap-2">
+                    <input id="boxnowDiscountAmount" class="input" type="number" min="0" step="0.01" inputmode="decimal">
+                    <span class="font-bold text-zinc-600">EUR</span>
+                  </div>
+                </div>
               </div>
               <div id="settingsPanelEmails" class="space-y-3 hidden" data-settings-panel="emails">
                 <h3 class="font-extrabold text-lg">Email templates</h3>
@@ -622,7 +721,7 @@
                   <textarea id="templateBody" class="input" rows="7" placeholder="Hi {customerName},&#10;&#10;Your GRUBZ order {orderNumber} is now {fulfillmentStatus}.&#10;&#10;{orderDetails}&#10;&#10;GRUBZ"></textarea>
                 </div>
                 <div class="text-xs text-zinc-500">
-                  {orderNumber} {customerName} {customerEmail} {coupon} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
+                  {orderNumber} {customerName} {customerEmail} {coupon} {grubz_url} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
                 </div>
                 <div class="flex flex-wrap justify-end gap-2">
                   <button id="clearTemplateBtn" class="btn-soft" type="button">Clear</button>
@@ -836,6 +935,63 @@
 	        </section>
 	      </div>
 
+	      <div id="manualOrderModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="manualOrderModalTitle">
+	        <div class="modal-backdrop" data-close-modal="manualOrderModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <h3 id="manualOrderModalTitle" class="font-extrabold text-lg">Create manual order</h3>
+	            <button id="closeManualOrderModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div>
+	              <label class="label" for="manualCustomerName">Customer name</label>
+	              <input id="manualCustomerName" class="input">
+	            </div>
+	            <div>
+	              <label class="label" for="manualCustomerEmail">Customer email</label>
+	              <input id="manualCustomerEmail" class="input" type="email">
+	            </div>
+	            <div>
+	              <label class="label" for="manualCustomerPhone">Phone</label>
+	              <input id="manualCustomerPhone" class="input">
+	            </div>
+	            <div>
+	              <label class="label" for="manualLanguage">Language</label>
+	              <select id="manualLanguage" class="input">
+	                <option value="en">English</option>
+	                <option value="el">Greek</option>
+	              </select>
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="manualStripePaymentLink">Stripe payment link</label>
+	              <input id="manualStripePaymentLink" class="input" type="url" placeholder="https://buy.stripe.com/...">
+	            </div>
+	            <div>
+	              <label class="label" for="manualShippingCents">Shipping cents</label>
+	              <input id="manualShippingCents" class="input" type="number" min="0" step="1" value="0">
+	            </div>
+	            <div>
+	              <label class="label" for="manualDiscountCents">Discount cents</label>
+	              <input id="manualDiscountCents" class="input" type="number" min="0" step="1" value="0">
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="manualNotes">Notes</label>
+	              <textarea id="manualNotes" class="input" rows="2"></textarea>
+	            </div>
+	          </div>
+	          <div class="panel p-3 space-y-2">
+	            <div class="flex items-center justify-between gap-2">
+	              <h4 class="font-extrabold text-sm">Products</h4>
+	              <button id="addManualOrderItemBtn" class="btn-soft" type="button">Add product</button>
+	            </div>
+	            <div id="manualOrderItems" class="space-y-2"></div>
+	            <div id="manualOrderTotal" class="text-sm font-bold text-right"></div>
+	          </div>
+	          <p id="manualOrderMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          <button id="createManualOrderBtn" class="btn w-full" type="button">Create order</button>
+	        </section>
+	      </div>
+
 	      <div id="orderModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
 	        <div class="modal-backdrop" data-close-modal="orderModal"></div>
 	        <section class="modal-panel p-4 space-y-3">
@@ -850,7 +1006,25 @@
 	                <h4 class="font-extrabold">BOX NOW shipment</h4>
 	                <p id="orderBoxNowShipmentSummary" class="text-xs text-zinc-500"></p>
 	              </div>
-	              <button id="createBoxNowShipmentBtn" class="btn-soft" type="button">Create BOX NOW delivery</button>
+	              <div class="flex flex-wrap gap-2">
+	                <button id="downloadBoxNowParcelLabelBtn" class="btn-soft" type="button">Parcel label</button>
+	                <button id="downloadBoxNowOrderLabelBtn" class="btn-soft" type="button">Order label</button>
+	                <button id="createBoxNowShipmentBtn" class="btn-soft" type="button">Create BOX NOW delivery</button>
+	              </div>
+	            </div>
+	            <div class="grid sm:grid-cols-2 gap-2">
+	              <div>
+	                <label class="label" for="boxNowPaymentMode">BOX NOW shipping type</label>
+	                <select id="boxNowPaymentMode" class="input">
+	                  <option value="auto">Auto from order</option>
+	                  <option value="prepaid">Prepaid</option>
+	                  <option value="cod">Cash on delivery</option>
+	                </select>
+	              </div>
+	              <div>
+	                <label class="label" for="boxNowCodAmount">COD amount</label>
+	                <input id="boxNowCodAmount" class="input" type="number" min="0" step="0.01">
+	              </div>
 	            </div>
 	            <pre id="orderBoxNowResult" class="hidden bg-zinc-950 text-zinc-100 text-xs rounded-md p-3 overflow-auto max-h-[260px]"></pre>
 	          </div>
@@ -877,6 +1051,10 @@
 	            <div>
 	              <label class="label" for="o_trackingUrl">Tracking URL</label>
 	              <input id="o_trackingUrl" class="input">
+	            </div>
+	            <div class="sm:col-span-2">
+	              <label class="label" for="o_stripePaymentLink">Stripe payment link</label>
+	              <input id="o_stripePaymentLink" class="input" type="url">
 	            </div>
 	            <div class="sm:col-span-2">
 	              <label class="label" for="o_notes">Notes</label>
@@ -946,7 +1124,7 @@
 	            <label class="label" for="bulkEmailBody">Message</label>
 	            <textarea id="bulkEmailBody" class="input" rows="10" maxlength="12000" placeholder="Hi {customerName},"></textarea>
 	          </div>
-	          <p class="text-xs text-zinc-500">Available fields: {customerName} {customerEmail} {customerPhone} {coupon}</p>
+	          <p class="text-xs text-zinc-500">Available fields: {customerName} {customerEmail} {customerPhone} {coupon} {grubz_url}</p>
 	          <p id="bulkEmailMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          <div class="flex justify-end gap-2">
 	            <button id="sendBulkEmailBtn" class="btn" type="button">Send email</button>
@@ -979,12 +1157,19 @@
 	      let chatPollTimer = null;
 	      let selectedCoupon = null;
 	      let selectedOrder = null;
+	      let manualOrderItems = [];
+	      let pendingBoxNowCreate = null;
 	      let selectedCustomer = null;
 	      let selectedCustomerKeys = new Set();
 	      let selectedChatConversation = null;
 	      let productApiReady = false;
 	      let currentProductImage = "";
-	      let shippingSettings = { boxnowFeeOverrideEnabled:false, boxnowFeeOverrideCents:0 };
+	      let shippingSettings = {
+	        boxnowFeeOverrideEnabled:false,
+	        boxnowFeeOverrideCents:0,
+	        boxnowFeeDiscountEnabled:false,
+	        boxnowFeeDiscountCents:0,
+	      };
 	      let stripeSettings = { mode:"test" };
 	      let orderEmailSettings = { templates:[] };
 	      let boxNowSettings = { activeEnvironment:"stage", environments:{} };
@@ -1038,6 +1223,19 @@
 	      ].join(" ").toLowerCase();
 	      const prettyJson = value => JSON.stringify(value, null, 2);
 	      const centsToEuro = cents => ((Number(cents || 0)) / 100).toFixed(2);
+	      function downloadBase64File(base64, filename, contentType = "application/pdf"){
+	        const binary = atob(String(base64 || ""));
+	        const bytes = new Uint8Array(binary.length);
+	        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+	        const url = URL.createObjectURL(new Blob([bytes], { type: contentType }));
+	        const link = document.createElement("a");
+	        link.href = url;
+	        link.download = filename;
+	        document.body.appendChild(link);
+	        link.click();
+	        link.remove();
+	        URL.revokeObjectURL(url);
+	      }
 	      function couponTimestampToInput(value){
 	        if (!value) return "";
 	        const ms = value._seconds ? value._seconds * 1000 : value.seconds ? value.seconds * 1000 : 0;
@@ -1353,6 +1551,39 @@
 	        button.addEventListener("click", () => showBoxNowTab(button.dataset.boxnowTab));
 	      });
 	      showBoxNowTab("settings");
+	      function showMarketingTab(tab = "settings"){
+	        const active = ["settings", "intake", "ideas", "opportunities"].includes(tab) ? tab : "settings";
+	        document.querySelectorAll("[data-marketing-panel]").forEach(panel => {
+	          panel.classList.toggle("hidden", panel.dataset.marketingPanel !== active);
+	        });
+	        document.querySelectorAll("[data-marketing-tab]").forEach(button => {
+	          const isActive = button.dataset.marketingTab === active;
+	          button.classList.toggle("btn", isActive);
+	          button.classList.toggle("btn-soft", !isActive);
+	          button.setAttribute("aria-selected", isActive ? "true" : "false");
+	        });
+	      }
+	      document.querySelectorAll("[data-marketing-tab]").forEach(button => {
+	        button.addEventListener("click", () => showMarketingTab(button.dataset.marketingTab));
+	      });
+	      showMarketingTab("settings");
+	      function showIdeaWeekTab(tab = "2026-07-20"){
+	        const tabs = Array.from(document.querySelectorAll("[data-idea-week-tab]")).map(button => button.dataset.ideaWeekTab);
+	        const active = tabs.includes(tab) ? tab : (tabs[0] || "");
+	        document.querySelectorAll("[data-idea-week-panel]").forEach(panel => {
+	          panel.classList.toggle("hidden", panel.dataset.ideaWeekPanel !== active);
+	        });
+	        document.querySelectorAll("[data-idea-week-tab]").forEach(button => {
+	          const isActive = button.dataset.ideaWeekTab === active;
+	          button.classList.toggle("btn", isActive);
+	          button.classList.toggle("btn-soft", !isActive);
+	          button.setAttribute("aria-selected", isActive ? "true" : "false");
+	        });
+	      }
+	      document.querySelectorAll("[data-idea-week-tab]").forEach(button => {
+	        button.addEventListener("click", () => showIdeaWeekTab(button.dataset.ideaWeekTab));
+	      });
+	      showIdeaWeekTab("2026-07-20");
 	      function showSettingsTab(tab = "stripe"){
 	        const active = ["stripe", "shipping", "emails"].includes(tab) ? tab : "stripe";
 	        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
@@ -1973,32 +2204,32 @@
 
 	      async function loadSocialAgent(){
 	        try {
-	          setMsg("socialMsg", "Loading Social Agent...");
+	          setMsg("socialMsg", "Loading Marketing...");
 	          const data = await api("/adminSocialAgent?limit=50");
 	          socialAgentSettings = data.settings || socialAgentSettings;
 	          socialOpportunities = data.opportunities || [];
 	          renderSocialAgent();
-	          setMsg("socialMsg", "Social Agent loaded");
+	          setMsg("socialMsg", "Marketing loaded");
 	        } catch (err) {
 	          socialOpportunities = [];
 	          renderSocialOpportunities();
-	          setMsg("socialMsg", err.message || apiUnavailableMessage("Social Agent"), false);
+	          setMsg("socialMsg", err.message || apiUnavailableMessage("Marketing"), false);
 	          throw err;
 	        }
 	      }
 
 	      async function saveSocialAgent(){
 	        try {
-	          setMsg("socialMsg", "Saving Social Agent...");
+	          setMsg("socialMsg", "Saving Marketing...");
 	          const settings = socialSettingsPayload();
 	          const data = await api("/adminSocialAgent", {
 	            method: "PATCH",
 	            body: JSON.stringify({ settings }),
 	          });
 	          socialAgentSettings = { ...settings, ...(data.settings || {}) };
-	          setMsg("socialMsg", "Social Agent saved");
+	          setMsg("socialMsg", "Marketing saved");
 	        } catch (err) {
-	          setMsg("socialMsg", err.message || "Social Agent save failed", false);
+	          setMsg("socialMsg", err.message || "Marketing save failed", false);
 	        }
 	      }
 
@@ -2012,10 +2243,11 @@
 	          socialAgentSettings = data.settings || socialAgentSettings;
 	          socialOpportunities = data.opportunities || [];
 	          renderSocialAgent();
+	          showMarketingTab("opportunities");
 	          const errors = data.scan?.errors || [];
 	          setMsg("socialMsg", errors.length ? `Scan complete with ${errors.length} source error(s)` : "Scan complete", !errors.length);
 	        } catch (err) {
-	          setMsg("socialMsg", err.message || "Social Agent scan failed", false);
+	          setMsg("socialMsg", err.message || "Marketing scan failed", false);
 	        }
 	      }
 
@@ -2050,6 +2282,7 @@
 	          socialAgentSettings = data.settings || socialAgentSettings;
 	          socialOpportunities = data.opportunities || [];
 	          renderSocialAgent();
+	          showMarketingTab("opportunities");
 	          $("facebookManualInput").value = "";
 	          setMsg("socialMsg", `${data.imported?.length || 0} Facebook post(s) analyzed`);
 	        } catch (err) {
@@ -2134,6 +2367,8 @@
 	          : "";
 	        $("boxnowOverrideEnabled").checked = shippingSettings.boxnowFeeOverrideEnabled === true;
 	        $("boxnowOverrideAmount").value = ((Number(shippingSettings.boxnowFeeOverrideCents || 0)) / 100).toFixed(2);
+	        $("boxnowDiscountEnabled").checked = shippingSettings.boxnowFeeDiscountEnabled === true;
+	        $("boxnowDiscountAmount").value = ((Number(shippingSettings.boxnowFeeDiscountCents || 0)) / 100).toFixed(2);
 	        renderOrderEmailTemplates();
 	        renderBulkEmailTemplateOptions();
 	        renderBoxNowSettings();
@@ -2814,6 +3049,8 @@
 	        }
 	        if (action === "buildOrderDeliveryPayload" || action === "createOrderDelivery") {
 	          body.orderId = $("boxNowPlaygroundOrderId").value.trim();
+	          body.paymentMode = $("boxNowPaymentMode")?.value === "auto" ? "" : $("boxNowPaymentMode")?.value || "";
+	          body.amountToBeCollectedCents = Math.max(0, Math.round(Number($("boxNowCodAmount")?.value || 0) * 100));
 	        }
 	        if (action === "checkAddressDelivery") {
 	          body.payload = JSON.parse($("boxNowPlaygroundPayload").value || "{}");
@@ -2823,6 +3060,7 @@
 	        }
 	        if (action === "fetchOrderLabel") {
 	          body.orderNumber = $("boxNowLabelOrderNumber").value.trim();
+	          body.parcelId = $("boxNowParcelId").value.trim();
 	        }
 	        if (action === "verifyWebhookSample") {
 	          body.payload = JSON.parse($("boxNowWebhookSample").value || "{}");
@@ -2842,6 +3080,17 @@
 	            body: JSON.stringify(playgroundPayload(action)),
 	          });
 	          $("boxNowResult").textContent = prettyJson(result);
+	          if ((action === "fetchParcelLabel" || action === "fetchOrderLabel") && result?.result?.base64) {
+	            const id = action === "fetchParcelLabel"
+	              ? $("boxNowParcelId").value.trim()
+	              : $("boxNowLabelOrderNumber").value.trim();
+	            const labelType = action === "fetchParcelLabel" ? "parcel" : "order";
+	            downloadBase64File(
+	              result.result.base64,
+	              `boxnow-${labelType}-label-${id || "download"}.pdf`,
+	              result.result.contentType || "application/pdf"
+	            );
+	          }
 	          setMsg("boxNowMsg", result.ok === false ? "BOX NOW action returned an error" : "BOX NOW action complete", result.ok !== false);
 	        } catch (err) {
 	          showBoxNowTab("playground");
@@ -2860,9 +3109,13 @@
 	        try {
 	          const euros = Number($("boxnowOverrideAmount").value || 0);
 	          if (!Number.isFinite(euros) || euros < 0) throw new Error("Enter a valid BOX NOW override amount.");
+	          const discountEuros = Number($("boxnowDiscountAmount").value || 0);
+	          if (!Number.isFinite(discountEuros) || discountEuros < 0) throw new Error("Enter a valid BOX NOW discount amount.");
 	          const shipping = {
 	            boxnowFeeOverrideEnabled: $("boxnowOverrideEnabled").checked,
 	            boxnowFeeOverrideCents: Math.round(euros * 100),
+	            boxnowFeeDiscountEnabled: $("boxnowDiscountEnabled").checked,
+	            boxnowFeeDiscountCents: Math.round(discountEuros * 100),
 	          };
 	          const stripe = {
 	            mode: $("stripeModeLive").checked ? "live" : "test",
@@ -3161,12 +3414,140 @@
         `).join("");
       }
 
+      function activeOrderProducts(){
+        return products
+          .filter(p => p.active !== false)
+          .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || String(a.name || a.id).localeCompare(String(b.name || b.id)));
+      }
+
+      function manualOrderItemTotalCents(){
+        return manualOrderItems.reduce((sum, item) => {
+          const product = products.find(p => p.id === item.id);
+          return sum + (Math.max(0, Number(product?.amount || 0)) * Math.max(1, Math.round(Number(item.qty || 1))));
+        }, 0);
+      }
+
+      function renderManualOrderItems(){
+        const available = activeOrderProducts();
+        const options = available.map(p => `<option value="${esc(p.id)}">${esc(p.name || p.id)} - ${money(p.amount, p.currency || "eur")}</option>`).join("");
+        if (!manualOrderItems.length && available.length) {
+          manualOrderItems = [{ id: available[0].id, qty: 1 }];
+        }
+        $("manualOrderItems").innerHTML = manualOrderItems.map((item, index) => `
+          <div class="grid sm:grid-cols-[minmax(0,1fr)_90px_auto] gap-2 items-end" data-manual-order-row="${index}">
+            <div>
+              <label class="label" for="manualOrderProduct${index}">Product</label>
+              <select id="manualOrderProduct${index}" class="input" data-manual-order-product="${index}">
+                ${options}
+              </select>
+            </div>
+            <div>
+              <label class="label" for="manualOrderQty${index}">Qty</label>
+              <input id="manualOrderQty${index}" class="input" type="number" min="1" step="1" value="${esc(item.qty || 1)}" data-manual-order-qty="${index}">
+            </div>
+            <button class="btn-danger" type="button" data-remove-manual-order-item="${index}">Remove</button>
+          </div>
+        `).join("");
+        manualOrderItems.forEach((item, index) => {
+          const select = $(`manualOrderProduct${index}`);
+          if (select) select.value = item.id;
+        });
+        const shipping = Math.max(0, Number($("manualShippingCents")?.value || 0));
+        const discount = Math.max(0, Number($("manualDiscountCents")?.value || 0));
+        const total = Math.max(0, manualOrderItemTotalCents() + shipping - discount);
+        $("manualOrderTotal").textContent = `Total: ${money(total, "eur")}`;
+      }
+
+      function openManualOrder(){
+        const available = activeOrderProducts();
+        manualOrderItems = available.length ? [{ id: available[0].id, qty: 1 }] : [];
+        $("manualCustomerName").value = "";
+        $("manualCustomerEmail").value = "";
+        $("manualCustomerPhone").value = "";
+        $("manualLanguage").value = "en";
+        $("manualStripePaymentLink").value = "";
+        $("manualShippingCents").value = "0";
+        $("manualDiscountCents").value = "0";
+        $("manualNotes").value = "";
+        $("manualOrderMsg").textContent = available.length ? "" : "Load or create active products before creating an order.";
+        renderManualOrderItems();
+        openModal("manualOrderModal");
+        setTimeout(() => $("manualCustomerName").focus(), 0);
+      }
+
 	      $("ordersTable").addEventListener("click", e => {
 	        const btn = e.target.closest("[data-order-doc-id]");
 	        if (!btn) return;
 	        selectedOrder = orders.find(o => o.id === btn.dataset.orderDocId);
 	        openOrder(selectedOrder);
 	      });
+
+      $("newManualOrderBtn").addEventListener("click", openManualOrder);
+      $("closeManualOrderModal").addEventListener("click", () => closeModal("manualOrderModal"));
+      $("addManualOrderItemBtn").addEventListener("click", () => {
+        const available = activeOrderProducts();
+        if (!available.length) return setMsg("manualOrderMsg", "No active products found.", false);
+        manualOrderItems.push({ id: available[0].id, qty: 1 });
+        renderManualOrderItems();
+      });
+      $("manualOrderItems").addEventListener("change", e => {
+        const productSelect = e.target.closest("[data-manual-order-product]");
+        const qtyInput = e.target.closest("[data-manual-order-qty]");
+        if (productSelect) {
+          const index = Number(productSelect.dataset.manualOrderProduct);
+          if (manualOrderItems[index]) manualOrderItems[index].id = productSelect.value;
+        }
+        if (qtyInput) {
+          const index = Number(qtyInput.dataset.manualOrderQty);
+          if (manualOrderItems[index]) manualOrderItems[index].qty = Math.max(1, Math.round(Number(qtyInput.value || 1)));
+        }
+        renderManualOrderItems();
+      });
+      $("manualOrderItems").addEventListener("click", e => {
+        const removeBtn = e.target.closest("[data-remove-manual-order-item]");
+        if (!removeBtn) return;
+        const index = Number(removeBtn.dataset.removeManualOrderItem);
+        manualOrderItems.splice(index, 1);
+        renderManualOrderItems();
+      });
+      ["manualShippingCents", "manualDiscountCents"].forEach(id => {
+        $(id).addEventListener("input", renderManualOrderItems);
+      });
+      $("createManualOrderBtn").addEventListener("click", async () => {
+        try {
+          const items = manualOrderItems
+            .map(item => ({ id: item.id, qty: Math.max(1, Math.round(Number(item.qty || 1))) }))
+            .filter(item => item.id && item.qty > 0);
+          if (!items.length) return setMsg("manualOrderMsg", "Add at least one product.", false);
+          setMsg("manualOrderMsg", "Creating manual order...");
+          const result = await api("/adminOrders", {
+            method:"POST",
+            body: JSON.stringify({
+              action: "createManualOrder",
+              order: {
+                customer: {
+                  name: $("manualCustomerName").value.trim(),
+                  email: $("manualCustomerEmail").value.trim(),
+                  phone: $("manualCustomerPhone").value.trim(),
+                },
+                language: $("manualLanguage").value,
+                stripePaymentLink: $("manualStripePaymentLink").value.trim(),
+                amountShipping: Math.max(0, Math.round(Number($("manualShippingCents").value || 0))),
+                amountDiscount: Math.max(0, Math.round(Number($("manualDiscountCents").value || 0))),
+                notes: $("manualNotes").value.trim(),
+                items,
+              },
+            }),
+          });
+          setMsg("manualOrderMsg", "Manual order created");
+          await loadOrders();
+          selectedOrder = orders.find(o => o.id === result.order?.id) || result.order || null;
+          closeModal("manualOrderModal");
+          if (selectedOrder) openOrder(selectedOrder);
+        } catch (err) {
+          setMsg("manualOrderMsg", err.message || "Manual order creation failed", false);
+        }
+      });
 
 	      function openOrder(o){
 	        fillOrder(o);
@@ -3186,25 +3567,37 @@
             <div><strong>Amounts:</strong><br>Subtotal: ${money(pricing.subtotal, o.currency)}<br>Shipping: ${money(pricing.shipping, o.currency)}${discountLine}<br>Total: ${money(pricing.total, o.currency)}</div>
             <div><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
             <div><strong>Items:</strong><ul class="list-disc ml-5">${(o.items || []).map(i => `<li>${esc(i.quantity)} x ${esc(i.name)} - ${money(i.totalAmount, i.currency)}</li>`).join("")}</ul></div>
+            <div><strong>Stripe payment link:</strong> ${o.stripePaymentLink || o.paymentLink ? `<a class="underline" href="${esc(o.stripePaymentLink || o.paymentLink)}" target="_blank" rel="noopener">${esc(o.stripePaymentLink || o.paymentLink)}</a>` : ""}</div>
             <div><strong>Stripe session:</strong> ${esc(o.stripeSessionId || "")}</div>
             <div><strong>Stripe payment intent:</strong> ${esc(o.stripePaymentIntentId || "")}</div>
           </div>
         `;
         $("o_status").value = o.status || "";
         $("o_fulfillment").value = o.fulfillmentStatus || "new";
-        $("o_tracking").value = o.shipping?.trackingNumber || "";
-        $("o_trackingUrl").value = o.shipping?.trackingUrl || "";
+        const shipment = o.boxNowShipment || {};
+        const shipmentParcelId = Array.isArray(shipment.parcelIds) && shipment.parcelIds[0] ? shipment.parcelIds[0] : "";
+        const trackingNumber = o.shipping?.trackingNumber || shipment.trackingNumber || shipmentParcelId || "";
+        const isCodOrder = o.paymentMethod === "cash_on_delivery" || o.shipping?.cashOnDelivery === true;
+        $("o_tracking").value = trackingNumber;
+        $("o_trackingUrl").value = o.shipping?.trackingUrl || (trackingNumber ? `https://track.boxnow.gr/en?track=${encodeURIComponent(trackingNumber)}` : "");
+        $("o_stripePaymentLink").value = o.stripePaymentLink || o.paymentLink || "";
         $("o_notes").value = o.notes || "";
+        $("boxNowPaymentMode").value = isCodOrder ? "cod" : "prepaid";
+        $("boxNowCodAmount").value = ((Number(o.amountDue || o.amountTotal || 0)) / 100).toFixed(2);
+        $("boxNowCodAmount").disabled = $("boxNowPaymentMode").value !== "cod";
         $("boxNowPlaygroundOrderId").value = o.id || "";
         $("boxNowLabelOrderNumber").value = orderNumber(o);
         $("boxNowParcelId").value = Array.isArray(o.boxNowShipment?.parcelIds) && o.boxNowShipment.parcelIds[0]
           ? o.boxNowShipment.parcelIds[0]
           : (o.shipping?.trackingNumber || "");
-        const shipment = o.boxNowShipment || {};
-        $("orderBoxNowShipmentSummary").textContent = shipment.deliveryRequestId
-          ? `Created in ${shipment.environment || "BOX NOW"}: ${shipment.deliveryRequestId}`
-          : "No BOX NOW delivery request has been created for this order yet.";
-        $("createBoxNowShipmentBtn").disabled = Boolean(shipment.deliveryRequestId);
+	        $("orderBoxNowShipmentSummary").textContent = shipment.deliveryRequestId
+	          ? `Created in ${shipment.environment || "BOX NOW"}: ${shipment.deliveryRequestId}`
+	          : "No BOX NOW delivery request has been created for this order yet.";
+	        pendingBoxNowCreate = null;
+	        $("createBoxNowShipmentBtn").disabled = Boolean(shipment.deliveryRequestId);
+	        $("createBoxNowShipmentBtn").textContent = "Create BOX NOW delivery";
+	        $("downloadBoxNowParcelLabelBtn").disabled = !shipment.deliveryRequestId || !(Array.isArray(shipment.parcelIds) && shipment.parcelIds.length);
+        $("downloadBoxNowOrderLabelBtn").disabled = !shipment.deliveryRequestId;
         $("orderBoxNowResult").classList.add("hidden");
         $("orderBoxNowResult").textContent = "";
       }
@@ -3212,18 +3605,55 @@
       $("createBoxNowShipmentBtn").addEventListener("click", async () => {
         if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
         const env = boxNowSettings.activeEnvironment === "production" ? "production" : "stage";
-        if (!confirm(`Create a BOX NOW delivery for ${orderNumber(selectedOrder)} in ${env}?`)) return;
+        const paymentMode = $("boxNowPaymentMode").value === "cod" ? "cod" : $("boxNowPaymentMode").value === "prepaid" ? "prepaid" : "";
+        const codAmountCents = Math.max(0, Math.round(Number($("boxNowCodAmount").value || 0) * 100));
+        const paymentLabel = paymentMode === "cod" ? `COD ${money(codAmountCents, selectedOrder.currency || "eur")}` : paymentMode || "auto";
+        const createBody = {
+          action: "createOrderDelivery",
+          environment: env,
+          orderId: selectedOrder.id,
+          paymentMode,
+          amountToBeCollectedCents: codAmountCents,
+        };
+        const payloadKey = JSON.stringify(createBody);
+        if (!pendingBoxNowCreate || pendingBoxNowCreate.key !== payloadKey) {
+          try {
+            $("createBoxNowShipmentBtn").disabled = true;
+            setMsg("orderMsg", "Building BOX NOW payload...");
+            const preview = await api("/adminBoxNow", {
+              method:"POST",
+              body: JSON.stringify({
+                ...createBody,
+                action: "buildOrderDeliveryPayload",
+              }),
+            });
+            pendingBoxNowCreate = { key: payloadKey, body: createBody, preview };
+            $("orderBoxNowResult").classList.remove("hidden");
+            $("orderBoxNowResult").textContent = prettyJson(preview);
+            $("createBoxNowShipmentBtn").textContent = "Confirm BOX NOW delivery";
+            const codHint = paymentMode === "cod"
+              ? " If BOX NOW has not enabled COD for this account, this will fail with P411; use Prepaid instead."
+              : "";
+            setMsg("orderMsg", `Review the BOX NOW payload below, then press Confirm BOX NOW delivery (${env}, ${paymentLabel}).${codHint}`);
+          } catch (err) {
+            pendingBoxNowCreate = null;
+            $("orderBoxNowResult").classList.remove("hidden");
+            $("orderBoxNowResult").textContent = prettyJson({ error: err.message || "BOX NOW payload preview failed" });
+            setMsg("orderMsg", err.message || "BOX NOW payload preview failed", false);
+          } finally {
+            $("createBoxNowShipmentBtn").disabled = Boolean(selectedOrder?.boxNowShipment?.deliveryRequestId);
+          }
+          return;
+        }
+        if (!confirm(`Send the BOX NOW payload shown below for ${orderNumber(selectedOrder)} in ${env} (${paymentLabel})?`)) return;
         try {
           $("createBoxNowShipmentBtn").disabled = true;
           setMsg("orderMsg", "Creating BOX NOW delivery...");
           const result = await api("/adminBoxNow", {
             method:"POST",
-            body: JSON.stringify({
-              action: "createOrderDelivery",
-              environment: env,
-              orderId: selectedOrder.id,
-            }),
+            body: JSON.stringify(pendingBoxNowCreate.body),
           });
+          pendingBoxNowCreate = null;
           $("orderBoxNowResult").classList.remove("hidden");
           $("orderBoxNowResult").textContent = prettyJson(result);
           setMsg("orderMsg", "BOX NOW delivery created");
@@ -3235,8 +3665,60 @@
           $("orderBoxNowResult").textContent = prettyJson({ error: err.message || "BOX NOW delivery failed" });
           setMsg("orderMsg", err.message || "BOX NOW delivery failed", false);
           $("createBoxNowShipmentBtn").disabled = Boolean(selectedOrder?.boxNowShipment?.deliveryRequestId);
+          $("createBoxNowShipmentBtn").textContent = pendingBoxNowCreate ? "Confirm BOX NOW delivery" : "Create BOX NOW delivery";
         }
       });
+
+      $("boxNowPaymentMode").addEventListener("change", () => {
+        pendingBoxNowCreate = null;
+        $("createBoxNowShipmentBtn").textContent = "Create BOX NOW delivery";
+        $("boxNowCodAmount").disabled = $("boxNowPaymentMode").value !== "cod";
+      });
+      $("boxNowCodAmount").addEventListener("input", () => {
+        pendingBoxNowCreate = null;
+        $("createBoxNowShipmentBtn").textContent = "Create BOX NOW delivery";
+      });
+
+      async function downloadOrderBoxNowLabel(kind){
+        if (!selectedOrder?.boxNowShipment?.deliveryRequestId) return setMsg("orderMsg", "Create the BOX NOW delivery first.", false);
+        const shipment = selectedOrder.boxNowShipment || {};
+        const isParcel = kind === "parcel";
+        const parcelId = Array.isArray(shipment.parcelIds) ? shipment.parcelIds[0] || "" : "";
+        if (isParcel && !parcelId) return setMsg("orderMsg", "No BOX NOW parcel ID found for this order.", false);
+        const env = shipment.environment || (boxNowSettings.activeEnvironment === "production" ? "production" : "stage");
+        const action = isParcel ? "fetchParcelLabel" : "fetchOrderLabel";
+        const filename = `${orderNumber(selectedOrder)}-${isParcel ? "parcel" : "order"}-label.pdf`;
+        try {
+          setMsg("orderMsg", `Downloading BOX NOW ${isParcel ? "parcel" : "order"} label...`);
+          const result = await api("/adminBoxNow", {
+            method:"POST",
+            body: JSON.stringify({
+              action,
+              environment: env,
+              parcelId,
+              deliveryRequestId: shipment.deliveryRequestId || "",
+              deliveryRequestIds: Array.isArray(shipment.deliveryRequestIds) ? shipment.deliveryRequestIds : [],
+              orderNumber: shipment.deliveryRequestId || orderNumber(selectedOrder),
+              type: "pdf",
+            }),
+          });
+          const label = result?.result || {};
+          if (!label.ok || !label.base64) {
+            throw new Error(`BOX NOW label unavailable (${label.status || "unknown"}): ${JSON.stringify(label.data || {})}`);
+          }
+          downloadBase64File(label.base64, filename, label.contentType || "application/pdf");
+          $("orderBoxNowResult").classList.remove("hidden");
+          $("orderBoxNowResult").textContent = prettyJson(result);
+          setMsg("orderMsg", `BOX NOW ${isParcel ? "parcel" : "order"} label downloaded`);
+        } catch (err) {
+          $("orderBoxNowResult").classList.remove("hidden");
+          $("orderBoxNowResult").textContent = prettyJson({ error: err.message || "BOX NOW label download failed" });
+          setMsg("orderMsg", err.message || "BOX NOW label download failed", false);
+        }
+      }
+
+      $("downloadBoxNowParcelLabelBtn").addEventListener("click", () => downloadOrderBoxNowLabel("parcel"));
+      $("downloadBoxNowOrderLabelBtn").addEventListener("click", () => downloadOrderBoxNowLabel("order"));
 
       $("saveOrderBtn").addEventListener("click", async () => {
         if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
@@ -3255,6 +3737,7 @@
               sendFulfillmentEmail,
               trackingNumber: $("o_tracking").value.trim(),
               trackingUrl: $("o_trackingUrl").value.trim(),
+              stripePaymentLink: $("o_stripePaymentLink").value.trim(),
               notes: $("o_notes").value.trim(),
             }),
           });

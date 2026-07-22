@@ -49,6 +49,7 @@ const BOXNOW_ENVIRONMENTS = {
     locationBaseUrl: "https://locationapi-production.boxnow.gr/api/v1",
   },
 };
+const BOXNOW_STAGE_TEST_DESTINATION_LOCATION_ID = "9";
 const BOXNOW_CONFIGURED_FEE_ENDPOINT = "";
 const BOXNOW_FALLBACK_FEE_CENTS = 0;
 const BOXNOW_PARCEL_SIZES = [
@@ -56,8 +57,10 @@ const BOXNOW_PARCEL_SIZES = [
   { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
   { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
 ];
+const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
+const BOXNOW_FLATTENED_BAGS_PER_LAYER = 2;
 const HAPPY_CHICKEN_PACKED_PARCELS = {
-  "happy-chicken-1kg": { heightCm: 11 / 3, widthCm: 24, lengthCm: 58 },
+  "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
   "happy-chicken-3kg": { heightCm: 16, widthCm: 30, lengthCm: 28 },
 };
@@ -72,6 +75,7 @@ const SOCIAL_OPPORTUNITIES_COLLECTION = "socialOpportunities";
 const CHAT_CONVERSATIONS_COLLECTION = "chatConversations";
 const GRUBZ_SIGNATURE_IMAGE_URL = "https://grubz.gr/images/grubz-email-signature.png";
 const GRUBZ_INFO_EMAIL = "info@grubz.gr";
+const GRUBZ_URL = "https://grubz.gr";
 const BULK_CUSTOMER_EMAIL_TEST_MODE = false;
 const GRUBZ_EMAIL_SIGNATURE_HTML = `
 <div>
@@ -200,11 +204,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "abandoned_signup",
     subject: "Still thinking about GRUBZ?",
-    body: "Hi {customerName},\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout.\n\nGRUBZ",
+    body: "Hi {customerName},\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout: {grubz_url}\n\nGRUBZ",
     translations: {
       el: {
         subject: "Σκέφτεσαι ακόμα το GRUBZ;",
-        body: "Γεια σου {customerName},\n\nΣε ευχαριστούμε που γράφτηκες στο GRUBZ. Φαίνεται ότι δεν ολοκλήρωσες ακόμα την παραγγελία σου.\n\nΑν είσαι έτοιμος/η, μπορείς να χρησιμοποιήσεις τον κωδικό έκπτωσης {coupon} στο checkout.\n\nGRUBZ",
+        body: "Γεια σου {customerName},\n\nΣε ευχαριστούμε που γράφτηκες στο GRUBZ. Φαίνεται ότι δεν ολοκλήρωσες ακόμα την παραγγελία σου.\n\nΑν είσαι έτοιμος/η, μπορείς να χρησιμοποιήσεις τον κωδικό έκπτωσης {coupon} στο checkout: {grubz_url}\n\nGRUBZ",
       },
     },
   },
@@ -233,6 +237,11 @@ const ALLOWED_ORIGINS = new Set([
   "https://www.grubz.gr",
 ]);
 const ALLOWED_ORIGIN_LIST = Array.from(ALLOWED_ORIGINS);
+const FIREBASE_STORAGE_BUCKET = "grubz-99b84.firebasestorage.app";
+const FIREBASE_STORAGE_BUCKET_FALLBACKS = [
+  FIREBASE_STORAGE_BUCKET,
+  "grubz-99b84.appspot.com",
+];
 
 initializeApp();
 const db = getFirestore(undefined, "grubz");
@@ -410,16 +419,66 @@ function parseImageUpload(body = {}) {
   }
 
   const dataUrl = String(body.imageDataUrl || "");
-  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const match = dataUrl.match(/^data:(image\/(?:png|jpe?g|webp));base64,([\s\S]+)$/i);
   if (!match) throw new Error("Upload a PNG, JPG, or WebP image");
 
-  const contentType = match[1];
-  const buffer = Buffer.from(match[2], "base64");
+  const contentType = match[1].toLowerCase() === "image/jpg" ? "image/jpeg" : match[1].toLowerCase();
+  const base64 = match[2].replace(/\s/g, "");
+  const buffer = Buffer.from(base64, "base64");
   if (!buffer.length) throw new Error("Image file is empty");
+  if (!buffer.toString("base64").replace(/=+$/, "").startsWith(base64.replace(/=+$/, "").slice(0, 32))) {
+    throw new Error("Image upload data is invalid");
+  }
   if (buffer.length > 5 * 1024 * 1024) throw new Error("Image must be 5 MB or smaller");
 
   const ext = contentType === "image/jpeg" ? "jpg" : contentType.split("/")[1];
   return { id, contentType, buffer, ext };
+}
+
+async function saveProductImageToStorage({ id, contentType, buffer, ext }) {
+  const token = randomUUID();
+  const filePath = `product-images/${id}-${Date.now()}.${ext}`;
+  let lastError = null;
+
+  for (const bucketName of FIREBASE_STORAGE_BUCKET_FALLBACKS) {
+    try {
+      const bucket = getStorage().bucket(bucketName);
+      const file = bucket.file(filePath);
+      await file.save(buffer, {
+        metadata: {
+          contentType,
+          cacheControl: "public, max-age=31536000",
+          metadata: { firebaseStorageDownloadTokens: token },
+        },
+        resumable: false,
+      });
+      return {
+        bucketName: bucket.name,
+        path: filePath,
+        image: productImageDownloadUrl({ bucketName: bucket.name, filePath, token }),
+      };
+    } catch (err) {
+      lastError = err;
+      logger.warn("Product image bucket upload failed", {
+        bucketName,
+        code: err.code || "",
+        message: err.message || "Storage upload failed",
+      });
+      if (Number(err.code || 0) !== 404) break;
+    }
+  }
+
+  throw lastError || new Error("Storage upload failed");
+}
+
+function productImageDownloadUrl({ bucketName, filePath, token }) {
+  const encodedPath = encodeURIComponent(filePath);
+  const emulatorHost = String(process.env.FIREBASE_STORAGE_EMULATOR_HOST || "").trim();
+  if (emulatorHost) {
+    const protocol = /^https?:\/\//i.test(emulatorHost) ? "" : "http://";
+    return `${protocol}${emulatorHost}/v0/b/${bucketName}/o/${encodedPath}?alt=media&token=${token}`;
+  }
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media&token=${token}`;
 }
 
 function generateOrderNumber() {
@@ -478,6 +537,100 @@ function orderItemsFromCart(items, productsMap, stripeMode = "test") {
       image: product.image || "",
     };
   });
+}
+
+function sanitizeStripePaymentLink(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("Stripe payment link must be a valid URL");
+  }
+  if (url.protocol !== "https:") throw new Error("Stripe payment link must use https");
+  const host = url.hostname.toLowerCase();
+  if (!host.endsWith("stripe.com") && host !== "buy.stripe.com") {
+    throw new Error("Stripe payment link must be a Stripe URL");
+  }
+  return url.toString();
+}
+
+async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
+  const productsMap = await getProductsMap();
+  const itemsInput = Array.isArray(input.items) ? input.items : [];
+  const items = orderItemsFromCart(itemsInput, productsMap, sanitizeStripeMode(input.stripeMode || "test"));
+  if (!items.length) throw new Error("Add at least one product");
+
+  const amountSubtotal = orderItemsSubtotal({ items });
+  const amountShipping = Math.max(0, Math.round(Number(input.amountShipping || input.shippingCents || 0)));
+  const amountDiscount = Math.max(0, Math.round(Number(input.amountDiscount || input.discountCents || 0)));
+  const amountTotal = Math.max(0, amountSubtotal + amountShipping - amountDiscount);
+  const paymentLink = sanitizeStripePaymentLink(input.stripePaymentLink || input.paymentLink || "");
+  const orderNumber = String(input.orderNumber || "").trim() || generateOrderNumber();
+  const id = `manual_${orderNumber.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${Date.now()}`;
+  const customer = input.customer && typeof input.customer === "object" ? input.customer : {};
+  const shipping = input.shipping && typeof input.shipping === "object" ? input.shipping : {};
+
+  const order = {
+    id,
+    orderNumber,
+    uid: String(input.uid || "manual").trim() || "manual",
+    manual: true,
+    source: "admin_console",
+    stripeMode: sanitizeStripeMode(input.stripeMode || "test"),
+    stripePaymentLink: paymentLink,
+    paymentLink,
+    paymentMethod: "stripe_payment_link",
+    status: String(input.status || "pending_payment").trim() || "pending_payment",
+    fulfillmentStatus: String(input.fulfillmentStatus || "new").trim() || "new",
+    language: String(input.language || "en").trim().toLowerCase() === "el" ? "el" : "en",
+    paymentStatus: String(input.paymentStatus || "pending_payment").trim() || "pending_payment",
+    amountTotal,
+    amountSubtotal,
+    amountShipping,
+    amountDiscount,
+    amountDue: amountTotal,
+    currency: String(input.currency || "eur").trim().toLowerCase() || "eur",
+    items,
+    customer: {
+      email: String(customer.email || input.customerEmail || "").trim(),
+      name: String(customer.name || input.customerName || "").trim(),
+      phone: String(customer.phone || input.customerPhone || "").trim(),
+    },
+    shipping: {
+      deliveryMethod: String(shipping.deliveryMethod || input.deliveryMethod || "boxnow").trim() || "boxnow",
+      name: String(shipping.name || customer.name || input.customerName || "").trim(),
+      phone: String(shipping.phone || customer.phone || input.customerPhone || "").trim(),
+      cashOnDelivery: false,
+      boxNow: {
+        id: String(shipping.boxNow?.id || input.boxNowLockerId || "").trim(),
+        name: String(shipping.boxNow?.name || input.boxNowLockerName || "").trim(),
+        postalCode: String(shipping.boxNow?.postalCode || input.boxNowLockerPostalCode || "").trim(),
+        addressLine1: String(shipping.boxNow?.addressLine1 || input.boxNowAddressLine1 || "").trim(),
+        addressLine2: String(shipping.boxNow?.addressLine2 || input.boxNowAddressLine2 || "").trim(),
+        lat: String(shipping.boxNow?.lat || "").trim(),
+        lng: String(shipping.boxNow?.lng || "").trim(),
+      },
+      trackingNumber: "",
+      trackingUrl: "",
+    },
+    metadata: {
+      orderNumber,
+      uid: String(input.uid || "manual").trim() || "manual",
+      paymentMethod: "stripe_payment_link",
+      stripePaymentLink: paymentLink,
+      createdBy: adminUser.uid || "",
+    },
+    notes: String(input.notes || "").slice(0, 5000),
+    createdAt: now(),
+    updatedAt: now(),
+    createdBy: adminUser.uid || "",
+    updatedBy: adminUser.uid || "",
+  };
+
+  await db.collection("orders").doc(id).set(order, { merge: true });
+  return order;
 }
 
 function normalizeCouponCode(value) {
@@ -937,7 +1090,7 @@ async function chatMessagesForConversation(conversationId, limit = 100) {
 }
 
 async function scanSocialAgent(settings = {}, adminUser = {}) {
-  if (settings.enabled === false) throw Object.assign(new Error("Social Agent is disabled"), { status: 400 });
+  if (settings.enabled === false) throw Object.assign(new Error("Marketing is disabled"), { status: 400 });
   const sources = (settings.sources || []).filter(source => source.enabled !== false);
   const opportunities = [];
   const errors = [];
@@ -1233,12 +1386,12 @@ async function recordCouponRedemption({ coupon, order, discountCents }) {
   }, { merge: true });
 }
 
-async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCode, productsMap, stripeMode = "", language = "en" }) {
+async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCode, productsMap, stripeMode = "", language = "en", boxNowConfig = null }) {
   const effectiveStripeMode = sanitizeStripeMode(stripeMode || (await getStripeSettings()).mode || "test");
   const orderLanguage = String(language || "en").trim().toLowerCase() === "el" ? "el" : "en";
   const orderItems = orderItemsFromCart(items, productsMap, effectiveStripeMode);
   const amountSubtotal = orderItemsSubtotal({ items: orderItems });
-  const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap);
+  const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
   const amountShipping = Number(boxNowFee.amount || 0);
   const couponResult = await calculateCouponDiscountCents(couponCode, items, productsMap, {
     uid,
@@ -1301,6 +1454,8 @@ async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCo
       parcelLabel: boxNowFee.parcel?.label || "",
       parcelCount: Number(boxNowFee.parcel?.count || 0),
       requiredHeightCm: Number(boxNowFee.parcel?.requiredHeightCm || 0),
+      environment: boxNowFee.environment || "",
+      apiBaseUrl: boxNowFee.apiBaseUrl || "",
     },
     couponCode: couponResult.coupon?.code || "",
     couponId: couponResult.coupon?.id || "",
@@ -1380,6 +1535,8 @@ async function upsertOrderFromSession(session) {
       parcelLabel: metadata.boxnowParcelLabel || "",
       parcelCount: Number(metadata.boxnowParcelCount || 0),
       requiredHeightCm: Number(metadata.boxnowRequiredHeightCm || 0),
+      environment: metadata.boxnowEnvironment || "",
+      apiBaseUrl: metadata.boxnowApiBaseUrl || "",
     },
     couponCode: metadata.couponCode || "",
     couponId: metadata.couponId || "",
@@ -1457,6 +1614,8 @@ async function upsertOrderFromPaymentIntent(intent) {
       parcelLabel: metadata.boxnowParcelLabel || "",
       parcelCount: Number(metadata.boxnowParcelCount || 0),
       requiredHeightCm: Number(metadata.boxnowRequiredHeightCm || 0),
+      environment: metadata.boxnowEnvironment || "",
+      apiBaseUrl: metadata.boxnowApiBaseUrl || "",
     },
     metadata,
     createdAt: intent.created ? Timestamp.fromMillis(intent.created * 1000) : now(),
@@ -1646,8 +1805,29 @@ function customerEmailTemplateValue(value = "", customer = {}, context = {}) {
     customerEmail: customer.email || "",
     customerPhone: customer.phone || "",
     coupon: context.coupon || "",
+    grubz_url: GRUBZ_URL,
   };
-  return String(value || "").replace(/\{(customerName|customerEmail|customerPhone|coupon)\}/g, (_, key) => replacements[key] || "");
+  return String(value || "").replace(/\{(customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => replacements[key] || "");
+}
+
+function customerEmailTemplateHtml(value = "", customer = {}, context = {}) {
+  const replacements = {
+    customerName: customer.name || customer.email || "there",
+    customerEmail: customer.email || "",
+    customerPhone: customer.phone || "",
+    coupon: context.coupon || "",
+    grubz_url: GRUBZ_URL,
+  };
+  const html = String(value || "").replace(/\{(customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => {
+    const escaped = escapeHtml(replacements[key] || "");
+    return key === "coupon" && escaped ? `<strong>${escaped}</strong>` : escaped;
+  });
+  return html
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map(line => line || " ")
+    .join("<br>\n");
 }
 
 async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, coupon, language }) {
@@ -1703,6 +1883,7 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
       const context = { coupon: couponCode };
       const personalizedSubject = customerEmailTemplateValue(cleanSubject, recipient, context);
       const personalizedText = customerEmailTemplateValue(cleanBody, recipient, context);
+      const personalizedHtml = customerEmailTemplateHtml(cleanBody, recipient, context);
       const testModeSubject = BULK_CUSTOMER_EMAIL_TEST_MODE
         ? `[TEST to ${recipient.email}] ${personalizedSubject}`
         : personalizedSubject;
@@ -1714,7 +1895,7 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
         bcc,
         subject: testModeSubject,
         text: personalizedText,
-        html: textToBasicHtml(personalizedText),
+        html: personalizedHtml,
       });
       if (result.skipped) throw new Error(result.reason || "Email skipped");
       results.push({
@@ -2026,6 +2207,7 @@ function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfil
     trackingUrl: shipping.trackingUrl || "",
     total: formatMoney(order.amountTotal, order.currency),
     coupon: order.couponCode || order.metadata?.couponCode || "",
+    grubz_url: GRUBZ_URL,
     boxNowLocker: boxNow.name || boxNow.id || "",
     orderDetails: orderDetailsText(order),
   };
@@ -2039,6 +2221,15 @@ function renderOrderTemplate(value, vars) {
 
 function plainTextToHtml(text) {
   return escapeHtml(text).replace(/\n/g, "<br>\n");
+}
+
+function renderOrderTemplateHtml(value, vars) {
+  const html = String(value || "").replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, key) => {
+    const replacement = vars[key] == null ? "" : String(vars[key]);
+    const escaped = escapeHtml(replacement);
+    return key === "coupon" && escaped ? `<strong>${escaped}</strong>` : escaped;
+  });
+  return html.replace(/\n/g, "<br>\n");
 }
 
 function templateContentForLanguage(template = {}, language = "en") {
@@ -2055,7 +2246,7 @@ function buildOrderStatusEmail(template, order, previousStatus, previousFulfillm
   const content = templateContentForLanguage(template, order.language || order.locale || "en");
   const subject = renderOrderTemplate(content.subject, vars);
   const text = renderOrderTemplate(content.body, vars);
-  return { subject, text, html: plainTextToHtml(text) };
+  return { subject, text, html: renderOrderTemplateHtml(content.body, vars) };
 }
 
 function sampleOrderForStatusTemplate(fulfillmentStatus, language = "en") {
@@ -2874,6 +3065,14 @@ async function boxNowApiRequest(config, path, options = {}) {
   };
 }
 
+function boxNowDeliveryErrorMessage(response) {
+  const code = String(response?.data?.code || "").trim();
+  if (code === "P411") {
+    return "BOX NOW delivery request failed (400/P411): This BOX NOW account is not eligible for Cash-on-delivery. Select Prepaid as the BOX NOW shipping type, or ask BOX NOW to enable COD for these API credentials.";
+  }
+  return `BOX NOW delivery request failed (${response.status}): ${JSON.stringify(response.data || {})}`;
+}
+
 async function getBoxNowAccessToken(config) {
   if (!config.clientId || !config.clientSecret) {
     throw new Error(`BOX NOW ${config.environment} client ID/secret are not configured`);
@@ -2941,6 +3140,11 @@ function compactBoxNowResult(result) {
   return compact;
 }
 
+function boxNowTrackingUrl(parcelId = "") {
+  const id = String(parcelId || "").trim();
+  return id ? `https://track.boxnow.gr/en?track=${encodeURIComponent(id)}` : "";
+}
+
 function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP) {
   const cartItems = (Array.isArray(order.items) ? order.items : []).map(item => ({
     id: item.id,
@@ -2960,7 +3164,7 @@ function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP) {
   }));
 }
 
-function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP) {
+function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP, options = {}) {
   const orderNumber = publicOrderId(order);
   const shipping = order.shipping || {};
   const boxNow = shipping.boxNow || {};
@@ -2975,13 +3179,27 @@ function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP) {
   if (!destinationPhone) throw new Error("Order is missing the recipient phone number");
   if (!destinationEmail) throw new Error("Order is missing the recipient email");
 
-  const isCod = order.paymentMethod === "cash_on_delivery" || shipping.cashOnDelivery === true;
+  const requestedPaymentMode = String(options.paymentMode || "").trim().toLowerCase();
+  const isCod = requestedPaymentMode
+    ? requestedPaymentMode === "cod"
+    : order.paymentMethod === "cash_on_delivery" || shipping.cashOnDelivery === true;
   const totalCents = Math.max(0, Number(order.amountDue || order.amountTotal || 0));
+  const amountToBeCollectedCents = isCod
+    ? Math.max(0, Number.isFinite(Number(options.amountToBeCollectedCents))
+      ? Number(options.amountToBeCollectedCents)
+      : totalCents)
+    : 0;
+  const destinationLocationId = config.environment === "stage"
+    ? BOXNOW_STAGE_TEST_DESTINATION_LOCATION_ID
+    : String(boxNow.id);
+  const stageDestinationOverride = config.environment === "stage"
+    ? { requestedLocationId: String(boxNow.id), stageTestLocationId: destinationLocationId }
+    : null;
   return {
     orderNumber,
     invoiceValue: (Math.max(0, Number(order.amountSubtotal || 0)) / 100).toFixed(2),
     paymentMode: isCod ? "cod" : "prepaid",
-    amountToBeCollected: isCod ? (totalCents / 100).toFixed(2) : "0.00",
+    amountToBeCollected: isCod ? (amountToBeCollectedCents / 100).toFixed(2) : "0.00",
     origin: {
       contactNumber: config.originContactNumber,
       contactEmail: config.originContactEmail || GRUBZ_INFO_EMAIL,
@@ -2992,7 +3210,8 @@ function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP) {
       contactNumber: destinationPhone,
       contactEmail: destinationEmail,
       contactName: customer.name || shipping.name || "GRUBZ Customer",
-      locationId: String(boxNow.id),
+      locationId: destinationLocationId,
+      ...(stageDestinationOverride ? { stageDestinationOverride } : {}),
     },
     items: boxNowParcelItemsForOrder(order, productsMap),
   };
@@ -3007,10 +3226,17 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
     throw new Error("This order already has a BOX NOW delivery request");
   }
 
-  const settings = await getEffectiveBoxNowSettings(options.req || null, { includeSecrets: true });
-  const config = boxNowEnvConfig(settings, options.environment || settings.activeEnvironment);
+  const settings = await getEffectiveBoxNowSettings(options.req || null, {
+    includeSecrets: true,
+    forceLocalEnvironment: false,
+  });
+  const orderEnvironment = order.boxnowFee?.environment || order.boxNowFee?.environment || "";
+  const config = boxNowEnvConfig(settings, options.environment || orderEnvironment || settings.activeEnvironment);
   const productsMap = await getProductsMap({ includeInactive: true });
-  const payload = buildBoxNowDeliveryRequest(order, config, productsMap);
+  const payload = buildBoxNowDeliveryRequest(order, config, productsMap, {
+    paymentMode: options.paymentMode || "",
+    amountToBeCollectedCents: options.amountToBeCollectedCents,
+  });
   const { token } = await getBoxNowAccessToken(config);
   const response = await boxNowApiRequest(config, "/api/v1/delivery-requests", {
     method: "POST",
@@ -3019,17 +3245,27 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    throw new Error(`BOX NOW delivery request failed (${response.status}): ${JSON.stringify(response.data || {})}`);
+    throw new Error(boxNowDeliveryErrorMessage(response));
   }
 
   const parcels = Array.isArray(response.data?.parcels) ? response.data.parcels : [];
   const parcelIds = parcels.map(parcel => String(parcel.id || parcel.parcelId || "")).filter(Boolean);
   const deliveryRequestId = String(response.data?.id || response.data?.deliveryRequestId || publicOrderId(order));
+  const deliveryRequestIds = [
+    response.data?.id,
+    response.data?.deliveryRequestId,
+    response.data?.deliveryRequest?.id,
+    response.data?.data?.id,
+    response.data?.data?.deliveryRequestId,
+    publicOrderId(order),
+  ].map(value => String(value || "").trim()).filter(Boolean);
   const firstParcelId = parcelIds[0] || "";
+  const trackingUrl = boxNowTrackingUrl(firstParcelId);
   const update = {
     boxNowShipment: {
       environment: config.environment,
       deliveryRequestId,
+      deliveryRequestIds,
       parcelIds,
       status: "new",
       paymentMode: payload.paymentMode,
@@ -3042,7 +3278,7 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
     shipping: {
       ...(order.shipping || {}),
       trackingNumber: firstParcelId || order.shipping?.trackingNumber || "",
-      trackingUrl: order.shipping?.trackingUrl || "",
+      trackingUrl: trackingUrl || order.shipping?.trackingUrl || "",
     },
     updatedAt: now(),
     updatedBy: adminUser.uid || "",
@@ -3065,25 +3301,50 @@ function cartWeightGrams(items, productsMap = PRODUCTS_MAP) {
   }, 0);
 }
 
-function fallbackParcelHeightCm(product = {}) {
-  const weightGrams = Math.max(0, Number(product.weightGrams || 0));
-  if (!weightGrams) return 2;
-  return Math.max(2, Math.ceil((weightGrams / 1000) * 8));
+function flattenedBagCapacityKg(parcel = {}) {
+  const layers = Math.floor(Number(parcel.heightCm || 0) / ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm);
+  return Math.max(0, layers * BOXNOW_FLATTENED_BAGS_PER_LAYER);
 }
 
-function packedParcelDimensionsForProduct(id = "", product = {}) {
-  const productId = String(id || product.id || "").trim().toLowerCase();
-  return HAPPY_CHICKEN_PACKED_PARCELS[productId] || null;
+function flattenedBagRequiredHeightCm(weightGrams = 0) {
+  const kgUnits = Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000);
+  const layers = Math.ceil(kgUnits / BOXNOW_FLATTENED_BAGS_PER_LAYER);
+  return layers * ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm;
 }
 
-function productParcelDimensions(product = {}, id = "") {
-  const parcel = product.parcel || {};
-  const packed = packedParcelDimensionsForProduct(id, product);
-  return {
-    heightCm: Number(parcel.heightCm || 0) || packed?.heightCm || fallbackParcelHeightCm(product),
-    widthCm: Number(parcel.widthCm || 0) || packed?.widthCm || 45,
-    lengthCm: Number(parcel.lengthCm || 0) || packed?.lengthCm || 60,
-  };
+function cheapestParcelCombinationForWeight(weightGrams = 0) {
+  const kgUnits = Math.max(1, Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000));
+  const maxParcels = kgUnits;
+  let best = null;
+
+  for (let small = 0; small <= maxParcels; small += 1) {
+    for (let medium = 0; medium <= maxParcels; medium += 1) {
+      for (let large = 0; large <= maxParcels; large += 1) {
+        const parcels = [
+          ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
+          ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
+          ...Array.from({ length: large }, () => BOXNOW_PARCEL_SIZES[2]),
+        ];
+        if (!parcels.length) continue;
+        const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
+        if (capacityKg < kgUnits) continue;
+        const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
+        const count = parcels.length;
+        const capacityHeightCm = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
+        if (
+          best &&
+          (amount > best.amount ||
+            (amount === best.amount && count > best.count) ||
+            (amount === best.amount && count === best.count && capacityKg >= best.capacityKg))
+        ) {
+          continue;
+        }
+        best = { parcels, amount, count, capacityKg, capacityHeightCm };
+      }
+    }
+  }
+
+  return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
 }
 
 function expandParcelItems(items, productsMap = PRODUCTS_MAP) {
@@ -3098,27 +3359,145 @@ function expandParcelItems(items, productsMap = PRODUCTS_MAP) {
   });
 }
 
-function canPackParcelItems(itemHeights, parcelSizes) {
-  const remaining = parcelSizes
-    .map(size => Number(size.heightCm || 0))
-    .sort((a, b) => b - a);
-  const heights = [...itemHeights].sort((a, b) => b - a);
+function packingOrientationsForParcel(item, parcel) {
+  const dimensions = [
+    Number(item.heightCm || 0),
+    Number(item.widthCm || 0),
+    Number(item.lengthCm || 0),
+  ].filter(Boolean);
+  const orientations = [];
+  const seen = new Set();
+  for (let verticalIndex = 0; verticalIndex < dimensions.length; verticalIndex += 1) {
+    const verticalCm = dimensions[verticalIndex];
+    const base = dimensions.filter((_, index) => index !== verticalIndex);
+    const variants = [
+      { widthCm: base[0], lengthCm: base[1] },
+      { widthCm: base[1], lengthCm: base[0] },
+    ];
+    for (const variant of variants) {
+      const key = `${verticalCm}:${variant.widthCm}:${variant.lengthCm}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (
+        verticalCm <= Number(parcel.heightCm || 0) &&
+        variant.widthCm <= Number(parcel.widthCm || 0) &&
+        variant.lengthCm <= Number(parcel.lengthCm || 0)
+      ) {
+        orientations.push({ verticalCm, widthCm: variant.widthCm, lengthCm: variant.lengthCm });
+      }
+    }
+  }
+  return orientations.sort((a, b) => a.verticalCm - b.verticalCm);
+}
 
-  function place(index) {
-    if (index >= heights.length) return true;
-    const height = heights[index];
-    let previousRemaining = -1;
-    for (let i = 0; i < remaining.length; i += 1) {
-      if (remaining[i] < height || remaining[i] === previousRemaining) continue;
-      remaining[i] -= height;
-      if (place(index + 1)) return true;
-      remaining[i] += height;
-      previousRemaining = remaining[i];
-      if (remaining[i] === height) break;
+function packageFitsParcel(item, parcel) {
+  return packingOrientationsForParcel(item, parcel).length > 0;
+}
+
+function rectsFitInBase(rects, widthCm, lengthCm) {
+  if (!rects.length) return true;
+  const ordered = [...rects].sort((a, b) => (b.widthCm * b.lengthCm) - (a.widthCm * a.lengthCm));
+  function place(index, spaces) {
+    if (index >= ordered.length) return true;
+    const rect = ordered[index];
+    const variants = [
+      { widthCm: rect.widthCm, lengthCm: rect.lengthCm },
+      { widthCm: rect.lengthCm, lengthCm: rect.widthCm },
+    ];
+    for (let spaceIndex = 0; spaceIndex < spaces.length; spaceIndex += 1) {
+      const space = spaces[spaceIndex];
+      for (const variant of variants) {
+        if (variant.widthCm > space.widthCm || variant.lengthCm > space.lengthCm) continue;
+        const nextSpaces = [
+          ...spaces.slice(0, spaceIndex),
+          ...spaces.slice(spaceIndex + 1),
+          {
+            x: space.x + variant.widthCm,
+            y: space.y,
+            widthCm: space.widthCm - variant.widthCm,
+            lengthCm: variant.lengthCm,
+          },
+          {
+            x: space.x,
+            y: space.y + variant.lengthCm,
+            widthCm: space.widthCm,
+            lengthCm: space.lengthCm - variant.lengthCm,
+          },
+        ].filter(spaceItem => spaceItem.widthCm > 0 && spaceItem.lengthCm > 0);
+        if (place(index + 1, nextSpaces)) return true;
+      }
     }
     return false;
   }
+  return place(0, [{ x: 0, y: 0, widthCm, lengthCm }]);
+}
 
+function itemsFitSingleLayerInParcel(items, parcel) {
+  const orientedItems = [];
+  function choose(index) {
+    if (index >= items.length) {
+      return rectsFitInBase(orientedItems, Number(parcel.widthCm || 0), Number(parcel.lengthCm || 0));
+    }
+    for (const orientation of packingOrientationsForParcel(items[index], parcel)) {
+      orientedItems.push({ widthCm: orientation.widthCm, lengthCm: orientation.lengthCm });
+      if (choose(index + 1)) return true;
+      orientedItems.pop();
+    }
+    return false;
+  }
+  return choose(0);
+}
+
+function itemsFitStackedInParcel(items, parcel) {
+  const chosen = [];
+  function choose(index) {
+    if (index >= items.length) {
+      const totalHeight = chosen.reduce((sum, item) => sum + item.verticalCm, 0);
+      const maxWidth = chosen.reduce((max, item) => Math.max(max, item.widthCm), 0);
+      const maxLength = chosen.reduce((max, item) => Math.max(max, item.lengthCm), 0);
+      return totalHeight <= Number(parcel.heightCm || 0) &&
+        ((maxWidth <= Number(parcel.widthCm || 0) && maxLength <= Number(parcel.lengthCm || 0)) ||
+          (maxLength <= Number(parcel.widthCm || 0) && maxWidth <= Number(parcel.lengthCm || 0)));
+    }
+    for (const orientation of packingOrientationsForParcel(items[index], parcel)) {
+      chosen.push(orientation);
+      if (choose(index + 1)) return true;
+      chosen.pop();
+    }
+    return false;
+  }
+  return choose(0);
+}
+
+function itemsFitInParcel(items, parcel) {
+  return itemsFitSingleLayerInParcel(items, parcel) || itemsFitStackedInParcel(items, parcel);
+}
+
+function canPackItemsInParcels(items, parcels) {
+  const available = parcels.map(parcel => ({ ...parcel, items: [] }));
+  const orderedItems = [...items].sort((a, b) => {
+    const aVolume = Number(a.heightCm || 0) * Number(a.widthCm || 0) * Number(a.lengthCm || 0);
+    const bVolume = Number(b.heightCm || 0) * Number(b.widthCm || 0) * Number(b.lengthCm || 0);
+    return bVolume - aVolume;
+  });
+  if (orderedItems.some(item => !available.some(parcel => packageFitsParcel(item, parcel)))) {
+    return false;
+  }
+  function place(index) {
+    if (index >= orderedItems.length) return true;
+    const item = orderedItems[index];
+    const seen = new Set();
+    for (let i = 0; i < available.length; i += 1) {
+      const parcel = available[i];
+      const key = `${parcel.code}:${parcel.items.length}:${parcel.items.map(placed => placed.id || "").join("|")}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      parcel.items.push(item);
+      if (itemsFitInParcel(parcel.items, parcel) && place(index + 1)) return true;
+      parcel.items.pop();
+    }
+    return false;
+  }
   return place(0);
 }
 
@@ -3133,17 +3512,14 @@ function parcelCombinationLabel(parcels) {
     .join(" + ");
 }
 
-function cheapestParcelCombination(itemHeights) {
-  if (!itemHeights.length) return [];
-  const totalHeightCm = itemHeights.reduce((sum, height) => sum + height, 0);
-  const maxSmall = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[0].heightCm) + 1;
-  const maxMedium = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[1].heightCm) + 1;
-  const maxLarge = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[2].heightCm) + 1;
+function cheapestParcelCombination(items) {
+  if (!items.length) return [];
+  const maxParcels = Math.max(1, items.length);
   let best = null;
 
-  for (let small = 0; small <= maxSmall; small += 1) {
-    for (let medium = 0; medium <= maxMedium; medium += 1) {
-      for (let large = 0; large <= maxLarge; large += 1) {
+  for (let small = 0; small <= maxParcels; small += 1) {
+    for (let medium = 0; medium <= maxParcels; medium += 1) {
+      for (let large = 0; large <= maxParcels; large += 1) {
         const parcels = [
           ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
           ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
@@ -3151,7 +3527,6 @@ function cheapestParcelCombination(itemHeights) {
         ];
         if (!parcels.length) continue;
         const capacity = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
-        if (capacity < totalHeightCm) continue;
         const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
         const count = parcels.length;
         if (
@@ -3162,7 +3537,7 @@ function cheapestParcelCombination(itemHeights) {
         ) {
           continue;
         }
-        if (!canPackParcelItems(itemHeights, parcels)) continue;
+        if (!canPackItemsInParcels(items, parcels)) continue;
         best = { parcels, amount, count, capacity };
       }
     }
@@ -3172,22 +3547,23 @@ function cheapestParcelCombination(itemHeights) {
 }
 
 function calculateBoxNowParcel(items, productsMap = PRODUCTS_MAP) {
-  const parcelItems = expandParcelItems(items, productsMap);
-  const totalHeightCm = parcelItems.reduce((sum, item) => sum + item.heightCm, 0);
-  const maxWidthCm = parcelItems.reduce((max, item) => Math.max(max, item.widthCm), 0);
-  const maxLengthCm = parcelItems.reduce((max, item) => Math.max(max, item.lengthCm), 0);
-  const itemHeights = parcelItems.map(item => item.heightCm);
-  const parcels = cheapestParcelCombination(itemHeights);
+  const weightGrams = cartWeightGrams(items, productsMap);
+  const kgUnits = Math.max(1, Math.ceil(Math.max(0, weightGrams) / 1000));
+  const parcels = cheapestParcelCombinationForWeight(weightGrams);
   const largestParcel = parcels.reduce((largest, parcel) => {
     return parcel.heightCm > largest.heightCm ? parcel : largest;
   }, parcels[0] || BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]);
   const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
   const capacityHeightCm = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
+  const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
 
   return {
     code: largestParcel.code,
     label: parcelCombinationLabel(parcels) || largestParcel.label,
     amount,
+    weightGrams,
+    kgUnits,
+    capacityKg,
     heightCm: largestParcel.heightCm,
     widthCm: largestParcel.widthCm,
     lengthCm: largestParcel.lengthCm,
@@ -3201,12 +3577,10 @@ function calculateBoxNowParcel(items, productsMap = PRODUCTS_MAP) {
       widthCm: parcel.widthCm,
       lengthCm: parcel.lengthCm,
     })),
-    requiredHeightCm: Math.ceil(totalHeightCm * 10) / 10,
-    maxItemWidthCm: Math.ceil(maxWidthCm * 10) / 10,
-    maxItemLengthCm: Math.ceil(maxLengthCm * 10) / 10,
-    oversized: itemHeights.some(height => height > largestParcel.heightCm) ||
-      maxWidthCm > largestParcel.widthCm ||
-      maxLengthCm > largestParcel.lengthCm,
+    requiredHeightCm: Math.ceil(flattenedBagRequiredHeightCm(weightGrams) * 10) / 10,
+    maxItemWidthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.widthCm,
+    maxItemLengthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.lengthCm,
+    oversized: capacityKg < kgUnits,
   };
 }
 
@@ -3297,26 +3671,30 @@ async function getBoxNowToken() {
   return null;
 }
 
-async function calculateBoxNowFee(items, shipping, productsMap = PRODUCTS_MAP) {
+async function calculateBoxNowFee(items, shipping, productsMap = PRODUCTS_MAP, boxNowConfig = null) {
   const weightGrams = cartWeightGrams(items, productsMap);
   const parcel = calculateBoxNowParcel(items, productsMap);
+  const environment = boxNowConfig?.environment || "";
+  const apiBaseUrl = boxNowConfig?.apiBaseUrl || "";
   const shippingSettings = await getShippingSettings();
-  if (shippingSettings.boxnowFeeOverrideEnabled) {
-    return {
-      amount: shippingSettings.boxnowFeeOverrideCents,
-      currency: "eur",
-      source: "admin-override",
-      weightGrams,
-      parcel,
-    };
-  }
+  const baseAmount = shippingSettings.boxnowFeeOverrideEnabled
+    ? shippingSettings.boxnowFeeOverrideCents
+    : parcel.amount;
+  const discountCents = shippingSettings.boxnowFeeDiscountEnabled
+    ? Math.min(baseAmount, shippingSettings.boxnowFeeDiscountCents)
+    : 0;
 
   return {
-    amount: parcel.amount,
+    amount: Math.max(0, baseAmount - discountCents),
+    baseAmount,
+    discountCents,
     currency: "eur",
-    source: "boxnow-parcel-size",
+    source: shippingSettings.boxnowFeeOverrideEnabled ? "admin-override" : "boxnow-parcel-size",
+    discountSource: discountCents > 0 ? "admin-discount" : "",
     weightGrams,
     parcel,
+    environment,
+    apiBaseUrl,
   };
 }
 
@@ -3325,9 +3703,15 @@ function sanitizeShippingSettings(input = {}) {
   const rawCents = input.boxnowFeeOverrideCents ?? input.boxnowFeeOverrideAmountCents ?? null;
   const amount = rawCents === "" || rawCents == null ? 0 : Math.round(Number(rawCents));
   if (!Number.isFinite(amount) || amount < 0) throw new Error("Invalid BOX NOW override amount");
+  const discountEnabled = input.boxnowFeeDiscountEnabled === true;
+  const rawDiscountCents = input.boxnowFeeDiscountCents ?? input.boxnowFeeDiscountAmountCents ?? null;
+  const discountAmount = rawDiscountCents === "" || rawDiscountCents == null ? 0 : Math.round(Number(rawDiscountCents));
+  if (!Number.isFinite(discountAmount) || discountAmount < 0) throw new Error("Invalid BOX NOW discount amount");
   return {
     boxnowFeeOverrideEnabled: overrideEnabled,
     boxnowFeeOverrideCents: amount,
+    boxnowFeeDiscountEnabled: discountEnabled,
+    boxnowFeeDiscountCents: discountAmount,
     updatedAt: now(),
   };
 }
@@ -3335,12 +3719,19 @@ function sanitizeShippingSettings(input = {}) {
 async function getShippingSettings() {
   const snap = await db.doc(SHIPPING_SETTINGS_DOC).get();
   if (!snap.exists) {
-    return { boxnowFeeOverrideEnabled: false, boxnowFeeOverrideCents: 0 };
+    return {
+      boxnowFeeOverrideEnabled: false,
+      boxnowFeeOverrideCents: 0,
+      boxnowFeeDiscountEnabled: false,
+      boxnowFeeDiscountCents: 0,
+    };
   }
   const data = snap.data() || {};
   return {
     boxnowFeeOverrideEnabled: data.boxnowFeeOverrideEnabled === true,
     boxnowFeeOverrideCents: Math.max(0, Math.round(Number(data.boxnowFeeOverrideCents || 0))),
+    boxnowFeeDiscountEnabled: data.boxnowFeeDiscountEnabled === true,
+    boxnowFeeDiscountCents: Math.max(0, Math.round(Number(data.boxnowFeeDiscountCents || 0))),
   };
 }
 
@@ -3368,7 +3759,9 @@ exports.getBoxNowFee = onRequest(
       if (!shipping?.boxNow?.id) return jsonError(res, 400, "Missing BOX NOW locker");
 
       const productsMap = await getProductsMap();
-      const fee = await calculateBoxNowFee(items, shipping, productsMap);
+      const boxNowSettings = await getEffectiveBoxNowSettings(req, { includeSecrets: true, forceLocalEnvironment: false });
+      const boxNowConfig = boxNowEnvConfig(boxNowSettings, boxNowSettings.activeEnvironment);
+      const fee = await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
       return res.json({ ok: true, ...fee });
     } catch (e) {
       logger.error("getBoxNowFee failed", e);
@@ -3415,6 +3808,8 @@ exports.createCheckoutSession = onRequest(
         return res.status(400).json({ error: "Missing BOX NOW locker" });
       }
       const productsMap = await getProductsMap();
+      const boxNowSettings = await getEffectiveBoxNowSettings(req, { includeSecrets: true, forceLocalEnvironment: false });
+      const boxNowConfig = boxNowEnvConfig(boxNowSettings, boxNowSettings.activeEnvironment);
 
       if (cashOnDelivery) {
         if (!uid) return res.status(401).json({ error: "Sign in is required for cash on delivery" });
@@ -3428,6 +3823,7 @@ exports.createCheckoutSession = onRequest(
           productsMap,
           stripeMode: stripeConfig.mode,
           language,
+          boxNowConfig,
         });
         await sendOrderNotificationOnce("cash_on_delivery_order", order, { id: order.id, type: "cash_on_delivery" });
         await sendCustomerSuccessEmailOnce(order, { id: order.id, type: "cash_on_delivery" });
@@ -3461,7 +3857,7 @@ exports.createCheckoutSession = onRequest(
         };
       });
 
-      const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap);
+      const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
       if (boxNowFee.amount > 0) {
         line_items.push({
           quantity: 1,
@@ -3513,6 +3909,8 @@ exports.createCheckoutSession = onRequest(
         boxnowParcelLabel: String(boxNowFee.parcel?.label || "").slice(0, 500),
         boxnowParcelCount: String(boxNowFee.parcel?.count || 0).slice(0, 500),
         boxnowRequiredHeightCm: String(boxNowFee.parcel?.requiredHeightCm || 0).slice(0, 500),
+        boxnowEnvironment: String(boxNowFee.environment || boxNowConfig.environment || "").slice(0, 500),
+        boxnowApiBaseUrl: String(boxNowFee.apiBaseUrl || boxNowConfig.apiBaseUrl || "").slice(0, 500),
         couponCode: couponResult?.coupon?.code || "",
         couponId: couponResult?.coupon?.id || "",
         couponDiscountCents: String(couponResult?.discountCents || 0).slice(0, 500),
@@ -3722,36 +4120,35 @@ exports.adminProductImage = onRequest(
     cors: ALLOWED_ORIGIN_LIST,
   },
   async (req, res) => {
+    let step = "start";
     try {
       if (req.method === "OPTIONS") return res.status(204).end();
       if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+      step = "auth";
       const adminUser = await requireAdmin(req);
+      step = "parse_body";
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      step = "parse_image";
       const { id, contentType, buffer, ext } = parseImageUpload(body);
 
-      const bucket = getStorage().bucket();
-      const token = randomUUID();
-      const filePath = `product-images/${id}-${Date.now()}.${ext}`;
-      const file = bucket.file(filePath);
-      await file.save(buffer, {
-        metadata: {
-          contentType,
-          cacheControl: "public, max-age=31536000",
-          metadata: { firebaseStorageDownloadTokens: token },
-        },
-        resumable: false,
-      });
-
-      const image = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
+      step = "storage_upload";
+      const upload = await saveProductImageToStorage({ id, contentType, buffer, ext });
+      step = "firestore_update";
       await db.collection("products").doc(id).set({
-        image,
+        image: upload.image,
         updatedAt: now(),
         updatedBy: adminUser.uid,
       }, { merge: true });
 
-      return res.json({ ok: true, image, path: filePath });
+      return res.json({ ok: true, image: upload.image, path: upload.path, bucket: upload.bucketName });
     } catch (err) {
-      return adminError(res, err);
+      logger.error("adminProductImage failed", {
+        step,
+        message: err.message || "Product image upload failed",
+        code: err.code || "",
+      });
+      const status = Number(err.status || 400);
+      return jsonError(res, status, `${step}_failed: ${err.message || "Product image upload failed"}`);
     }
   }
 );
@@ -3833,6 +4230,11 @@ exports.adminOrders = onRequest(
 
       if (req.method === "PATCH" || req.method === "POST") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (req.method === "POST" && String(body.action || "").trim() === "createManualOrder") {
+          const order = await createManualOrderFromAdmin(body.order || body, adminUser);
+          return res.json({ ok: true, order });
+        }
+
         const id = String(body.id || "").trim();
         if (!id) return jsonError(res, 400, "Missing order id");
 
@@ -3844,6 +4246,15 @@ exports.adminOrders = onRequest(
         if (body.status != null) allowed.status = String(body.status).trim();
         if (body.fulfillmentStatus != null) allowed.fulfillmentStatus = String(body.fulfillmentStatus).trim();
         if (body.notes != null) allowed.notes = String(body.notes).slice(0, 5000);
+        if (body.stripePaymentLink != null || body.paymentLink != null) {
+          const paymentLink = sanitizeStripePaymentLink(body.stripePaymentLink || body.paymentLink || "");
+          allowed.stripePaymentLink = paymentLink;
+          allowed.paymentLink = paymentLink;
+          allowed.metadata = {
+            ...(existingOrder.metadata || {}),
+            stripePaymentLink: paymentLink,
+          };
+        }
         if (body.shipping && typeof body.shipping === "object") {
           allowed.shipping = body.shipping;
         }
@@ -4258,7 +4669,7 @@ exports.adminSocialAgent = onRequest(
           await db.collection(SOCIAL_OPPORTUNITIES_COLLECTION).doc(id).set(update, { merge: true });
           return res.json({ ok: true });
         }
-        return jsonError(res, 400, "Unknown Social Agent action");
+        return jsonError(res, 400, "Unknown Marketing action");
       }
 
       return jsonError(res, 405, "Use GET, PATCH, or POST");
@@ -4280,7 +4691,7 @@ exports.socialAgentWebhook = onRequest(
       if (req.method === "OPTIONS") return res.status(204).end();
       if (req.method !== "POST") return jsonError(res, 405, "Use POST");
       const expectedSecret = secretValue(SOCIAL_AGENT_WEBHOOK_SECRET, "");
-      if (!expectedSecret) return jsonError(res, 503, "Social Agent webhook secret is not configured");
+      if (!expectedSecret) return jsonError(res, 503, "Marketing webhook secret is not configured");
 
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const bearer = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1] || "";
@@ -4296,8 +4707,8 @@ exports.socialAgentWebhook = onRequest(
       const imported = await importManualSocialItems(items, settings, { uid: "social-agent-webhook" });
       return res.json({ ok: true, importedCount: imported.length, imported });
     } catch (err) {
-      logger.error("Social Agent webhook failed", { error: err.message || "Webhook failed" });
-      return jsonError(res, Number(err.status || 400), err.message || "Social Agent webhook failed");
+      logger.error("Marketing webhook failed", { error: err.message || "Webhook failed" });
+      return jsonError(res, Number(err.status || 400), err.message || "Marketing webhook failed");
     }
   }
 );
@@ -4341,7 +4752,13 @@ exports.adminSettings = onRequest(
         let orderEmails = null;
         let boxNow = null;
 
-        if (body.shipping || body.boxnowFeeOverrideEnabled != null || body.boxnowFeeOverrideCents != null) {
+        if (
+          body.shipping ||
+          body.boxnowFeeOverrideEnabled != null ||
+          body.boxnowFeeOverrideCents != null ||
+          body.boxnowFeeDiscountEnabled != null ||
+          body.boxnowFeeDiscountCents != null
+        ) {
           shipping = sanitizeShippingSettings(body.shipping || body);
           await db.doc(SHIPPING_SETTINGS_DOC).set(
             {
@@ -4408,6 +4825,8 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
       result: await createBoxNowDeliveryForOrder(orderId, {
         environment: safeEnvironment,
         force: body.force === true,
+        paymentMode: body.paymentMode || "",
+        amountToBeCollectedCents: body.amountToBeCollectedCents,
         req,
       }, adminUser),
     };
@@ -4423,7 +4842,10 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
       ok: true,
       action,
       environment: safeEnvironment,
-      result: buildBoxNowDeliveryRequest({ id: snap.id, ...snap.data() }, config, productsMap),
+      result: buildBoxNowDeliveryRequest({ id: snap.id, ...snap.data() }, config, productsMap, {
+        paymentMode: body.paymentMode || "",
+        amountToBeCollectedCents: body.amountToBeCollectedCents,
+      }),
     };
   }
 
@@ -4489,17 +4911,39 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
 
   if (action === "fetchParcelLabel" || action === "fetchOrderLabel") {
     const type = String(body.type || "pdf").trim().toLowerCase() === "zpl" ? "zpl" : "pdf";
-    const id = String(body.parcelId || body.orderNumber || "").trim();
-    if (!id) throw new Error("Enter a parcel ID or order number");
-    const path = action === "fetchOrderLabel"
-      ? `/api/v1/delivery-requests/${encodeURIComponent(id)}/label.${type}`
-      : `/api/v1/parcels/${encodeURIComponent(id)}/label.${type}`;
-    const response = await boxNowApiRequest(config, path, {
-      raw: true,
-      token,
-      headers: { accept: type === "pdf" ? "application/pdf" : "text/plain" },
-    });
-    return { ok: response.ok, action, environment: safeEnvironment, result: compactBoxNowResult(response) };
+    const parcelId = String(body.parcelId || "").trim();
+    const orderCandidates = [
+      body.deliveryRequestId,
+      body.orderNumber,
+      ...(Array.isArray(body.deliveryRequestIds) ? body.deliveryRequestIds : []),
+    ].map(value => String(value || "").trim()).filter(Boolean);
+    const ids = action === "fetchOrderLabel" ? orderCandidates : [parcelId || String(body.orderNumber || "").trim()].filter(Boolean);
+    if (!ids.length) throw new Error(action === "fetchOrderLabel" ? "Enter an order number" : "Enter a parcel ID");
+    let response = null;
+    let labelId = "";
+    for (const id of ids) {
+      const path = action === "fetchOrderLabel"
+        ? `/api/v1/delivery-requests/${encodeURIComponent(id)}/label.${type}`
+        : `/api/v1/parcels/${encodeURIComponent(id)}/label.${type}`;
+      response = await boxNowApiRequest(config, path, {
+        raw: true,
+        token,
+        headers: { accept: type === "pdf" ? "application/pdf" : "text/plain" },
+      });
+      labelId = id;
+      if (response.ok) break;
+    }
+    let source = action === "fetchOrderLabel" ? "order" : "parcel";
+    if (action === "fetchOrderLabel" && response && !response.ok && response.status === 404 && parcelId) {
+      response = await boxNowApiRequest(config, `/api/v1/parcels/${encodeURIComponent(parcelId)}/label.${type}`, {
+        raw: true,
+        token,
+        headers: { accept: type === "pdf" ? "application/pdf" : "text/plain" },
+      });
+      labelId = parcelId;
+      source = "parcel-fallback";
+    }
+    return { ok: response.ok, action, environment: safeEnvironment, labelId, source, result: compactBoxNowResult(response) };
   }
 
   if (action === "cancelParcel") {
@@ -4675,6 +5119,7 @@ exports.boxNowWebhook = onRequest(
             },
             shipping: {
               trackingNumber: update.parcelId,
+              trackingUrl: boxNowTrackingUrl(update.parcelId),
             },
             boxNowWebhookEventIds: FieldValue.arrayUnion(eventId),
             updatedAt: now(),

@@ -614,8 +614,10 @@ const BOXNOW_PARCEL_SIZES = [
   { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
   { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
 ];
+const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
+const BOXNOW_FLATTENED_BAGS_PER_LAYER = 2;
 const HAPPY_CHICKEN_PACKED_PARCELS = {
-  "happy-chicken-1kg": { heightCm: 11 / 3, widthCm: 24, lengthCm: 58 },
+  "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
   "happy-chicken-3kg": { heightCm: 16, widthCm: 30, lengthCm: 28 },
 };
@@ -740,6 +742,8 @@ async function chatFetch(path, options = {}) {
       let __boxNowFee = null;
       let __boxNowFeeKey = "";
       let __boxNowFeePromise = null;
+      let __reviewSubmitting = false;
+      let __currentReviewAddress = null;
       let __currentProductId = null;
       try {
         const rawLocker = Cookie.get("grubz_boxnow_locker");
@@ -844,6 +848,7 @@ async function chatFetch(path, options = {}) {
           boxnowFeeLabel:"BOX NOW delivery",
           boxnowFeeLoading:"Calculating delivery fee...",
           boxnowFeeUnavailable:"Delivery fee will be confirmed at checkout.",
+          boxnowFeeRequired:"Calculate BOX NOW delivery before confirming.",
           boxnowCodLabel:"Cash on delivery",
           boxnowCodHelp:"Mark this order as cash-on-delivery.",
           inclVATRate: "incl. VAT 24%",
@@ -943,6 +948,7 @@ async function chatFetch(path, options = {}) {
           boxnowFeeLabel:"BOX NOW αποστολή",
           boxnowFeeLoading:"Υπολογισμός κόστους αποστολής...",
           boxnowFeeUnavailable:"Το κόστος αποστολής θα επιβεβαιωθεί στο checkout.",
+          boxnowFeeRequired:"Υπολογίστε την αποστολή BOX NOW πριν την επιβεβαίωση.",
           boxnowCodLabel:"Αντικαταβολή",
           boxnowCodHelp:"Σημειώστε την παραγγελία ως αντικαταβολή.",
           inclVATRate: "με ΦΠΑ 24%",
@@ -1658,8 +1664,8 @@ async function chatFetch(path, options = {}) {
           emptyEl.classList.remove("hidden");
           suggestionsEl.classList.remove("hidden");
           Object.entries(CATALOG)
-            .filter(([id]) => !stockIsKnown(id) || getStock(id) > 0)
-            .slice(0, 3)
+            .filter(([, p]) => p.active !== false)
+            .sort((a, b) => (a[1].sortOrder || 0) - (b[1].sortOrder || 0) || productName(a[0], dict).localeCompare(productName(b[0], dict)))
             .forEach(([id, p]) => {
               const item = document.createElement("div");
               item.dataset.suggestProduct = id;
@@ -1979,7 +1985,6 @@ async function chatFetch(path, options = {}) {
         });
       }
 
-      let __currentReviewAddress = null;
       let __reopenReviewAfterAddr = false;
 
       function boxNowLockerLines(locker){
@@ -2016,6 +2021,7 @@ async function chatFetch(path, options = {}) {
         __boxNowFeeKey = "";
         __boxNowFeePromise = null;
         if (typeof renderBoxNowFee === "function") renderBoxNowFee();
+        if (typeof updateReviewConfirmState === "function") updateReviewConfirmState();
       }
 
       function boxNowFeeKey(addr){
@@ -2027,41 +2033,195 @@ async function chatFetch(path, options = {}) {
         });
       }
 
-      function fallbackParcelHeightCm(product = {}){
-        const weightGrams = Math.max(0, Number(product.weightGrams || 0));
-        if (!weightGrams) return 2;
-        return Math.max(2, Math.ceil((weightGrams / 1000) * 8));
+      function cartWeightGrams(){
+        let grams = 0;
+        for (const [id, qty] of cart) {
+          const product = CATALOG[id];
+          if (!product) continue;
+          grams += Math.max(0, Number(product.weightGrams || 0)) * Math.max(1, Math.round(Number(qty || 0)));
+        }
+        return grams;
       }
 
-      function packedParcelDimensionsForProduct(id = "", product = {}){
-        const productId = String(id || product.id || "").trim().toLowerCase();
-        return HAPPY_CHICKEN_PACKED_PARCELS[productId] || null;
+      function flattenedBagCapacityKg(parcel = {}){
+        const layers = Math.floor(Number(parcel.heightCm || 0) / ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm);
+        return Math.max(0, layers * BOXNOW_FLATTENED_BAGS_PER_LAYER);
       }
 
-      function productParcelDimensions(product = {}, id = ""){
-        const parcel = product.parcel || {};
-        const packed = packedParcelDimensionsForProduct(id, product);
-        return {
-          heightCm: Number(parcel.heightCm || 0) || packed?.heightCm || fallbackParcelHeightCm(product),
-          widthCm: Number(parcel.widthCm || 0) || packed?.widthCm || 45,
-          lengthCm: Number(parcel.lengthCm || 0) || packed?.lengthCm || 60,
-        };
+      function flattenedBagRequiredHeightCm(weightGrams = 0){
+        const kgUnits = Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000);
+        const layers = Math.ceil(kgUnits / BOXNOW_FLATTENED_BAGS_PER_LAYER);
+        return layers * ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm;
       }
 
-      function canPackParcelItems(itemHeights, parcelSizes){
-        const remaining = parcelSizes.map(size => Number(size.heightCm || 0)).sort((a, b) => b - a);
-        const heights = [...itemHeights].sort((a, b) => b - a);
+      function cheapestParcelCombinationForWeight(weightGrams = 0){
+        const kgUnits = Math.max(1, Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000));
+        const maxParcels = kgUnits;
+        let best = null;
+        for (let small = 0; small <= maxParcels; small += 1) {
+          for (let medium = 0; medium <= maxParcels; medium += 1) {
+            for (let large = 0; large <= maxParcels; large += 1) {
+              const parcels = [
+                ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
+                ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
+                ...Array.from({ length: large }, () => BOXNOW_PARCEL_SIZES[2]),
+              ];
+              if (!parcels.length) continue;
+              const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
+              if (capacityKg < kgUnits) continue;
+              const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
+              const count = parcels.length;
+              if (
+                best &&
+                (amount > best.amount ||
+                  (amount === best.amount && count > best.count) ||
+                  (amount === best.amount && count === best.count && capacityKg >= best.capacityKg))
+              ) {
+                continue;
+              }
+              best = { parcels, amount, count, capacityKg };
+            }
+          }
+        }
+        return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
+      }
+
+      function packingOrientationsForParcel(item, parcel){
+        const dimensions = [
+          Number(item.heightCm || 0),
+          Number(item.widthCm || 0),
+          Number(item.lengthCm || 0),
+        ].filter(Boolean);
+        const orientations = [];
+        const seen = new Set();
+        for (let verticalIndex = 0; verticalIndex < dimensions.length; verticalIndex += 1) {
+          const verticalCm = dimensions[verticalIndex];
+          const base = dimensions.filter((_, index) => index !== verticalIndex);
+          const variants = [
+            { widthCm: base[0], lengthCm: base[1] },
+            { widthCm: base[1], lengthCm: base[0] },
+          ];
+          for (const variant of variants) {
+            const key = `${verticalCm}:${variant.widthCm}:${variant.lengthCm}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            if (
+              verticalCm <= Number(parcel.heightCm || 0) &&
+              variant.widthCm <= Number(parcel.widthCm || 0) &&
+              variant.lengthCm <= Number(parcel.lengthCm || 0)
+            ) {
+              orientations.push({ verticalCm, widthCm: variant.widthCm, lengthCm: variant.lengthCm });
+            }
+          }
+        }
+        return orientations.sort((a, b) => a.verticalCm - b.verticalCm);
+      }
+
+      function packageFitsParcel(item, parcel){
+        return packingOrientationsForParcel(item, parcel).length > 0;
+      }
+
+      function rectsFitInBase(rects, widthCm, lengthCm){
+        if (!rects.length) return true;
+        const ordered = [...rects].sort((a, b) => (b.widthCm * b.lengthCm) - (a.widthCm * a.lengthCm));
+        function place(index, spaces){
+          if (index >= ordered.length) return true;
+          const rect = ordered[index];
+          const variants = [
+            { widthCm: rect.widthCm, lengthCm: rect.lengthCm },
+            { widthCm: rect.lengthCm, lengthCm: rect.widthCm },
+          ];
+          for (let spaceIndex = 0; spaceIndex < spaces.length; spaceIndex += 1) {
+            const space = spaces[spaceIndex];
+            for (const variant of variants) {
+              if (variant.widthCm > space.widthCm || variant.lengthCm > space.lengthCm) continue;
+              const nextSpaces = [
+                ...spaces.slice(0, spaceIndex),
+                ...spaces.slice(spaceIndex + 1),
+                {
+                  x: space.x + variant.widthCm,
+                  y: space.y,
+                  widthCm: space.widthCm - variant.widthCm,
+                  lengthCm: variant.lengthCm,
+                },
+                {
+                  x: space.x,
+                  y: space.y + variant.lengthCm,
+                  widthCm: space.widthCm,
+                  lengthCm: space.lengthCm - variant.lengthCm,
+                },
+              ].filter(spaceItem => spaceItem.widthCm > 0 && spaceItem.lengthCm > 0);
+              if (place(index + 1, nextSpaces)) return true;
+            }
+          }
+          return false;
+        }
+        return place(0, [{ x: 0, y: 0, widthCm, lengthCm }]);
+      }
+
+      function itemsFitSingleLayerInParcel(items, parcel){
+        const orientedItems = [];
+        function choose(index){
+          if (index >= items.length) {
+            return rectsFitInBase(orientedItems, Number(parcel.widthCm || 0), Number(parcel.lengthCm || 0));
+          }
+          for (const orientation of packingOrientationsForParcel(items[index], parcel)) {
+            orientedItems.push({ widthCm: orientation.widthCm, lengthCm: orientation.lengthCm });
+            if (choose(index + 1)) return true;
+            orientedItems.pop();
+          }
+          return false;
+        }
+        return choose(0);
+      }
+
+      function itemsFitStackedInParcel(items, parcel){
+        const chosen = [];
+        function choose(index){
+          if (index >= items.length) {
+            const totalHeight = chosen.reduce((sum, item) => sum + item.verticalCm, 0);
+            const maxWidth = chosen.reduce((max, item) => Math.max(max, item.widthCm), 0);
+            const maxLength = chosen.reduce((max, item) => Math.max(max, item.lengthCm), 0);
+            return totalHeight <= Number(parcel.heightCm || 0) &&
+              ((maxWidth <= Number(parcel.widthCm || 0) && maxLength <= Number(parcel.lengthCm || 0)) ||
+                (maxLength <= Number(parcel.widthCm || 0) && maxWidth <= Number(parcel.lengthCm || 0)));
+          }
+          for (const orientation of packingOrientationsForParcel(items[index], parcel)) {
+            chosen.push(orientation);
+            if (choose(index + 1)) return true;
+            chosen.pop();
+          }
+          return false;
+        }
+        return choose(0);
+      }
+
+      function itemsFitInParcel(items, parcel){
+        return itemsFitSingleLayerInParcel(items, parcel) || itemsFitStackedInParcel(items, parcel);
+      }
+
+      function canPackItemsInParcels(items, parcels){
+        const available = parcels.map(parcel => ({ ...parcel, items: [] }));
+        const orderedItems = [...items].sort((a, b) => {
+          const aVolume = Number(a.heightCm || 0) * Number(a.widthCm || 0) * Number(a.lengthCm || 0);
+          const bVolume = Number(b.heightCm || 0) * Number(b.widthCm || 0) * Number(b.lengthCm || 0);
+          return bVolume - aVolume;
+        });
+        if (orderedItems.some(item => !available.some(parcel => packageFitsParcel(item, parcel)))) {
+          return false;
+        }
         function place(index){
-          if (index >= heights.length) return true;
-          const height = heights[index];
-          let previousRemaining = -1;
-          for (let i = 0; i < remaining.length; i += 1) {
-            if (remaining[i] < height || remaining[i] === previousRemaining) continue;
-            remaining[i] -= height;
-            if (place(index + 1)) return true;
-            remaining[i] += height;
-            previousRemaining = remaining[i];
-            if (remaining[i] === height) break;
+          if (index >= orderedItems.length) return true;
+          const item = orderedItems[index];
+          const seen = new Set();
+          for (let i = 0; i < available.length; i += 1) {
+            const parcel = available[i];
+            const key = `${parcel.code}:${parcel.items.length}:${parcel.items.map(placed => placed.id || "").join("|")}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            parcel.items.push(item);
+            if (itemsFitInParcel(parcel.items, parcel) && place(index + 1)) return true;
+            parcel.items.pop();
           }
           return false;
         }
@@ -2079,16 +2239,13 @@ async function chatFetch(path, options = {}) {
           .join(" + ");
       }
 
-      function cheapestParcelCombination(itemHeights){
-        if (!itemHeights.length) return [];
-        const totalHeightCm = itemHeights.reduce((sum, height) => sum + height, 0);
-        const maxSmall = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[0].heightCm) + 1;
-        const maxMedium = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[1].heightCm) + 1;
-        const maxLarge = Math.ceil(totalHeightCm / BOXNOW_PARCEL_SIZES[2].heightCm) + 1;
+      function cheapestParcelCombination(items){
+        if (!items.length) return [];
+        const maxParcels = Math.max(1, items.length);
         let best = null;
-        for (let small = 0; small <= maxSmall; small += 1) {
-          for (let medium = 0; medium <= maxMedium; medium += 1) {
-            for (let large = 0; large <= maxLarge; large += 1) {
+        for (let small = 0; small <= maxParcels; small += 1) {
+          for (let medium = 0; medium <= maxParcels; medium += 1) {
+            for (let large = 0; large <= maxParcels; large += 1) {
               const parcels = [
                 ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
                 ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
@@ -2096,7 +2253,6 @@ async function chatFetch(path, options = {}) {
               ];
               if (!parcels.length) continue;
               const capacity = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
-              if (capacity < totalHeightCm) continue;
               const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
               const count = parcels.length;
               if (
@@ -2107,7 +2263,7 @@ async function chatFetch(path, options = {}) {
               ) {
                 continue;
               }
-              if (!canPackParcelItems(itemHeights, parcels)) continue;
+              if (!canPackItemsInParcels(items, parcels)) continue;
               best = { parcels, amount, count, capacity };
             }
           }
@@ -2116,34 +2272,25 @@ async function chatFetch(path, options = {}) {
       }
 
       function currentBoxNowParcel(){
-        const parcelItems = [];
-        let maxItemWidthCm = 0;
-        let maxItemLengthCm = 0;
-        for (const [id, qty] of cart) {
-          const product = CATALOG[id];
-          if (!product) continue;
-          const dimensions = productParcelDimensions(product, id);
-          for (let i = 0; i < Math.max(1, Math.round(Number(qty || 0))); i += 1) {
-            parcelItems.push(dimensions);
-          }
-          maxItemWidthCm = Math.max(maxItemWidthCm, dimensions.widthCm);
-          maxItemLengthCm = Math.max(maxItemLengthCm, dimensions.lengthCm);
-        }
-        const itemHeights = parcelItems.map(item => item.heightCm);
-        const requiredHeightCm = itemHeights.reduce((sum, height) => sum + height, 0);
-        const parcels = cheapestParcelCombination(itemHeights);
+        const weightGrams = cartWeightGrams();
+        const kgUnits = Math.max(1, Math.ceil(Math.max(0, weightGrams) / 1000));
+        const parcels = cheapestParcelCombinationForWeight(weightGrams);
         const largestParcel = parcels.reduce((largest, parcel) => (
           parcel.heightCm > largest.heightCm ? parcel : largest
         ), parcels[0] || BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]);
+        const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
         return {
           ...largestParcel,
           amount: parcels.reduce((sum, parcel) => sum + parcel.amount, 0),
           label: parcelCombinationLabel(parcels) || largestParcel.label,
           count: parcels.length,
           parcels,
-          requiredHeightCm: Math.ceil(requiredHeightCm * 10) / 10,
-          maxItemWidthCm: Math.ceil(maxItemWidthCm * 10) / 10,
-          maxItemLengthCm: Math.ceil(maxItemLengthCm * 10) / 10,
+          weightGrams,
+          kgUnits,
+          capacityKg,
+          requiredHeightCm: Math.ceil(flattenedBagRequiredHeightCm(weightGrams) * 10) / 10,
+          maxItemWidthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.widthCm,
+          maxItemLengthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.lengthCm,
         };
       }
 
@@ -2175,6 +2322,32 @@ async function chatFetch(path, options = {}) {
         }
       }
 
+      function updateReviewTotal(){
+        const total = document.getElementById("reviewSubtotal");
+        if (!total) return;
+        const { grand } = cartTotals();
+        const deliveryFee = __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0;
+        total.textContent = nf(grand + deliveryFee);
+      }
+
+      function canConfirmReview(){
+        return Boolean(__currentReviewAddress && hasBoxNowLocker() && __boxNowFee && !__boxNowFeePromise && !__reviewSubmitting);
+      }
+
+      function updateReviewConfirmState(){
+        const b = document.getElementById("reviewConfirm");
+        if (!b) return;
+        const disabled = !canConfirmReview();
+        b.disabled = disabled;
+        b.classList.toggle("opacity-60", disabled);
+        b.classList.toggle("pointer-events-none", disabled);
+        if (__reviewSubmitting) {
+          b.textContent = "Processing…";
+        } else {
+          b.textContent = reviewConfirmLabel();
+        }
+      }
+
       async function refreshBoxNowFee(addr){
         if (!hasBoxNowLocker()) {
           invalidateBoxNowFee();
@@ -2186,6 +2359,7 @@ async function chatFetch(path, options = {}) {
 
         __boxNowFeeKey = key;
         __boxNowFee = null;
+        updateReviewConfirmState();
         const items = Array.from(cart.entries()).map(([id, qty]) => ({ id, qty }));
         __boxNowFeePromise = authedFetch("/getBoxNowFee", {
           method: "POST",
@@ -2203,6 +2377,8 @@ async function chatFetch(path, options = {}) {
               source: data.source || "boxnow",
               parcel: data.parcel || null
             };
+            const err = document.getElementById("boxnowErr");
+            if (err) err.textContent = "";
             return __boxNowFee;
           })
           .catch(err => {
@@ -2212,10 +2388,13 @@ async function chatFetch(path, options = {}) {
           })
           .finally(() => {
             __boxNowFeePromise = null;
-            if (typeof renderReview === "function") renderReview(__currentReviewAddress);
+            renderBoxNowFee();
+            updateReviewTotal();
+            updateReviewConfirmState();
           });
 
         renderBoxNowFee();
+        updateReviewConfirmState();
         return __boxNowFeePromise;
       }
 
@@ -2244,33 +2423,61 @@ async function chatFetch(path, options = {}) {
         closeDialog("boxnowModal", "boxnowModal");
       }
 
+      function parseBoxNowWidgetMessage(raw){
+        if (typeof raw === "string") {
+          try {
+            return JSON.parse(raw);
+          } catch {
+            try {
+              return Object.fromEntries(new URLSearchParams(raw));
+            } catch {
+              return {};
+            }
+          }
+        }
+        return raw && typeof raw === "object" ? raw : {};
+      }
+
+      function boxNowMessageValue(data, keys){
+        for (const key of keys) {
+          const value = data?.[key] ?? data?.locker?.[key] ?? data?.location?.[key] ?? data?.boxnow?.[key];
+          if (value != null && String(value).trim()) return String(value).trim();
+        }
+        return "";
+      }
+
       function acceptBoxNowLocker(data){
-        const lockerId = String(data.boxnowLockerId || "").trim();
+        const lockerId = boxNowMessageValue(data, ["boxnowLockerId", "lockerId", "locationId", "id"]);
         if (!lockerId) return;
         __boxNowLocker = {
           id: lockerId,
-          name: String(data.boxnowLockerName || "").trim(),
-          postalCode: String(data.boxnowLockerPostalCode || "").trim(),
-          addressLine1: String(data.boxnowLockerAddressLine1 || "").trim(),
-          addressLine2: String(data.boxnowLockerAddressLine2 || "").trim(),
-          lat: data.boxnowLockerLat || "",
-          lng: data.boxnowLockerLng || ""
+          name: boxNowMessageValue(data, ["boxnowLockerName", "lockerName", "name", "title"]),
+          postalCode: boxNowMessageValue(data, ["boxnowLockerPostalCode", "postalCode", "zip"]),
+          addressLine1: boxNowMessageValue(data, ["boxnowLockerAddressLine1", "addressLine1", "address"]),
+          addressLine2: boxNowMessageValue(data, ["boxnowLockerAddressLine2", "addressLine2"]),
+          lat: boxNowMessageValue(data, ["boxnowLockerLat", "lat", "latitude"]),
+          lng: boxNowMessageValue(data, ["boxnowLockerLng", "lng", "lon", "longitude"])
         };
         Cookie.set("grubz_boxnow_locker", JSON.stringify(__boxNowLocker));
+        const err = document.getElementById("boxnowErr");
+        if (err) err.textContent = "";
         invalidateBoxNowFee();
-        renderBoxNowSelection();
-        refreshBoxNowFee(__currentReviewAddress);
         closeBoxNowWidget();
+        const selected = document.getElementById("boxnowSelected");
+        if (selected) selected.textContent = boxNowLockerLines(__boxNowLocker).join("\n");
+        renderBoxNowSelection();
+        renderBoxNowFee();
+        refreshBoxNowFee(__currentReviewAddress);
       }
 
       window.addEventListener("message", (event) => {
-        if (event.origin !== "https://widget-v5.boxnow.gr") return;
-        const data = event.data || {};
-        if (data.boxnowClose === "yes") {
+        if (!/^https:\/\/(?:.*\.)?boxnow\.gr$/i.test(event.origin)) return;
+        const data = parseBoxNowWidgetMessage(event.data);
+        if (data.boxnowClose === "yes" || data.close === true || data.close === "yes") {
           closeBoxNowWidget();
           return;
         }
-        if (data.boxnowLockerId) acceptBoxNowLocker(data);
+        if (boxNowMessageValue(data, ["boxnowLockerId", "lockerId", "locationId", "id"])) acceptBoxNowLocker(data);
       });
 
       function openReview(addr){
@@ -2291,13 +2498,8 @@ async function chatFetch(path, options = {}) {
       }
 
       function setReviewLoading(on){
-        const d = i18n[lang()]||i18n.en;
-        const b = document.getElementById("reviewConfirm");
-        if (!b) return;
-        b.disabled = on;
-        b.classList.toggle("opacity-60", on);
-        b.classList.toggle("pointer-events-none", on);
-        b.textContent = on ? "Processing…" : reviewConfirmLabel();
+        __reviewSubmitting = Boolean(on);
+        updateReviewConfirmState();
       }
 
       function reviewConfirmLabel(){
@@ -2308,8 +2510,7 @@ async function chatFetch(path, options = {}) {
       }
 
       function refreshReviewConfirmLabel(){
-        const b = document.getElementById("reviewConfirm");
-        if (b && !b.disabled) b.textContent = reviewConfirmLabel();
+        updateReviewConfirmState();
       }
 
       function renderReview(addr){
@@ -2339,11 +2540,10 @@ async function chatFetch(path, options = {}) {
         const { grand, discount } = cartTotals();
         document.querySelector("[data-i18n='reviewTotal']").textContent =
           (i18n[lang()]||i18n.en).totalInclVAT;
-        const deliveryFee = __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0;
-        document.getElementById("reviewSubtotal").textContent = nf(grand + deliveryFee);
+        updateReviewTotal();
         renderBoxNowSelection();
         renderBoxNowFee();
-        refreshReviewConfirmLabel();
+        updateReviewConfirmState();
         refreshBoxNowFee(__currentReviewAddress);
 
         const row = document.getElementById("reviewDiscountRow");
@@ -2377,6 +2577,14 @@ async function chatFetch(path, options = {}) {
             document.getElementById("boxnowErr").textContent = msg;
             announce(msg);
             openBoxNowWidget();
+            return;
+          }
+          if (!__boxNowFee || __boxNowFeePromise) {
+            const msg = (i18n[lang()] || i18n.en).boxnowFeeRequired || "Calculate BOX NOW delivery before confirming.";
+            document.getElementById("boxnowErr").textContent = msg;
+            announce(msg);
+            refreshBoxNowFee(__currentReviewAddress);
+            updateReviewConfirmState();
             return;
           }
           setReviewLoading(true);
@@ -2496,7 +2704,8 @@ async function chatFetch(path, options = {}) {
           "grubz-500g":"grubz-500g",
           "happy-chicken-1kg":"happy-chicken-1kg",
           "happy-chicken-2kg":"happy-chicken-2kg",
-          "happy-chicken-3kg":"happy-chicken-3kg"
+          "happy-chicken-3kg":"happy-chicken-3kg",
+          "frass":"frass"
         };
 
         const items = Array.from(cart.entries())

@@ -66,6 +66,9 @@
       }
     ]
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "emulators": {
     "apphosting": {
       "port": 5002,
@@ -77,6 +80,9 @@
     },
     "hosting": {
       "port": 5100
+    },
+    "storage": {
+      "port": 9199
     },
     "ui": {
       "enabled": true
