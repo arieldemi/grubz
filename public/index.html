@@ -367,7 +367,7 @@
         <div class="p-5 border-b">
           <h3 id="authTitle" class="text-lg font-extrabold"><span data-i18n="signIn">Sign in</span> / <span data-i18n="createAccount">Create account</span></h3>
         </div>
-        <div class="p-5 space-y-3">
+        <form id="authForm" class="p-5 space-y-3">
           <div>
             <label class="label" for="authEmail" data-i18n="email">Email</label>
             <input id="authEmail" type="email" class="input" autocomplete="email" required aria-describedby="authErr" />
@@ -377,11 +377,11 @@
             <input id="authPass" type="password" class="input" autocomplete="current-password" required aria-describedby="authErr" />
           </div>
           <div class="flex gap-2">
-            <button id="doSignIn" class="btn flex-1" data-i18n="signIn">Sign in</button>
-            <button id="doSignUp" class="btn-outline flex-1" data-i18n="createAccount">Create account</button>
+            <button id="doSignIn" class="btn flex-1" type="submit" data-i18n="signIn">Sign in</button>
+            <button id="doSignUp" class="btn-outline flex-1" type="button" data-i18n="createAccount">Create account</button>
           </div>
           <p id="authErr" class="text-sm text-red-600" role="alert"></p>
-        </div>
+        </form>
         <div class="p-4 border-t bg-zinc-50 text-right">
           <button id="authClose" class="btn-soft" data-i18n="cancel">Cancel</button>
         </div>
@@ -1159,6 +1159,33 @@ async function chatFetch(path, options = {}) {
         return seconds ? new Date(seconds * 1000).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : "";
       }
 
+      function linkifyChatText(value = ""){
+        const text = String(value || "");
+        const pattern = /(https?:\/\/[^\s<]+|www\.[^\s<]+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\+?\d[\d\s().-]{6,}\d)/gi;
+        let html = "";
+        let lastIndex = 0;
+        for (const match of text.matchAll(pattern)) {
+          const raw = match[0];
+          const index = match.index || 0;
+          const trimmed = raw.replace(/[),.!?;:]+$/g, "");
+          const trailing = raw.slice(trimmed.length);
+          html += escapeHtml(text.slice(lastIndex, index));
+          if (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(trimmed)) {
+            html += `<a class="underline break-words" href="mailto:${escapeHtml(trimmed)}">${escapeHtml(trimmed)}</a>`;
+          } else if (/^(?:https?:\/\/|www\.)/i.test(trimmed)) {
+            const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+            html += `<a class="underline break-words" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(trimmed)}</a>`;
+          } else {
+            const digits = trimmed.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+            html += `<a class="underline break-words" href="tel:${escapeHtml(digits)}">${escapeHtml(trimmed)}</a>`;
+          }
+          html += escapeHtml(trailing);
+          lastIndex = index + raw.length;
+        }
+        html += escapeHtml(text.slice(lastIndex));
+        return html;
+      }
+
       function renderChatMessages(messages = []){
         const box = document.getElementById("chatMessages");
         if (!messages.length) {
@@ -1171,7 +1198,7 @@ async function chatFetch(path, options = {}) {
             <div class="flex ${mine ? "justify-end" : "justify-start"}">
               <div class="max-w-[82%] rounded-2xl px-3 py-2 ${mine ? "bg-[var(--grubz-1)] text-white" : "bg-white border border-zinc-200 text-zinc-800"}">
                 <div class="mb-1 text-[10px] font-bold ${mine ? "text-white/80" : "text-zinc-500"}">${escapeHtml(message.senderName || (mine ? "You" : "GRUBZ"))}</div>
-                <div class="whitespace-pre-wrap">${escapeHtml(message.text || "")}</div>
+                <div class="whitespace-pre-wrap">${linkifyChatText(message.text || "")}</div>
                 <div class="mt-1 text-[10px] ${mine ? "text-white/75" : "text-zinc-400"}">${escapeHtml(chatTime(message.createdAt))}</div>
               </div>
             </div>
@@ -1279,11 +1306,12 @@ async function chatFetch(path, options = {}) {
       function setCatalogProducts(products){
         for (const key of Object.keys(CATALOG)) delete CATALOG[key];
         products.forEach((p) => {
+          const image = String(p.image || "").trim();
           CATALOG[p.id] = {
             price: Number(p.amount || 0) / 100,
             amount: Number(p.amount || 0),
             currency: p.currency || "eur",
-            img: p.image || "",
+            img: /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(image) ? "" : image,
             bg: p.imageBg || "#f8f1eb",
             name: p.name || p.id,
             nameEl: p.nameEl || p.name || p.id,
@@ -1845,7 +1873,10 @@ async function chatFetch(path, options = {}) {
           announce(msg);
         }
       }
-      document.getElementById("doSignIn").addEventListener("click", ()=>signIn(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
+      document.getElementById("authForm").addEventListener("submit", event => {
+        event.preventDefault();
+        signIn(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value);
+      });
       document.getElementById("doSignUp").addEventListener("click", ()=>signUp(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
 
       auth().onAuthStateChanged(async (u) => {

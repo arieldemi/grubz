@@ -51,6 +51,7 @@
       { "source": "/api/adminOrders", "function": { "functionId": "adminOrders", "region": "europe-west1" } },
       { "source": "/api/adminCustomers", "function": { "functionId": "adminCustomers", "region": "europe-west1" } },
       { "source": "/api/adminChat", "function": { "functionId": "adminChat", "region": "europe-west1" } },
+      { "source": "/api/adminChatbotDraft", "function": { "functionId": "adminChatbotDraft", "region": "europe-west1" } },
       { "source": "/api/adminSocialAgent", "function": { "functionId": "adminSocialAgent", "region": "europe-west1" } },
       { "source": "/api/adminSettings", "function": { "functionId": "adminSettings", "region": "europe-west1" } },
       { "source": "/api/adminBoxNow", "function": { "functionId": "adminBoxNow", "region": "europe-west1" } },
@@ -60,6 +61,12 @@
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [
+      {
+        "source": "/console/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store, max-age=0" }
+        ]
+      },
       {
         "source": "/api/stripe/webhook",
         "headers": [{ "key": "Content-Type", "value": "application/json" }]

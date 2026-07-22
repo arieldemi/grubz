@@ -133,9 +133,17 @@
 	          </section>
 
 	          <section id="ordersSection" class="hidden lg:col-span-2 space-y-4">
-	            <div class="flex items-center justify-between gap-3">
-	              <h2 class="text-xl font-extrabold">Orders Manager</h2>
-	              <div class="flex gap-2">
+	            <div class="flex flex-wrap items-end justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Orders Manager</h2>
+	                <p class="text-sm text-zinc-500">Search by order, customer, status, products, payment link, tracking, or BOX NOW locker.</p>
+	              </div>
+	              <div class="flex flex-wrap items-end gap-2">
+	                <div>
+	                  <label class="label" for="orderSearch">Search</label>
+	                  <input id="orderSearch" class="input min-w-[260px]" placeholder="Order, customer, product, status">
+	                </div>
+	                <button id="clearOrderSearchBtn" class="btn-soft" type="button">Clear</button>
 	                <button id="newManualOrderBtn" class="btn" type="button">Manual order</button>
 	                <button id="refreshOrdersBtn" class="btn-soft" type="button">Refresh orders</button>
 	              </div>
@@ -154,6 +162,7 @@
 	                <tbody id="ordersTable" class="divide-y"></tbody>
 	              </table>
 	            </div>
+	            <p id="orderSearchMsg" class="text-xs text-zinc-500" role="status" aria-live="polite"></p>
 	            <p id="orderMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
@@ -220,7 +229,10 @@
 	                <div class="grid gap-2">
 	                  <label class="label" for="chatAdminReply">Reply</label>
 	                  <textarea id="chatAdminReply" class="input" rows="4" placeholder="Write a reply..."></textarea>
-	                  <button id="sendChatReplyBtn" class="btn justify-self-end" type="button">Send reply</button>
+	                  <div class="flex flex-wrap justify-end gap-2">
+	                    <button id="generateChatbotDraftBtn" class="btn-soft" type="button">Generate draft</button>
+	                    <button id="sendChatReplyBtn" class="btn" type="button">Send reply</button>
+	                  </div>
 	                </div>
 	                <p id="chatAdminMsg" class="text-sm" role="status" aria-live="polite"></p>
 	              </div>
@@ -635,8 +647,9 @@
               <button id="settingsTabStripe" class="btn-soft" type="button" data-settings-tab="stripe">Stripe</button>
               <button id="settingsTabShipping" class="btn-soft" type="button" data-settings-tab="shipping">Shipping</button>
               <button id="settingsTabEmails" class="btn-soft" type="button" data-settings-tab="emails">Emails</button>
+              <button id="settingsTabChatbot" class="btn-soft" type="button" data-settings-tab="chatbot">Chatbot</button>
             </div>
-            <div class="panel p-4 max-w-2xl space-y-4">
+            <div class="panel p-4 max-w-3xl space-y-4">
               <div id="settingsPanelStripe" class="space-y-4" data-settings-panel="stripe">
                 <div>
                   <h3 class="font-extrabold text-lg">Stripe</h3>
@@ -729,6 +742,93 @@
                 </div>
                 <div id="templateList" class="space-y-2"></div>
               </div>
+              <div id="settingsPanelChatbot" class="space-y-4 hidden" data-settings-panel="chatbot">
+                <div>
+                  <h3 class="font-extrabold text-lg">Chatbot</h3>
+                  <p class="text-xs text-zinc-500">Draft generation fills the admin reply box for review. The bot will not send customer messages automatically.</p>
+                </div>
+                <label class="inline-flex items-center gap-2 font-semibold">
+                  <input id="chatbotEnabled" type="checkbox" class="h-4 w-4">
+                  Enable chatbot
+                </label>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label class="label" for="chatbotName">Chatbot name</label>
+                    <input id="chatbotName" class="input" placeholder="Gina">
+                  </div>
+                  <label class="inline-flex items-center gap-2 font-semibold self-end">
+                    <input id="chatbotIntroduceSelf" type="checkbox" class="h-4 w-4">
+                    Introduce herself in drafts
+                  </label>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label class="label" for="chatbotMode">Reply mode</label>
+                    <select id="chatbotMode" class="input">
+                      <option value="off">Off</option>
+                      <option value="draft">Draft only</option>
+                      <option value="auto">Auto-reply</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label" for="chatbotModel">OpenAI model</label>
+                    <input id="chatbotModel" class="input" placeholder="gpt-5.6-luna">
+                  </div>
+                  <div>
+                    <label class="label" for="chatbotMaxHistory">Max chat history</label>
+                    <input id="chatbotMaxHistory" class="input" type="number" min="4" max="60" step="1">
+                  </div>
+                  <div>
+                    <label class="label" for="chatbotMaxTokens">Max answer tokens</label>
+                    <input id="chatbotMaxTokens" class="input" type="number" min="100" max="2000" step="50">
+                  </div>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="inline-flex items-center gap-2 font-semibold">
+                    <input id="chatbotTranslationEnabled" type="checkbox" class="h-4 w-4">
+                    Translation enabled
+                  </label>
+                  <div>
+                    <label class="label" for="chatbotReplyLanguage">Reply language</label>
+                    <select id="chatbotReplyLanguage" class="input">
+                      <option value="auto">Customer language</option>
+                      <option value="en">English</option>
+                      <option value="el">Greek</option>
+                    </select>
+                  </div>
+                </div>
+                <fieldset class="space-y-2">
+                  <legend class="label">Allowed knowledge areas</legend>
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    <label class="inline-flex items-center gap-2 font-semibold"><input id="chatbotTopicProducts" type="checkbox" class="h-4 w-4"> Products</label>
+                    <label class="inline-flex items-center gap-2 font-semibold"><input id="chatbotTopicOrders" type="checkbox" class="h-4 w-4"> Orders</label>
+                    <label class="inline-flex items-center gap-2 font-semibold"><input id="chatbotTopicShipping" type="checkbox" class="h-4 w-4"> Shipping</label>
+                    <label class="inline-flex items-center gap-2 font-semibold"><input id="chatbotTopicCoupons" type="checkbox" class="h-4 w-4"> Coupons</label>
+                    <label class="inline-flex items-center gap-2 font-semibold"><input id="chatbotTopicTranslation" type="checkbox" class="h-4 w-4"> Translation</label>
+                    <label class="inline-flex items-center gap-2 font-semibold"><input id="chatbotTopicObjections" type="checkbox" class="h-4 w-4"> Rejections</label>
+                  </div>
+                </fieldset>
+                <div>
+                  <label class="label" for="chatbotBusinessContext">Business knowledge</label>
+                  <textarea id="chatbotBusinessContext" class="input" rows="5"></textarea>
+                </div>
+                <div>
+                  <label class="label" for="chatbotScopeRestriction">Scope restriction</label>
+                  <textarea id="chatbotScopeRestriction" class="input" rows="4"></textarea>
+                </div>
+                <div>
+                  <label class="label" for="chatbotBehaviorRules">Behavior rules</label>
+                  <textarea id="chatbotBehaviorRules" class="input" rows="7" placeholder="One rule per line"></textarea>
+                </div>
+                <div>
+                  <label class="label" for="chatbotRejectionHandling">Rejection handling</label>
+                  <textarea id="chatbotRejectionHandling" class="input" rows="4"></textarea>
+                </div>
+                <div>
+                  <label class="label" for="chatbotEscalationRules">Escalation rules</label>
+                  <textarea id="chatbotEscalationRules" class="input" rows="5" placeholder="One rule per line"></textarea>
+                </div>
+              </div>
               <p id="settingsMsg" class="text-sm" role="status" aria-live="polite"></p>
               <div class="flex justify-end">
                 <button id="saveSettingsBtn" class="btn" type="button">Save settings</button>
@@ -750,7 +850,7 @@
 	              <div id="productImagePreviewWrap" class="panel grid place-items-center p-3 min-h-[170px]"></div>
 	              <div>
 	                <label class="label" for="p_upload">Upload product image</label>
-	                <input id="p_upload" class="input" type="file" accept="image/png,image/jpeg,image/webp">
+	                <input id="p_upload" class="input" type="file" accept="image/*">
 	              </div>
 	              <button id="uploadProductImageBtn" class="btn-soft w-full" type="button">Upload image</button>
 	            </div>
@@ -1173,6 +1273,22 @@
 	      let stripeSettings = { mode:"test" };
 	      let orderEmailSettings = { templates:[] };
 	      let boxNowSettings = { activeEnvironment:"stage", environments:{} };
+	      let chatbotSettings = {
+	        enabled:false,
+	        mode:"draft",
+	        name:"Gina",
+	        introduceSelf:true,
+	        model:"gpt-5.6-luna",
+	        maxHistoryMessages:20,
+	        maxOutputTokens:500,
+	        businessContext:"",
+	        scopeRestriction:"",
+	        behaviorRules:[],
+	        rejectionHandling:"",
+	        escalationRules:[],
+	        translation:{ enabled:true, replyLanguage:"auto", languages:["en", "el"] },
+	        topics:{ products:true, orders:true, shipping:true, coupons:true, translation:true, objections:true },
+	      };
 	      let socialAgentSettings = { enabled:true, keywords:[], negativeKeywords:[], sources:[] };
 	      let socialOpportunities = [];
 	      let editingTemplateIndex = -1;
@@ -1308,6 +1424,7 @@
 	      const imageSrc = src => {
 	        const value = String(src || "").trim();
 	        if (!value) return "";
+	        if (/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(value)) return "";
 	        if (/^(https?:|data:|\/)/.test(value)) return value;
 	        return `/${value.replace(/^\/+/, "")}`;
 	      };
@@ -1317,6 +1434,44 @@
 	        reader.onerror = () => reject(new Error("Could not read image file."));
 	        reader.readAsDataURL(file);
 	      });
+	      const loadImageFromFile = file => new Promise((resolve, reject) => {
+	        const url = URL.createObjectURL(file);
+	        const img = new Image();
+	        img.onload = () => {
+	          URL.revokeObjectURL(url);
+	          resolve(img);
+	        };
+	        img.onerror = () => {
+	          URL.revokeObjectURL(url);
+	          reject(new Error("Could not read this image. Use PNG, JPG, or WebP."));
+	        };
+	        img.src = url;
+	      });
+	      async function productImageDataUrl(file){
+	        const allowed = /^(image\/png|image\/jpe?g|image\/webp)$/i.test(file.type || "");
+	        if (allowed && file.size <= 4.5 * 1024 * 1024) return fileAsDataUrl(file);
+	        const img = await loadImageFromFile(file);
+	        const maxSide = 1800;
+	        const scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+	        const width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+	        const height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+	        const canvas = document.createElement("canvas");
+	        canvas.width = width;
+	        canvas.height = height;
+	        const ctx = canvas.getContext("2d");
+	        ctx.fillStyle = "#ffffff";
+	        ctx.fillRect(0, 0, width, height);
+	        ctx.drawImage(img, 0, 0, width, height);
+	        const preferredType = canvas.toDataURL("image/webp", 0.86).startsWith("data:image/webp")
+	          ? "image/webp"
+	          : "image/jpeg";
+	        for (const quality of [0.86, 0.78, 0.68, 0.58]) {
+	          const dataUrl = canvas.toDataURL(preferredType, quality);
+	          const approxBytes = Math.ceil((dataUrl.split(",")[1] || "").length * 3 / 4);
+	          if (approxBytes <= 4.8 * 1024 * 1024) return dataUrl;
+	        }
+	        throw new Error("Image is too large. Choose a smaller image.");
+	      }
       const boxNowRows = o => {
         const s = o?.shipping || {};
         const b = s.boxNow || {};
@@ -1585,7 +1740,7 @@
 	      });
 	      showIdeaWeekTab("2026-07-20");
 	      function showSettingsTab(tab = "stripe"){
-	        const active = ["stripe", "shipping", "emails"].includes(tab) ? tab : "stripe";
+	        const active = ["stripe", "shipping", "emails", "chatbot"].includes(tab) ? tab : "stripe";
 	        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
 	          panel.classList.toggle("hidden", panel.dataset.settingsPanel !== active);
 	        });
@@ -1621,6 +1776,12 @@
 	      $("sendBulkEmailBtn").addEventListener("click", sendBulkCustomerEmail);
 	      $("bulkEmailTemplate").addEventListener("change", applyBulkEmailTemplate);
 	      $("bulkEmailLanguage").addEventListener("change", applyBulkEmailTemplate);
+	      $("orderSearch").addEventListener("input", renderOrders);
+	      $("clearOrderSearchBtn").addEventListener("click", () => {
+	        $("orderSearch").value = "";
+	        renderOrders();
+	        $("orderSearch").focus();
+	      });
 
       async function loadProducts(){
         try {
@@ -1722,8 +1883,9 @@
 	        if (!id) return setMsg("productMsg", "Save or enter a product ID before uploading an image.", false);
 	        if (!file) return setMsg("productMsg", "Choose an image first.", false);
 	        try {
+	          setMsg("productMsg", "Preparing image...");
+	          const imageDataUrl = await productImageDataUrl(file);
 	          setMsg("productMsg", "Uploading image...");
-	          const imageDataUrl = await fileAsDataUrl(file);
 	          const data = await api("/adminProductImage", { method:"POST", body: JSON.stringify({ productId:id, imageDataUrl }) });
 	          currentProductImage = data.image || "";
 	          renderProductImagePreview();
@@ -1973,6 +2135,33 @@
 	        return seconds ? new Date(seconds * 1000).toLocaleString() : "";
 	      }
 
+	      function linkifyChatText(value = ""){
+	        const text = String(value || "");
+	        const pattern = /(https?:\/\/[^\s<]+|www\.[^\s<]+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\+?\d[\d\s().-]{6,}\d)/gi;
+	        let html = "";
+	        let lastIndex = 0;
+	        for (const match of text.matchAll(pattern)) {
+	          const raw = match[0];
+	          const index = match.index || 0;
+	          const trimmed = raw.replace(/[),.!?;:]+$/g, "");
+	          const trailing = raw.slice(trimmed.length);
+	          html += esc(text.slice(lastIndex, index));
+	          if (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(trimmed)) {
+	            html += `<a class="underline break-words" href="mailto:${esc(trimmed)}">${esc(trimmed)}</a>`;
+	          } else if (/^(?:https?:\/\/|www\.)/i.test(trimmed)) {
+	            const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+	            html += `<a class="underline break-words" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(trimmed)}</a>`;
+	          } else {
+	            const digits = trimmed.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+	            html += `<a class="underline break-words" href="tel:${esc(digits)}">${esc(trimmed)}</a>`;
+	          }
+	          html += esc(trailing);
+	          lastIndex = index + raw.length;
+	        }
+	        html += esc(text.slice(lastIndex));
+	        return html;
+	      }
+
 	      function renderChatConversationList(){
 	        if (!chatConversations.length) {
 	          $("chatConversationList").innerHTML = `<div class="p-3 text-sm text-zinc-500">No chat conversations yet.</div>`;
@@ -2022,7 +2211,7 @@
 	            <div class="flex ${admin ? "justify-end" : "justify-start"}">
 	              <div class="max-w-[78%] rounded-md px-3 py-2 ${admin ? "bg-[var(--grubz)] text-white" : "bg-white border border-zinc-200 text-zinc-800"}">
 	                <div class="mb-1 text-[10px] font-bold ${admin ? "text-white/75" : "text-zinc-500"}">${esc(message.senderName || (admin ? "GRUBZ" : chatLabel(selectedChatConversation)))}</div>
-	                <div class="whitespace-pre-wrap">${esc(message.text || "")}</div>
+	                <div class="whitespace-pre-wrap">${linkifyChatText(message.text || "")}</div>
 	                <div class="mt-1 text-[10px] ${admin ? "text-white/75" : "text-zinc-400"}">${esc(chatTime(message.createdAt))}</div>
 	              </div>
 	            </div>
@@ -2081,6 +2270,26 @@
 	        }
 	      }
 
+	      async function generateChatbotDraft(){
+	        if (!selectedChatConversation) return setMsg("chatAdminMsg", "Select a conversation first", false);
+	        try {
+	          $("generateChatbotDraftBtn").disabled = true;
+	          setMsg("chatAdminMsg", "Generating draft...");
+	          const data = await chatAdminApi("/adminChatbotDraft", {
+	            method: "POST",
+	            body: JSON.stringify({ conversationId: selectedChatConversation.id }),
+	          });
+	          $("chatAdminReply").value = data.draft || "";
+	          $("chatAdminReply").focus();
+	          const model = data.model ? ` using ${data.model}` : "";
+	          setMsg("chatAdminMsg", `Draft generated${model}`);
+	        } catch (err) {
+	          setMsg("chatAdminMsg", err.message || "Draft generation failed", false);
+	        } finally {
+	          $("generateChatbotDraftBtn").disabled = false;
+	        }
+	      }
+
 	      async function toggleChatStatus(){
 	        if (!selectedChatConversation) return;
 	        const status = selectedChatConversation.status === "closed" ? "open" : "closed";
@@ -2106,6 +2315,7 @@
 	        await loadChatConversations(btn.dataset.chatConversation).catch(() => {});
 	      });
 	      $("sendChatReplyBtn").addEventListener("click", sendChatReply);
+	      $("generateChatbotDraftBtn").addEventListener("click", generateChatbotDraft);
 	      $("toggleChatStatusBtn").addEventListener("click", toggleChatStatus);
 
 	      function socialLines(value){
@@ -2350,6 +2560,7 @@
 	          stripeSettings = data.stripe || stripeSettings;
 	          orderEmailSettings = data.orderEmails || orderEmailSettings;
 	          boxNowSettings = data.boxNow || boxNowSettings;
+	          chatbotSettings = data.chatbot || chatbotSettings;
 	          renderSettings();
 	          setMsg("settingsMsg", "Settings loaded");
 	        } catch (err) {
@@ -2372,6 +2583,71 @@
 	        renderOrderEmailTemplates();
 	        renderBulkEmailTemplateOptions();
 	        renderBoxNowSettings();
+	        renderChatbotSettings();
+	      }
+
+	      function renderChatbotSettings(){
+	        const settings = chatbotSettings || {};
+	        const translation = settings.translation || {};
+	        const topics = settings.topics || {};
+	        $("chatbotEnabled").checked = settings.enabled === true;
+	        $("chatbotMode").value = ["off", "draft", "auto"].includes(settings.mode) ? settings.mode : "draft";
+	        $("chatbotName").value = settings.name || "Gina";
+	        $("chatbotIntroduceSelf").checked = settings.introduceSelf !== false;
+	        $("chatbotModel").value = settings.model || "gpt-5.6-luna";
+	        $("chatbotMaxHistory").value = Number(settings.maxHistoryMessages || 20);
+	        $("chatbotMaxTokens").value = Number(settings.maxOutputTokens || 500);
+	        $("chatbotTranslationEnabled").checked = translation.enabled !== false;
+	        $("chatbotReplyLanguage").value = ["auto", "en", "el"].includes(translation.replyLanguage) ? translation.replyLanguage : "auto";
+	        $("chatbotTopicProducts").checked = topics.products !== false;
+	        $("chatbotTopicOrders").checked = topics.orders !== false;
+	        $("chatbotTopicShipping").checked = topics.shipping !== false;
+	        $("chatbotTopicCoupons").checked = topics.coupons !== false;
+	        $("chatbotTopicTranslation").checked = topics.translation !== false;
+	        $("chatbotTopicObjections").checked = topics.objections !== false;
+	        $("chatbotBusinessContext").value = settings.businessContext || "";
+	        $("chatbotScopeRestriction").value = settings.scopeRestriction || "";
+	        $("chatbotBehaviorRules").value = Array.isArray(settings.behaviorRules) ? settings.behaviorRules.join("\n") : "";
+	        $("chatbotRejectionHandling").value = settings.rejectionHandling || "";
+	        $("chatbotEscalationRules").value = Array.isArray(settings.escalationRules) ? settings.escalationRules.join("\n") : "";
+	      }
+
+	      function chatbotSettingsPayload(){
+	        const maxHistoryMessages = Math.round(Number($("chatbotMaxHistory").value || 20));
+	        if (!Number.isFinite(maxHistoryMessages) || maxHistoryMessages < 4 || maxHistoryMessages > 60) {
+	          throw new Error("Enter chatbot history between 4 and 60 messages.");
+	        }
+	        const maxOutputTokens = Math.round(Number($("chatbotMaxTokens").value || 500));
+	        if (!Number.isFinite(maxOutputTokens) || maxOutputTokens < 100 || maxOutputTokens > 2000) {
+	          throw new Error("Enter chatbot answer tokens between 100 and 2000.");
+	        }
+	        return {
+	          enabled: $("chatbotEnabled").checked,
+	          mode: $("chatbotMode").value,
+	          name: $("chatbotName").value.trim() || "Gina",
+	          introduceSelf: $("chatbotIntroduceSelf").checked,
+	          model: $("chatbotModel").value.trim() || "gpt-5.6-luna",
+	          maxHistoryMessages,
+	          maxOutputTokens,
+	          businessContext: $("chatbotBusinessContext").value.trim(),
+	          scopeRestriction: $("chatbotScopeRestriction").value.trim(),
+	          behaviorRules: $("chatbotBehaviorRules").value.split(/\r?\n/).map(item => item.trim()).filter(Boolean),
+	          rejectionHandling: $("chatbotRejectionHandling").value.trim(),
+	          escalationRules: $("chatbotEscalationRules").value.split(/\r?\n/).map(item => item.trim()).filter(Boolean),
+	          translation: {
+	            enabled: $("chatbotTranslationEnabled").checked,
+	            replyLanguage: $("chatbotReplyLanguage").value,
+	            languages: ["en", "el"],
+	          },
+	          topics: {
+	            products: $("chatbotTopicProducts").checked,
+	            orders: $("chatbotTopicOrders").checked,
+	            shipping: $("chatbotTopicShipping").checked,
+	            coupons: $("chatbotTopicCoupons").checked,
+	            translation: $("chatbotTopicTranslation").checked,
+	            objections: $("chatbotTopicObjections").checked,
+	          },
+	        };
 	      }
 
 	      function renderBoxNowSettings(){
@@ -3123,10 +3399,12 @@
 	          const orderEmails = {
 	            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
 	          };
-	          await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ shipping, stripe, orderEmails }) });
+	          const chatbot = chatbotSettingsPayload();
+	          const data = await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ shipping, stripe, orderEmails, chatbot }) });
 	          shippingSettings = shipping;
 	          stripeSettings = stripe;
 	          orderEmailSettings = orderEmails;
+	          chatbotSettings = data.chatbot || chatbot;
 	          renderSettings();
 	          setMsg("settingsMsg", "Settings saved");
 	        } catch (err) {
@@ -3395,12 +3673,74 @@
 	        }
 	      });
 
+	      function orderSearchText(o = {}){
+	        const customer = o.customer || {};
+	        const shipping = o.shipping || {};
+	        const boxNow = shipping.boxNow || {};
+	        const shipment = o.boxNowShipment || {};
+	        const items = Array.isArray(o.items) ? o.items : [];
+	        return [
+	          o.id,
+	          orderNumber(o),
+	          o.status,
+	          o.fulfillmentStatus,
+	          o.paymentStatus,
+	          o.stripePaymentLink,
+	          o.paymentLink,
+	          o.trackingNumber,
+	          o.trackingUrl,
+	          shipment.trackingNumber,
+	          shipment.trackingUrl,
+	          shipment.parcelId,
+	          shipment.orderId,
+	          customer.name,
+	          customer.email,
+	          customer.phone,
+	          customer.uid,
+	          shipping.name,
+	          shipping.email,
+	          shipping.phone,
+	          boxNow.id,
+	          boxNow.name,
+	          boxNow.addressLine1,
+	          boxNow.addressLine2,
+	          boxNow.postalCode,
+	          ...items.flatMap(item => [
+	            item.id,
+	            item.name,
+	            item.nameEl,
+	            item.stripeProductId,
+	            item.stripePriceId,
+	          ]),
+	        ].filter(Boolean).join(" ").toLowerCase();
+	      }
+
+	      function filteredOrders(){
+	        const query = ($("orderSearch")?.value || "").trim().toLowerCase();
+	        if (!query) return orders;
+	        const terms = query.split(/\s+/).filter(Boolean);
+	        return orders.filter(order => {
+	          const text = orderSearchText(order);
+	          return terms.every(term => text.includes(term));
+	        });
+	      }
+
 	      function renderOrders(){
+	        const visibleOrders = filteredOrders();
 	        if (!orders.length) {
 	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders to display.</td></tr>`;
+	          $("orderSearchMsg").textContent = "";
 	          return;
 	        }
-        $("ordersTable").innerHTML = orders.map(o => `
+	        if (!visibleOrders.length) {
+	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders match your search.</td></tr>`;
+	          $("orderSearchMsg").textContent = `0 of ${orders.length} orders shown`;
+	          return;
+	        }
+	        $("orderSearchMsg").textContent = visibleOrders.length === orders.length
+	          ? `${orders.length} orders shown`
+	          : `${visibleOrders.length} of ${orders.length} orders shown`;
+        $("ordersTable").innerHTML = visibleOrders.map(o => `
           <tr class="hover:bg-zinc-50">
             <td class="p-3">
               <button class="font-bold text-left hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>

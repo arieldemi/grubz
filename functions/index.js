@@ -10,6 +10,7 @@ const { getAuth: getAdminAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
 const { randomUUID, createHash, createHmac, timingSafeEqual } = require("crypto");
 const Stripe = require("stripe");
+const OpenAI = require("openai");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 
@@ -36,6 +37,7 @@ const SMTP_PASS = defineSecret("SMTP_PASS");
 const ORDER_NOTIFICATION_EMAIL = defineSecret("ORDER_NOTIFICATION_EMAIL");
 const ORDER_NOTIFICATION_FROM = defineSecret("ORDER_NOTIFICATION_FROM");
 const SOCIAL_AGENT_WEBHOOK_SECRET = defineSecret("SOCIAL_AGENT_WEBHOOK_SECRET");
+const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 const BOXNOW_API_BASE_URL = "https://api-production.boxnow.gr";
 const BOXNOW_ENVIRONMENTS = {
   stage: {
@@ -69,6 +71,7 @@ const STRIPE_SETTINGS_DOC = "settings/stripe";
 const ORDER_EMAIL_SETTINGS_DOC = "settings/orderEmails";
 const BOXNOW_SETTINGS_DOC = "settings/boxnow";
 const SOCIAL_AGENT_SETTINGS_DOC = "settings/socialAgent";
+const CHATBOT_SETTINGS_DOC = "settings/chatbot";
 const COUPONS_COLLECTION = "coupons";
 const EMAIL_RESERVATIONS_COLLECTION = "emailReservations";
 const SOCIAL_OPPORTUNITIES_COLLECTION = "socialOpportunities";
@@ -237,8 +240,10 @@ const ALLOWED_ORIGINS = new Set([
   "https://www.grubz.gr",
 ]);
 const ALLOWED_ORIGIN_LIST = Array.from(ALLOWED_ORIGINS);
+const PRODUCT_IMAGE_BUCKET = "grubz-99b84-product-images";
 const FIREBASE_STORAGE_BUCKET = "grubz-99b84.firebasestorage.app";
 const FIREBASE_STORAGE_BUCKET_FALLBACKS = [
+  PRODUCT_IMAGE_BUCKET,
   FIREBASE_STORAGE_BUCKET,
   "grubz-99b84.appspot.com",
 ];
@@ -258,6 +263,15 @@ function now() {
 
 function normalizedEmail(value = "") {
   return String(value || "").trim().toLowerCase();
+}
+
+function isLocalResourceUrl(value = "") {
+  return /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(String(value || "").trim());
+}
+
+function publicImageUrl(value = "") {
+  const image = String(value || "").trim();
+  return isLocalResourceUrl(image) ? "" : image;
 }
 
 function emailReservationDocId(emailKey = "") {
@@ -299,7 +313,7 @@ function productDocToRuntime(id, data = {}) {
     descriptionEl: data.descriptionEl || data.description || "",
     detail: data.detail || data.description || "",
     detailEl: data.detailEl || data.detail || data.descriptionEl || "",
-    image: data.image || "",
+    image: publicImageUrl(data.image),
     imageBg: data.imageBg || "#f8f1eb",
     active: data.active !== false,
     sortOrder: Number(data.sortOrder || 0),
@@ -319,7 +333,7 @@ function productToPublic(id, product) {
     descriptionEl: product.descriptionEl || product.description || "",
     detail: product.detail || product.description || "",
     detailEl: product.detailEl || product.detail || product.descriptionEl || "",
-    image: product.image || "",
+    image: publicImageUrl(product.image),
     imageBg: product.imageBg || "#f8f1eb",
     amount: Math.max(0, Number(product.amount || 0)),
     currency: product.currency || "eur",
@@ -419,6 +433,8 @@ function parseImageUpload(body = {}) {
   }
 
   const dataUrl = String(body.imageDataUrl || "");
+  if (!dataUrl) throw new Error("Missing image upload data");
+  if (dataUrl.length > 22 * 1024 * 1024) throw new Error("Image upload is too large. Use an image under 15 MB.");
   const match = dataUrl.match(/^data:(image\/(?:png|jpe?g|webp));base64,([\s\S]+)$/i);
   if (!match) throw new Error("Upload a PNG, JPG, or WebP image");
 
@@ -429,7 +445,7 @@ function parseImageUpload(body = {}) {
   if (!buffer.toString("base64").replace(/=+$/, "").startsWith(base64.replace(/=+$/, "").slice(0, 32))) {
     throw new Error("Image upload data is invalid");
   }
-  if (buffer.length > 5 * 1024 * 1024) throw new Error("Image must be 5 MB or smaller");
+  if (buffer.length > 15 * 1024 * 1024) throw new Error("Image must be 15 MB or smaller");
 
   const ext = contentType === "image/jpeg" ? "jpg" : contentType.split("/")[1];
   return { id, contentType, buffer, ext };
@@ -472,9 +488,13 @@ async function saveProductImageToStorage({ id, contentType, buffer, ext }) {
 }
 
 function productImageDownloadUrl({ bucketName, filePath, token }) {
+  const publicPath = String(filePath || "").split("/").map(part => encodeURIComponent(part)).join("/");
+  if (bucketName === PRODUCT_IMAGE_BUCKET) {
+    return `https://storage.googleapis.com/${bucketName}/${publicPath}`;
+  }
   const encodedPath = encodeURIComponent(filePath);
   const emulatorHost = String(process.env.FIREBASE_STORAGE_EMULATOR_HOST || "").trim();
-  if (emulatorHost) {
+  if (emulatorHost && !process.env.K_SERVICE) {
     const protocol = /^https?:\/\//i.test(emulatorHost) ? "" : "http://";
     return `${protocol}${emulatorHost}/v0/b/${bucketName}/o/${encodedPath}?alt=media&token=${token}`;
   }
@@ -870,6 +890,50 @@ const DEFAULT_SOCIAL_AGENT_SETTINGS = {
   ],
 };
 
+const DEFAULT_CHATBOT_SETTINGS = {
+  enabled: false,
+  mode: "draft",
+  name: "Gina",
+  introduceSelf: true,
+  model: "gpt-5.6-luna",
+  maxHistoryMessages: 20,
+  maxOutputTokens: 500,
+  businessContext: "GRUBZ is a Greece-based ecommerce business selling dried black soldier fly larvae products for reptiles, chickens, birds, aquarium fish, and pond fish. Be helpful, practical, friendly, and concise. Do not make promises about orders, refunds, payments, or shipping that are not confirmed by system data.",
+  scopeRestriction: "Only answer questions related to GRUBZ, GRUBZ products, product suitability, orders, checkout, coupons, payments, shipping, BOX NOW delivery, returns, support, and business policies. If the customer asks about unrelated topics, politely say you can only help with GRUBZ-related questions and ask what they need about GRUBZ.",
+  behaviorRules: [
+    "Only greet the customer by name when you are introducing yourself. In follow-up replies, do not start with repeated greetings like 'Hi <name>!' or 'Hello <name>!'; answer naturally and directly.",
+    `When a customer clearly wants to buy a product or quantity, do not say the GRUBZ team can arrange the order unless there is an actual order, payment, stock, or policy problem. Guide the customer to add the matching pack quantity to the cart at ${GRUBZ_URL}/#products and continue to checkout. Example: for 3kg of a 1kg product, tell them to add 3 x 1kg packs.`,
+    "Do not claim you already added items to the customer's cart unless a system action explicitly confirms it. Use wording like 'Add 3 x TerraGrub 1KG to your cart' instead of 'I added it for you'.",
+    "Do not repeat the same product, cart, checkout, coupon, shipping, or policy instructions that GRUBZ already gave in the recent conversation unless the customer explicitly asks the same question again, asks for clarification, or says they did not understand.",
+    "If the latest customer message is only an acknowledgement or thanks, such as 'thank you', 'thanks', 'ok', 'ευχαριστώ', or 'εντάξει', reply briefly and naturally without restating previous instructions, links, products, or coupon codes.",
+    "Write only the customer-facing draft reply. Do not include analysis, labels, or markdown headings.",
+    "Be concise, warm, practical, and honest. Do not pressure customers.",
+    "Do not claim that an order, refund, payment, coupon, or shipment was changed unless the provided context explicitly says so.",
+    "For order-specific information, only use details present in the context. If verification or human action is needed, say the GRUBZ team will check it.",
+  ],
+  rejectionHandling: "When customers object or reject the product, acknowledge the concern without pressure. Answer with useful facts, suggest a low-risk next step, and offer human help. Common concerns include price, trust, shipping cost, animal acceptance, product safety, and discomfort with insect-based food.",
+  escalationRules: [
+    "Refund, cancellation, payment, or chargeback requests",
+    "Angry or abusive customer messages",
+    "Order-specific questions when the customer is not verified",
+    "Medical, veterinary, allergy, or safety claims",
+    "Uncertainty about product availability, shipping, or policy",
+  ],
+  translation: {
+    enabled: true,
+    replyLanguage: "auto",
+    languages: ["en", "el"],
+  },
+  topics: {
+    products: true,
+    orders: true,
+    shipping: true,
+    coupons: true,
+    translation: true,
+    objections: true,
+  },
+};
+
 function splitLines(value) {
   return String(value || "").split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
 }
@@ -912,6 +976,255 @@ function sanitizeSocialAgentSettings(input = {}, existing = {}) {
 async function getSocialAgentSettings() {
   const snap = await db.doc(SOCIAL_AGENT_SETTINGS_DOC).get();
   return sanitizeSocialAgentSettings({}, snap.exists ? snap.data() : {});
+}
+
+function sanitizeChatbotSettings(input = {}, existing = {}) {
+  const merged = { ...DEFAULT_CHATBOT_SETTINGS, ...(existing || {}), ...(input || {}) };
+  const inputTranslation = input.translation && typeof input.translation === "object" ? input.translation : {};
+  const existingTranslation = existing.translation && typeof existing.translation === "object" ? existing.translation : {};
+  const translation = { ...DEFAULT_CHATBOT_SETTINGS.translation, ...existingTranslation, ...inputTranslation };
+  const inputTopics = input.topics && typeof input.topics === "object" ? input.topics : {};
+  const existingTopics = existing.topics && typeof existing.topics === "object" ? existing.topics : {};
+  const topics = { ...DEFAULT_CHATBOT_SETTINGS.topics, ...existingTopics, ...inputTopics };
+  const mode = ["off", "draft", "auto"].includes(String(merged.mode || "")) ? String(merged.mode) : "draft";
+  const behaviorRules = splitLines(Array.isArray(merged.behaviorRules) ? merged.behaviorRules.join("\n") : merged.behaviorRules);
+  const replyLanguage = ["auto", "en", "el"].includes(String(translation.replyLanguage || ""))
+    ? String(translation.replyLanguage)
+    : "auto";
+  const languages = splitLines(Array.isArray(translation.languages) ? translation.languages.join("\n") : translation.languages)
+    .map(lang => lang.toLowerCase())
+    .filter(lang => ["en", "el"].includes(lang));
+  return {
+    enabled: merged.enabled === true,
+    mode,
+    name: String(merged.name || DEFAULT_CHATBOT_SETTINGS.name).trim().slice(0, 80) || DEFAULT_CHATBOT_SETTINGS.name,
+    introduceSelf: merged.introduceSelf !== false,
+    model: String(merged.model || DEFAULT_CHATBOT_SETTINGS.model).trim().slice(0, 80) || DEFAULT_CHATBOT_SETTINGS.model,
+    maxHistoryMessages: Math.min(60, Math.max(4, Math.round(Number(merged.maxHistoryMessages || 20)))),
+    maxOutputTokens: Math.min(2000, Math.max(100, Math.round(Number(merged.maxOutputTokens || 500)))),
+    businessContext: String(merged.businessContext || DEFAULT_CHATBOT_SETTINGS.businessContext).trim().slice(0, 5000),
+    scopeRestriction: String(merged.scopeRestriction || DEFAULT_CHATBOT_SETTINGS.scopeRestriction).trim().slice(0, 3000),
+    behaviorRules: (behaviorRules.length ? behaviorRules : DEFAULT_CHATBOT_SETTINGS.behaviorRules).slice(0, 80),
+    rejectionHandling: String(merged.rejectionHandling || DEFAULT_CHATBOT_SETTINGS.rejectionHandling).trim().slice(0, 3000),
+    escalationRules: splitLines(Array.isArray(merged.escalationRules) ? merged.escalationRules.join("\n") : merged.escalationRules)
+      .slice(0, 40),
+    translation: {
+      enabled: translation.enabled !== false,
+      replyLanguage,
+      languages: languages.length ? languages : DEFAULT_CHATBOT_SETTINGS.translation.languages,
+    },
+    topics: {
+      products: topics.products !== false,
+      orders: topics.orders !== false,
+      shipping: topics.shipping !== false,
+      coupons: topics.coupons !== false,
+      translation: topics.translation !== false,
+      objections: topics.objections !== false,
+    },
+    updatedAt: now(),
+  };
+}
+
+async function getChatbotSettings() {
+  const snap = await db.doc(CHATBOT_SETTINGS_DOC).get();
+  return sanitizeChatbotSettings({}, snap.exists ? snap.data() : {});
+}
+
+function chatbotSettingsPublic(settings = {}) {
+  return {
+    enabled: settings.enabled === true,
+    mode: settings.mode || "draft",
+    name: settings.name || DEFAULT_CHATBOT_SETTINGS.name,
+    introduceSelf: settings.introduceSelf !== false,
+    model: settings.model || DEFAULT_CHATBOT_SETTINGS.model,
+    maxHistoryMessages: Number(settings.maxHistoryMessages || DEFAULT_CHATBOT_SETTINGS.maxHistoryMessages),
+    maxOutputTokens: Number(settings.maxOutputTokens || DEFAULT_CHATBOT_SETTINGS.maxOutputTokens),
+    scopeRestriction: settings.scopeRestriction || DEFAULT_CHATBOT_SETTINGS.scopeRestriction,
+    behaviorRules: Array.isArray(settings.behaviorRules) ? settings.behaviorRules : DEFAULT_CHATBOT_SETTINGS.behaviorRules,
+    translation: settings.translation || DEFAULT_CHATBOT_SETTINGS.translation,
+    topics: settings.topics || DEFAULT_CHATBOT_SETTINGS.topics,
+  };
+}
+
+function productSummaryForChatbot(id, product = {}) {
+  return [
+    `Product ID: ${id}`,
+    product.name || id,
+    product.nameEl && product.nameEl !== product.name ? `Greek name: ${product.nameEl}` : "",
+    product.amount ? `Price: ${(Number(product.amount || 0) / 100).toFixed(2)} ${String(product.currency || "eur").toUpperCase()}` : "",
+    product.weightGrams ? `Weight: ${product.weightGrams}g` : "",
+    product.description ? `Description: ${product.description}` : "",
+    product.descriptionEl && product.descriptionEl !== product.description ? `Greek description: ${product.descriptionEl}` : "",
+  ].filter(Boolean).join(" | ");
+}
+
+async function activeCouponSummariesForChatbot(limit = 20) {
+  const snap = await db.collection(COUPONS_COLLECTION).limit(Math.min(40, Math.max(1, Number(limit || 20)))).get();
+  return snap.docs
+    .map(doc => couponToPublic(doc.id, doc.data()))
+    .filter(coupon => coupon.active !== false)
+    .slice(0, limit)
+    .map(coupon => {
+      const discount = coupon.type === "fixed"
+        ? `${(Number(coupon.amountOffCents || 0) / 100).toFixed(2)} ${String(coupon.currency || "eur").toUpperCase()} off`
+        : `${Number(coupon.percentOff || 0)}% off`;
+      return `${coupon.code}: ${discount}${coupon.description ? ` | ${coupon.description}` : ""}`;
+    });
+}
+
+function shippingSummaryForChatbot(shipping = {}, boxNow = {}) {
+  const activeEnvironment = (boxNow.localEnvironmentForced ? boxNow.savedActiveEnvironment : boxNow.activeEnvironment) || "stage";
+  const discount = shipping.boxnowFeeDiscountEnabled
+    ? `${(Number(shipping.boxnowFeeDiscountCents || 0) / 100).toFixed(2)} EUR discount`
+    : "No console shipping discount";
+  const override = shipping.boxnowFeeOverrideEnabled
+    ? `${(Number(shipping.boxnowFeeOverrideCents || 0) / 100).toFixed(2)} EUR override`
+    : "BOX NOW fee is calculated from parcel size";
+  const sizes = BOXNOW_PARCEL_SIZES.map(size => `${size.label}: ${size.heightCm}x${size.widthCm}x${size.lengthCm}cm, ${(size.amount / 100).toFixed(2)} EUR`).join("; ");
+  return [
+    `BOX NOW environment: ${activeEnvironment}`,
+    override,
+    discount,
+    `BOX NOW compartments: ${sizes}`,
+    "Packing rule currently used by GRUBZ: flexible 1kg bags can be flattened; up to 6kg can fit in one medium BOX NOW compartment.",
+  ].join("\n");
+}
+
+function responseTextFromOpenAI(response = {}) {
+  if (typeof response.output_text === "string" && response.output_text.trim()) return response.output_text.trim();
+  const parts = [];
+  for (const item of response.output || []) {
+    for (const content of item.content || []) {
+      if (typeof content.text === "string") parts.push(content.text);
+      if (typeof content.output_text === "string") parts.push(content.output_text);
+    }
+  }
+  return parts.join("\n").trim();
+}
+
+function latestCustomerMessage(messages = []) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index] || {};
+    if (message.sender === "customer" && String(message.text || "").trim()) return message;
+  }
+  return null;
+}
+
+function requestedChatReplyLanguage(text = "") {
+  const value = String(text || "").toLowerCase();
+  if (/(?:reply|answer|write|speak|use|respond)\s+(?:in\s+)?(?:greek|ελληνικά|ελληνικα|ellinika)|(?:στα|σε)\s+ελληνικά|(?:στα|σε)\s+ελληνικα/.test(value)) {
+    return "el";
+  }
+  if (/(?:reply|answer|write|speak|use|respond)\s+(?:in\s+)?(?:english|αγγλικά|αγγλικα|agglika)|(?:στα|σε)\s+αγγλικά|(?:στα|σε)\s+αγγλικα/.test(value)) {
+    return "en";
+  }
+  return "";
+}
+
+function detectChatMessageLanguage(text = "") {
+  const value = String(text || "");
+  const greekCount = (value.match(/[\u0370-\u03FF]/g) || []).length;
+  const latinCount = (value.match(/[A-Za-z]/g) || []).length;
+  if (greekCount >= 2 && greekCount >= latinCount) return "el";
+  if (latinCount >= 2) return "en";
+  return "";
+}
+
+function chatLanguageName(language = "") {
+  return language === "el" ? "Greek" : "English";
+}
+
+function chatbotReplyLanguageForMessages(messages = [], settings = {}) {
+  const configured = settings.translation?.replyLanguage || "auto";
+  if (configured === "el" || configured === "en") return configured;
+  const latest = latestCustomerMessage(messages);
+  const text = latest?.text || "";
+  return requestedChatReplyLanguage(text) || detectChatMessageLanguage(text) || "en";
+}
+
+function draftMatchesReplyLanguage(draft = "", replyLanguage = "") {
+  const detected = detectChatMessageLanguage(draft);
+  if (replyLanguage === "el") return detected === "el";
+  if (replyLanguage === "en") return detected === "en" || !detected;
+  return true;
+}
+
+async function translateChatbotDraft({ client, model, draft, replyLanguage, maxOutputTokens }) {
+  if (!replyLanguage || draftMatchesReplyLanguage(draft, replyLanguage)) return draft;
+  const response = await client.responses.create({
+    model,
+    instructions: [
+      `Translate the customer support draft to ${chatLanguageName(replyLanguage)}.`,
+      "Keep the same meaning, tone, product names, prices, quantities, URLs, and line breaks.",
+      "Return only the translated customer-facing reply. Do not add labels, notes, markdown headings, or explanations.",
+    ].join("\n"),
+    input: draft,
+    max_output_tokens: maxOutputTokens,
+    store: false,
+  });
+  return sanitizeChatText(responseTextFromOpenAI(response), 5000) || draft;
+}
+
+async function buildChatbotDraftInput({ conversation = {}, messages = [], settings = {}, shipping = {}, boxNow = {}, replyLanguage = "" }) {
+  const topics = settings.topics || {};
+  const lines = [];
+  const customer = conversation.customer || {};
+  lines.push(`Customer: ${customer.name || "Unknown"} ${customer.email ? `<${customer.email}>` : ""}`.trim());
+  if (customer.uid) lines.push(`Customer UID: ${customer.uid}`);
+  if (customer.guestId && !customer.uid) lines.push(`Guest ID: ${customer.guestId}`);
+
+  if (topics.products !== false) {
+    const productsMap = await getProductsMap();
+    const products = Object.entries(productsMap)
+      .sort((a, b) => Number(a[1].sortOrder || 0) - Number(b[1].sortOrder || 0))
+      .slice(0, 30)
+      .map(([id, product]) => `- ${productSummaryForChatbot(id, product)}`);
+    lines.push(`Products:\n${products.length ? products.join("\n") : "No active products loaded."}`);
+  }
+
+  if (topics.coupons !== false) {
+    const coupons = await activeCouponSummariesForChatbot(20);
+    lines.push(`Active coupons:\n${coupons.length ? coupons.map(item => `- ${item}`).join("\n") : "No active coupons loaded."}`);
+  }
+
+  if (topics.shipping !== false) {
+    lines.push(`Shipping:\n${shippingSummaryForChatbot(shipping, boxNow)}`);
+  }
+
+  if (replyLanguage) {
+    lines.push(`Required reply language: ${chatLanguageName(replyLanguage)} (${replyLanguage}).`);
+  }
+
+  const history = messages.slice(-settings.maxHistoryMessages).map(message => {
+    const role = message.sender === "admin" ? "GRUBZ" : "Customer";
+    return `${role}: ${message.text || ""}`;
+  });
+  lines.push(`Recent conversation:\n${history.join("\n")}`);
+  return lines.join("\n\n");
+}
+
+function chatbotDraftInstructions(settings = {}, options = {}) {
+  const translation = settings.translation || {};
+  const topics = settings.topics || {};
+  const replyLanguage = options.replyLanguage || "";
+  return [
+    "You are drafting a customer support chat reply for GRUBZ. The reply will be reviewed by a human admin before sending.",
+    `Your chatbot name is ${settings.name || DEFAULT_CHATBOT_SETTINGS.name}.`,
+    settings.introduceSelf !== false
+      ? `When it feels natural, introduce yourself by name as ${settings.name || DEFAULT_CHATBOT_SETTINGS.name}, especially in the first reply of a conversation. Keep the introduction short.`
+      : "Do not introduce yourself by name unless the customer asks who they are speaking with.",
+    `Scope restriction controlled by console:\n${settings.scopeRestriction || DEFAULT_CHATBOT_SETTINGS.scopeRestriction}`,
+    `Behavior rules controlled by console:\n${(settings.behaviorRules || DEFAULT_CHATBOT_SETTINGS.behaviorRules).map(rule => `- ${rule}`).join("\n")}`,
+    replyLanguage ? `Required reply language for this draft: ${chatLanguageName(replyLanguage)}. This is mandatory. Do not answer in another language unless the customer's latest message explicitly asks for a different language.` : "",
+    topics.translation !== false && translation.enabled !== false
+      ? `Translation: ${translation.replyLanguage === "el" ? "reply in Greek" : translation.replyLanguage === "en" ? "reply in English" : "when set to auto, the required reply language is detected from the customer's latest message before drafting"}. If the customer explicitly asks to use a specific language, follow that requested language instead. Greek and English are supported.`
+      : "Translation is disabled; reply in the same language as the latest customer message when possible.",
+    `Business knowledge controlled by console:\n${settings.businessContext || DEFAULT_CHATBOT_SETTINGS.businessContext}`,
+    topics.objections !== false
+      ? `Rejection handling controlled by console:\n${settings.rejectionHandling || DEFAULT_CHATBOT_SETTINGS.rejectionHandling}`
+      : "",
+    `Escalate instead of solving directly when any of these apply:\n${(settings.escalationRules || DEFAULT_CHATBOT_SETTINGS.escalationRules).map(rule => `- ${rule}`).join("\n")}`,
+  ].filter(Boolean).join("\n\n");
 }
 
 function decodeXml(value = "") {
@@ -1080,11 +1393,22 @@ function canAccessChatConversation(conversation = {}, customer = {}) {
   return false;
 }
 
-async function chatMessagesForConversation(conversationId, limit = 100) {
-  const snap = await db.collection(CHAT_CONVERSATIONS_COLLECTION).doc(conversationId)
-    .collection("messages")
+async function chatMessagesForConversation(conversationId, limit = 100, options = {}) {
+  const max = Math.min(200, Math.max(1, Number(limit || 100)));
+  const ref = db.collection(CHAT_CONVERSATIONS_COLLECTION).doc(conversationId)
+    .collection("messages");
+  if (options.latest === true) {
+    const snap = await ref
+      .orderBy("createdAt", "desc")
+      .limit(max)
+      .get();
+    return snap.docs
+      .map(doc => publicChatMessage(doc.id, doc.data()))
+      .reverse();
+  }
+  const snap = await ref
     .orderBy("createdAt", "asc")
-    .limit(Math.min(200, Math.max(1, Number(limit || 100))))
+    .limit(max)
     .get();
   return snap.docs.map(doc => publicChatMessage(doc.id, doc.data()));
 }
@@ -4597,6 +4921,88 @@ exports.adminChat = onRequest(
   }
 );
 
+exports.adminChatbotDraft = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    secrets: [OPENAI_API_KEY],
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      await requireAdmin(req);
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const conversationId = String(body.conversationId || body.id || "").trim();
+      if (!conversationId) return jsonError(res, 400, "Missing conversation ID");
+
+      const apiKey = String(OPENAI_API_KEY.value() || "").trim();
+      if (!apiKey) return jsonError(res, 400, "missing_openai_api_key");
+
+      const settings = await getChatbotSettings();
+      if (settings.enabled !== true || settings.mode === "off") {
+        return jsonError(res, 400, "Chatbot is disabled in settings");
+      }
+
+      const ref = db.collection(CHAT_CONVERSATIONS_COLLECTION).doc(conversationId);
+      const snap = await ref.get();
+      if (!snap.exists) return jsonError(res, 404, "Conversation not found");
+
+      const messages = await chatMessagesForConversation(conversationId, settings.maxHistoryMessages, { latest: true });
+      if (!messages.some(message => message.sender === "customer" && String(message.text || "").trim())) {
+        return jsonError(res, 400, "No customer message found to answer");
+      }
+
+      const shipping = await getShippingSettings();
+      const boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
+      const replyLanguage = chatbotReplyLanguageForMessages(messages, settings);
+      const input = await buildChatbotDraftInput({
+        conversation: publicChatConversation(conversationId, snap.data()),
+        messages,
+        settings,
+        shipping,
+        boxNow,
+        replyLanguage,
+      });
+
+      const client = new OpenAI({ apiKey });
+      const model = settings.model || DEFAULT_CHATBOT_SETTINGS.model;
+      const response = await client.responses.create({
+        model,
+        instructions: chatbotDraftInstructions(settings, { replyLanguage }),
+        input,
+        max_output_tokens: settings.maxOutputTokens,
+        store: false,
+      });
+      const rawDraft = sanitizeChatText(responseTextFromOpenAI(response), 5000);
+      const draft = await translateChatbotDraft({
+        client,
+        model,
+        draft: rawDraft,
+        replyLanguage,
+        maxOutputTokens: settings.maxOutputTokens,
+      });
+      if (!draft) return jsonError(res, 502, "OpenAI returned an empty draft");
+
+      return res.json({
+        ok: true,
+        draft,
+        replyLanguage,
+        configuredReplyLanguage: settings.translation?.replyLanguage || "auto",
+        model: response.model || model,
+        responseId: response.id || "",
+        usage: response.usage || null,
+        settings: chatbotSettingsPublic(settings),
+      });
+    } catch (err) {
+      logger.error("Chatbot draft failed", { error: err.message || "Chatbot draft failed" });
+      return adminError(res, err);
+    }
+  }
+);
+
 exports.adminSocialAgent = onRequest(
   {
     region: "europe-west1",
@@ -4737,7 +5143,8 @@ exports.adminSettings = onRequest(
         const stripe = await effectiveStripeSettings(req, { forceLocalEnvironment: false });
         const orderEmails = await getOrderEmailSettings();
         const boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
-        return res.json({ shipping, stripe, orderEmails, boxNow });
+        const chatbot = await getChatbotSettings();
+        return res.json({ shipping, stripe, orderEmails, boxNow, chatbot });
       }
 
       if (req.method === "PATCH" || req.method === "POST") {
@@ -4751,6 +5158,7 @@ exports.adminSettings = onRequest(
         let stripe = null;
         let orderEmails = null;
         let boxNow = null;
+        let chatbot = null;
 
         if (
           body.shipping ||
@@ -4795,11 +5203,24 @@ exports.adminSettings = onRequest(
           boxNow = await saveBoxNowSettings(body.boxNow, adminUser);
         }
 
+        if (body.chatbot) {
+          const previous = await getChatbotSettings();
+          chatbot = sanitizeChatbotSettings(body.chatbot, previous);
+          await db.doc(CHATBOT_SETTINGS_DOC).set(
+            {
+              ...chatbot,
+              updatedBy: adminUser.uid,
+            },
+            { merge: true }
+          );
+        }
+
         if (!shipping) shipping = await getShippingSettings();
         if (!stripe) stripe = await effectiveStripeSettings(req, { forceLocalEnvironment: false });
         if (!orderEmails) orderEmails = await getOrderEmailSettings();
         if (!boxNow) boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
-        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow });
+        if (!chatbot) chatbot = await getChatbotSettings();
+        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, chatbot });
       }
 
       return jsonError(res, 405, "Use GET or PATCH");
