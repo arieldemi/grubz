@@ -136,11 +136,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "new",
     subject: "We received your GRUBZ order {orderNumber}",
-    body: "Hi {customerName},\n\nWe received your GRUBZ order {orderNumber} and it is now in our queue.\n\nTotal: {total}\n\nGRUBZ",
+    body: "{greeting}\n\nWe received your GRUBZ order {orderNumber} and it is now in our queue.\n\nTotal: {total}\n\nGRUBZ",
     translations: {
       el: {
         subject: "Λάβαμε την παραγγελία GRUBZ {orderNumber}",
-        body: "Γεια σου {customerName},\n\nΛάβαμε την παραγγελία σου {orderNumber} και είναι πλέον στη σειρά μας.\n\nΣύνολο: {total}\n\nGRUBZ",
+        body: "{greeting}\n\nΛάβαμε την παραγγελία σου {orderNumber} και είναι πλέον στη σειρά μας.\n\nΣύνολο: {total}\n\nGRUBZ",
       },
     },
   },
@@ -148,11 +148,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "processing",
     subject: "Your GRUBZ order {orderNumber} is being prepared",
-    body: "Hi {customerName},\n\nYour GRUBZ order {orderNumber} is now being prepared.\n\nWe will update you again when it is packed.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} is now being prepared.\n\nWe will update you again when it is packed.\n\nGRUBZ",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} ετοιμάζεται",
-        body: "Γεια σου {customerName},\n\nΗ παραγγελία σου {orderNumber} ετοιμάζεται.\n\nΘα σε ενημερώσουμε ξανά όταν συσκευαστεί.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ετοιμάζεται.\n\nΘα σε ενημερώσουμε ξανά όταν συσκευαστεί.\n\nGRUBZ",
       },
     },
   },
@@ -160,11 +160,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "packed",
     subject: "Your GRUBZ order {orderNumber} is packed",
-    body: "Hi {customerName},\n\nYour GRUBZ order {orderNumber} has been packed and is almost ready to ship.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been packed and is almost ready to ship.\n\nGRUBZ",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} συσκευάστηκε",
-        body: "Γεια σου {customerName},\n\nΗ παραγγελία σου {orderNumber} έχει συσκευαστεί και είναι σχεδόν έτοιμη για αποστολή.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} έχει συσκευαστεί και είναι σχεδόν έτοιμη για αποστολή.\n\nGRUBZ",
       },
     },
   },
@@ -172,11 +172,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "shipped",
     subject: "Your GRUBZ order {orderNumber} has shipped",
-    body: "Hi {customerName},\n\nYour GRUBZ order {orderNumber} has shipped.\n\nTracking number: {trackingNumber}\nTracking link: {trackingUrl}\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has shipped.\n\nTracking number: {trackingNumber}\nTracking link: {trackingUrl}\n\nGRUBZ",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} στάλθηκε",
-        body: "Γεια σου {customerName},\n\nΗ παραγγελία σου {orderNumber} έχει σταλεί.\n\nΑριθμός αποστολής: {trackingNumber}\nΣύνδεσμος παρακολούθησης: {trackingUrl}\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} έχει σταλεί.\n\nΑριθμός αποστολής: {trackingNumber}\nΣύνδεσμος παρακολούθησης: {trackingUrl}\n\nGRUBZ",
       },
     },
   },
@@ -184,11 +184,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "delivered",
     subject: "Your GRUBZ order {orderNumber} was delivered",
-    body: "Hi {customerName},\n\nYour GRUBZ order {orderNumber} has been delivered.\n\nThank you for choosing GRUBZ.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been delivered.\n\nThank you for choosing GRUBZ.\n\nGRUBZ",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} παραδόθηκε",
-        body: "Γεια σου {customerName},\n\nΗ παραγγελία σου {orderNumber} παραδόθηκε.\n\nΣε ευχαριστούμε που επέλεξες GRUBZ.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} παραδόθηκε.\n\nΣε ευχαριστούμε που επέλεξες GRUBZ.\n\nGRUBZ",
       },
     },
   },
@@ -196,11 +196,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "cancelled",
     subject: "Your GRUBZ order {orderNumber} was cancelled",
-    body: "Hi {customerName},\n\nYour GRUBZ order {orderNumber} has been cancelled.\n\nIf you have any questions, reply to this email.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been cancelled.\n\nIf you have any questions, reply to this email.\n\nGRUBZ",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} ακυρώθηκε",
-        body: "Γεια σου {customerName},\n\nΗ παραγγελία σου {orderNumber} ακυρώθηκε.\n\nΑν έχεις ερωτήσεις, απάντησε σε αυτό το email.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ακυρώθηκε.\n\nΑν έχεις ερωτήσεις, απάντησε σε αυτό το email.\n\nGRUBZ",
       },
     },
   },
@@ -208,11 +208,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "abandoned_signup",
     subject: "Still thinking about GRUBZ?",
-    body: "Hi {customerName},\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout: {grubz_url}\n\nGRUBZ",
+    body: "{greeting}\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout: {grubz_url}\n\nGRUBZ",
     translations: {
       el: {
         subject: "Σκέφτεσαι ακόμα το GRUBZ;",
-        body: "Γεια σου {customerName},\n\nΣε ευχαριστούμε που γράφτηκες στο GRUBZ. Φαίνεται ότι δεν ολοκλήρωσες ακόμα την παραγγελία σου.\n\nΑν είσαι έτοιμος/η, μπορείς να χρησιμοποιήσεις τον κωδικό έκπτωσης {coupon} στο checkout: {grubz_url}\n\nGRUBZ",
+        body: "{greeting}\n\nΣε ευχαριστούμε που γράφτηκες στο GRUBZ. Φαίνεται ότι δεν ολοκλήρωσες ακόμα την παραγγελία σου.\n\nΑν είσαι έτοιμος/η, μπορείς να χρησιμοποιήσεις τον κωδικό έκπτωσης {coupon} στο checkout: {grubz_url}\n\nGRUBZ",
       },
     },
   },
@@ -2371,25 +2371,35 @@ function textToBasicHtml(text = "") {
 }
 
 function customerEmailTemplateValue(value = "", customer = {}, context = {}) {
+  const language = String(context.language || "en").trim().toLowerCase() === "el" ? "el" : "en";
+  const placeholders = sanitizeEmailPlaceholderSettings(context.placeholders || {});
+  const customerName = String(customer.name || "").trim();
+  const greetingTemplate = customerName ? placeholders.greeting[language] : placeholders.greetingNoName[language];
   const replacements = {
-    customerName: customer.name || customer.email || "there",
+    greeting: greetingTemplate.replace(/\{customerName\}/g, customerName),
+    customerName,
     customerEmail: customer.email || "",
     customerPhone: customer.phone || "",
     coupon: context.coupon || "",
     grubz_url: GRUBZ_URL,
   };
-  return String(value || "").replace(/\{(customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => replacements[key] || "");
+  return String(value || "").replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => replacements[key] || "");
 }
 
 function customerEmailTemplateHtml(value = "", customer = {}, context = {}) {
+  const language = String(context.language || "en").trim().toLowerCase() === "el" ? "el" : "en";
+  const placeholders = sanitizeEmailPlaceholderSettings(context.placeholders || {});
+  const customerName = String(customer.name || "").trim();
+  const greetingTemplate = customerName ? placeholders.greeting[language] : placeholders.greetingNoName[language];
   const replacements = {
-    customerName: customer.name || customer.email || "there",
+    greeting: greetingTemplate.replace(/\{customerName\}/g, customerName),
+    customerName,
     customerEmail: customer.email || "",
     customerPhone: customer.phone || "",
     coupon: context.coupon || "",
     grubz_url: GRUBZ_URL,
   };
-  const html = String(value || "").replace(/\{(customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => {
+  const html = String(value || "").replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => {
     const escaped = escapeHtml(replacements[key] || "");
     return key === "coupon" && escaped ? `<strong>${escaped}</strong>` : escaped;
   });
@@ -2401,6 +2411,14 @@ function customerEmailTemplateHtml(value = "", customer = {}, context = {}) {
     .join("<br>\n");
 }
 
+function containsCouponPlaceholder(value = "") {
+  return /\{\s*coupon\s*\}/i.test(String(value || ""));
+}
+
+function containsOrderOnlyPlaceholder(value = "") {
+  return /\{\s*(orderNumber|status|previousStatus|fulfillmentStatus|previousFulfillmentStatus|trackingNumber|trackingUrl|total|boxNowLocker|orderDetails)\s*\}/i.test(String(value || ""));
+}
+
 async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, coupon, language }) {
   const cleanSubject = String(subject || "").trim().slice(0, 180);
   const cleanBody = String(body || "").trim().slice(0, 12000);
@@ -2408,6 +2426,12 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
   const emailLanguage = String(language || "en").trim().toLowerCase() === "el" ? "el" : "en";
   if (!cleanSubject) throw Object.assign(new Error("Enter an email subject."), { status: 400 });
   if (!cleanBody) throw Object.assign(new Error("Enter an email message."), { status: 400 });
+  if (containsCouponPlaceholder(cleanBody) && !couponCode) {
+    throw Object.assign(new Error("Select a coupon or remove the {coupon} placeholder before sending."), { status: 400 });
+  }
+  if (containsOrderOnlyPlaceholder(`${cleanSubject}\n${cleanBody}`)) {
+    throw Object.assign(new Error("Customer emails cannot use order placeholders. Choose a customer template or remove order placeholders."), { status: 400 });
+  }
   if (!Array.isArray(recipients) || !recipients.length) {
     throw Object.assign(new Error("Choose at least one customer with an email address."), { status: 400 });
   }
@@ -2436,6 +2460,7 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
 
   const batchRef = db.collection("bulkCustomerEmails").doc();
   const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
+  const emailSettings = await getOrderEmailSettings();
   await batchRef.set({
     subject: cleanSubject,
     coupon: couponCode,
@@ -2449,9 +2474,10 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
   });
 
   const results = [];
+  let monitoringBccSent = false;
   for (const recipient of uniqueRecipients) {
     try {
-      const context = { coupon: couponCode };
+      const context = { coupon: couponCode, language: emailLanguage, placeholders: emailSettings.placeholders };
       const personalizedSubject = customerEmailTemplateValue(cleanSubject, recipient, context);
       const personalizedText = customerEmailTemplateValue(cleanBody, recipient, context);
       const personalizedHtml = customerEmailTemplateHtml(cleanBody, recipient, context);
@@ -2459,7 +2485,7 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
         ? `[TEST to ${recipient.email}] ${personalizedSubject}`
         : personalizedSubject;
       const to = BULK_CUSTOMER_EMAIL_TEST_MODE ? GRUBZ_INFO_EMAIL : recipient.email;
-      const bcc = BULK_CUSTOMER_EMAIL_TEST_MODE ? undefined : GRUBZ_INFO_EMAIL;
+      const bcc = !BULK_CUSTOMER_EMAIL_TEST_MODE && !monitoringBccSent ? GRUBZ_INFO_EMAIL : undefined;
       const result = await sendEmail({
         to,
         from,
@@ -2469,9 +2495,11 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
         html: personalizedHtml,
       });
       if (result.skipped) throw new Error(result.reason || "Email skipped");
+      if (bcc) monitoringBccSent = true;
       results.push({
         email: recipient.email,
         deliveredTo: to,
+        monitoringBcc: Boolean(bcc),
         testMode: BULK_CUSTOMER_EMAIL_TEST_MODE,
         ok: !result.skipped,
         skipped: Boolean(result.skipped),
@@ -2706,16 +2734,57 @@ function defaultOrderEmailSettings() {
   return sanitizeOrderEmailSettingsInternal({ templates: ORDER_FULFILLMENT_EMAIL_TEMPLATES }, { includeDefaults: false });
 }
 
+const DEFAULT_EMAIL_PLACEHOLDERS = {
+  greeting: {
+    en: "Hi {customerName},",
+    el: "Γεια σου {customerName},",
+  },
+  greetingNoName: {
+    en: "Hi,",
+    el: "Γεια σου,",
+  },
+};
+
+function sanitizeEmailPlaceholderSettings(input = {}, existing = {}) {
+  const source = {
+    ...DEFAULT_EMAIL_PLACEHOLDERS,
+    ...(existing || {}),
+    ...(input || {}),
+  };
+  const sanitizeEntry = (key, lang) => String(source[key]?.[lang] || DEFAULT_EMAIL_PLACEHOLDERS[key][lang] || "")
+    .trim()
+    .slice(0, 240);
+  return {
+    greeting: {
+      en: sanitizeEntry("greeting", "en"),
+      el: sanitizeEntry("greeting", "el"),
+    },
+    greetingNoName: {
+      en: sanitizeEntry("greetingNoName", "en"),
+      el: sanitizeEntry("greetingNoName", "el"),
+    },
+  };
+}
+
+function emailTemplateContext(template = {}) {
+  const raw = String(template.templateContext || template.context || template.emailContext || "").trim().toLowerCase();
+  if (raw === "customer" || raw === "order") return raw;
+  const status = normalizeOrderStatus(template.fulfillmentStatus || template.status || "");
+  return status === "abandoned_signup" ? "customer" : "order";
+}
+
 function sanitizeOrderEmailSettings(input = {}) {
   return sanitizeOrderEmailSettingsInternal(input, { includeDefaults: true });
 }
 
 function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true } = {}) {
   const templates = Array.isArray(input.templates) ? input.templates : [];
+  const placeholders = sanitizeEmailPlaceholderSettings(input.placeholders || {});
   const sanitized = templates
     .map((template = {}) => {
         const fulfillmentStatus = String(template.fulfillmentStatus || template.status || "").trim();
         const fulfillmentKey = normalizeOrderStatus(fulfillmentStatus);
+        const templateContext = emailTemplateContext(template);
         const translations = {};
         const inputTranslations = template.translations && typeof template.translations === "object" ? template.translations : {};
         for (const lang of ["el"]) {
@@ -2726,6 +2795,8 @@ function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true
         }
         return {
           enabled: template.enabled !== false,
+          templateContext,
+          context: templateContext,
           fulfillmentStatus,
           fulfillmentKey,
           status: fulfillmentStatus,
@@ -2750,6 +2821,7 @@ function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true
   }
 
   return {
+    placeholders,
     templates: merged.slice(0, 30),
     updatedAt: now(),
   };
@@ -2761,13 +2833,18 @@ async function getOrderEmailSettings() {
   return sanitizeOrderEmailSettings(snap.data() || {});
 }
 
-function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfillmentStatus = previousStatus) {
+function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfillmentStatus = previousStatus, placeholdersInput = {}) {
   const customer = order.customer || {};
   const shipping = order.shipping || {};
   const boxNow = shipping.boxNow || {};
+  const language = String(order.language || order.locale || "en").trim().toLowerCase() === "el" ? "el" : "en";
+  const placeholders = sanitizeEmailPlaceholderSettings(placeholdersInput || {});
+  const customerName = String(customer.name || "").trim();
+  const greetingTemplate = customerName ? placeholders.greeting[language] : placeholders.greetingNoName[language];
   return {
     orderNumber: publicOrderId(order),
-    customerName: customer.name || "",
+    greeting: greetingTemplate.replace(/\{customerName\}/g, customerName),
+    customerName,
     customerEmail: customer.email || "",
     customerPhone: customer.phone || "",
     status: order.status || "",
@@ -2812,8 +2889,8 @@ function templateContentForLanguage(template = {}, language = "en") {
   };
 }
 
-function buildOrderStatusEmail(template, order, previousStatus, previousFulfillmentStatus = previousStatus) {
-  const vars = orderStatusTemplateVars(order, previousStatus, previousFulfillmentStatus);
+function buildOrderStatusEmail(template, order, previousStatus, previousFulfillmentStatus = previousStatus, settings = {}) {
+  const vars = orderStatusTemplateVars(order, previousStatus, previousFulfillmentStatus, settings.placeholders);
   const content = templateContentForLanguage(template, order.language || order.locale || "en");
   const subject = renderOrderTemplate(content.subject, vars);
   const text = renderOrderTemplate(content.body, vars);
@@ -2873,16 +2950,24 @@ function sampleOrderForStatusTemplate(fulfillmentStatus, language = "en") {
   };
 }
 
-async function sendOrderStatusTestEmail(template, adminUser = {}, language = "en") {
+async function sendOrderStatusTestEmail(template, adminUser = {}, language = "en", placeholdersInput = null) {
   const sanitized = sanitizeOrderEmailSettings({ templates: [template] }).templates[0];
   if (!sanitized) throw new Error("Enter a valid email template before sending a test.");
   const emailLanguage = String(language || "en").trim().toLowerCase() === "el" ? "el" : "en";
   const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
+  const savedSettings = await getOrderEmailSettings();
+  const settings = {
+    ...savedSettings,
+    placeholders: placeholdersInput
+      ? sanitizeEmailPlaceholderSettings(placeholdersInput, savedSettings.placeholders)
+      : savedSettings.placeholders,
+  };
   const message = buildOrderStatusEmail(
     sanitized,
     sampleOrderForStatusTemplate(sanitized.fulfillmentStatus, emailLanguage),
     "paid",
-    "previous_fulfillment"
+    "previous_fulfillment",
+    settings
   );
   const result = await sendEmail({
     to: DEFAULT_NOTIFICATION_EMAIL,
@@ -3093,9 +3178,14 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
   const bccEmail = GRUBZ_INFO_EMAIL;
 
   const settings = await getOrderEmailSettings();
-  const template = settings.templates.find(item => item.enabled !== false && item.fulfillmentKey === fulfillmentKey);
+  const template = settings.templates.find(item => item.enabled !== false && item.templateContext !== "customer" && item.fulfillmentKey === fulfillmentKey);
   if (!template) {
     return { skipped: true, reason: "missing_template" };
+  }
+  const content = templateContentForLanguage(template, order.language || order.locale || "en");
+  const orderCouponCode = normalizeCouponCode(order.couponCode || order.coupon || order.metadata?.couponCode || order.metadata?.coupon || "");
+  if (containsCouponPlaceholder(content.body) && !orderCouponCode) {
+    throw Object.assign(new Error("This fulfillment template uses {coupon}, but the order has no coupon code. Remove the placeholder before sending."), { status: 400 });
   }
 
   const orderId = order.id || publicOrderId(order);
@@ -3120,7 +3210,7 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
 
   try {
     const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
-    const message = buildOrderStatusEmail(template, order, order.status || "", previousFulfillmentStatus);
+    const message = buildOrderStatusEmail(template, order, order.status || "", previousFulfillmentStatus, settings);
     const result = await sendEmail({ to: recipientEmail, from, bcc: bccEmail, ...message });
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
@@ -4842,13 +4932,25 @@ exports.adminOrders = onRequest(
         allowed.updatedAt = now();
         allowed.updatedBy = adminUser.uid;
 
+        const fulfillmentWillChange = (
+          allowed.fulfillmentStatus != null &&
+          normalizeOrderStatus(allowed.fulfillmentStatus) !== normalizeOrderStatus(previousFulfillmentStatus)
+        );
+        if (fulfillmentWillChange && body.sendFulfillmentEmail === true) {
+          const fulfillmentKey = normalizeOrderStatus(allowed.fulfillmentStatus);
+          const settings = await getOrderEmailSettings();
+          const template = settings.templates.find(item => item.enabled !== false && item.templateContext !== "customer" && item.fulfillmentKey === fulfillmentKey);
+          const content = template ? templateContentForLanguage(template, existingOrder.language || existingOrder.locale || "en") : null;
+          const orderCouponCode = normalizeCouponCode(existingOrder.couponCode || existingOrder.coupon || existingOrder.metadata?.couponCode || existingOrder.metadata?.coupon || "");
+          if (content && containsCouponPlaceholder(content.body) && !orderCouponCode) {
+            return jsonError(res, 400, "This fulfillment template uses {coupon}, but the order has no coupon code. Remove the placeholder before sending.");
+          }
+        }
+
         await orderRef.set(allowed, { merge: true });
 
         let statusEmail = { skipped: true, reason: "fulfillment_not_updated" };
-        if (
-          allowed.fulfillmentStatus != null &&
-          normalizeOrderStatus(allowed.fulfillmentStatus) !== normalizeOrderStatus(previousFulfillmentStatus)
-        ) {
+        if (fulfillmentWillChange) {
           if (body.sendFulfillmentEmail === true) {
             const mergedShipping = {
               ...(existingOrder.shipping || {}),
@@ -5542,7 +5644,7 @@ exports.adminSettings = onRequest(
       if (req.method === "PATCH" || req.method === "POST") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
         if (body.action === "sendOrderStatusTestEmail") {
-          const result = await sendOrderStatusTestEmail(body.template || {}, adminUser, body.language || "");
+          const result = await sendOrderStatusTestEmail(body.template || {}, adminUser, body.language || "", body.placeholders || body.orderEmails?.placeholders || null);
           return res.json({ ok: true, result });
         }
 

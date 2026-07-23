@@ -17,7 +17,11 @@
       .btn{background:var(--grubz);color:#fff;border-radius:8px;padding:.65rem .9rem;font-weight:700}
       .btn:hover{background:#bd3a0f}
       .btn-soft{border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:650}
+      [data-section-tab].btn-soft:hover{background:#f7f2ed;border-color:#d8c5b7;color:#71391d}
+      [data-section-tab].btn{box-shadow:0 1px 2px rgba(113,57,29,.16)}
       .btn-danger{border:1px solid #dc2626;color:#dc2626;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:700}
+      .nav-label{display:inline-flex;align-items:center;gap:.5rem;min-width:0}
+      .nav-icon{width:1rem;height:1rem;flex:0 0 auto}
       .tab-badge{display:inline-flex;min-width:1.25rem;height:1.25rem;align-items:center;justify-content:center;border-radius:999px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:800;line-height:1;padding:0 .35rem}
       .tab-badge.hidden{display:none}
       .input{width:100%;border:1px solid #d4d4d8;border-radius:8px;padding:.55rem .65rem;background:#fff}
@@ -61,8 +65,8 @@
       </section>
 
       <section id="appView" class="hidden min-h-screen lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside class="sticky top-0 z-20 bg-white border-b border-zinc-200 lg:h-screen lg:border-b-0 lg:border-r lg:border-zinc-200">
-          <div class="px-4 py-3 lg:flex lg:h-full lg:flex-col lg:gap-4">
+        <aside class="sticky top-0 z-20 bg-white border-b border-zinc-200 lg:h-screen lg:overflow-hidden lg:border-b-0 lg:border-r lg:border-zinc-200">
+          <div class="px-4 py-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:gap-4">
             <div>
               <a href="/" class="inline-flex items-center gap-3" aria-label="GRUBZ home">
                 <img src="/images/grubz-icon-80.png" alt="GRUBZ icon" class="h-12 w-12">
@@ -71,28 +75,43 @@
               <h1 class="mt-2 font-extrabold text-sm text-zinc-700">Console</h1>
               <p id="adminEmail" class="text-xs text-zinc-500"></p>
             </div>
-            <nav class="mt-3 flex gap-2 overflow-x-auto pb-1 lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0" aria-label="Console sections">
-              <button id="tabAnalytics" class="btn-soft text-left shrink-0" type="button" data-section-tab="analytics">Dashboard</button>
-              <button id="tabProducts" class="btn-soft text-left shrink-0" type="button" data-section-tab="products">Products</button>
-              <button id="tabCoupons" class="btn-soft text-left shrink-0" type="button" data-section-tab="coupons">Coupons</button>
+            <nav class="mt-3 flex gap-2 overflow-x-auto pb-1 lg:mt-0 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pb-0 lg:pr-1" aria-label="Console sections">
+              <button id="tabAnalytics" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="analytics">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-9"/></svg><span>Dashboard</span></span>
+              </button>
+              <button id="tabProducts" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="products">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Products</span></span>
+              </button>
+              <button id="tabCoupons" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="coupons">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v4a3 3 0 0 0 0 6v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a3 3 0 0 0 0-6z"/><path d="M9 9h.01"/><path d="M15 15h.01"/><path d="M15 9l-6 6"/></svg><span>Coupons</span></span>
+              </button>
               <button id="tabOrders" class="btn-soft text-left shrink-0 inline-flex items-center justify-between gap-2" type="button" data-section-tab="orders">
-                <span>Orders</span>
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h4"/></svg><span>Orders</span></span>
                 <span id="ordersTabBadge" class="tab-badge hidden" aria-label="New orders"></span>
               </button>
               <button id="tabCustomers" class="btn-soft text-left shrink-0 inline-flex items-center justify-between gap-2" type="button" data-section-tab="customers">
-                <span>Customers</span>
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Customers</span></span>
                 <span id="customersTabBadge" class="tab-badge hidden" aria-label="New customers"></span>
               </button>
               <button id="tabMessages" class="btn-soft text-left shrink-0 inline-flex items-center justify-between gap-2" type="button" data-section-tab="messages">
-                <span>Messages</span>
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Messages</span></span>
                 <span id="messagesTabBadge" class="tab-badge hidden" aria-label="Unread messages"></span>
               </button>
-              <button id="tabCollaborations" class="btn-soft text-left shrink-0" type="button" data-section-tab="collaborations">Collaborations</button>
-              <button id="tabSocialAgent" class="btn-soft text-left shrink-0" type="button" data-section-tab="social">Marketing</button>
-              <button id="tabBoxNow" class="btn-soft text-left shrink-0" type="button" data-section-tab="boxnow">BOX NOW</button>
-              <button id="tabSettings" class="btn-soft text-left shrink-0" type="button" data-section-tab="settings">Settings</button>
-              <button id="refreshBtn" class="btn-soft text-left shrink-0 lg:mt-auto" type="button">Refresh</button>
-              <button id="signOutBtn" class="btn-danger text-left shrink-0" type="button">Sign out</button>
+              <button id="tabCollaborations" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="collaborations">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 12h8"/><path d="M12 8v8"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/></svg><span>Collaborations</span></span>
+              </button>
+              <button id="tabSocialAgent" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="social">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z"/><path d="M11 13l10-10"/></svg><span>Marketing</span></span>
+              </button>
+              <button id="tabBoxNow" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="boxnow">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><span>BOX NOW</span></span>
+              </button>
+              <button id="tabSettings" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="settings">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg><span>Settings</span></span>
+              </button>
+              <button id="signOutBtn" class="btn-danger text-left shrink-0 inline-flex items-center gap-2 lg:mt-auto" type="button">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Sign out</span></span>
+              </button>
             </nav>
           </div>
         </aside>
@@ -959,47 +978,18 @@
                   </div>
                 </div>
               </div>
-              <div id="settingsPanelEmails" class="space-y-3 hidden" data-settings-panel="emails">
-                <h3 class="font-extrabold text-lg">Email templates</h3>
-                <label class="inline-flex items-center gap-2 font-semibold">
-                  <input id="templateEnabled" type="checkbox" class="h-4 w-4" checked>
-                  Enabled
-                </label>
-                <div>
-                  <label class="label" for="templateStatus">Template type</label>
-                  <select id="templateStatus" class="input">
-                    <option value="new">New</option>
-                    <option value="processing">Processing</option>
-                    <option value="packed">Packed</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="abandoned_signup">Signed up, no order</option>
-                  </select>
+              <div id="settingsPanelEmails" class="space-y-4 hidden" data-settings-panel="emails">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 class="font-extrabold text-lg">Templates</h3>
+                    <p class="text-xs text-zinc-500">Customer emails are used for campaigns. Order fulfillment emails require order context.</p>
+                  </div>
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <button id="editPlaceholdersBtn" class="btn-soft" type="button">Editable placeholders</button>
+                    <button id="newTemplateBtn" class="btn-soft" type="button">New template</button>
+                  </div>
                 </div>
-                <div>
-                  <label class="label" for="templateLanguage">Language</label>
-                  <select id="templateLanguage" class="input">
-                    <option value="en">English</option>
-                    <option value="el">Greek</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="label" for="templateSubject">Subject</label>
-                  <input id="templateSubject" class="input" placeholder="Your GRUBZ order {orderNumber} is now {fulfillmentStatus}">
-                </div>
-                <div>
-                  <label class="label" for="templateBody">Email body</label>
-                  <textarea id="templateBody" class="input" rows="7" placeholder="Hi {customerName},&#10;&#10;Your GRUBZ order {orderNumber} is now {fulfillmentStatus}.&#10;&#10;{orderDetails}&#10;&#10;GRUBZ"></textarea>
-                </div>
-                <div class="text-xs text-zinc-500">
-                  {orderNumber} {customerName} {customerEmail} {coupon} {grubz_url} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
-                </div>
-                <div class="flex flex-wrap justify-end gap-2">
-                  <button id="clearTemplateBtn" class="btn-soft" type="button">Clear</button>
-                  <button id="addTemplateBtn" class="btn-soft" type="button">Add template</button>
-                </div>
-                <div id="templateList" class="space-y-2"></div>
+                <div id="templateList" class="space-y-4"></div>
               </div>
               <div id="settingsPanelChatbot" class="space-y-4 hidden" data-settings-panel="chatbot">
                 <div>
@@ -1449,6 +1439,99 @@
 	        </section>
 	      </div>
 
+	      <div id="placeholdersModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="placeholdersModalTitle">
+	        <div class="modal-backdrop" data-close-modal="placeholdersModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <div>
+	              <h3 id="placeholdersModalTitle" class="font-extrabold text-lg">Editable placeholders</h3>
+	              <p class="text-xs text-zinc-500">Shared replacement text used by customer and order email templates.</p>
+	            </div>
+	            <button id="closePlaceholdersModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div>
+	              <label class="label" for="emailGreetingEn">Greeting EN</label>
+	              <input id="emailGreetingEn" class="input" placeholder="Hi {customerName},">
+	            </div>
+	            <div>
+	              <label class="label" for="emailGreetingNoNameEn">Greeting EN without name</label>
+	              <input id="emailGreetingNoNameEn" class="input" placeholder="Hi,">
+	            </div>
+	            <div>
+	              <label class="label" for="emailGreetingEl">Greeting EL</label>
+	              <input id="emailGreetingEl" class="input" placeholder="Γεια σου {customerName},">
+	            </div>
+	            <div>
+	              <label class="label" for="emailGreetingNoNameEl">Greeting EL without name</label>
+	              <input id="emailGreetingNoNameEl" class="input" placeholder="Γεια σου,">
+	            </div>
+	          </div>
+	          <p class="text-xs text-zinc-500">Use {customerName} inside the named greeting fields when you want the customer's name inserted.</p>
+	          <div class="flex justify-end">
+	            <button id="savePlaceholdersBtn" class="btn" type="button">Save placeholders</button>
+	          </div>
+	        </section>
+	      </div>
+
+	      <div id="templateModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="templateModalTitle">
+	        <div class="modal-backdrop" data-close-modal="templateModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-center justify-between gap-3">
+	            <h3 id="templateModalTitle" class="font-extrabold text-lg">Email template</h3>
+	            <button id="closeTemplateModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <label class="inline-flex items-center gap-2 font-semibold">
+	            <input id="templateEnabled" type="checkbox" class="h-4 w-4" checked>
+	            Enabled
+	          </label>
+	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div>
+	              <label class="label" for="templateContext">Context</label>
+	              <select id="templateContext" class="input">
+	                <option value="customer">Customer email</option>
+	                <option value="order">Order fulfillment email</option>
+	              </select>
+	            </div>
+	            <div>
+	              <label class="label" for="templateStatus">Template type</label>
+	              <select id="templateStatus" class="input">
+	                <option value="new">New</option>
+	                <option value="processing">Processing</option>
+	                <option value="packed">Packed</option>
+	                <option value="shipped">Shipped</option>
+	                <option value="delivered">Delivered</option>
+	                <option value="cancelled">Cancelled</option>
+	                <option value="abandoned_signup">Signed up, no order</option>
+	              </select>
+	            </div>
+	            <div>
+	              <label class="label" for="templateLanguage">Language</label>
+	              <select id="templateLanguage" class="input">
+	                <option value="en">English</option>
+	                <option value="el">Greek</option>
+	              </select>
+	            </div>
+	          </div>
+	          <div>
+	            <label class="label" for="templateSubject">Subject</label>
+	            <input id="templateSubject" class="input" placeholder="Your GRUBZ order {orderNumber} is now {fulfillmentStatus}">
+	          </div>
+	          <div>
+	            <label class="label" for="templateBody">Email body</label>
+	            <textarea id="templateBody" class="input" rows="9" placeholder="{greeting}&#10;&#10;Your GRUBZ order {orderNumber} is now {fulfillmentStatus}.&#10;&#10;{orderDetails}&#10;&#10;GRUBZ"></textarea>
+	          </div>
+	          <div id="templatePlaceholderHelp" class="text-xs text-zinc-500">
+	            {greeting} {orderNumber} {customerName} {customerEmail} {coupon} {grubz_url} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}
+	          </div>
+	          <p id="templateModalMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          <div class="flex flex-wrap justify-end gap-2">
+	            <button id="clearTemplateBtn" class="btn-soft" type="button">Clear</button>
+	            <button id="addTemplateBtn" class="btn" type="button">Save template</button>
+	          </div>
+	        </section>
+	      </div>
+
 	      <div id="bulkEmailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="bulkEmailModalTitle">
 	        <div class="modal-backdrop" data-close-modal="bulkEmailModal"></div>
 	        <section class="modal-panel p-4 space-y-3">
@@ -1484,9 +1567,9 @@
 	          </div>
 	          <div>
 	            <label class="label" for="bulkEmailBody">Message</label>
-	            <textarea id="bulkEmailBody" class="input" rows="10" maxlength="12000" placeholder="Hi {customerName},"></textarea>
+	            <textarea id="bulkEmailBody" class="input" rows="10" maxlength="12000" placeholder="{greeting}"></textarea>
 	          </div>
-	          <p class="text-xs text-zinc-500">Available fields: {customerName} {customerEmail} {customerPhone} {coupon} {grubz_url}</p>
+	          <p class="text-xs text-zinc-500">Available fields: {greeting} {customerName} {customerEmail} {customerPhone} {coupon} {grubz_url}</p>
 	          <p id="bulkEmailMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          <div class="flex justify-end gap-2">
 	            <button id="sendBulkEmailBtn" class="btn" type="button">Send email</button>
@@ -1536,7 +1619,11 @@
 	        boxnowFeeDiscountCents:0,
 	      };
 	      let stripeSettings = { mode:"test" };
-	      let orderEmailSettings = { templates:[] };
+	      const defaultEmailPlaceholders = {
+	        greeting:{ en:"Hi {customerName},", el:"Γεια σου {customerName}," },
+	        greetingNoName:{ en:"Hi,", el:"Γεια σου," },
+	      };
+	      let orderEmailSettings = { placeholders:defaultEmailPlaceholders, templates:[] };
 	      let boxNowSettings = { activeEnvironment:"stage", environments:{} };
 	      let chatbotSettings = {
 	        enabled:false,
@@ -1969,7 +2056,6 @@
       });
 
 	      $("signOutBtn").addEventListener("click", () => auth.signOut().then(() => showLogin()));
-	      $("refreshBtn").addEventListener("click", refreshConsoleData);
 	      $("refreshOrdersBtn").addEventListener("click", () => loadOrders().catch(() => {}));
 	      $("refreshAnalyticsBtn").addEventListener("click", () => loadOrders().catch(() => {}));
 	      $("refreshCustomersBtn").addEventListener("click", () => loadCustomers().catch(() => {}));
@@ -1979,9 +2065,11 @@
 	      $("refreshBoxNowBtn").addEventListener("click", () => loadSettings().catch(() => {}));
 	      $("closeProductModal").addEventListener("click", () => closeModal("productModal"));
 	      $("closeCouponModal").addEventListener("click", () => closeModal("couponModal"));
-	      $("closeOrderModal").addEventListener("click", () => closeModal("orderModal"));
-	      $("closeCustomerModal").addEventListener("click", () => closeModal("customerModal"));
-	      $("closeBulkEmailModal").addEventListener("click", () => closeModal("bulkEmailModal"));
+		      $("closeOrderModal").addEventListener("click", () => closeModal("orderModal"));
+		      $("closeCustomerModal").addEventListener("click", () => closeModal("customerModal"));
+		      $("closePlaceholdersModal").addEventListener("click", () => closeModal("placeholdersModal"));
+		      $("closeTemplateModal").addEventListener("click", () => closeModal("templateModal"));
+		      $("closeBulkEmailModal").addEventListener("click", () => closeModal("bulkEmailModal"));
 	      document.querySelectorAll("[data-close-modal]").forEach(el => {
 	        el.addEventListener("click", () => closeModal(el.dataset.closeModal));
 	      });
@@ -1989,9 +2077,11 @@
 	        if (e.key !== "Escape") return;
 	        closeModal("productModal");
 	        closeModal("couponModal");
-	        closeModal("orderModal");
-	        closeModal("customerModal");
-	        closeModal("bulkEmailModal");
+		        closeModal("orderModal");
+		        closeModal("customerModal");
+		        closeModal("placeholdersModal");
+		        closeModal("templateModal");
+		        closeModal("bulkEmailModal");
 	      });
 	      const consoleSections = ["analytics", "products", "coupons", "orders", "customers", "messages", "collaborations", "social", "boxnow", "settings"];
 	      const consoleTabStorageKey = "grubz_console_tab";
@@ -2088,9 +2178,14 @@
 	          button.setAttribute("aria-selected", isActive ? "true" : "false");
 	        });
 	      }
-	      document.querySelectorAll("[data-settings-tab]").forEach(button => {
-	        button.addEventListener("click", () => showSettingsTab(button.dataset.settingsTab));
-	      });
+		      document.querySelectorAll("[data-settings-tab]").forEach(button => {
+		        button.addEventListener("click", () => showSettingsTab(button.dataset.settingsTab));
+		      });
+		      $("editPlaceholdersBtn").addEventListener("click", () => {
+		        renderEmailPlaceholderSettings();
+		        openModal("placeholdersModal");
+		      });
+		      $("savePlaceholdersBtn").addEventListener("click", saveEmailPlaceholders);
 	      showSettingsTab("stripe");
 	      document.querySelectorAll("[data-section-tab]").forEach(button => {
 	        button.addEventListener("click", () => showSection(button.dataset.sectionTab));
@@ -3297,15 +3392,54 @@
 	        $("stripeModeNote").textContent = stripeSettings.localEnvironmentForced
 	          ? `Localhost detected: using Stripe test mode. Saved console mode is ${stripeSettings.savedMode || "test"}.`
 	          : "";
-	        $("boxnowOverrideEnabled").checked = shippingSettings.boxnowFeeOverrideEnabled === true;
-	        $("boxnowOverrideAmount").value = ((Number(shippingSettings.boxnowFeeOverrideCents || 0)) / 100).toFixed(2);
-	        $("boxnowDiscountEnabled").checked = shippingSettings.boxnowFeeDiscountEnabled === true;
-	        $("boxnowDiscountAmount").value = ((Number(shippingSettings.boxnowFeeDiscountCents || 0)) / 100).toFixed(2);
-	        renderOrderEmailTemplates();
-	        renderBulkEmailTemplateOptions();
-	        renderBoxNowSettings();
-	        renderChatbotSettings();
-	      }
+		        $("boxnowOverrideEnabled").checked = shippingSettings.boxnowFeeOverrideEnabled === true;
+		        $("boxnowOverrideAmount").value = ((Number(shippingSettings.boxnowFeeOverrideCents || 0)) / 100).toFixed(2);
+		        $("boxnowDiscountEnabled").checked = shippingSettings.boxnowFeeDiscountEnabled === true;
+		        $("boxnowDiscountAmount").value = ((Number(shippingSettings.boxnowFeeDiscountCents || 0)) / 100).toFixed(2);
+		        renderEmailPlaceholderSettings();
+		        renderOrderEmailTemplates();
+		        renderBulkEmailTemplateOptions();
+		        renderBoxNowSettings();
+		        renderChatbotSettings();
+		      }
+
+		      function emailPlaceholderSettingsPayload(){
+		        return {
+		          greeting:{
+		            en: $("emailGreetingEn").value.trim(),
+		            el: $("emailGreetingEl").value.trim(),
+		          },
+		          greetingNoName:{
+		            en: $("emailGreetingNoNameEn").value.trim(),
+		            el: $("emailGreetingNoNameEl").value.trim(),
+		          },
+		        };
+		      }
+
+		      function renderEmailPlaceholderSettings(){
+		        const placeholders = orderEmailSettings.placeholders || defaultEmailPlaceholders;
+		        $("emailGreetingEn").value = placeholders.greeting?.en || defaultEmailPlaceholders.greeting.en;
+		        $("emailGreetingEl").value = placeholders.greeting?.el || defaultEmailPlaceholders.greeting.el;
+		        $("emailGreetingNoNameEn").value = placeholders.greetingNoName?.en || defaultEmailPlaceholders.greetingNoName.en;
+		        $("emailGreetingNoNameEl").value = placeholders.greetingNoName?.el || defaultEmailPlaceholders.greetingNoName.el;
+		      }
+
+		      async function saveEmailPlaceholders(){
+		        try {
+		          const orderEmails = {
+		            placeholders: emailPlaceholderSettingsPayload(),
+		            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
+		          };
+		          setMsg("settingsMsg", "Saving placeholders...");
+		          const data = await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ orderEmails }) });
+		          orderEmailSettings = data.orderEmails || orderEmails;
+		          renderEmailPlaceholderSettings();
+		          closeModal("placeholdersModal");
+		          setMsg("settingsMsg", "Placeholders saved");
+		        } catch (err) {
+		          setMsg("settingsMsg", err.message || "Placeholder save failed", false);
+		        }
+		      }
 
 	      function renderChatbotSettings(){
 	        const settings = chatbotSettings || {};
@@ -3793,79 +3927,153 @@
 	      $("packingCalculateBtn").addEventListener("click", calculatePacking);
 	      resetPackingRows();
 
-	      function resetTemplateEditor(){
-	        editingTemplateIndex = -1;
-	        $("templateEnabled").checked = true;
-	        $("templateStatus").value = "new";
-	        $("templateLanguage").value = "en";
-	        $("templateSubject").value = "";
-	        $("templateBody").value = "";
-	        $("addTemplateBtn").textContent = "Add template";
-	      }
+		      function resetTemplateEditor(){
+		        editingTemplateIndex = -1;
+		        $("templateEnabled").checked = true;
+		        $("templateContext").value = "customer";
+		        $("templateStatus").value = "new";
+		        $("templateLanguage").value = "en";
+		        $("templateSubject").value = "";
+		        $("templateBody").value = "";
+		        $("templateModalTitle").textContent = "New email template";
+		        $("templateModalMsg").textContent = "";
+		        $("addTemplateBtn").textContent = "Save template";
+		        updateTemplatePlaceholderHelp();
+		      }
 
-	      function templateContent(template = {}, language = "en"){
+		      function openTemplateModal(index = -1, language = "en"){
+		        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
+		        resetTemplateEditor();
+		        editingTemplateIndex = Number.isInteger(index) ? index : -1;
+		        if (editingTemplateIndex >= 0 && templates[editingTemplateIndex]) {
+		          fillTemplateEditor(templates[editingTemplateIndex], language);
+		          $("templateModalTitle").textContent = `Edit ${templates[editingTemplateIndex].fulfillmentStatus || templates[editingTemplateIndex].status || "template"}`;
+		        } else {
+		          fillTemplateEditor({ enabled:true, fulfillmentStatus:"new", status:"new" }, language);
+		        }
+		        openModal("templateModal");
+		        setTimeout(() => $("templateSubject").focus(), 0);
+		      }
+
+		      function templateContent(template = {}, language = "en"){
 	        const lang = language === "el" ? "el" : "en";
 	        const translated = lang !== "en" ? template.translations?.[lang] : null;
 	        return {
 	          subject: translated?.subject || template.subject || "",
 	          body: translated?.body || template.body || "",
 	        };
-	      }
+		      }
 
-	      function templateByStatus(status){
-	        const key = statusKey(status);
-	        return (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
-	          .find(template => statusKey(template.fulfillmentStatus || template.status) === key);
-	      }
+		      function templateContext(template = {}){
+		        const raw = String(template.templateContext || template.context || template.emailContext || "").trim().toLowerCase();
+		        if (raw === "customer" || raw === "order") return raw;
+		        return statusKey(template.fulfillmentStatus || template.status) === "abandoned_signup" ? "customer" : "order";
+		      }
+
+		      function containsOrderOnlyPlaceholder(value = ""){
+		        return /\{\s*(orderNumber|status|previousStatus|fulfillmentStatus|previousFulfillmentStatus|trackingNumber|trackingUrl|total|boxNowLocker|orderDetails)\s*\}/i.test(String(value || ""));
+		      }
+
+		      function updateTemplatePlaceholderHelp(){
+		        const context = $("templateContext").value === "order" ? "order" : "customer";
+		        $("templatePlaceholderHelp").textContent = context === "order"
+		          ? "{greeting} {orderNumber} {customerName} {customerEmail} {coupon} {grubz_url} {status} {previousStatus} {fulfillmentStatus} {previousFulfillmentStatus} {trackingNumber} {trackingUrl} {total} {boxNowLocker} {orderDetails}"
+		          : "{greeting} {customerName} {customerEmail} {customerPhone} {coupon} {grubz_url}";
+		      }
+
+		      function templateByStatus(status, context = $("templateContext").value){
+		        const key = statusKey(status);
+		        return (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
+		          .find(template => statusKey(template.fulfillmentStatus || template.status) === key && templateContext(template) === context);
+		      }
 
 	      function fillTemplateEditor(template = {}, language = $("templateLanguage").value){
-	        const content = templateContent(template, language);
-	        $("templateEnabled").checked = template.enabled !== false;
-	        $("templateStatus").value = template.fulfillmentStatus || template.status || "new";
-	        $("templateLanguage").value = language === "el" ? "el" : "en";
-	        $("templateSubject").value = content.subject || "";
-	        $("templateBody").value = content.body || "";
-	      }
+		        const content = templateContent(template, language);
+		        $("templateEnabled").checked = template.enabled !== false;
+		        $("templateContext").value = templateContext(template);
+		        $("templateStatus").value = template.fulfillmentStatus || template.status || "new";
+		        $("templateLanguage").value = language === "el" ? "el" : "en";
+		        $("templateSubject").value = content.subject || "";
+		        $("templateBody").value = content.body || "";
+		        updateTemplatePlaceholderHelp();
+		      }
 
-	      function renderOrderEmailTemplates(){
-	        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
-	        if (!templates.length) {
-	          $("templateList").innerHTML = `<div class="text-sm text-zinc-500 border border-dashed border-zinc-300 rounded-md p-3">No fulfillment email templates yet.</div>`;
-	          return;
-	        }
-	        $("templateList").innerHTML = templates.map((template, index) => `
-	          <div class="border border-zinc-200 rounded-md p-3 space-y-2">
-	            <div class="flex items-start justify-between gap-3">
-	              <div>
-	                <div class="font-extrabold">${esc(template.fulfillmentStatus || template.status || "")}</div>
-	                <div class="text-sm text-zinc-600">${esc(template.subject || "")}</div>
-	                <div class="text-xs ${template.enabled === false ? "text-red-600" : "text-emerald-700"}">${template.enabled === false ? "Disabled" : "Enabled"}${template.translations?.el ? " | Greek" : ""}</div>
-	              </div>
-	              <div class="flex gap-2 shrink-0">
-	                <button class="btn-soft" type="button" data-template-test="${index}">Send test</button>
-	                <button class="btn-soft" type="button" data-template-edit="${index}">Edit</button>
-	                <button class="btn-soft" type="button" data-template-delete="${index}">Delete</button>
-	              </div>
-	            </div>
-	          </div>
-	        `).join("");
-	      }
+		      function renderOrderEmailTemplates(){
+		        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
+		        if (!templates.length) {
+		          $("templateList").innerHTML = `<div class="text-sm text-zinc-500 border border-dashed border-zinc-300 rounded-md p-3">No email templates yet.</div>`;
+		          return;
+		        }
+		        const templateCard = (template, index) => {
+		          const context = templateContext(template);
+		          const isOrder = context === "order";
+		          const borderClass = isOrder ? "border-l-blue-500" : "border-l-emerald-500";
+		          const badgeClass = isOrder ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-emerald-50 text-emerald-700 border-emerald-200";
+		          const statusClass = template.enabled === false ? "text-red-600" : "text-emerald-700";
+		          return `
+		            <div class="border border-l-4 ${borderClass} border-zinc-200 rounded-md p-3 space-y-2">
+		              <div class="flex items-start justify-between gap-3">
+		                <div class="min-w-0">
+		                  <div class="flex flex-wrap items-center gap-2">
+		                    <div class="font-extrabold">${esc(template.fulfillmentStatus || template.status || "")}</div>
+		                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold ${badgeClass}">${isOrder ? "Order fulfillment" : "Customer email"}</span>
+		                  </div>
+		                  <div class="text-sm text-zinc-600 truncate">${esc(template.subject || "")}</div>
+		                  <div class="text-xs ${statusClass}">${template.enabled === false ? "Disabled" : "Enabled"}${template.translations?.el ? " | Greek" : ""}</div>
+		                </div>
+		                <div class="flex flex-wrap justify-end gap-2 shrink-0">
+		                  <button class="btn-soft" type="button" data-template-test="${index}">Send test</button>
+		                  <button class="btn-soft" type="button" data-template-edit="${index}">Edit</button>
+		                  <button class="btn-soft" type="button" data-template-delete="${index}">Delete</button>
+		                </div>
+		              </div>
+		            </div>
+		          `;
+		        };
+		        const grouped = [
+		          { context:"customer", title:"Customer emails", note:"Available in the bulk customer email picker." },
+		          { context:"order", title:"Order fulfillment emails", note:"Used when an order fulfillment status changes." },
+		        ].map(group => {
+		          const groupTemplates = templates
+		            .map((template, index) => ({ template, index }))
+		            .filter(item => templateContext(item.template) === group.context);
+		          return `
+		            <div class="space-y-2">
+		              <div class="flex items-baseline justify-between gap-3 border-b border-zinc-200 pb-1">
+		                <div>
+		                  <h4 class="font-extrabold text-sm">${group.title}</h4>
+		                  <p class="text-xs text-zinc-500">${group.note}</p>
+		                </div>
+		                <span class="text-xs font-bold text-zinc-500">${groupTemplates.length}</span>
+		              </div>
+		              ${groupTemplates.length ? groupTemplates.map(item => templateCard(item.template, item.index)).join("") : `<div class="text-sm text-zinc-500 border border-dashed border-zinc-300 rounded-md p-3">No ${group.title.toLowerCase()} yet.</div>`}
+		            </div>
+		          `;
+		        }).join("");
+		        $("templateList").innerHTML = grouped;
+		      }
 
-	      function currentTemplateFromEditor(){
-	        const fulfillmentStatus = $("templateStatus").value.trim();
-	        const language = $("templateLanguage").value === "el" ? "el" : "en";
-	        const existing = editingTemplateIndex >= 0
-	          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
-	          : (templateByStatus(fulfillmentStatus) || {});
-	        const subject = $("templateSubject").value.trim();
-	        const body = $("templateBody").value.trim();
-	        if (!fulfillmentStatus) throw new Error("Choose the fulfillment status for this email template.");
-	        if (!subject) throw new Error("Enter an email subject.");
-	        if (!body) throw new Error("Enter an email body.");
-	        const template = {
-	          ...existing,
-	          enabled: $("templateEnabled").checked,
-	          fulfillmentStatus,
+		      function currentTemplateFromEditor(){
+		        const context = $("templateContext").value === "order" ? "order" : "customer";
+		        const fulfillmentStatus = $("templateStatus").value.trim();
+		        const language = $("templateLanguage").value === "el" ? "el" : "en";
+		        const existing = editingTemplateIndex >= 0
+		          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
+		          : (templateByStatus(fulfillmentStatus, context) || {});
+		        const subject = $("templateSubject").value.trim();
+		        const body = $("templateBody").value.trim();
+		        if (!fulfillmentStatus) throw new Error("Choose the fulfillment status for this email template.");
+		        if (!subject) throw new Error("Enter an email subject.");
+		        if (!body) throw new Error("Enter an email body.");
+		        if (context === "customer" && containsOrderOnlyPlaceholder(`${subject}\n${body}`)) {
+		          throw new Error("Customer templates cannot use order placeholders.");
+		        }
+		        const template = {
+		          ...existing,
+		          enabled: $("templateEnabled").checked,
+		          templateContext: context,
+		          context,
+		          fulfillmentStatus,
 	          status: fulfillmentStatus,
 	          translations: { ...(existing.translations || {}) },
 	        };
@@ -3881,70 +4089,87 @@
 	        return template;
 	      }
 
-	      async function saveOrderEmailTemplates(templates){
-	        const orderEmails = { templates };
-	        const data = await api("/adminSettings", {
-	          method:"PATCH",
-	          body: JSON.stringify({ orderEmails }),
-	        });
-	        orderEmailSettings = data.orderEmails || orderEmails;
-	        return orderEmailSettings;
+		      async function saveOrderEmailTemplates(templates){
+		        const orderEmails = { placeholders: emailPlaceholderSettingsPayload(), templates };
+		        const data = await api("/adminSettings", {
+		          method:"PATCH",
+		          body: JSON.stringify({ orderEmails }),
+		        });
+		        orderEmailSettings = data.orderEmails || orderEmails;
+		        return orderEmailSettings;
 	      }
 
 	      function templateIndexForUpsert(templates, template){
-	        const existingIndex = templates.findIndex(item => {
-	            return statusKey(item.fulfillmentStatus || item.status) === statusKey(template.fulfillmentStatus);
-	          });
+		        const existingIndex = templates.findIndex(item => {
+		            return statusKey(item.fulfillmentStatus || item.status) === statusKey(template.fulfillmentStatus) && templateContext(item) === templateContext(template);
+		          });
 	        return editingTemplateIndex >= 0 ? editingTemplateIndex : existingIndex;
 	      }
 
 	      function upsertTemplateInList(template){
 	        const templates = Array.isArray(orderEmailSettings.templates) ? [...orderEmailSettings.templates] : [];
 	        const targetIndex = templateIndexForUpsert(templates, template);
-	        if (targetIndex >= 0) {
-	          templates[targetIndex] = template;
-	        } else {
-	          templates.push(template);
-	        }
-	        orderEmailSettings = { templates };
-	        return templates;
-	      }
+		        if (targetIndex >= 0) {
+		          templates[targetIndex] = template;
+		        } else {
+		          templates.push(template);
+		        }
+		        orderEmailSettings = { ...orderEmailSettings, templates };
+		        return templates;
+		      }
 
-	      $("addTemplateBtn").addEventListener("click", async () => {
-	        try {
-	          const template = currentTemplateFromEditor();
-	          const templates = upsertTemplateInList(template);
-	          setMsg("settingsMsg", "Saving template...");
-	          await saveOrderEmailTemplates(templates);
-	          resetTemplateEditor();
-	          renderOrderEmailTemplates();
-	          setMsg("settingsMsg", "Template saved");
-	        } catch (err) {
-	          setMsg("settingsMsg", err.message || "Template update failed", false);
-	        }
-	      });
+		      $("newTemplateBtn").addEventListener("click", () => openTemplateModal(-1, "en"));
 
-	      $("clearTemplateBtn").addEventListener("click", () => {
-	        resetTemplateEditor();
-	        setMsg("settingsMsg", "");
-	      });
+		      $("addTemplateBtn").addEventListener("click", async () => {
+		        try {
+		          const template = currentTemplateFromEditor();
+		          const templates = upsertTemplateInList(template);
+		          setMsg("templateModalMsg", "Saving template...");
+		          await saveOrderEmailTemplates(templates);
+		          resetTemplateEditor();
+		          renderOrderEmailTemplates();
+		          renderBulkEmailTemplateOptions();
+		          closeModal("templateModal");
+		          setMsg("settingsMsg", "Template saved");
+		        } catch (err) {
+		          setMsg("templateModalMsg", err.message || "Template update failed", false);
+		        }
+		      });
 
-	      $("templateLanguage").addEventListener("change", () => {
-	        const template = editingTemplateIndex >= 0
-	          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
-	          : (templateByStatus($("templateStatus").value) || {});
-	        fillTemplateEditor(template, $("templateLanguage").value);
-	      });
+		      $("clearTemplateBtn").addEventListener("click", () => {
+		        resetTemplateEditor();
+		        setMsg("templateModalMsg", "");
+		      });
 
-	      $("templateStatus").addEventListener("change", () => {
-	        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
-	        const key = statusKey($("templateStatus").value);
-	        const index = templates.findIndex(template => statusKey(template.fulfillmentStatus || template.status) === key);
-	        editingTemplateIndex = index;
-	        const template = templates[index] || {
-	          enabled: true,
-	          fulfillmentStatus: $("templateStatus").value,
-	          status: $("templateStatus").value,
+		      $("templateLanguage").addEventListener("change", () => {
+		        const template = editingTemplateIndex >= 0
+		          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
+		          : (templateByStatus($("templateStatus").value, $("templateContext").value) || {});
+		        fillTemplateEditor(template, $("templateLanguage").value);
+		      });
+
+		      $("templateContext").addEventListener("change", () => {
+		        const template = editingTemplateIndex >= 0
+		          ? ((Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])[editingTemplateIndex] || {})
+		          : (templateByStatus($("templateStatus").value, $("templateContext").value) || {
+		            enabled: true,
+		            templateContext: $("templateContext").value,
+		            fulfillmentStatus: $("templateStatus").value,
+		            status: $("templateStatus").value,
+		          });
+		        fillTemplateEditor(template, $("templateLanguage").value);
+		      });
+
+		      $("templateStatus").addEventListener("change", () => {
+		        const templates = Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [];
+		        const key = statusKey($("templateStatus").value);
+		        const index = templates.findIndex(template => statusKey(template.fulfillmentStatus || template.status) === key && templateContext(template) === $("templateContext").value);
+		        editingTemplateIndex = index;
+		        const template = templates[index] || {
+		          enabled: true,
+		          templateContext: $("templateContext").value,
+		          fulfillmentStatus: $("templateStatus").value,
+		          status: $("templateStatus").value,
 	        };
 	        fillTemplateEditor(template, $("templateLanguage").value);
 	      });
@@ -3954,42 +4179,30 @@
 	        const editBtn = event.target.closest("[data-template-edit]");
 	        const deleteBtn = event.target.closest("[data-template-delete]");
 	        const templates = Array.isArray(orderEmailSettings.templates) ? [...orderEmailSettings.templates] : [];
-	        if (testBtn) {
-	          const index = Number(testBtn.dataset.templateTest);
-	          let template = templates[index];
-	          if (!template) return;
-	          if (editingTemplateIndex === index) {
-	            try {
-	              template = currentTemplateFromEditor();
-	              const updatedTemplates = upsertTemplateInList(template);
-	              setMsg("settingsMsg", "Saving template before sending test...");
-	              await saveOrderEmailTemplates(updatedTemplates);
-	            } catch (err) {
-	              setMsg("settingsMsg", err.message || "Template update failed", false);
-	              return;
-	            }
-	          }
-	          await sendTemplateTest(template, testBtn, $("templateLanguage").value);
-	          renderOrderEmailTemplates();
-	        }
-	        if (editBtn) {
-	          const index = Number(editBtn.dataset.templateEdit);
-	          const template = templates[index];
-	          if (!template) return;
-	          editingTemplateIndex = index;
-	          fillTemplateEditor(template, $("templateLanguage").value);
-	          $("addTemplateBtn").textContent = "Update template";
-	        }
-	        if (deleteBtn) {
-	          const index = Number(deleteBtn.dataset.templateDelete);
-	          templates.splice(index, 1);
-	          orderEmailSettings = { templates };
-	          try {
-	            setMsg("settingsMsg", "Removing template...");
-	            await saveOrderEmailTemplates(templates);
-	            resetTemplateEditor();
-	            renderOrderEmailTemplates();
-	            setMsg("settingsMsg", "Template removed");
+		        if (testBtn) {
+		          const index = Number(testBtn.dataset.templateTest);
+		          let template = templates[index];
+		          if (!template) return;
+		          await sendTemplateTest(template, testBtn, $("templateLanguage").value);
+		          renderOrderEmailTemplates();
+		        }
+		        if (editBtn) {
+		          const index = Number(editBtn.dataset.templateEdit);
+		          const template = templates[index];
+		          if (!template) return;
+		          openTemplateModal(index, $("templateLanguage").value);
+		        }
+		        if (deleteBtn) {
+		          const index = Number(deleteBtn.dataset.templateDelete);
+		          templates.splice(index, 1);
+		          orderEmailSettings = { ...orderEmailSettings, templates };
+		          try {
+		            setMsg("settingsMsg", "Removing template...");
+		            await saveOrderEmailTemplates(templates);
+		            resetTemplateEditor();
+		            renderOrderEmailTemplates();
+		            renderBulkEmailTemplateOptions();
+		            setMsg("settingsMsg", "Template removed");
 	          } catch (err) {
 	            renderOrderEmailTemplates();
 	            setMsg("settingsMsg", err.message || "Template delete failed", false);
@@ -4002,14 +4215,15 @@
 	          button.disabled = true;
 	          button.textContent = "Sending...";
 	          setMsg("settingsMsg", "Sending test email...");
-	          await api("/adminSettings", {
-	            method:"POST",
-	            body: JSON.stringify({
-	              action: "sendOrderStatusTestEmail",
-	              template,
-	              language,
-	            }),
-	          });
+		          await api("/adminSettings", {
+		            method:"POST",
+		            body: JSON.stringify({
+		              action: "sendOrderStatusTestEmail",
+		              template,
+		              language,
+		              placeholders: emailPlaceholderSettingsPayload(),
+		            }),
+		          });
 	          setMsg("settingsMsg", `Test email sent to info@grubz.gr (${language === "el" ? "Greek" : "English"})`);
 	        } catch (err) {
 	          setMsg("settingsMsg", err.message || "Test email failed", false);
@@ -4117,9 +4331,10 @@
 	          const stripe = {
 	            mode: $("stripeModeLive").checked ? "live" : "test",
 	          };
-	          const orderEmails = {
-	            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
-	          };
+		          const orderEmails = {
+		            placeholders: emailPlaceholderSettingsPayload(),
+		            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
+		          };
 	          const chatbot = chatbotSettingsPayload();
 	          const data = await api("/adminSettings", { method:"PATCH", body: JSON.stringify({ shipping, stripe, orderEmails, chatbot }) });
 	          shippingSettings = shipping;
@@ -4170,10 +4385,11 @@
 	        $("deselectAllCustomersBtn").disabled = selectedCount === 0;
 	      }
 
-	      function bulkEmailTemplates(){
-	        return (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
-	          .filter(template => template && (template.subject || template.body));
-	      }
+		      function bulkEmailTemplates(){
+		        return (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
+		          .filter(template => templateContext(template) === "customer")
+		          .filter(template => template && (template.subject || template.body));
+		      }
 
 	      function bulkTemplateLabel(template){
 	        const status = template.fulfillmentStatus || template.status || "Template";
@@ -4219,6 +4435,17 @@
 	        return normalizeCouponCode($("bulkEmailCoupon").value);
 	      }
 
+	      function containsCouponPlaceholder(value = ""){
+	        return /\{\s*coupon\s*\}/i.test(String(value || ""));
+	      }
+
+		      function fulfillmentTemplateContentForStatus(fulfillmentStatus, language = "en"){
+		        const key = statusKey(fulfillmentStatus);
+		        const template = (Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [])
+		          .find(item => item.enabled !== false && templateContext(item) === "order" && statusKey(item.fulfillmentStatus || item.status) === key);
+		        return template ? templateContent(template, language) : null;
+		      }
+
 	      function openBulkEmailModal(){
 	        const recipients = selectedCustomerRecipients();
 	        if (!recipients.length) return setMsg("customerMsg", "Select at least one customer with an email address.", false);
@@ -4229,7 +4456,7 @@
 	        $("bulkEmailLanguage").value = "en";
 	        $("bulkEmailCoupon").value = "";
 	        $("bulkEmailSubject").value = "";
-	        $("bulkEmailBody").value = "Hi {customerName},\n\n";
+	        $("bulkEmailBody").value = "{greeting}\n\n";
 	        $("bulkEmailMsg").textContent = "";
 	        $("sendBulkEmailBtn").disabled = false;
 	        openModal("bulkEmailModal");
@@ -4241,14 +4468,23 @@
 	        if (!recipients.length) return setMsg("bulkEmailMsg", "Select at least one customer with an email address.", false);
 	        const subject = $("bulkEmailSubject").value.trim();
 	        const body = $("bulkEmailBody").value.trim();
+	        const couponCode = selectedBulkCouponCode();
 	        if (!subject || !body) return setMsg("bulkEmailMsg", "Enter a subject and message.", false);
+	        if (containsCouponPlaceholder(body) && !couponCode) {
+	          $("bulkEmailCoupon").focus();
+	          return setMsg("bulkEmailMsg", "Select a coupon or remove the {coupon} placeholder before sending.", false);
+	        }
+	        if (containsOrderOnlyPlaceholder(`${subject}\n${body}`)) {
+	          $("bulkEmailBody").focus();
+	          return setMsg("bulkEmailMsg", "Customer emails cannot use order placeholders. Choose a customer template or remove order placeholders.", false);
+	        }
 	        if (!confirm(`Send this email to ${recipients.length} customer${recipients.length === 1 ? "" : "s"}?`)) return;
 	        try {
 	          $("sendBulkEmailBtn").disabled = true;
 	          setMsg("bulkEmailMsg", "Sending email...");
 	          const result = await api("/adminCustomers", {
 	            method: "POST",
-	            body: JSON.stringify({ action: "sendEmail", recipients, subject, body, coupon: selectedBulkCouponCode(), language: $("bulkEmailLanguage").value }),
+	            body: JSON.stringify({ action: "sendEmail", recipients, subject, body, coupon: couponCode, language: $("bulkEmailLanguage").value }),
 	          });
 	          const summary = `${result.sent || 0} sent, ${result.skipped || 0} skipped, ${result.failed || 0} failed`;
 	          const firstError = Array.isArray(result.results)
@@ -4957,6 +5193,13 @@
         try {
           const nextFulfillmentStatus = $("o_fulfillment").value;
           const fulfillmentChanged = statusKey(nextFulfillmentStatus) !== statusKey(selectedOrder.fulfillmentStatus || "new");
+          if (fulfillmentChanged) {
+            const content = fulfillmentTemplateContentForStatus(nextFulfillmentStatus, selectedOrder.language || selectedOrder.locale || "en");
+            const orderCouponCode = normalizeCouponCode(selectedOrder.couponCode || selectedOrder.coupon || selectedOrder.metadata?.couponCode || selectedOrder.metadata?.coupon || "");
+            if (content && containsCouponPlaceholder(content.body || "") && !orderCouponCode) {
+              return setMsg("orderMsg", "This fulfillment template uses {coupon}, but the order has no coupon code. Remove the placeholder before sending.", false);
+            }
+          }
           const sendFulfillmentEmail = fulfillmentChanged
             ? window.confirm("Update Customer?\n\nSend the fulfillment email to the customer and BCC info@grubz.gr?")
             : false;
