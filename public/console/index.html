@@ -18,6 +18,8 @@
       .btn:hover{background:#bd3a0f}
       .btn-soft{border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:650}
       .btn-danger{border:1px solid #dc2626;color:#dc2626;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:700}
+      .tab-badge{display:inline-flex;min-width:1.25rem;height:1.25rem;align-items:center;justify-content:center;border-radius:999px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:800;line-height:1;padding:0 .35rem}
+      .tab-badge.hidden{display:none}
       .input{width:100%;border:1px solid #d4d4d8;border-radius:8px;padding:.55rem .65rem;background:#fff}
       .label{font-size:.75rem;font-weight:700;color:#52525b}
 	      .panel{border:1px solid #e4e4e7;background:#fff;border-radius:8px}
@@ -70,11 +72,22 @@
               <p id="adminEmail" class="text-xs text-zinc-500"></p>
             </div>
             <nav class="mt-3 flex gap-2 overflow-x-auto pb-1 lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0" aria-label="Console sections">
+              <button id="tabAnalytics" class="btn-soft text-left shrink-0" type="button" data-section-tab="analytics">Dashboard</button>
               <button id="tabProducts" class="btn-soft text-left shrink-0" type="button" data-section-tab="products">Products</button>
               <button id="tabCoupons" class="btn-soft text-left shrink-0" type="button" data-section-tab="coupons">Coupons</button>
-              <button id="tabOrders" class="btn-soft text-left shrink-0" type="button" data-section-tab="orders">Orders</button>
-              <button id="tabCustomers" class="btn-soft text-left shrink-0" type="button" data-section-tab="customers">Customers</button>
-              <button id="tabMessages" class="btn-soft text-left shrink-0" type="button" data-section-tab="messages">Messages</button>
+              <button id="tabOrders" class="btn-soft text-left shrink-0 inline-flex items-center justify-between gap-2" type="button" data-section-tab="orders">
+                <span>Orders</span>
+                <span id="ordersTabBadge" class="tab-badge hidden" aria-label="New orders"></span>
+              </button>
+              <button id="tabCustomers" class="btn-soft text-left shrink-0 inline-flex items-center justify-between gap-2" type="button" data-section-tab="customers">
+                <span>Customers</span>
+                <span id="customersTabBadge" class="tab-badge hidden" aria-label="New customers"></span>
+              </button>
+              <button id="tabMessages" class="btn-soft text-left shrink-0 inline-flex items-center justify-between gap-2" type="button" data-section-tab="messages">
+                <span>Messages</span>
+                <span id="messagesTabBadge" class="tab-badge hidden" aria-label="Unread messages"></span>
+              </button>
+              <button id="tabCollaborations" class="btn-soft text-left shrink-0" type="button" data-section-tab="collaborations">Collaborations</button>
               <button id="tabSocialAgent" class="btn-soft text-left shrink-0" type="button" data-section-tab="social">Marketing</button>
               <button id="tabBoxNow" class="btn-soft text-left shrink-0" type="button" data-section-tab="boxnow">BOX NOW</button>
               <button id="tabSettings" class="btn-soft text-left shrink-0" type="button" data-section-tab="settings">Settings</button>
@@ -166,6 +179,67 @@
 	            <p id="orderMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
+	          <section id="analyticsSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex flex-wrap items-end justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Order Analytics</h2>
+	                <p class="text-sm text-zinc-500">Revenue, order mix, products, coupons, referrals, and fulfillment health.</p>
+	              </div>
+	              <div class="flex flex-wrap items-end gap-2">
+	                <div>
+	                  <label class="label" for="analyticsRange">Range</label>
+	                  <select id="analyticsRange" class="input min-w-[180px]">
+	                    <option value="30">Last 30 days</option>
+	                    <option value="7">Last 7 days</option>
+	                    <option value="90">Last 90 days</option>
+	                    <option value="365">Last 365 days</option>
+	                    <option value="all">All loaded orders</option>
+	                  </select>
+	                </div>
+	                <button id="refreshAnalyticsBtn" class="btn-soft" type="button">Refresh orders</button>
+	              </div>
+	            </div>
+	            <div id="analyticsKpis" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+	            <div class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
+	              <div class="panel p-4">
+	                <div class="mb-3 flex items-center justify-between gap-3">
+	                  <h3 class="font-extrabold">Daily revenue</h3>
+	                  <span id="analyticsRangeLabel" class="text-xs text-zinc-500"></span>
+	                </div>
+	                <div id="analyticsRevenueTrend" class="flex h-56 items-end gap-1 border-b border-zinc-200 pb-2"></div>
+	              </div>
+	              <div class="panel p-4">
+	                <h3 class="font-extrabold">Order health</h3>
+	                <div id="analyticsHealth" class="mt-3 space-y-2 text-sm"></div>
+	              </div>
+	            </div>
+	            <div class="grid gap-4 xl:grid-cols-3">
+	              <div class="panel p-4">
+	                <h3 class="font-extrabold">Top products</h3>
+	                <div id="analyticsProducts" class="mt-3 space-y-2 text-sm"></div>
+	              </div>
+	              <div class="panel p-4">
+	                <h3 class="font-extrabold">Coupons & referrals</h3>
+	                <div id="analyticsAttribution" class="mt-3 space-y-2 text-sm"></div>
+	              </div>
+	              <div class="panel p-4">
+	                <h3 class="font-extrabold">Payment methods</h3>
+	                <div id="analyticsPayments" class="mt-3 space-y-2 text-sm"></div>
+	              </div>
+	            </div>
+	            <div class="grid gap-4 xl:grid-cols-2">
+	              <div class="panel p-4">
+	                <h3 class="font-extrabold">BOX NOW</h3>
+	                <div id="analyticsBoxNow" class="mt-3 space-y-2 text-sm"></div>
+	              </div>
+	              <div class="panel p-4">
+	                <h3 class="font-extrabold">Recent orders</h3>
+	                <div id="analyticsRecentOrders" class="mt-3 space-y-2 text-sm"></div>
+	              </div>
+	            </div>
+	            <p id="analyticsMsg" class="text-sm" role="status" aria-live="polite"></p>
+	          </section>
+
 	          <section id="customersSection" class="hidden lg:col-span-2 space-y-4">
 	            <div class="flex flex-wrap items-end justify-between gap-3">
 	              <div>
@@ -236,6 +310,191 @@
 	                </div>
 	                <p id="chatAdminMsg" class="text-sm" role="status" aria-live="polite"></p>
 	              </div>
+	            </div>
+	          </section>
+
+	          <section id="collaborationsSection" class="hidden lg:col-span-2 space-y-4">
+	            <div class="flex flex-wrap items-center justify-between gap-3">
+	              <div>
+	                <h2 class="text-xl font-extrabold">Collaborations</h2>
+	                <p class="text-sm text-zinc-500">Manage ambassadors, creator deals, farm trials, coupon-code partnerships, and follow-ups.</p>
+	              </div>
+	              <div class="flex flex-wrap gap-2">
+	                <button id="refreshCollaborationsBtn" class="btn-soft" type="button">Refresh</button>
+	                <button id="newCollaborationBtn" class="btn" type="button">New collaboration</button>
+	              </div>
+	            </div>
+	            <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+	              <div class="panel overflow-hidden">
+	                <div class="grid gap-3 border-b border-zinc-200 bg-zinc-50 p-3 sm:grid-cols-[1fr_180px_160px]">
+	                  <input id="collaborationSearch" class="input" placeholder="Search collaborations, social links, coupons, notes...">
+	                  <select id="collaborationStatusFilter" class="input">
+	                    <option value="">All statuses</option>
+	                    <option value="lead">Lead</option>
+	                    <option value="contacted">Contacted</option>
+	                    <option value="negotiating">Negotiating</option>
+	                    <option value="trial_sent">Trial sent</option>
+	                    <option value="active">Active</option>
+	                    <option value="paused">Paused</option>
+	                    <option value="ended">Ended</option>
+	                  </select>
+	                  <select id="collaborationTypeFilter" class="input">
+	                    <option value="">All types</option>
+	                    <option value="free_product">Free product</option>
+	                    <option value="discount_code">Discount code</option>
+	                    <option value="paid_post">Paid post</option>
+	                    <option value="ambassador">Ambassador</option>
+	                    <option value="testimonial">Testimonial</option>
+	                    <option value="case_study">Case study</option>
+	                    <option value="other">Other</option>
+	                  </select>
+	                </div>
+	                <div id="collaborationSummary" class="border-b border-zinc-200 px-3 py-2 text-xs text-zinc-500"></div>
+	                <div id="collaborationList" class="divide-y"></div>
+	              </div>
+	              <aside class="panel p-4 space-y-3">
+	                <div class="flex items-center justify-between gap-3">
+	                  <h3 class="font-extrabold text-lg">Lead details</h3>
+	                  <button id="deleteCollaborationBtn" class="btn-danger" type="button">Delete</button>
+	                </div>
+	                <div class="grid gap-2 sm:grid-cols-2">
+	                  <div class="sm:col-span-2">
+	                    <label class="label" for="collabName">Name / page</label>
+	                    <input id="collabName" class="input" placeholder="Agia Farm Lemnos">
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabContactName">Contact name</label>
+	                    <input id="collabContactName" class="input">
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabEmail">Email</label>
+	                    <input id="collabEmail" class="input" type="email">
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabPhone">Phone</label>
+	                    <input id="collabPhone" class="input">
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabScore">Lead score</label>
+	                    <input id="collabScore" class="input" type="number" min="0" max="100" step="1">
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabStatus">Status</label>
+	                    <select id="collabStatus" class="input">
+	                      <option value="lead">Lead</option>
+	                      <option value="contacted">Contacted</option>
+	                      <option value="negotiating">Negotiating</option>
+	                      <option value="trial_sent">Trial sent</option>
+	                      <option value="active">Active</option>
+	                      <option value="paused">Paused</option>
+	                      <option value="ended">Ended</option>
+	                    </select>
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabType">Type</label>
+	                    <select id="collabType" class="input">
+	                      <option value="discount_code">Discount code</option>
+	                      <option value="free_product">Free product</option>
+	                      <option value="paid_post">Paid post</option>
+	                      <option value="ambassador">Ambassador</option>
+	                      <option value="testimonial">Testimonial</option>
+	                      <option value="case_study">Case study</option>
+	                      <option value="other">Other</option>
+	                    </select>
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabCategory">Category</label>
+	                    <select id="collabCategory" class="input">
+	                      <option value="farm">Farm</option>
+	                      <option value="homestead">Homestead</option>
+	                      <option value="chicken_owner">Chicken owner</option>
+	                      <option value="reptile_keeper">Reptile keeper</option>
+	                      <option value="pet_shop">Pet shop</option>
+	                      <option value="breeder">Breeder</option>
+	                      <option value="aquarium">Aquarium</option>
+	                      <option value="creator">Creator</option>
+	                      <option value="other">Other</option>
+	                    </select>
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabNextFollowUp">Next follow-up</label>
+	                    <input id="collabNextFollowUp" class="input" type="date">
+	                  </div>
+	                </div>
+	                <details class="rounded-md border border-zinc-200 p-3" open>
+	                  <summary class="cursor-pointer font-bold">Links</summary>
+	                  <div class="mt-3 grid gap-2">
+	                    <input id="collabInstagram" class="input" placeholder="Instagram URL">
+	                    <input id="collabFacebook" class="input" placeholder="Facebook URL">
+	                    <input id="collabTiktok" class="input" placeholder="TikTok URL">
+	                    <input id="collabYoutube" class="input" placeholder="YouTube URL">
+	                    <input id="collabWebsite" class="input" placeholder="Website URL">
+	                  </div>
+	                </details>
+	                <details class="rounded-md border border-zinc-200 p-3" open>
+	                  <summary class="cursor-pointer font-bold">Offer</summary>
+	                  <div class="mt-3 grid gap-2">
+	                    <input id="collabOfferProducts" class="input" placeholder="Products offered">
+	                    <input id="collabOfferQuantity" class="input" placeholder="Quantity">
+	                    <div>
+	                      <label class="label" for="collabCouponCode">Attribution coupon code</label>
+	                      <select id="collabCouponCode" class="input"></select>
+	                      <p class="mt-1 text-xs text-zinc-500">Orders using this coupon code are attributed to this collaboration.</p>
+	                    </div>
+	                    <div>
+	                      <label class="label" for="collabReferralCode">Referral code</label>
+	                      <div class="flex gap-2">
+	                        <input id="collabReferralCode" class="input flex-1" placeholder="PARTNER10">
+	                        <button id="generateCollabReferralBtn" class="btn-soft shrink-0" type="button">Generate</button>
+	                      </div>
+	                      <div class="mt-2 flex gap-2">
+	                        <input id="collabReferralUrl" class="input flex-1 text-xs" readonly placeholder="Referral link appears after adding a code">
+	                        <button id="copyCollabReferralBtn" class="btn-soft shrink-0" type="button">Copy link</button>
+	                      </div>
+	                      <p class="mt-1 text-xs text-zinc-500">Orders from this referral link are attributed even when no discount coupon is used.</p>
+	                    </div>
+	                    <input id="collabCommission" class="input" placeholder="Commission">
+	                    <label class="inline-flex items-center gap-2 text-sm font-semibold"><input id="collabShippingCovered" type="checkbox" class="h-4 w-4"> Shipping covered</label>
+	                    <textarea id="collabOfferDetails" class="input" rows="3" placeholder="Offer details"></textarea>
+	                    <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+	                      <div class="flex items-center justify-between gap-3">
+	                        <div class="font-bold">Coupon performance</div>
+	                        <button id="refreshCollabMetricsBtn" class="btn-soft px-2 py-1 text-xs" type="button">Refresh</button>
+	                      </div>
+	                      <div id="collabMetrics" class="mt-2 text-sm text-zinc-600"></div>
+	                    </div>
+	                  </div>
+	                </details>
+	                <div>
+	                  <label class="label" for="collabCommitments">Content commitments, one per line</label>
+	                  <textarea id="collabCommitments" class="input" rows="4" placeholder="1 Instagram reel&#10;3 stories&#10;1 TikTok video"></textarea>
+	                </div>
+	                <div>
+	                  <label class="label" for="collabAudienceNotes">Audience notes</label>
+	                  <textarea id="collabAudienceNotes" class="input" rows="3"></textarea>
+	                </div>
+	                <div>
+	                  <label class="label" for="collabContentLinks">Delivered content links, one per line</label>
+	                  <textarea id="collabContentLinks" class="input" rows="3"></textarea>
+	                </div>
+	                <div>
+	                  <label class="label" for="collabNotes">Internal notes</label>
+	                  <textarea id="collabNotes" class="input" rows="4"></textarea>
+	                </div>
+	                <div class="grid gap-2 sm:grid-cols-2">
+	                  <input id="collabCustomerKey" class="input" placeholder="Customer key/email">
+	                  <input id="collabOrderId" class="input" placeholder="Order ID">
+	                </div>
+	                <div class="flex flex-wrap gap-2">
+	                  <button id="saveCollaborationBtn" class="btn" type="button">Save collaboration</button>
+	                  <button id="generateCollabOutreachBtn" class="btn-soft" type="button">Generate outreach</button>
+	                </div>
+	                <div>
+	                  <label class="label" for="collabOutreachDraft">Outreach draft</label>
+	                  <textarea id="collabOutreachDraft" class="input" rows="5"></textarea>
+	                </div>
+	                <p id="collaborationMsg" class="text-sm" role="status" aria-live="polite"></p>
+	              </aside>
 	            </div>
 	          </section>
 
@@ -1161,7 +1420,10 @@
 	              <textarea id="o_notes" class="input" rows="3"></textarea>
 	            </div>
 	          </div>
-	          <button id="saveOrderBtn" class="btn w-full" type="button">Save order</button>
+	          <div class="grid sm:grid-cols-[1fr_auto] gap-2">
+	            <button id="saveOrderBtn" class="btn w-full" type="button">Save order</button>
+	            <button id="deleteOrderBtn" class="btn-danger" type="button">Delete order</button>
+	          </div>
 	        </section>
 	      </div>
 
@@ -1255,6 +1517,7 @@
 	      let chatConversations = [];
 	      let chatMessages = [];
 	      let chatPollTimer = null;
+	      let currentConsoleSection = "";
 	      let selectedCoupon = null;
 	      let selectedOrder = null;
 	      let manualOrderItems = [];
@@ -1262,6 +1525,8 @@
 	      let selectedCustomer = null;
 	      let selectedCustomerKeys = new Set();
 	      let selectedChatConversation = null;
+	      let collaborations = [];
+	      let selectedCollaborationId = "";
 	      let productApiReady = false;
 	      let currentProductImage = "";
 	      let shippingSettings = {
@@ -1329,6 +1594,7 @@
 	      const orderNumber = o => o?.orderNumber || o?.internalOrderId || o?.id || "";
 	      const statusKey = value => String(value || "").trim().toLowerCase();
 	      const normalizeCouponCode = value => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+	      const normalizeReferralCode = value => String(value || "").trim().toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9_-]/g, "").slice(0, 80);
 	      const customerLabel = c => c?.name || c?.email || c?.uid || "Guest customer";
 	      const customerSearchText = c => [
 	        c?.name,
@@ -1561,8 +1827,71 @@
         if (!value) return "";
         if (value._seconds) return new Date(value._seconds * 1000).toLocaleString();
         if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
+        if (typeof value === "string" || typeof value === "number") {
+          const date = new Date(value);
+          return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
+        }
         return "";
       }
+      function dateFromValue(value){
+        if (!value) return null;
+        if (value._seconds) return new Date(value._seconds * 1000);
+        if (value.seconds) return new Date(value.seconds * 1000);
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+      function dateMs(value){
+        const date = dateFromValue(value);
+        return date ? date.getTime() : 0;
+      }
+      const tabSeenStoragePrefix = "grubz_console_seen_";
+      function tabSeenMs(section){
+        return Number(localStorage.getItem(`${tabSeenStoragePrefix}${section}`) || 0);
+      }
+      function markTabSeen(section){
+        if (!["orders", "customers"].includes(section)) return;
+        localStorage.setItem(`${tabSeenStoragePrefix}${section}`, String(Date.now()));
+      }
+      async function markMessagesRead(){
+        if (!chatConversations.some(conversation => Number(conversation.unreadAdmin || 0) > 0)) return;
+        chatConversations = chatConversations.map(conversation => ({ ...conversation, unreadAdmin: 0 }));
+        if (selectedChatConversation) selectedChatConversation = { ...selectedChatConversation, unreadAdmin: 0 };
+        renderChatConversationList();
+        updateTabBadges();
+        await chatAdminApi("/adminChat", {
+          method: "PATCH",
+          body: JSON.stringify({ action: "markAllRead" }),
+        });
+      }
+      function badgeCountLabel(count){
+        return count > 99 ? "99+" : String(count);
+      }
+      function setTabBadge(id, count){
+        const badge = $(id);
+        if (!badge) return;
+        const visible = Number(count || 0) > 0;
+        badge.classList.toggle("hidden", !visible);
+        badge.textContent = visible ? badgeCountLabel(count) : "";
+      }
+      function orderActivityMs(order = {}){
+        return Math.max(dateMs(order.createdAt), dateMs(order.updatedAt));
+      }
+      function customerActivityMs(customer = {}){
+        return Math.max(dateMs(customer.createdAt), dateMs(customer.updatedAt), dateMs(customer.lastOrderAt));
+      }
+      function updateTabBadges(){
+        const ordersSeen = tabSeenMs("orders");
+        const customersSeen = tabSeenMs("customers");
+        const newOrders = ordersSeen ? orders.filter(order => orderActivityMs(order) > ordersSeen).length : 0;
+        const newCustomers = customersSeen ? customers.filter(customer => customerActivityMs(customer) > customersSeen).length : 0;
+        const unreadMessages = chatConversations.reduce((sum, conversation) => sum + Math.max(0, Number(conversation.unreadAdmin || 0)), 0);
+        setTabBadge("ordersTabBadge", currentConsoleSection === "orders" ? 0 : newOrders);
+        setTabBadge("customersTabBadge", currentConsoleSection === "customers" ? 0 : newCustomers);
+        setTabBadge("messagesTabBadge", currentConsoleSection === "messages" ? 0 : unreadMessages);
+      }
+      const dayKey = date => date ? date.toISOString().slice(0, 10) : "";
+      const percent = (part, total) => total > 0 ? `${Math.round((part / total) * 100)}%` : "0%";
+      const avgCents = (sum, count) => count > 0 ? Math.round(sum / count) : 0;
       async function token(){ return (await auth.currentUser.getIdToken(true)); }
       async function api(path, options = {}){
         if (!auth.currentUser) throw new Error("Please sign in again.");
@@ -1642,8 +1971,10 @@
 	      $("signOutBtn").addEventListener("click", () => auth.signOut().then(() => showLogin()));
 	      $("refreshBtn").addEventListener("click", refreshConsoleData);
 	      $("refreshOrdersBtn").addEventListener("click", () => loadOrders().catch(() => {}));
+	      $("refreshAnalyticsBtn").addEventListener("click", () => loadOrders().catch(() => {}));
 	      $("refreshCustomersBtn").addEventListener("click", () => loadCustomers().catch(() => {}));
 	      $("refreshMessagesBtn").addEventListener("click", () => loadChatConversations(selectedChatConversation?.id || "").catch(() => {}));
+	      $("refreshCollaborationsBtn").addEventListener("click", () => loadCollaborations().catch(() => {}));
 	      $("refreshSocialAgentBtn").addEventListener("click", () => loadSocialAgent().catch(() => {}));
 	      $("refreshBoxNowBtn").addEventListener("click", () => loadSettings().catch(() => {}));
 	      $("closeProductModal").addEventListener("click", () => closeModal("productModal"));
@@ -1662,19 +1993,22 @@
 	        closeModal("customerModal");
 	        closeModal("bulkEmailModal");
 	      });
-	      const consoleSections = ["products", "coupons", "orders", "customers", "messages", "social", "boxnow", "settings"];
+	      const consoleSections = ["analytics", "products", "coupons", "orders", "customers", "messages", "collaborations", "social", "boxnow", "settings"];
 	      const consoleTabStorageKey = "grubz_console_tab";
 	      function savedConsoleSection(){
 	        const saved = localStorage.getItem(consoleTabStorageKey);
-	        return consoleSections.includes(saved) ? saved : "products";
+	        return consoleSections.includes(saved) ? saved : "analytics";
 	      }
 	      function showSection(section, options = {}){
-	        const active = consoleSections.includes(section) ? section : "products";
+	        const active = consoleSections.includes(section) ? section : "analytics";
+	        currentConsoleSection = active;
 	        $("productsSection").classList.toggle("hidden", active !== "products");
 	        $("couponsSection").classList.toggle("hidden", active !== "coupons");
 	        $("ordersSection").classList.toggle("hidden", active !== "orders");
+	        $("analyticsSection").classList.toggle("hidden", active !== "analytics");
 	        $("customersSection").classList.toggle("hidden", active !== "customers");
 	        $("messagesSection").classList.toggle("hidden", active !== "messages");
+	        $("collaborationsSection").classList.toggle("hidden", active !== "collaborations");
 	        $("socialSection").classList.toggle("hidden", active !== "social");
 	        $("boxNowSection").classList.toggle("hidden", active !== "boxnow");
 	        $("settingsSection").classList.toggle("hidden", active !== "settings");
@@ -1685,8 +2019,11 @@
 	          button.setAttribute("aria-current", isActive ? "page" : "false");
 	        });
 	        if (options.persist !== false) localStorage.setItem(consoleTabStorageKey, active);
+	        markTabSeen(active);
+	        updateTabBadges();
 	        clearInterval(chatPollTimer);
 	        if (active === "messages") {
+	          markMessagesRead().catch(() => {});
 	          chatPollTimer = setInterval(() => loadChatConversations(selectedChatConversation?.id || "").catch(() => {}), 15000);
 	        }
 	      }
@@ -1960,11 +2297,13 @@
           const data = await api("/adminCoupons");
           coupons = data.coupons || [];
           renderCoupons();
+          renderCollaborationCouponOptions(currentCollaboration()?.offer?.couponCode || "");
           renderBulkEmailCouponOptions();
           setMsg("couponAdminMsg", coupons.length ? `${coupons.length} coupons loaded` : "No coupons found");
         } catch (err) {
           coupons = [];
           renderCoupons();
+          renderCollaborationCouponOptions(currentCollaboration()?.offer?.couponCode || "");
           renderBulkEmailCouponOptions();
           setMsg("couponAdminMsg", err.message || apiUnavailableMessage("Coupons"), false);
           throw err;
@@ -1979,6 +2318,21 @@
       function couponSelectLabel(coupon){
         const state = coupon.active ? "active" : "disabled";
         return `${coupon.code} - ${couponDiscountLabel(coupon)} (${state})`;
+      }
+
+      function renderCollaborationCouponOptions(selectedCode = ""){
+        const select = $("collabCouponCode");
+        if (!select) return;
+        const normalizedSelected = normalizeCouponCode(selectedCode || select.value || "");
+        const options = [
+          `<option value="">No attribution coupon</option>`,
+          ...coupons.map(coupon => `<option value="${esc(normalizeCouponCode(coupon.code))}">${esc(couponSelectLabel(coupon))}</option>`),
+        ];
+        if (normalizedSelected && !coupons.some(coupon => normalizeCouponCode(coupon.code) === normalizedSelected)) {
+          options.push(`<option value="${esc(normalizedSelected)}">${esc(normalizedSelected)} (not found in Coupons)</option>`);
+        }
+        select.innerHTML = options.join("");
+        select.value = normalizedSelected;
       }
 
       function couponRulesLabel(coupon){
@@ -2096,13 +2450,18 @@
       async function loadOrders(){
         try {
           setMsg("orderMsg", "Loading orders...");
-          const data = await api("/adminOrders?limit=100");
+          const data = await api("/adminOrders?limit=500");
           orders = data.orders || [];
+          if (currentConsoleSection === "orders") markTabSeen("orders");
           renderOrders();
+          renderAnalytics();
+          updateTabBadges();
           setMsg("orderMsg", orders.length ? `${orders.length} orders loaded` : "No orders found");
         } catch (err) {
           orders = [];
           renderOrders();
+          renderAnalytics();
+          updateTabBadges();
           setMsg("orderMsg", err.message || apiUnavailableMessage("Orders"), false);
           throw err;
         }
@@ -2115,11 +2474,14 @@
 	          customers = data.customers || [];
 	          const loadedKeys = new Set(customers.map(customer => customer.key));
 	          selectedCustomerKeys = new Set([...selectedCustomerKeys].filter(key => loadedKeys.has(key)));
+	          if (currentConsoleSection === "customers") markTabSeen("customers");
 	          renderCustomers();
+          updateTabBadges();
           setMsg("customerMsg", customers.length ? `${customers.length} customers loaded` : "No customers found");
         } catch (err) {
           customers = [];
           renderCustomers();
+          updateTabBadges();
           setMsg("customerMsg", err.message || apiUnavailableMessage("Customers"), false);
           throw err;
         }
@@ -2227,7 +2589,11 @@
 	          const data = await chatAdminApi(`/adminChat${qs}`);
 	          chatConversations = data.conversations || [];
 	          if (conversationId) {
+	            chatConversations = chatConversations.map(conversation => conversation.id === conversationId
+	              ? { ...conversation, unreadAdmin: 0 }
+	              : conversation);
 	            selectedChatConversation = chatConversations.find(conversation => conversation.id === conversationId) || selectedChatConversation;
+	            if (selectedChatConversation) selectedChatConversation = { ...selectedChatConversation, unreadAdmin: 0 };
 	            chatMessages = data.messages || [];
 	          } else if (!selectedChatConversation && chatConversations.length) {
 	            selectedChatConversation = chatConversations[0];
@@ -2236,12 +2602,15 @@
 	          }
 	          renderChatConversationList();
 	          renderChatAdminMessages();
+	          updateTabBadges();
+	          if (currentConsoleSection === "messages") await markMessagesRead();
 	          setMsg("chatAdminMsg", chatConversations.length ? `${chatConversations.length} conversations loaded` : "No conversations found");
 	        } catch (err) {
 	          chatConversations = [];
 	          chatMessages = [];
 	          renderChatConversationList();
 	          renderChatAdminMessages();
+	          updateTabBadges();
 	          setMsg("chatAdminMsg", err.message || apiUnavailableMessage("Messages"), false);
 	          throw err;
 	        }
@@ -2544,8 +2913,360 @@
 	        }
 	      });
 
+	      const collaborationStatusLabels = {
+	        lead: "Lead",
+	        contacted: "Contacted",
+	        negotiating: "Negotiating",
+	        trial_sent: "Trial sent",
+	        active: "Active",
+	        paused: "Paused",
+	        ended: "Ended",
+	      };
+	      const collaborationTypeLabels = {
+	        free_product: "Free product",
+	        discount_code: "Discount code",
+	        paid_post: "Paid post",
+	        ambassador: "Ambassador",
+	        testimonial: "Testimonial",
+	        case_study: "Case study",
+	        other: "Other",
+	      };
+
+	      function collaborationSearchText(item = {}){
+	        const links = item.socialLinks || {};
+	        const offer = item.offer || {};
+	        return [
+	          item.name,
+	          item.contactName,
+	          item.email,
+	          item.phone,
+	          item.customerKey,
+	          item.orderId,
+	          item.referralCode,
+	          item.category,
+	          item.status,
+	          item.type,
+	          links.instagram,
+	          links.facebook,
+	          links.tiktok,
+	          links.youtube,
+	          links.website,
+	          item.audienceNotes,
+	          offer.products,
+	          offer.quantity,
+	          offer.couponCode,
+	          offer.commission,
+	          offer.details,
+	          ...(Array.isArray(item.commitments) ? item.commitments : []),
+	          ...(Array.isArray(item.contentLinks) ? item.contentLinks : []),
+	          item.notes,
+	        ].filter(Boolean).join(" ").toLowerCase();
+	      }
+
+	      function filteredCollaborations(){
+	        const query = ($("collaborationSearch").value || "").trim().toLowerCase();
+	        const status = $("collaborationStatusFilter").value || "";
+	        const type = $("collaborationTypeFilter").value || "";
+	        const terms = query.split(/\s+/).filter(Boolean);
+	        return collaborations.filter(item => {
+	          if (status && item.status !== status) return false;
+	          if (type && item.type !== type) return false;
+	          if (!terms.length) return true;
+	          const text = collaborationSearchText(item);
+	          return terms.every(term => text.includes(term));
+	        });
+	      }
+
+	      function renderCollaborations(){
+	        const visible = filteredCollaborations();
+	        const visibleRevenue = visible.reduce((sum, item) => sum + Number(item.metrics?.revenueCents || 0), 0);
+	        const visibleOrders = visible.reduce((sum, item) => sum + Number(item.metrics?.orderCount || 0), 0);
+	        $("collaborationSummary").textContent = collaborations.length
+	          ? `${visible.length} of ${collaborations.length} collaborations shown | ${visibleOrders} attributed order(s) | ${money(visibleRevenue, "eur")} revenue`
+	          : "No collaborations yet";
+	        if (!visible.length) {
+	          $("collaborationList").innerHTML = `<div class="p-4 text-sm text-zinc-500">${collaborations.length ? "No collaborations match your filters." : "Create your first ambassador or creator lead."}</div>`;
+	        } else {
+	          $("collaborationList").innerHTML = visible.map(item => {
+	            const active = item.id === selectedCollaborationId;
+	            const offer = item.offer || {};
+	            const links = item.socialLinks || {};
+	            const primaryLink = links.instagram || links.tiktok || links.facebook || links.youtube || links.website || "";
+	            return `
+	              <button class="block w-full p-3 text-left hover:bg-zinc-50 ${active ? "bg-orange-50" : "bg-white"}" type="button" data-collaboration-id="${esc(item.id)}">
+	                <div class="flex items-start justify-between gap-3">
+	                  <div class="min-w-0">
+	                    <div class="font-extrabold">${esc(item.name || "Untitled collaboration")}</div>
+	                    <div class="mt-1 text-xs text-zinc-500">${esc(collaborationStatusLabels[item.status] || item.status || "Lead")} | ${esc(collaborationTypeLabels[item.type] || item.type || "Type")} | Score ${Number(item.score || 0)}</div>
+	                    <div class="mt-1 text-xs text-zinc-500">${esc(offer.products || "")}${offer.couponCode ? ` | Coupon ${esc(offer.couponCode)}` : ""}${item.referralCode ? ` | Ref ${esc(item.referralCode)}` : ""}${item.nextFollowUp ? ` | Follow-up ${esc(item.nextFollowUp)}` : ""}</div>
+	                    ${item.metrics?.orderCount ? `<div class="mt-1 text-xs font-bold text-zinc-700">${Number(item.metrics.orderCount || 0)} order(s) | ${money(item.metrics.revenueCents || 0, item.metrics.currency || "eur")} revenue | ${money(item.metrics.discountCents || 0, item.metrics.currency || "eur")} discount</div>` : ""}
+	                    ${primaryLink ? `<div class="mt-1 text-xs text-[var(--grubz)] break-words">${esc(primaryLink)}</div>` : ""}
+	                  </div>
+	                  <span class="shrink-0 rounded border border-zinc-300 px-2 py-1 text-xs font-bold">${esc(item.category || "creator")}</span>
+	                </div>
+	              </button>
+	            `;
+	          }).join("");
+	        }
+	        renderCollaborationEditor();
+	      }
+
+	      function renderCollaborationMetrics(item = null){
+	        const metrics = item?.metrics || null;
+	        if (!metrics?.couponCode && !metrics?.referralCode) {
+	          $("collabMetrics").innerHTML = `<div>No coupon or referral code connected yet. Add one in the Offer section and save.</div>`;
+	          return;
+	        }
+	        const orders = Array.isArray(metrics.recentOrders) ? metrics.recentOrders : [];
+	        $("collabMetrics").innerHTML = `
+	          <div class="grid gap-2 sm:grid-cols-3">
+	            <div><div class="text-xs text-zinc-500">Coupon</div><div class="font-extrabold">${esc(metrics.couponCode || "-")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Referral</div><div class="font-extrabold">${esc(metrics.referralCode || "-")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Orders</div><div class="font-extrabold">${Number(metrics.orderCount || 0)}</div></div>
+	            <div><div class="text-xs text-zinc-500">Coupon orders</div><div class="font-extrabold">${Number(metrics.couponOrderCount || 0)}</div></div>
+	            <div><div class="text-xs text-zinc-500">Referral orders</div><div class="font-extrabold">${Number(metrics.referralOrderCount || 0)}</div></div>
+	            <div><div class="text-xs text-zinc-500">Revenue</div><div class="font-extrabold">${money(metrics.revenueCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Discount</div><div class="font-extrabold">${money(metrics.discountCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Subtotal</div><div class="font-extrabold">${money(metrics.subtotalCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Last order</div><div class="font-extrabold">${esc(ts(metrics.lastOrderAt) || "-")}</div></div>
+	          </div>
+	          <div class="mt-3 space-y-2">
+	            ${orders.length ? orders.map(order => `
+	              <div class="rounded border border-zinc-200 bg-white p-2 text-xs">
+	                <div class="font-bold">${esc(order.orderNumber || order.id)} | ${money(order.amountTotal || 0, order.currency || metrics.currency || "eur")} | ${esc(order.attributionSource || "attributed")}</div>
+	                <div class="text-zinc-500">${esc(order.customerName || order.customerEmail || "Customer")} | ${esc(ts(order.createdAt) || "")}</div>
+	              </div>
+	            `).join("") : `<div class="text-xs text-zinc-500">No attributed orders yet.</div>`}
+	          </div>
+	        `;
+	      }
+
+	      function collaborationReferralUrl(code = ""){
+	        const normalized = normalizeReferralCode(code);
+	        return normalized ? `https://grubz.gr/?ref=${encodeURIComponent(normalized)}#products` : "";
+	      }
+
+	      function refreshCollaborationReferralUrl(){
+	        const codeInput = $("collabReferralCode");
+	        const urlInput = $("collabReferralUrl");
+	        if (!codeInput || !urlInput) return;
+	        const normalized = normalizeReferralCode(codeInput.value);
+	        codeInput.value = normalized;
+	        urlInput.value = collaborationReferralUrl(normalized);
+	      }
+
+	      function generateCollaborationReferralCode(){
+	        const source = $("collabName").value || $("collabContactName").value || "GRUBZ";
+	        const base = normalizeReferralCode(source.replace(/https?:\/\//gi, "").replace(/[^a-z0-9]+/gi, "_")).replace(/^_+|_+$/g, "").slice(0, 24) || "GRUBZ";
+	        const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+	        $("collabReferralCode").value = `${base}_${suffix}`;
+	        refreshCollaborationReferralUrl();
+	      }
+
+	      function currentCollaboration(){
+	        return collaborations.find(item => item.id === selectedCollaborationId) || null;
+	      }
+
+	      function setCollaborationForm(item = null){
+	        const c = item || {};
+	        const links = c.socialLinks || {};
+	        const offer = c.offer || {};
+	        $("collabName").value = c.name || "";
+	        $("collabContactName").value = c.contactName || "";
+	        $("collabEmail").value = c.email || "";
+	        $("collabPhone").value = c.phone || "";
+	        $("collabScore").value = Number(c.score || 0);
+	        $("collabStatus").value = c.status || "lead";
+	        $("collabType").value = c.type || "discount_code";
+	        $("collabCategory").value = c.category || "creator";
+	        $("collabNextFollowUp").value = c.nextFollowUp || "";
+	        $("collabInstagram").value = links.instagram || "";
+	        $("collabFacebook").value = links.facebook || "";
+	        $("collabTiktok").value = links.tiktok || "";
+	        $("collabYoutube").value = links.youtube || "";
+	        $("collabWebsite").value = links.website || "";
+	        $("collabOfferProducts").value = offer.products || "";
+	        $("collabOfferQuantity").value = offer.quantity || "";
+	        renderCollaborationCouponOptions(offer.couponCode || "");
+	        $("collabReferralCode").value = normalizeReferralCode(c.referralCode || "");
+	        refreshCollaborationReferralUrl();
+	        $("collabCommission").value = offer.commission || "";
+	        $("collabShippingCovered").checked = offer.shippingCovered === true;
+	        $("collabOfferDetails").value = offer.details || "";
+	        $("collabCommitments").value = Array.isArray(c.commitments) ? c.commitments.join("\n") : "";
+	        $("collabAudienceNotes").value = c.audienceNotes || "";
+	        $("collabContentLinks").value = Array.isArray(c.contentLinks) ? c.contentLinks.join("\n") : "";
+	        $("collabNotes").value = c.notes || "";
+	        $("collabCustomerKey").value = c.customerKey || "";
+	        $("collabOrderId").value = c.orderId || "";
+	        $("collabOutreachDraft").value = "";
+	        $("deleteCollaborationBtn").disabled = !c.id;
+	      }
+
+	      function renderCollaborationEditor(){
+	        const item = currentCollaboration();
+	        setCollaborationForm(item);
+	        renderCollaborationMetrics(item);
+	      }
+
+	      function collaborationPayload(){
+	        const name = $("collabName").value.trim();
+	        if (!name) throw new Error("Enter a collaboration name.");
+	        return {
+	          id: selectedCollaborationId || "",
+	          name,
+	          contactName: $("collabContactName").value.trim(),
+	          email: $("collabEmail").value.trim(),
+	          phone: $("collabPhone").value.trim(),
+	          customerKey: $("collabCustomerKey").value.trim(),
+	          orderId: $("collabOrderId").value.trim(),
+	          referralCode: normalizeReferralCode($("collabReferralCode").value),
+	          score: Number($("collabScore").value || 0),
+	          status: $("collabStatus").value,
+	          type: $("collabType").value,
+	          category: $("collabCategory").value,
+	          nextFollowUp: $("collabNextFollowUp").value,
+	          socialLinks: {
+	            instagram: $("collabInstagram").value.trim(),
+	            facebook: $("collabFacebook").value.trim(),
+	            tiktok: $("collabTiktok").value.trim(),
+	            youtube: $("collabYoutube").value.trim(),
+	            website: $("collabWebsite").value.trim(),
+	          },
+	          offer: {
+	            products: $("collabOfferProducts").value.trim(),
+	            quantity: $("collabOfferQuantity").value.trim(),
+	            couponCode: $("collabCouponCode").value.trim(),
+	            commission: $("collabCommission").value.trim(),
+	            shippingCovered: $("collabShippingCovered").checked,
+	            details: $("collabOfferDetails").value.trim(),
+	          },
+	          commitments: $("collabCommitments").value.split(/\r?\n/).map(item => item.trim()).filter(Boolean),
+	          audienceNotes: $("collabAudienceNotes").value.trim(),
+	          contentLinks: $("collabContentLinks").value.split(/\r?\n/).map(item => item.trim()).filter(Boolean),
+	          notes: $("collabNotes").value.trim(),
+	        };
+	      }
+
+	      async function loadCollaborations(){
+	        try {
+	          setMsg("collaborationMsg", "Loading collaborations...");
+	          const data = await api("/adminCollaborations?limit=100");
+	          collaborations = data.collaborations || [];
+	          if (selectedCollaborationId && !collaborations.some(item => item.id === selectedCollaborationId)) selectedCollaborationId = "";
+	          if (!selectedCollaborationId && collaborations.length) selectedCollaborationId = collaborations[0].id;
+	          renderCollaborations();
+	          setMsg("collaborationMsg", "Collaborations loaded");
+	        } catch (err) {
+	          collaborations = [];
+	          renderCollaborations();
+	          setMsg("collaborationMsg", err.message || apiUnavailableMessage("Collaborations"), false);
+	          throw err;
+	        }
+	      }
+
+	      async function saveCollaboration(){
+	        try {
+	          setMsg("collaborationMsg", "Saving collaboration...");
+	          const collaboration = collaborationPayload();
+	          const data = await api("/adminCollaborations", {
+	            method: "POST",
+	            body: JSON.stringify({ collaboration }),
+	          });
+	          const saved = data.collaboration;
+	          const index = collaborations.findIndex(item => item.id === saved.id);
+	          if (index >= 0) collaborations[index] = saved;
+	          else collaborations.unshift(saved);
+	          selectedCollaborationId = saved.id;
+	          renderCollaborations();
+	          setMsg("collaborationMsg", "Collaboration saved");
+	        } catch (err) {
+	          setMsg("collaborationMsg", err.message || "Collaboration save failed", false);
+	        }
+	      }
+
+	      async function deleteCollaboration(){
+	        if (!selectedCollaborationId) return;
+	        if (!confirm("Delete this collaboration?")) return;
+	        try {
+	          setMsg("collaborationMsg", "Deleting collaboration...");
+	          await api(`/adminCollaborations?id=${encodeURIComponent(selectedCollaborationId)}`, { method: "DELETE" });
+	          collaborations = collaborations.filter(item => item.id !== selectedCollaborationId);
+	          selectedCollaborationId = collaborations[0]?.id || "";
+	          renderCollaborations();
+	          setMsg("collaborationMsg", "Collaboration deleted");
+	        } catch (err) {
+	          setMsg("collaborationMsg", err.message || "Collaboration delete failed", false);
+	        }
+	      }
+
+	      async function generateCollaborationOutreach(){
+	        try {
+	          const collaboration = collaborationPayload();
+	          setMsg("collaborationMsg", "Generating outreach draft...");
+	          $("generateCollabOutreachBtn").disabled = true;
+	          const data = await api("/adminCollaborations", {
+	            method: "POST",
+	            body: JSON.stringify({
+	              action: "generateOutreach",
+	              id: selectedCollaborationId || "",
+	              collaboration,
+	              language: "auto",
+	              channel: "dm",
+	            }),
+	          });
+	          $("collabOutreachDraft").value = data.draft || "";
+	          setMsg("collaborationMsg", "Outreach draft generated");
+	        } catch (err) {
+	          setMsg("collaborationMsg", err.message || "Outreach draft failed", false);
+	        } finally {
+	          $("generateCollabOutreachBtn").disabled = false;
+	        }
+	      }
+
+	      $("newCollaborationBtn").addEventListener("click", () => {
+	        selectedCollaborationId = "";
+	        setCollaborationForm(null);
+	        setMsg("collaborationMsg", "New collaboration");
+	        $("collabName").focus();
+	      });
+	      $("saveCollaborationBtn").addEventListener("click", saveCollaboration);
+	      $("deleteCollaborationBtn").addEventListener("click", deleteCollaboration);
+	      $("generateCollabOutreachBtn").addEventListener("click", generateCollaborationOutreach);
+	      $("refreshCollabMetricsBtn").addEventListener("click", () => loadCollaborations().catch(() => {}));
+	      $("generateCollabReferralBtn").addEventListener("click", generateCollaborationReferralCode);
+	      $("collabReferralCode").addEventListener("input", refreshCollaborationReferralUrl);
+	      $("collabReferralCode").addEventListener("blur", refreshCollaborationReferralUrl);
+	      $("copyCollabReferralBtn").addEventListener("click", async () => {
+	        refreshCollaborationReferralUrl();
+	        const url = $("collabReferralUrl").value;
+	        if (!url) return setMsg("collaborationMsg", "Add a referral code first.", false);
+	        try {
+	          await navigator.clipboard.writeText(url);
+	          setMsg("collaborationMsg", "Referral link copied");
+	        } catch (err) {
+	          setMsg("collaborationMsg", "Could not copy automatically; select the referral link manually.", false);
+	        }
+	      });
+	      $("collaborationSearch").addEventListener("input", renderCollaborations);
+	      $("collaborationStatusFilter").addEventListener("change", renderCollaborations);
+	      $("collaborationTypeFilter").addEventListener("change", renderCollaborations);
+	      $("collaborationList").addEventListener("click", event => {
+	        const button = event.target.closest("[data-collaboration-id]");
+	        if (!button) return;
+	        selectedCollaborationId = button.dataset.collaborationId || "";
+	        renderCollaborations();
+	      });
+	      $("analyticsRange").addEventListener("change", renderAnalytics);
+	      $("analyticsRecentOrders").addEventListener("click", event => {
+	        const button = event.target.closest("[data-analytics-order-id]");
+	        if (!button) return;
+	        selectedOrder = orders.find(order => order.id === button.dataset.analyticsOrderId) || null;
+	        if (selectedOrder) openOrder(selectedOrder);
+	      });
+
 	      async function refreshConsoleData(){
-	        const results = await Promise.allSettled([loadProducts(), loadCoupons(), loadOrders(), loadCustomers(), loadChatConversations(), loadSocialAgent(), loadSettings()]);
+	        const results = await Promise.allSettled([loadProducts(), loadCoupons(), loadOrders(), loadCustomers(), loadChatConversations(), loadCollaborations(), loadSocialAgent(), loadSettings()]);
 	        const failures = results.filter(result => result.status === "rejected");
 	        if (failures.length) {
 	          announce("Some console data could not load.");
@@ -3725,16 +4446,163 @@
 	        });
 	      }
 
+	      function analyticsOrders(){
+	        const range = $("analyticsRange")?.value || "30";
+	        const withDates = orders
+	          .map(order => ({ order, date: dateFromValue(order.createdAt) }))
+	          .filter(item => item.date);
+	        if (range === "all") return withDates;
+	        const days = Math.max(1, Number(range || 30));
+	        const cutoff = new Date();
+	        cutoff.setHours(0, 0, 0, 0);
+	        cutoff.setDate(cutoff.getDate() - days + 1);
+	        return withDates.filter(item => item.date >= cutoff);
+	      }
+
+	      function addBreakdown(map, key, cents = 0, quantity = 1){
+	        const label = String(key || "Unknown").trim() || "Unknown";
+	        const current = map.get(label) || { label, count: 0, cents: 0, quantity: 0 };
+	        current.count += 1;
+	        current.cents += Number(cents || 0);
+	        current.quantity += Number(quantity || 0);
+	        map.set(label, current);
+	      }
+
+	      function renderAnalyticsList(id, rows, options = {}){
+	        const limit = Number(options.limit || 8);
+	        const total = Number(options.total || rows.reduce((sum, row) => sum + Number(row.cents || row.count || 0), 0));
+	        const showMoney = options.money === true;
+	        const showQuantity = options.quantity === true;
+	        const empty = options.empty || "No data yet.";
+	        const visible = rows.slice(0, limit);
+	        $(id).innerHTML = visible.length ? visible.map(row => {
+	          const value = showMoney ? money(row.cents || 0, row.currency || "eur") : `${Number(row.count || 0)}`;
+	          const barValue = Number(showMoney ? row.cents : row.count) || 0;
+	          const width = total > 0 ? Math.max(4, Math.round((barValue / total) * 100)) : 0;
+	          const meta = [
+	            showQuantity ? `${Number(row.quantity || 0)} item(s)` : "",
+	            row.extra || "",
+	          ].filter(Boolean).join(" | ");
+	          return `
+	            <div>
+	              <div class="flex items-center justify-between gap-3">
+	                <div class="min-w-0 truncate font-bold">${esc(row.label)}</div>
+	                <div class="shrink-0 text-zinc-600">${esc(value)}</div>
+	              </div>
+	              <div class="mt-1 h-2 overflow-hidden rounded bg-zinc-100">
+	                <div class="h-full bg-[var(--grubz)]" style="width:${width}%"></div>
+	              </div>
+	              ${meta ? `<div class="mt-1 text-xs text-zinc-500">${esc(meta)}</div>` : ""}
+	            </div>
+	          `;
+	        }).join("") : `<div class="text-zinc-500">${empty}</div>`;
+	      }
+
+	      function renderAnalytics(){
+	        if (!$("analyticsKpis")) return;
+	        const items = analyticsOrders();
+	        const currency = items.find(({ order }) => order.currency)?.order.currency || "eur";
+	        const revenue = items.reduce((sum, { order }) => sum + Number(order.amountTotal || 0), 0);
+	        const subtotal = items.reduce((sum, { order }) => sum + Number(order.amountSubtotal || orderPricing(order).subtotal || 0), 0);
+	        const shipping = items.reduce((sum, { order }) => sum + Number(order.amountShipping || orderPricing(order).shipping || 0), 0);
+	        const discounts = items.reduce((sum, { order }) => sum + Number(order.amountDiscount || orderPricing(order).discount || 0), 0);
+	        const customersSeen = new Set(items.map(({ order }) => String(order.customer?.email || order.uid || order.customer?.phone || order.id || "").toLowerCase()).filter(Boolean));
+	        const paidOrders = items.filter(({ order }) => ["paid", "succeeded", "complete", "cash_on_delivery_pending"].includes(statusKey(order.paymentStatus)) || ["paid", "pending_payment"].includes(statusKey(order.status)));
+	        const range = $("analyticsRange")?.value || "30";
+	        $("analyticsRangeLabel").textContent = range === "all" ? "All loaded orders" : `Last ${range} days`;
+	        $("analyticsKpis").innerHTML = [
+	          ["Revenue", money(revenue, currency), `${items.length} order(s)`],
+	          ["Avg order value", money(avgCents(revenue, items.length), currency), `${customersSeen.size} customer(s)`],
+	          ["Discounts", money(discounts, currency), `${percent(discounts, subtotal || revenue)} of subtotal`],
+	          ["Shipping", money(shipping, currency), `${percent(shipping, revenue)} of revenue`],
+	        ].map(([label, value, hint]) => `
+	          <div class="panel p-4">
+	            <div class="text-xs font-bold uppercase tracking-wide text-zinc-500">${esc(label)}</div>
+	            <div class="mt-1 text-2xl font-extrabold">${esc(value)}</div>
+	            <div class="mt-1 text-xs text-zinc-500">${esc(hint)}</div>
+	          </div>
+	        `).join("");
+
+	        const daily = new Map();
+	        for (const { order, date } of items) {
+	          const key = dayKey(date);
+	          const current = daily.get(key) || { label: key, cents: 0, count: 0 };
+	          current.cents += Number(order.amountTotal || 0);
+	          current.count += 1;
+	          daily.set(key, current);
+	        }
+	        const dailyRows = [...daily.values()].sort((a, b) => a.label.localeCompare(b.label));
+	        const maxDay = Math.max(1, ...dailyRows.map(row => row.cents));
+	        $("analyticsRevenueTrend").innerHTML = dailyRows.length ? dailyRows.map(row => {
+	          const height = Math.max(5, Math.round((row.cents / maxDay) * 100));
+	          return `<div class="group relative flex flex-1 items-end justify-center" title="${esc(row.label)} | ${money(row.cents, currency)} | ${row.count} order(s)">
+	            <div class="w-full rounded-t bg-[var(--grubz)] opacity-85 hover:opacity-100" style="height:${height}%"></div>
+	          </div>`;
+	        }).join("") : `<div class="flex h-full w-full items-center justify-center text-sm text-zinc-500">No orders in this range.</div>`;
+
+	        const statusMap = new Map();
+	        const fulfillmentMap = new Map();
+	        const paymentMap = new Map();
+	        const productMap = new Map();
+	        const attributionMap = new Map();
+	        const boxNowMap = new Map();
+	        for (const { order } of items) {
+	          addBreakdown(statusMap, order.status || "Unknown", order.amountTotal || 0);
+	          addBreakdown(fulfillmentMap, order.fulfillmentStatus || "Unknown", order.amountTotal || 0);
+	          addBreakdown(paymentMap, order.paymentMethod || order.paymentStatus || "Unknown", order.amountTotal || 0);
+	          const coupon = normalizeCouponCode(order.couponCode || order.metadata?.couponCode || "");
+	          const referral = normalizeReferralCode(order.referralCode || order.metadata?.referralCode || "");
+	          if (coupon) addBreakdown(attributionMap, `Coupon ${coupon}`, order.amountTotal || 0);
+	          if (referral) addBreakdown(attributionMap, `Referral ${referral}`, order.amountTotal || 0);
+	          if (!coupon && !referral) addBreakdown(attributionMap, "No coupon/referral", order.amountTotal || 0);
+	          addBreakdown(boxNowMap, order.boxnowFee?.parcelLabel || order.boxnowFee?.parcelSize || order.shipping?.boxNow?.name || "No BOX NOW data", order.amountTotal || 0);
+	          for (const item of Array.isArray(order.items) ? order.items : []) {
+	            const label = item.name || item.id || "Unknown product";
+	            const current = productMap.get(label) || { label, count: 0, cents: 0, quantity: 0 };
+	            current.count += 1;
+	            current.quantity += Number(item.quantity || item.qty || 0);
+	            current.cents += Number(item.totalAmount || item.amountTotal || (Number(item.unitAmount || item.amount || 0) * Number(item.quantity || item.qty || 1)) || 0);
+	            productMap.set(label, current);
+	          }
+	        }
+
+	        const sortByCents = map => [...map.values()].sort((a, b) => Number(b.cents || 0) - Number(a.cents || 0));
+	        const sortByCount = map => [...map.values()].sort((a, b) => Number(b.count || 0) - Number(a.count || 0));
+	        $("analyticsHealth").innerHTML = `
+	          <div class="grid gap-2 sm:grid-cols-2">
+	            <div class="rounded border border-zinc-200 p-3"><div class="text-xs text-zinc-500">Paid / pending COD</div><div class="text-xl font-extrabold">${paidOrders.length}</div></div>
+	            <div class="rounded border border-zinc-200 p-3"><div class="text-xs text-zinc-500">Not paid / failed</div><div class="text-xl font-extrabold">${Math.max(0, items.length - paidOrders.length)}</div></div>
+	          </div>
+	          <div class="pt-2">
+	            <div class="font-bold">Fulfillment</div>
+	            <div class="mt-2 space-y-2">${sortByCount(fulfillmentMap).map(row => `<div class="flex justify-between gap-3"><span>${esc(row.label)}</span><strong>${Number(row.count || 0)}</strong></div>`).join("") || `<div class="text-zinc-500">No fulfillment data.</div>`}</div>
+	          </div>
+	        `;
+	        renderAnalyticsList("analyticsProducts", sortByCents(productMap), { money: true, quantity: true, total: [...productMap.values()].reduce((sum, row) => sum + Number(row.cents || 0), 0) });
+	        renderAnalyticsList("analyticsAttribution", sortByCents(attributionMap), { money: true, total: revenue });
+	        renderAnalyticsList("analyticsPayments", sortByCount(paymentMap), { total: items.length });
+	        renderAnalyticsList("analyticsBoxNow", sortByCount(boxNowMap), { total: items.length });
+	        $("analyticsRecentOrders").innerHTML = items.slice(0, 8).map(({ order }) => `
+	          <button class="block w-full rounded border border-zinc-200 bg-white p-2 text-left hover:bg-zinc-50" type="button" data-analytics-order-id="${esc(order.id)}">
+	            <div class="flex justify-between gap-3"><strong>${esc(orderNumber(order))}</strong><span>${money(order.amountTotal || 0, order.currency || currency)}</span></div>
+	            <div class="text-xs text-zinc-500">${esc(order.customer?.name || order.customer?.email || "Customer")} | ${esc(ts(order.createdAt))}</div>
+	          </button>
+	        `).join("") || `<div class="text-zinc-500">No recent orders in this range.</div>`;
+	        $("analyticsMsg").textContent = `${items.length} of ${orders.length} loaded order(s) included`;
+	      }
+
 	      function renderOrders(){
 	        const visibleOrders = filteredOrders();
 	        if (!orders.length) {
 	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders to display.</td></tr>`;
 	          $("orderSearchMsg").textContent = "";
+	          renderAnalytics();
 	          return;
 	        }
 	        if (!visibleOrders.length) {
 	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders match your search.</td></tr>`;
 	          $("orderSearchMsg").textContent = `0 of ${orders.length} orders shown`;
+	          renderAnalytics();
 	          return;
 	        }
 	        $("orderSearchMsg").textContent = visibleOrders.length === orders.length
@@ -3752,6 +4620,7 @@
             <td class="p-3">${esc(o.shipping?.boxNow?.name || o.shipping?.boxNow?.id || "")}</td>
           </tr>
         `).join("");
+        renderAnalytics();
       }
 
       function activeOrderProducts(){
@@ -3904,6 +4773,7 @@
             <div><strong>Order:</strong> ${esc(orderNumber(o))}</div>
             <div><strong>Customer:</strong> ${esc(o.customer?.name || "")} ${esc(o.customer?.phone || "")}<br>${esc(o.customer?.email || "")}</div>
             <div><strong>Payment:</strong> ${esc(o.paymentMethod || "card")}<br>${esc(o.paymentStatus || "")}</div>
+            <div><strong>Attribution:</strong><br>Coupon: ${esc(o.couponCode || o.metadata?.couponCode || "-")}<br>Referral: ${esc(o.referralCode || o.metadata?.referralCode || "-")}</div>
             <div><strong>Amounts:</strong><br>Subtotal: ${money(pricing.subtotal, o.currency)}<br>Shipping: ${money(pricing.shipping, o.currency)}${discountLine}<br>Total: ${money(pricing.total, o.currency)}</div>
             <div><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
             <div><strong>Items:</strong><ul class="list-disc ml-5">${(o.items || []).map(i => `<li>${esc(i.quantity)} x ${esc(i.name)} - ${money(i.totalAmount, i.currency)}</li>`).join("")}</ul></div>
@@ -4059,6 +4929,28 @@
 
       $("downloadBoxNowParcelLabelBtn").addEventListener("click", () => downloadOrderBoxNowLabel("parcel"));
       $("downloadBoxNowOrderLabelBtn").addEventListener("click", () => downloadOrderBoxNowLabel("order"));
+
+      $("deleteOrderBtn").addEventListener("click", async () => {
+        if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
+        const label = orderNumber(selectedOrder);
+        const customer = selectedOrder.customer?.email || selectedOrder.customer?.name || "this customer";
+        const confirmed = window.confirm(`Delete order ${label} for ${customer}?\n\nThis removes the order from the dashboard.`);
+        if (!confirmed) return;
+        try {
+          setMsg("orderMsg", "Deleting order...");
+          await api(`/adminOrders?id=${encodeURIComponent(selectedOrder.id)}`, {
+            method: "DELETE",
+          });
+          const deletedLabel = label;
+          orders = orders.filter(o => o.id !== selectedOrder.id);
+          selectedOrder = null;
+          closeModal("orderModal");
+          renderOrders();
+          setMsg("orderMsg", `Order ${deletedLabel} deleted`);
+        } catch (err) {
+          setMsg("orderMsg", err.message || "Order delete failed", false);
+        }
+      });
 
       $("saveOrderBtn").addEventListener("click", async () => {
         if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);

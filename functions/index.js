@@ -75,6 +75,7 @@ const CHATBOT_SETTINGS_DOC = "settings/chatbot";
 const COUPONS_COLLECTION = "coupons";
 const EMAIL_RESERVATIONS_COLLECTION = "emailReservations";
 const SOCIAL_OPPORTUNITIES_COLLECTION = "socialOpportunities";
+const COLLABORATIONS_COLLECTION = "collaborations";
 const CHAT_CONVERSATIONS_COLLECTION = "chatConversations";
 const GRUBZ_SIGNATURE_IMAGE_URL = "https://grubz.gr/images/grubz-email-signature.png";
 const GRUBZ_INFO_EMAIL = "info@grubz.gr";
@@ -655,6 +656,10 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
 
 function normalizeCouponCode(value) {
   return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function normalizeReferralCode(value) {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9_-]/g, "").slice(0, 80);
 }
 
 function couponDocId(code) {
@@ -1271,6 +1276,241 @@ function parseFeedItems(xml = "", source = {}) {
   }).filter(item => item.title && item.url);
 }
 
+const COLLABORATION_STATUSES = new Set(["lead", "contacted", "negotiating", "trial_sent", "active", "paused", "ended"]);
+const COLLABORATION_TYPES = new Set(["free_product", "discount_code", "paid_post", "ambassador", "testimonial", "case_study", "other"]);
+const COLLABORATION_CATEGORIES = new Set(["farm", "homestead", "reptile_keeper", "chicken_owner", "pet_shop", "breeder", "aquarium", "creator", "other"]);
+
+function collaborationLines(value = "", max = 30) {
+  return String(value || "").split(/\r?\n/).map(item => item.trim()).filter(Boolean).slice(0, max);
+}
+
+function sanitizeSocialLinks(input = {}) {
+  const links = input && typeof input === "object" ? input : {};
+  return {
+    instagram: String(links.instagram || "").trim().slice(0, 300),
+    facebook: String(links.facebook || "").trim().slice(0, 300),
+    tiktok: String(links.tiktok || "").trim().slice(0, 300),
+    youtube: String(links.youtube || "").trim().slice(0, 300),
+    website: String(links.website || "").trim().slice(0, 300),
+  };
+}
+
+function sanitizeCollaborationInput(input = {}, existing = {}) {
+  const merged = { ...(existing || {}), ...(input || {}) };
+  const status = COLLABORATION_STATUSES.has(String(merged.status || "")) ? String(merged.status) : "lead";
+  const type = COLLABORATION_TYPES.has(String(merged.type || "")) ? String(merged.type) : "discount_code";
+  const category = COLLABORATION_CATEGORIES.has(String(merged.category || "")) ? String(merged.category) : "creator";
+  const score = Math.min(100, Math.max(0, Math.round(Number(merged.score || 0))));
+  return {
+    name: String(merged.name || "").trim().slice(0, 180),
+    contactName: String(merged.contactName || "").trim().slice(0, 180),
+    email: normalizedEmail(merged.email || ""),
+    phone: String(merged.phone || "").trim().slice(0, 80),
+    customerKey: String(merged.customerKey || "").trim().slice(0, 180),
+    orderId: String(merged.orderId || "").trim().slice(0, 180),
+    category,
+    status,
+    type,
+    score,
+    referralCode: normalizeReferralCode(merged.referralCode || merged.referral || ""),
+    socialLinks: sanitizeSocialLinks(merged.socialLinks || {}),
+    audienceNotes: String(merged.audienceNotes || "").trim().slice(0, 3000),
+    offer: {
+      products: String(merged.offer?.products || merged.offerProducts || "").trim().slice(0, 1000),
+      quantity: String(merged.offer?.quantity || merged.offerQuantity || "").trim().slice(0, 200),
+      shippingCovered: merged.offer?.shippingCovered === true || merged.shippingCovered === true,
+      commission: String(merged.offer?.commission || merged.offerCommission || "").trim().slice(0, 200),
+      couponCode: String(merged.offer?.couponCode || merged.couponCode || "").trim().toUpperCase().slice(0, 80),
+      details: String(merged.offer?.details || merged.offerDetails || "").trim().slice(0, 3000),
+    },
+    commitments: collaborationLines(Array.isArray(merged.commitments) ? merged.commitments.join("\n") : merged.commitments, 30),
+    contentLinks: collaborationLines(Array.isArray(merged.contentLinks) ? merged.contentLinks.join("\n") : merged.contentLinks, 50),
+    notes: String(merged.notes || "").trim().slice(0, 5000),
+    nextFollowUp: String(merged.nextFollowUp || "").trim().slice(0, 40),
+    startedAt: merged.startedAt || existing.startedAt || now(),
+  };
+}
+
+function publicCollaboration(id, data = {}) {
+  return {
+    id,
+    name: data.name || "",
+    contactName: data.contactName || "",
+    email: data.email || "",
+    phone: data.phone || "",
+    customerKey: data.customerKey || "",
+    orderId: data.orderId || "",
+    category: data.category || "creator",
+    status: data.status || "lead",
+    type: data.type || "discount_code",
+    score: Number(data.score || 0),
+    referralCode: normalizeReferralCode(data.referralCode || data.referral || ""),
+    socialLinks: sanitizeSocialLinks(data.socialLinks || {}),
+    audienceNotes: data.audienceNotes || "",
+    offer: data.offer || {},
+    commitments: Array.isArray(data.commitments) ? data.commitments : [],
+    contentLinks: Array.isArray(data.contentLinks) ? data.contentLinks : [],
+    notes: data.notes || "",
+    nextFollowUp: data.nextFollowUp || "",
+    startedAt: data.startedAt || null,
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null,
+    updatedBy: data.updatedBy || "",
+    metrics: data.metrics || null,
+  };
+}
+
+function couponCodeForOrder(order = {}) {
+  return normalizeCouponCode(
+    order.couponCode ||
+    order.coupon ||
+    order.metadata?.couponCode ||
+    order.metadata?.coupon ||
+    order.paymentIntent?.metadata?.couponCode ||
+    ""
+  );
+}
+
+function referralCodeForOrder(order = {}) {
+  return normalizeReferralCode(
+    order.referralCode ||
+    order.referral ||
+    order.metadata?.referralCode ||
+    order.paymentIntent?.metadata?.referralCode ||
+    ""
+  );
+}
+
+function collaborationOrderKey(order = {}, index = 0) {
+  return String(order.id || order.orderNumber || order.stripeSessionId || order.stripePaymentIntentId || `order_${index}`);
+}
+
+function collaborationMetricsForAttribution({ couponCode = "", referralCode = "" } = {}, orders = []) {
+  const coupon = normalizeCouponCode(couponCode || "");
+  const referral = normalizeReferralCode(referralCode || "");
+  const matchedById = new Map();
+  if (coupon) {
+    for (let index = 0; index < orders.length; index += 1) {
+      const order = orders[index];
+      if (couponCodeForOrder(order) === coupon) matchedById.set(collaborationOrderKey(order, index), order);
+    }
+  }
+  if (referral) {
+    for (let index = 0; index < orders.length; index += 1) {
+      const order = orders[index];
+      if (referralCodeForOrder(order) === referral) matchedById.set(collaborationOrderKey(order, index), order);
+    }
+  }
+  const matchedOrders = Array.from(matchedById.values());
+  const currency = matchedOrders.find(order => order.currency)?.currency || "eur";
+  const totals = matchedOrders.reduce((acc, order) => {
+    const pricing = orderPricing(order);
+    acc.revenueCents += Number(pricing.total || order.amountTotal || 0);
+    acc.discountCents += Number(order.amountDiscount || pricing.discount || 0);
+    acc.subtotalCents += Number(pricing.subtotal || order.amountSubtotal || 0);
+    const createdMs = millisFromTimestamp(order.createdAt);
+    if (createdMs > acc.lastOrderAtMs) {
+      acc.lastOrderAtMs = createdMs;
+      acc.lastOrderAt = order.createdAt || null;
+    }
+    return acc;
+  }, { revenueCents: 0, discountCents: 0, subtotalCents: 0, lastOrderAtMs: 0, lastOrderAt: null });
+  const couponOrders = coupon ? matchedOrders.filter(order => couponCodeForOrder(order) === coupon).length : 0;
+  const referralOrders = referral ? matchedOrders.filter(order => referralCodeForOrder(order) === referral).length : 0;
+  return {
+    couponCode: coupon,
+    referralCode: referral,
+    orderCount: matchedOrders.length,
+    couponOrderCount: couponOrders,
+    referralOrderCount: referralOrders,
+    revenueCents: totals.revenueCents,
+    discountCents: totals.discountCents,
+    subtotalCents: totals.subtotalCents,
+    currency,
+    lastOrderAt: totals.lastOrderAt,
+    recentOrders: matchedOrders.slice(0, 8).map(order => ({
+      ...publicOrderSummary(order),
+      couponCode: couponCodeForOrder(order),
+      referralCode: referralCodeForOrder(order),
+      attributionSource: referral && referralCodeForOrder(order) === referral ? "referral" : "coupon",
+      discountCents: Number(order.amountDiscount || orderPricing(order).discount || 0),
+      customerEmail: order.customer?.email || "",
+      customerName: order.customer?.name || "",
+    })),
+  };
+}
+
+function collaborationMetricsForCode(couponCode = "", orders = []) {
+  return collaborationMetricsForAttribution({ couponCode }, orders);
+}
+
+async function collaborationMetricsMap(collaborations = []) {
+  const keys = collaborations
+    .map(item => {
+      const coupon = normalizeCouponCode(item.offer?.couponCode || "");
+      const referral = normalizeReferralCode(item.referralCode || "");
+      return coupon || referral ? `${coupon}::${referral}` : "";
+    })
+    .filter(Boolean);
+  if (!keys.length) return new Map();
+  const snap = await db.collection("orders").orderBy("createdAt", "desc").limit(1000).get();
+  const orders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const metrics = new Map();
+  for (const key of keys) {
+    const [couponCode, referralCode] = key.split("::");
+    metrics.set(key, collaborationMetricsForAttribution({ couponCode, referralCode }, orders));
+  }
+  return metrics;
+}
+
+function collaborationPrompt(collaboration = {}) {
+  const social = collaboration.socialLinks || {};
+  return [
+    `Collaboration: ${collaboration.name || "Unnamed lead"}`,
+    collaboration.contactName ? `Contact: ${collaboration.contactName}` : "",
+    collaboration.category ? `Category: ${collaboration.category}` : "",
+    collaboration.type ? `Collaboration type: ${collaboration.type}` : "",
+    collaboration.status ? `Status: ${collaboration.status}` : "",
+    collaboration.score ? `Lead score: ${collaboration.score}/100` : "",
+    collaboration.email ? `Email: ${collaboration.email}` : "",
+    social.instagram ? `Instagram: ${social.instagram}` : "",
+    social.facebook ? `Facebook: ${social.facebook}` : "",
+    social.tiktok ? `TikTok: ${social.tiktok}` : "",
+    social.youtube ? `YouTube: ${social.youtube}` : "",
+    collaboration.audienceNotes ? `Audience notes: ${collaboration.audienceNotes}` : "",
+    collaboration.offer?.products ? `Products offered: ${collaboration.offer.products}` : "",
+    collaboration.offer?.quantity ? `Quantity: ${collaboration.offer.quantity}` : "",
+    collaboration.offer?.couponCode ? `Coupon code: ${collaboration.offer.couponCode}` : "",
+    collaboration.referralCode ? `Referral code: ${collaboration.referralCode}` : "",
+    collaboration.referralCode ? `Referral link: https://grubz.gr/?ref=${encodeURIComponent(collaboration.referralCode)}#products` : "",
+    collaboration.offer?.commission ? `Commission: ${collaboration.offer.commission}` : "",
+    collaboration.offer?.shippingCovered ? "Shipping covered: yes" : "Shipping covered: no",
+    collaboration.offer?.details ? `Offer details: ${collaboration.offer.details}` : "",
+    collaboration.commitments?.length ? `Content commitments:\n${collaboration.commitments.map(item => `- ${item}`).join("\n")}` : "",
+    collaboration.notes ? `Internal notes: ${collaboration.notes}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+async function generateCollaborationOutreach({ client, model, collaboration = {}, language = "auto", channel = "dm" }) {
+  const targetLanguage = language === "el" ? "Greek" : language === "en" ? "English" : "the most natural language for the lead";
+  const response = await client.responses.create({
+    model,
+    instructions: [
+      "Draft a concise GRUBZ collaboration outreach message for a human admin to review before sending.",
+      `Write in ${targetLanguage}.`,
+      `Channel: ${channel}.`,
+      "The message should be warm, specific, practical, and not pushy.",
+      "Make the collaboration offer clear, including product, content expectation, coupon or commission when provided.",
+      "Do not invent audience metrics, follower counts, order history, payments, or commitments that are not in the context.",
+      "Return only the message text.",
+    ].join("\n"),
+    input: collaborationPrompt(collaboration),
+    max_output_tokens: 700,
+    store: false,
+  });
+  return sanitizeChatText(responseTextFromOpenAI(response), 5000);
+}
+
 function socialOpportunityId(url = "") {
   return createHash("sha256").update(String(url || "")).digest("hex").slice(0, 40);
 }
@@ -1710,9 +1950,10 @@ async function recordCouponRedemption({ coupon, order, discountCents }) {
   }, { merge: true });
 }
 
-async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCode, productsMap, stripeMode = "", language = "en", boxNowConfig = null }) {
+async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCode, referralCode = "", productsMap, stripeMode = "", language = "en", boxNowConfig = null }) {
   const effectiveStripeMode = sanitizeStripeMode(stripeMode || (await getStripeSettings()).mode || "test");
   const orderLanguage = String(language || "en").trim().toLowerCase() === "el" ? "el" : "en";
+  const orderReferralCode = normalizeReferralCode(referralCode || shipping?.referralCode || "");
   const orderItems = orderItemsFromCart(items, productsMap, effectiveStripeMode);
   const amountSubtotal = orderItemsSubtotal({ items: orderItems });
   const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
@@ -1783,12 +2024,14 @@ async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCo
     },
     couponCode: couponResult.coupon?.code || "",
     couponId: couponResult.coupon?.id || "",
+    referralCode: orderReferralCode,
     metadata: {
       orderNumber,
       uid: uid || "guest",
       paymentMethod: "cash_on_delivery",
       cashOnDelivery: "true",
       couponCode: couponResult.coupon?.code || "",
+      referralCode: orderReferralCode,
       language: orderLanguage,
     },
     createdAt: now(),
@@ -1864,6 +2107,7 @@ async function upsertOrderFromSession(session) {
     },
     couponCode: metadata.couponCode || "",
     couponId: metadata.couponId || "",
+    referralCode: normalizeReferralCode(metadata.referralCode || ""),
     amountDiscount: Number(session.total_details?.amount_discount || metadata.couponDiscountCents || 0),
     metadata,
     createdAt: session.created ? Timestamp.fromMillis(session.created * 1000) : now(),
@@ -1941,6 +2185,9 @@ async function upsertOrderFromPaymentIntent(intent) {
       environment: metadata.boxnowEnvironment || "",
       apiBaseUrl: metadata.boxnowApiBaseUrl || "",
     },
+    couponCode: metadata.couponCode || "",
+    couponId: metadata.couponId || "",
+    referralCode: normalizeReferralCode(metadata.referralCode || ""),
     metadata,
     createdAt: intent.created ? Timestamp.fromMillis(intent.created * 1000) : now(),
     updatedAt: now(),
@@ -4122,6 +4369,7 @@ exports.createCheckoutSession = onRequest(
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const items = Array.isArray(body.items) ? body.items : [];
       const couponCode = normalizeCouponCode(body.couponCode || body.code || "");
+      const referralCode = normalizeReferralCode(body.referralCode || body.referral || "");
       const language = String(body.language || "").trim().toLowerCase() === "el" ? "el" : "en";
       const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
       const boxNow = shipping && shipping.boxNow && typeof shipping.boxNow === "object" ? shipping.boxNow : null;
@@ -4144,6 +4392,7 @@ exports.createCheckoutSession = onRequest(
           items,
           shipping: { ...shipping, cashOnDelivery: true },
           couponCode,
+          referralCode,
           productsMap,
           stripeMode: stripeConfig.mode,
           language,
@@ -4238,6 +4487,7 @@ exports.createCheckoutSession = onRequest(
         couponCode: couponResult?.coupon?.code || "",
         couponId: couponResult?.coupon?.id || "",
         couponDiscountCents: String(couponResult?.discountCents || 0).slice(0, 500),
+        referralCode,
         language,
       };
 
@@ -4546,7 +4796,7 @@ exports.adminOrders = onRequest(
       const adminUser = await requireAdmin(req);
 
       if (req.method === "GET") {
-        const limit = Math.min(100, Math.max(1, Number(req.query.limit || 50)));
+        const limit = Math.min(500, Math.max(1, Number(req.query.limit || 50)));
         const snap = await db.collection("orders").orderBy("createdAt", "desc").limit(limit).get();
         const orders = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         return res.json({ orders });
@@ -4628,7 +4878,22 @@ exports.adminOrders = onRequest(
         return res.json({ ok: true, statusEmail });
       }
 
-      return jsonError(res, 405, "Use GET or PATCH");
+      if (req.method === "DELETE") {
+        const id = String(req.query.id || "").trim();
+        if (!id) return jsonError(res, 400, "Missing order id");
+        const orderRef = db.collection("orders").doc(id);
+        const snap = await orderRef.get();
+        if (!snap.exists) return jsonError(res, 404, "Order not found");
+        await orderRef.delete();
+        logger.info("Admin deleted order", {
+          orderId: id,
+          adminUid: adminUser.uid,
+          adminEmail: adminUser.email || "",
+        });
+        return res.json({ ok: true });
+      }
+
+      return jsonError(res, 405, "Use GET, POST, PATCH, or DELETE");
     } catch (err) {
       return adminError(res, err);
     }
@@ -4879,6 +5144,24 @@ exports.adminChat = onRequest(
 
       if (req.method === "POST" || req.method === "PATCH") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (String(body.action || "").trim() === "markAllRead") {
+          const snap = await db.collection(CHAT_CONVERSATIONS_COLLECTION)
+            .where("unreadAdmin", ">", 0)
+            .limit(500)
+            .get();
+          const batch = db.batch();
+          snap.docs.forEach(doc => {
+            batch.set(doc.ref, {
+              unreadAdmin: 0,
+              adminLastReadAt: now(),
+              updatedAt: now(),
+              updatedBy: adminUser.uid,
+            }, { merge: true });
+          });
+          if (!snap.empty) await batch.commit();
+          return res.json({ ok: true, updated: snap.size });
+        }
+
         const conversationId = String(body.conversationId || body.id || "").trim();
         if (!conversationId) return jsonError(res, 400, "Missing conversation ID");
         const ref = db.collection(CHAT_CONVERSATIONS_COLLECTION).doc(conversationId);
@@ -5115,6 +5398,115 @@ exports.socialAgentWebhook = onRequest(
     } catch (err) {
       logger.error("Marketing webhook failed", { error: err.message || "Webhook failed" });
       return jsonError(res, Number(err.status || 400), err.message || "Marketing webhook failed");
+    }
+  }
+);
+
+exports.adminCollaborations = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+    secrets: [OPENAI_API_KEY],
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const adminUser = await requireAdmin(req);
+
+      if (req.method === "GET") {
+        const limit = Math.min(200, Math.max(1, Number(req.query.limit || 100)));
+        const snap = await db.collection(COLLABORATIONS_COLLECTION)
+          .orderBy("updatedAt", "desc")
+          .limit(limit)
+          .get();
+        const collaborations = snap.docs.map(doc => publicCollaboration(doc.id, doc.data()));
+        const metricsByCode = await collaborationMetricsMap(collaborations);
+        for (const collaboration of collaborations) {
+          const code = normalizeCouponCode(collaboration.offer?.couponCode || "");
+          const referral = normalizeReferralCode(collaboration.referralCode || "");
+          const key = `${code}::${referral}`;
+          collaboration.metrics = code || referral
+            ? metricsByCode.get(key) || collaborationMetricsForAttribution({ couponCode: code, referralCode: referral }, [])
+            : null;
+        }
+        return res.json({ collaborations });
+      }
+
+      if (req.method === "DELETE") {
+        const id = String(req.query.id || "").trim();
+        if (!id) return jsonError(res, 400, "Missing collaboration id");
+        await db.collection(COLLABORATIONS_COLLECTION).doc(id).delete();
+        return res.json({ ok: true });
+      }
+
+      if (req.method === "POST" || req.method === "PATCH") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const action = String(body.action || "save").trim();
+
+        if (action === "generateOutreach") {
+          const apiKey = String(OPENAI_API_KEY.value() || "").trim();
+          if (!apiKey) return jsonError(res, 400, "missing_openai_api_key");
+          const id = String(body.id || "").trim();
+          let collaboration = null;
+          if (id) {
+            const snap = await db.collection(COLLABORATIONS_COLLECTION).doc(id).get();
+            if (!snap.exists) return jsonError(res, 404, "Collaboration not found");
+            collaboration = publicCollaboration(snap.id, snap.data());
+          } else {
+            collaboration = sanitizeCollaborationInput(body.collaboration || body);
+          }
+          const settings = await getChatbotSettings();
+          const model = String(body.model || settings.model || DEFAULT_CHATBOT_SETTINGS.model);
+          const client = new OpenAI({ apiKey });
+          const draft = await generateCollaborationOutreach({
+            client,
+            model,
+            collaboration,
+            language: String(body.language || "auto"),
+            channel: String(body.channel || "dm"),
+          });
+          if (!draft) return jsonError(res, 502, "OpenAI returned an empty outreach draft");
+          return res.json({ ok: true, draft, model });
+        }
+
+        if (action === "delete") {
+          const id = String(body.id || "").trim();
+          if (!id) return jsonError(res, 400, "Missing collaboration id");
+          await db.collection(COLLABORATIONS_COLLECTION).doc(id).delete();
+          return res.json({ ok: true });
+        }
+
+        const id = String(body.id || body.collaboration?.id || "").trim();
+        const ref = id
+          ? db.collection(COLLABORATIONS_COLLECTION).doc(id)
+          : db.collection(COLLABORATIONS_COLLECTION).doc();
+        const existingSnap = await ref.get();
+        const existing = existingSnap.exists ? existingSnap.data() : {};
+        const sanitized = sanitizeCollaborationInput(body.collaboration || body, existing);
+        if (!sanitized.name) return jsonError(res, 400, "Enter a collaboration name");
+        const update = {
+          ...sanitized,
+          createdAt: existing.createdAt || now(),
+          updatedAt: now(),
+          updatedBy: adminUser.uid,
+        };
+        await ref.set(update, { merge: true });
+        const updatedSnap = await ref.get();
+        const collaboration = publicCollaboration(ref.id, updatedSnap.data());
+        const code = normalizeCouponCode(collaboration.offer?.couponCode || "");
+        const referral = normalizeReferralCode(collaboration.referralCode || "");
+        if (code || referral) {
+          const metricsByCode = await collaborationMetricsMap([collaboration]);
+          collaboration.metrics = metricsByCode.get(`${code}::${referral}`) || collaborationMetricsForAttribution({ couponCode: code, referralCode: referral }, []);
+        }
+        return res.json({ ok: true, collaboration });
+      }
+
+      return jsonError(res, 405, "Use GET, POST, PATCH, or DELETE");
+    } catch (err) {
+      logger.error("Collaborations admin failed", { error: err.message || "Collaborations failed" });
+      return adminError(res, err);
     }
   }
 );

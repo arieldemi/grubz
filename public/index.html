@@ -55,6 +55,8 @@
       .btn-danger{ border:1px solid #ef4444; color:#ef4444; background:#fff; border-radius:.75rem; padding:.7rem 1rem; font-weight:700; }
       .btn-danger:hover{ background:#fee2e2 }
       .input{ border:1px solid #e5e5e5; border-radius:.75rem; padding:.65rem .8rem; width:100%; }
+      .chat-guest-input{ min-height:2.25rem; padding:.45rem .7rem; border-radius:.65rem; line-height:1.2; }
+      #chatWidget{ transition: bottom .16s ease; }
       .label{ font-size:.8rem; color:#525252 }
       .cookie-banner{ box-shadow: 0 -10px 30px rgba(0,0,0,.12) }
       button:disabled,
@@ -68,6 +70,12 @@
       .fade-dots { position: absolute; left: 50%; bottom: .5rem; transform: translateX(-50%); display: flex; gap: .4rem; }
       .fade-dots button{ width:8px; height:8px; border-radius:9999px; background:rgba(255,255,255,.6); border:none }
       .fade-dots button.active{ background:#fff; }
+      .hero-shell{ padding-top:2rem; }
+      .hero-title{ margin-top:0; }
+      @media (min-width: 640px){
+        .hero-shell{ padding-top:3.5rem; }
+        .hero-title{ margin-top:1.5rem; }
+      }
       .product-thumb { height: 15rem; }
       @media (min-width: 640px){ .product-thumb { height: 13rem; } }
       :focus-visible { outline: 3px solid #111; outline-offset: 3px; }
@@ -148,9 +156,9 @@
     <main id="main" tabindex="-1" role="main">
       <!-- Hero -->
       <section class="bg-grubz text-white">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-14 grid md:grid-cols-2 gap-10">
+        <div class="hero-shell max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-14 grid md:grid-cols-2 gap-10">
           <div>
-            <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight text-shadow mt-6">
+            <h1 class="hero-title text-4xl sm:text-5xl font-extrabold leading-tight text-shadow mt-6">
               <span data-i18n="heroTitleL1">High-Protein</span>
               <span data-i18n="heroTitleL2">BSF Snacks for Pets & Poultry</span>
             </h1>
@@ -569,8 +577,8 @@
         <div id="chatMessages" class="h-72 overflow-y-auto bg-zinc-50 p-3 space-y-2 text-sm"></div>
         <div class="border-t p-3 space-y-2">
           <div id="chatGuestFields" class="grid grid-cols-2 gap-2">
-            <input id="chatName" class="input text-sm" autocomplete="name" placeholder="Name">
-            <input id="chatEmail" class="input text-sm" autocomplete="email" placeholder="Email">
+            <input id="chatName" class="input chat-guest-input text-sm" autocomplete="name" placeholder="Name">
+            <input id="chatEmail" class="input chat-guest-input text-sm" autocomplete="email" placeholder="Email">
           </div>
           <textarea id="chatInput" class="input text-sm" rows="3" placeholder="Write your message..."></textarea>
           <div class="flex items-center gap-2">
@@ -591,6 +599,7 @@
     <script>
       let __user = null;   // Firebase auth user
       let __coupon = null; // { code, discount, discountCents }
+      let __referralCode = "";
     </script>
 
     <script>
@@ -608,6 +617,19 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
         : "/api";
       const CHAT_API_BASE = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
 const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
+const REFERRAL_STORAGE_KEY = "grubz_referral_code";
+const normalizeReferralCode = value => String(value || "").trim().toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9_-]/g, "").slice(0, 80);
+function initReferralCode(){
+  const params = new URLSearchParams(location.search || "");
+  const code = normalizeReferralCode(params.get("ref") || params.get("referral") || params.get("grubz_ref") || "");
+  if (code) {
+    localStorage.setItem(REFERRAL_STORAGE_KEY, code);
+    __referralCode = code;
+    return;
+  }
+  __referralCode = normalizeReferralCode(localStorage.getItem(REFERRAL_STORAGE_KEY) || "");
+}
+initReferralCode();
 const BOXNOW_PARTNER_ID = "";
 const BOXNOW_PARCEL_SIZES = [
   { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60 },
@@ -1293,6 +1315,16 @@ async function chatFetch(path, options = {}) {
         clearInterval(__chatPollTimer);
       }
 
+      function updateChatWidgetPosition(){
+        const widget = document.getElementById("chatWidget");
+        const footerBottomBar = document.querySelector("#contact .border-t");
+        if (!widget || !footerBottomBar) return;
+        const baseOffset = 16;
+        const bottomBarTop = footerBottomBar.getBoundingClientRect().top;
+        const overlap = Math.max(0, window.innerHeight - bottomBarTop);
+        widget.style.bottom = `${baseOffset + overlap}px`;
+      }
+
       document.getElementById("chatToggle").addEventListener("click", () => {
         const panel = document.getElementById("chatPanel");
         panel.classList.contains("hidden") ? openChat() : closeChat();
@@ -1302,6 +1334,9 @@ async function chatFetch(path, options = {}) {
       document.getElementById("chatInput").addEventListener("keydown", event => {
         if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) sendChatMessage();
       });
+      window.addEventListener("scroll", updateChatWidgetPosition, { passive: true });
+      window.addEventListener("resize", updateChatWidgetPosition);
+      updateChatWidgetPosition();
 
       function setCatalogProducts(products){
         for (const key of Object.keys(CATALOG)) delete CATALOG[key];
@@ -2773,7 +2808,7 @@ async function chatFetch(path, options = {}) {
         try {
           const resp = await authedFetch(
             "/createCheckoutSession",
-            { method: "POST", body: JSON.stringify({ items, couponCode, shipping, language: lang() === "el" ? "el" : "en" }) }
+            { method: "POST", body: JSON.stringify({ items, couponCode, referralCode: __referralCode || "", shipping, language: lang() === "el" ? "el" : "en" }) }
           );
           const data = await resp.json().catch(()=> ({}));
           if (!resp.ok) {
