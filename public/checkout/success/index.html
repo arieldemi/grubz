@@ -16,10 +16,12 @@
       --grubz-2:#e37500; /* accent */
       --grubz-3:#daa266; /* sand */
       --grubz-4:#71391d; /* dark */
+      --positive:#2f7d52;
+      --positive-hover:#256643;
     }
     .bg-grubz{ background: linear-gradient(135deg,var(--grubz-1),var(--grubz-2)); }
-    .btn{ background: var(--grubz-1); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
-    .btn:hover{ filter: brightness(.95) }
+    .btn{ background: var(--positive); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
+    .btn:hover{ background:var(--positive-hover) }
     .btn-outline{ border:2px solid var(--grubz-1); color:var(--grubz-1); background:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
   </style>
 
@@ -75,7 +77,7 @@
       <p class="text-zinc-600" data-i18n="subtitle">Thanks for your order! We’re getting it ready.</p>
 
       <div class="mt-6 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 text-sm">
-        <span id="referenceLabel" class="text-zinc-500" data-i18n="sessionLabel">Reference (Session ID):</span>
+        <span id="referenceLabel" class="text-zinc-500" data-i18n="orderLabel">Order number:</span>
         <code id="sid" class="font-mono text-zinc-800"></code>
       </div>
 
@@ -87,6 +89,23 @@
       <p class="mt-6 text-xs text-zinc-500" data-i18n="note">
         If email receipts are enabled, you’ll receive one shortly.
       </p>
+
+      <section class="mx-auto mt-8 max-w-xl rounded-2xl border border-orange-100 bg-orange-50 p-5 text-left" aria-labelledby="newsletterTitle">
+        <h2 id="newsletterTitle" class="text-lg font-extrabold" style="color:var(--grubz-4)" data-i18n="newsletterTitle">Keep learning with GRUBZ</h2>
+        <p class="mt-1 text-sm text-zinc-600" data-i18n="newsletterText">Get practical feeding tips, product news, and occasional offers.</p>
+        <form id="successNewsletterForm" class="mt-4 space-y-3">
+          <label class="block">
+            <span class="sr-only" data-i18n="newsletterEmail">Email address</span>
+            <input id="successNewsletterEmail" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2" type="email" autocomplete="email" required placeholder="you@example.com">
+          </label>
+          <label class="flex items-start gap-2 text-xs text-zinc-600">
+            <input id="successNewsletterConsent" class="mt-0.5 h-4 w-4 shrink-0" type="checkbox" required>
+            <span data-i18n="newsletterConsent">I agree to receive GRUBZ marketing emails. I can unsubscribe at any time.</span>
+          </label>
+          <button id="successNewsletterSubmit" class="btn w-full" type="submit" data-i18n="newsletterSubscribe">Join the newsletter</button>
+          <p id="successNewsletterMsg" class="text-sm" role="status" aria-live="polite"></p>
+        </form>
+      </section>
     </div>
   </main>
 
@@ -96,25 +115,45 @@
       en: {
         title: "Payment successful",
         codTitle: "Order confirmed",
+        quoteTitle: "Shipping quote requested",
         subtitle: "Thanks for your order! We’re getting it ready.",
         codSubtitle: "Thanks for your order! You selected cash on delivery.",
-        orderLabel: "Order ID:",
-        sessionLabel: "Reference (Session ID):",
+        quoteSubtitle: "Your order has not been charged. We will email you the courier price and estimated delivery time before payment.",
+        orderLabel: "Order number:",
+        orderLoading: "Loading...",
         back: "Back to shop",
         support: "Contact support",
         note: "If email receipts are enabled, you’ll receive one shortly.",
+        newsletterTitle: "Keep learning with GRUBZ",
+        newsletterText: "Get practical feeding tips, product news, and occasional offers.",
+        newsletterEmail: "Email address",
+        newsletterConsent: "I agree to receive GRUBZ marketing emails. I can unsubscribe at any time.",
+        newsletterSubscribe: "Join the newsletter",
+        newsletterSending: "Subscribing...",
+        newsletterSuccess: "You’re subscribed. Welcome to the GRUBZ newsletter!",
+        newsletterError: "Subscription failed. Please try again.",
         madeInGr: "Made in Greece"
       },
       el: {
         title: "Η πληρωμή ολοκληρώθηκε",
         codTitle: "Η παραγγελία επιβεβαιώθηκε",
+        quoteTitle: "Το αίτημα προσφοράς καταχωρίστηκε",
         subtitle: "Ευχαριστούμε για την παραγγελία! Τη προετοιμάζουμε.",
         codSubtitle: "Ευχαριστούμε για την παραγγελία! Επιλέξατε αντικαταβολή.",
+        quoteSubtitle: "Δεν έχει γίνει χρέωση. Θα σας στείλουμε με email το κόστος courier και τον εκτιμώμενο χρόνο παράδοσης πριν από την πληρωμή.",
         orderLabel: "Αριθμός παραγγελίας:",
-        sessionLabel: "Αναφορά (Session ID):",
+        orderLoading: "Φόρτωση...",
         back: "Επιστροφή στο κατάστημα",
         support: "Υποστήριξη",
         note: "Αν οι αποδείξεις email είναι ενεργές, θα τη λάβετε σύντομα.",
+        newsletterTitle: "Συνέχισε να μαθαίνεις με το GRUBZ",
+        newsletterText: "Λάβε πρακτικές συμβουλές διατροφής, νέα προϊόντων και περιστασιακές προσφορές.",
+        newsletterEmail: "Διεύθυνση email",
+        newsletterConsent: "Συμφωνώ να λαμβάνω προωθητικά email από το GRUBZ. Μπορώ να διαγραφώ ανά πάσα στιγμή.",
+        newsletterSubscribe: "Εγγραφή στο newsletter",
+        newsletterSending: "Γίνεται εγγραφή...",
+        newsletterSuccess: "Η εγγραφή ολοκληρώθηκε. Καλώς ήρθες στο newsletter του GRUBZ!",
+        newsletterError: "Η εγγραφή απέτυχε. Δοκίμασε ξανά.",
         madeInGr: "Παράγεται στην Ελλάδα"
       }
     };
@@ -134,11 +173,40 @@
     document.getElementById("lang-el").onclick = () => applyLang("el");
 
     // --- Helpers for clearing cart via backend verification ---
-    const API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
+    const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+    const API_BASE = LOCAL_HOSTS.has(location.hostname)
+      ? "http://127.0.0.1:5101/grubz-99b84/europe-west1"
+      : "https://europe-west1-grubz-99b84.cloudfunctions.net";
+    const NEWSLETTER_API_BASE = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "5100"
+      ? "/api"
+      : API_BASE;
     let __user = null;
 
     function removeCookie(name){
       document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;
+    }
+
+    const META_PIXEL_ID = "2792868587751630";
+    function metaPurchase(data, sid){
+      let consent = null;
+      try {
+        const raw = document.cookie.split('; ').find(row => row.startsWith('grubz_consent='));
+        consent = raw ? JSON.parse(decodeURIComponent(raw.split('=').slice(1).join('='))) : null;
+      } catch {}
+      if (!consent?.marketing || !data?.paid) return;
+      const dedupeKey = `grubz_meta_purchase_${sid}`;
+      if (localStorage.getItem(dedupeKey)) return;
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+      (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', META_PIXEL_ID);
+      fbq('track', 'Purchase', {
+        value: Number(data.amount_total || 0) / 100,
+        currency: String(data.currency || 'EUR').toUpperCase(),
+      });
+      localStorage.setItem(dedupeKey, new Date().toISOString());
     }
 
     async function waitForAuthInit(timeout = 4000){
@@ -167,8 +235,9 @@
       // Support both ?sid=... and Stripe's ?session_id=...
       const qs = new URLSearchParams(location.search);
       const cod = qs.get("cod") === "1";
+      const quote = qs.get("quote") === "1";
       const orderNumber = qs.get("order") || "";
-      if (cod) {
+      if (cod || quote) {
         const lang = localStorage.getItem("grubz_lang") || "en";
         const t = i18n[lang] || i18n.en;
         const title = document.querySelector("[data-i18n='title']");
@@ -176,12 +245,12 @@
         const label = document.getElementById("referenceLabel");
         const sidEl = document.getElementById("sid");
         if (title) {
-          title.setAttribute("data-i18n", "codTitle");
-          title.textContent = t.codTitle;
+          title.setAttribute("data-i18n", quote ? "quoteTitle" : "codTitle");
+          title.textContent = quote ? t.quoteTitle : t.codTitle;
         }
         if (subtitle) {
-          subtitle.setAttribute("data-i18n", "codSubtitle");
-          subtitle.textContent = t.codSubtitle;
+          subtitle.setAttribute("data-i18n", quote ? "quoteSubtitle" : "codSubtitle");
+          subtitle.textContent = quote ? t.quoteSubtitle : t.codSubtitle;
         }
         if (label) {
           label.setAttribute("data-i18n", "orderLabel");
@@ -212,6 +281,7 @@
         const data = await resp.json().catch(()=> ({}));
 
         if (resp.ok && data.paid) {
+          metaPurchase(data, sid);
           if (data.orderNumber) {
             sidEl.textContent = data.orderNumber;
             const label = document.getElementById("referenceLabel");
@@ -230,19 +300,62 @@
             history.replaceState({}, "", url.toString());
           } catch {}
         } else {
+          if (sidEl) sidEl.textContent = "—";
           console.warn("verifyCheckout not paid or failed:", data);
         }
       } catch (e) {
+        if (sidEl) sidEl.textContent = "—";
         console.warn("verifyCheckout error:", e);
       }
     }
 
-    // Initial display of the session id (fallback to em dash if missing)
+    // Never expose the Stripe session ID; show the order number after verification.
     const sidParam = new URLSearchParams(location.search).get("sid") || new URLSearchParams(location.search).get("session_id");
-    document.getElementById("sid").textContent = sidParam || "—";
+    document.getElementById("sid").textContent = sidParam
+      ? (i18n[localStorage.getItem("grubz_lang") || "en"] || i18n.en).orderLoading
+      : "—";
 
     // Kick off the clear-cart flow
     maybeClearCartOnSuccess();
+
+    document.getElementById("successNewsletterEmail").value = localStorage.getItem("grubz_marketing_email") || "";
+    document.getElementById("successNewsletterForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      if (!form.reportValidity()) return;
+      const email = document.getElementById("successNewsletterEmail").value.trim().toLowerCase();
+      const button = document.getElementById("successNewsletterSubmit");
+      const message = document.getElementById("successNewsletterMsg");
+      const language = localStorage.getItem("grubz_lang") === "el" ? "el" : "en";
+      const text = i18n[language] || i18n.en;
+      button.disabled = true;
+      message.textContent = text.newsletterSending;
+      try {
+        const response = await fetch(`${NEWSLETTER_API_BASE}/newsletter`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body:JSON.stringify({
+            action:"subscribe",
+            email,
+            language,
+            source:"checkout_success",
+            consentText:text.newsletterConsent,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok !== true || data.status !== "subscribed") {
+          throw new Error(data.error || data.message || text.newsletterError);
+        }
+        localStorage.setItem("grubz_marketing_email", email);
+        message.className = "text-sm text-green-700";
+        message.textContent = text.newsletterSuccess;
+        form.querySelectorAll("input, button").forEach(control => control.disabled = true);
+      } catch (error) {
+        message.className = "text-sm text-red-600";
+        message.textContent = error.message || text.newsletterError;
+        button.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>

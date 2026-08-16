@@ -1,6 +1,7 @@
 // functions/index.js
 
 const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { beforeUserCreated, HttpsError } = require("firebase-functions/v2/identity");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
@@ -55,12 +56,13 @@ const BOXNOW_STAGE_TEST_DESTINATION_LOCATION_ID = "9";
 const BOXNOW_CONFIGURED_FEE_ENDPOINT = "";
 const BOXNOW_FALLBACK_FEE_CENTS = 0;
 const BOXNOW_PARCEL_SIZES = [
-  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60 },
-  { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
-  { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
+  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60, capacityKg: 2 },
+  { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60, capacityKg: 10 },
+  { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60, capacityKg: 20 },
 ];
 const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
-const BOXNOW_FLATTENED_BAGS_PER_LAYER = 2;
+const BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT = 10;
+const BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM = 17;
 const HAPPY_CHICKEN_PACKED_PARCELS = {
   "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
@@ -72,11 +74,21 @@ const ORDER_EMAIL_SETTINGS_DOC = "settings/orderEmails";
 const BOXNOW_SETTINGS_DOC = "settings/boxnow";
 const SOCIAL_AGENT_SETTINGS_DOC = "settings/socialAgent";
 const CHATBOT_SETTINGS_DOC = "settings/chatbot";
+const MARKETING_SETTINGS_DOC = "settings/marketing";
 const COUPONS_COLLECTION = "coupons";
 const EMAIL_RESERVATIONS_COLLECTION = "emailReservations";
 const SOCIAL_OPPORTUNITIES_COLLECTION = "socialOpportunities";
+const SOCIAL_GROUPS_COLLECTION = "socialGroups";
+const SOCIAL_POSTS_COLLECTION = "socialPosts";
 const COLLABORATIONS_COLLECTION = "collaborations";
 const CHAT_CONVERSATIONS_COLLECTION = "chatConversations";
+const MARKETING_LEADS_COLLECTION = "marketingLeads";
+const ABANDONED_CARTS_COLLECTION = "abandonedCarts";
+const NEWSLETTER_SUBSCRIBERS_COLLECTION = "newsletterSubscribers";
+const NEWSLETTER_SENDS_COLLECTION = "newsletterSends";
+const NEWSLETTER_IDEAS_COLLECTION = "newsletterIdeas";
+const ORDER_FEEDBACK_COLLECTION = "orderFeedback";
+const SCHEDULED_ORDER_EMAILS_COLLECTION = "scheduledOrderEmails";
 const GRUBZ_SIGNATURE_IMAGE_URL = "https://grubz.gr/images/grubz-email-signature.png";
 const GRUBZ_INFO_EMAIL = "info@grubz.gr";
 const GRUBZ_URL = "https://grubz.gr";
@@ -206,6 +218,32 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
   },
   {
     enabled: true,
+    templateContext: "feedback",
+    fulfillmentStatus: "feedback_request",
+    subject: "How was your GRUBZ order {orderNumber}?",
+    body: "{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nWe would love to hear your feedback. Rate your experience here:\n{feedback_url}\n\nYour feedback helps us improve.\n\nGRUBZ",
+    translations: {
+      el: {
+        subject: "Πώς σου φάνηκε η παραγγελία GRUBZ {orderNumber};",
+        body: "{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΘα χαρούμε πολύ να ακούσουμε τη γνώμη σου. Αξιολόγησε την εμπειρία σου εδώ:\n{feedback_url}\n\nΗ γνώμη σου μας βοηθά να γινόμαστε καλύτεροι.\n\nGRUBZ",
+      },
+    },
+  },
+  {
+    enabled: true,
+    templateContext: "order",
+    fulfillmentStatus: "locker_reminder",
+    subject: "Your GRUBZ parcel is waiting at the BOX NOW locker",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} is waiting for collection at the BOX NOW locker:\n\n{boxNowLocker}\n\nPlease collect it soon to avoid it being returned.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
+    translations: {
+      el: {
+        subject: "Το δέμα GRUBZ σε περιμένει στη θυρίδα BOX NOW",
+        body: "{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} σε περιμένει για παραλαβή στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΠαρακαλούμε παρέλαβέ τη σύντομα, ώστε να μην επιστραφεί.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ",
+      },
+    },
+  },
+  {
+    enabled: true,
     fulfillmentStatus: "abandoned_signup",
     subject: "Still thinking about GRUBZ?",
     body: "{greeting}\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout: {grubz_url}\n\nGRUBZ",
@@ -242,6 +280,8 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const ALLOWED_ORIGIN_LIST = Array.from(ALLOWED_ORIGINS);
 const PRODUCT_IMAGE_BUCKET = "grubz-99b84-product-images";
+const ANALYTICS_EVENTS_COLLECTION = "analyticsEvents";
+const ANALYTICS_SESSIONS_COLLECTION = "analyticsSessions";
 const FIREBASE_STORAGE_BUCKET = "grubz-99b84.firebasestorage.app";
 const FIREBASE_STORAGE_BUCKET_FALLBACKS = [
   PRODUCT_IMAGE_BUCKET,
@@ -317,6 +357,8 @@ function productDocToRuntime(id, data = {}) {
     image: publicImageUrl(data.image),
     imageBg: data.imageBg || "#f8f1eb",
     active: data.active !== false,
+    allowBackorder: data.allowBackorder === true,
+    inventoryPoolId: String(data.inventoryPoolId || "").trim(),
     sortOrder: Number(data.sortOrder || 0),
     stock: Number.isFinite(Number(data.stock)) ? Math.max(0, Number(data.stock)) : null,
   };
@@ -327,6 +369,7 @@ function productToPublic(id, product) {
   return {
     id,
     active: product.active !== false,
+    allowBackorder: product.allowBackorder === true,
     sortOrder: Number(product.sortOrder || 0),
     name: product.name || id,
     nameEl: product.nameEl || product.name || id,
@@ -339,6 +382,7 @@ function productToPublic(id, product) {
     amount: Math.max(0, Number(product.amount || 0)),
     currency: product.currency || "eur",
     weightGrams: Math.max(0, Number(product.weightGrams || 0)),
+    inventoryPoolId: String(product.inventoryPoolId || "").trim(),
     parcel: product.parcel || {},
     stripeProductId: product.productId || "",
     stripePriceId: product.priceId || "",
@@ -356,13 +400,27 @@ function stripeRefsForProduct(product = {}, mode = "test") {
   };
 }
 
+let legacyInventoryPoolsMigrated = false;
 async function getProductsMap({ includeInactive = false } = {}) {
+  if (!legacyInventoryPoolsMigrated) {
+    await migrateLegacyProductInventoryPools();
+    legacyInventoryPoolsMigrated = true;
+  }
   const snap = await db.collection("products").get();
   const map = {};
   snap.forEach((doc) => {
     const product = productDocToRuntime(doc.id, doc.data());
     if (includeInactive || product.active !== false) map[doc.id] = product;
   });
+  const pools = Object.fromEntries((await getInventoryPools()).map(pool => [pool.id, pool]));
+  for (const [id, product] of Object.entries(map)) {
+    const pool = pools[String(product.inventoryPoolId || "").trim()];
+    const weightGrams = Math.max(0, Number(product.weightGrams || 0));
+    if (pool?.updatedAt && weightGrams > 0) {
+      product.stock = Math.max(0, Math.floor(pool.availableGrams / weightGrams));
+      product.allowBackorder = pool.allowBackorder === true;
+    }
+  }
   PRODUCTS_MAP = map;
   return map;
 }
@@ -377,9 +435,11 @@ function sanitizeProductPayload(input = {}) {
   const amount = Math.round(Number(input.amount ?? input.priceCents ?? 0));
   if (!Number.isFinite(amount) || amount < 0) throw new Error("Invalid price amount");
 
-  return {
+  const product = {
     id,
     active: input.active !== false,
+    allowBackorder: input.allowBackorder === true,
+    inventoryPoolId: String(input.inventoryPoolId || "").trim(),
     sortOrder: Number(input.sortOrder || 0),
     name: String(input.name || id).trim(),
     nameEl: String(input.nameEl || input.name || id).trim(),
@@ -412,6 +472,150 @@ function sanitizeProductPayload(input = {}) {
     stock: input.stock === "" || input.stock == null ? null : Math.max(0, Math.round(Number(input.stock || 0))),
     updatedAt: now(),
   };
+  if (product.active) {
+    const missing = productActivationMissingFields(product);
+    if (missing.length) {
+      throw new Error(`Cannot activate product. Missing: ${missing.join(", ")}`);
+    }
+  }
+  return product;
+}
+
+function productActivationMissingFields(product = {}) {
+  const missing = [];
+  if (!String(product.name || "").trim()) missing.push("English name");
+  if (!String(product.nameEl || "").trim()) missing.push("Greek name");
+  if (!String(product.description || "").trim()) missing.push("English description");
+  if (!String(product.descriptionEl || "").trim()) missing.push("Greek description");
+  if (!String(product.detail || "").trim()) missing.push("English details");
+  if (!String(product.detailEl || "").trim()) missing.push("Greek details");
+  if (!String(product.image || "").trim()) missing.push("product image");
+  if (!(Number(product.amount || 0) > 0)) missing.push("price");
+  if (!(Number(product.weightGrams || 0) > 0)) missing.push("weight");
+  if (!String(product.inventoryPoolId || "").trim() && (product.stock == null || !Number.isFinite(Number(product.stock)))) missing.push("stock");
+  if (!String(product.currency || "").trim()) missing.push("currency");
+  if (!String(product.stripe?.live?.productId || "").trim()) missing.push("live Stripe product ID");
+  if (!String(product.stripe?.live?.priceId || "").trim()) missing.push("live Stripe price ID");
+  return missing;
+}
+
+const DEFAULT_INVENTORY_POOLS = {
+  "happy-chicken": { id: "happy-chicken", name: "Happy Chicken", material: "Dried larvae" },
+  terragrub: { id: "terragrub", name: "TerraGrub", material: "Frass" },
+};
+
+function legacyInventoryPoolIdForMigration(id = "") {
+  const value = String(id || "").toLowerCase();
+  if (value.startsWith("happy-chicken-")) return "happy-chicken";
+  if (value.startsWith("terragrub-")) return "terragrub";
+  return "";
+}
+
+function inventoryRequirements(items = []) {
+  const result = {};
+  for (const item of Array.isArray(items) ? items : []) {
+    const poolId = String(item.inventoryPoolId || "").trim();
+    if (!poolId) continue;
+    const grams = Math.max(0, Math.round(Number(item.weightGrams || 0) || 0));
+    const quantity = Math.max(0, Math.round(Number(item.quantity || item.qty || 0)));
+    if (grams && quantity) result[poolId] = (result[poolId] || 0) + grams * quantity;
+  }
+  return result;
+}
+
+function inventoryPoolView(id, data = {}) {
+  const onHandGrams = Math.max(0, Math.round(Number(data.onHandGrams || 0)));
+  const reservedGrams = Math.max(0, Math.round(Number(data.reservedGrams || 0)));
+  return {
+    id,
+    name: String(data.name || id),
+    material: String(data.material || ""),
+    active: data.active !== false,
+    allowBackorder: data.allowBackorder === true,
+    onHandGrams,
+    reservedGrams,
+    availableGrams: Math.max(0, onHandGrams - reservedGrams),
+    backorderedGrams: Math.max(0, reservedGrams - onHandGrams),
+    updatedAt: data.updatedAt || null,
+  };
+}
+
+async function getInventoryPools() {
+  const collection = db.collection("inventoryPools");
+  let snap = await collection.get();
+  if (snap.empty) {
+    const batch = db.batch();
+    Object.values(DEFAULT_INVENTORY_POOLS).forEach(pool => batch.set(collection.doc(pool.id), { ...pool, active:true, allowBackorder:false, onHandGrams:0, reservedGrams:0, createdAt:now(), updatedAt:now() }));
+    await batch.commit();
+    snap = await collection.get();
+  }
+  return snap.docs.map(doc => inventoryPoolView(doc.id, doc.data())).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function migrateLegacyProductInventoryPools() {
+  const snap = await db.collection("products").get();
+  const batch = db.batch();
+  let count = 0;
+  snap.docs.forEach(doc => {
+    if (String(doc.data()?.inventoryPoolId || "").trim()) return;
+    const poolId = legacyInventoryPoolIdForMigration(doc.id);
+    if (!poolId) return;
+    batch.set(doc.ref, { inventoryPoolId:poolId, updatedAt:now() }, { merge:true });
+    count += 1;
+  });
+  if (count) await batch.commit();
+  return count;
+}
+
+async function transitionOrderInventory(orderId, targetState, actor = "system") {
+  const orderRef = db.collection("orders").doc(orderId);
+  return db.runTransaction(async transaction => {
+    const orderSnap = await transaction.get(orderRef);
+    if (!orderSnap.exists) return { skipped: true, reason: "order_not_found" };
+    const order = orderSnap.data() || {};
+    const currentState = String(order.inventoryState || "none");
+    if (currentState === targetState) return { skipped: true, reason: "already_applied" };
+    if (currentState === "consumed" && targetState !== "consumed") return { skipped: true, reason: "already_consumed" };
+    const requirements = inventoryRequirements(order.items || []);
+    const poolIds = Object.keys(requirements);
+    const poolRefs = poolIds.map(id => db.collection("inventoryPools").doc(id));
+    const poolSnaps = [];
+    for (const ref of poolRefs) poolSnaps.push(await transaction.get(ref));
+    const updates = {};
+    poolIds.forEach((poolId, index) => {
+      const data = poolSnaps[index].exists ? poolSnaps[index].data() : {};
+      let onHandGrams = Math.max(0, Math.round(Number(data.onHandGrams || 0)));
+      let reservedGrams = Math.max(0, Math.round(Number(data.reservedGrams || 0)));
+      const grams = requirements[poolId];
+      if (targetState === "reserved") {
+        if (currentState !== "reserved") reservedGrams += grams;
+      } else if (targetState === "consumed") {
+        if (currentState === "reserved") reservedGrams = Math.max(0, reservedGrams - grams);
+        if (currentState !== "consumed") onHandGrams = Math.max(0, onHandGrams - grams);
+      } else if (targetState === "released" && currentState === "reserved") {
+        reservedGrams = Math.max(0, reservedGrams - grams);
+      }
+      updates[poolId] = { onHandGrams, reservedGrams };
+      transaction.set(poolRefs[index], { onHandGrams, reservedGrams, updatedAt: now() }, { merge: true });
+      transaction.set(db.collection("inventoryTransactions").doc(), {
+        poolId,
+        type: `order_${targetState}`,
+        orderId,
+        grams,
+        previousState: currentState,
+        resultingState: targetState,
+        createdAt: now(),
+        createdBy: actor,
+      });
+    });
+    transaction.set(orderRef, {
+      inventoryState: targetState,
+      inventoryRequirementsGrams: requirements,
+      inventoryUpdatedAt: now(),
+      inventoryUpdatedBy: actor,
+    }, { merge: true });
+    return { ok: true, state: targetState, requirements, pools: updates };
+  });
 }
 
 async function requireAdmin(req) {
@@ -424,7 +628,13 @@ async function requireAdmin(req) {
 
 function adminError(res, err) {
   const status = Number(err.status || 400);
-  return jsonError(res, status, err.message || "Admin request failed");
+  const details = err.details || null;
+  console.error("Admin request failed", {
+    status,
+    message: err.message || "Admin request failed",
+    details,
+  });
+  return jsonError(res, status, err.message || "Admin request failed", details ? { details } : {});
 }
 
 function parseImageUpload(body = {}) {
@@ -446,7 +656,9 @@ function parseImageUpload(body = {}) {
   if (!buffer.toString("base64").replace(/=+$/, "").startsWith(base64.replace(/=+$/, "").slice(0, 32))) {
     throw new Error("Image upload data is invalid");
   }
-  if (buffer.length > 15 * 1024 * 1024) throw new Error("Image must be 15 MB or smaller");
+  if (buffer.length > 600 * 1024) {
+    throw new Error("Optimized product images must be 600 KB or smaller");
+  }
 
   const ext = contentType === "image/jpeg" ? "jpg" : contentType.split("/")[1];
   return { id, contentType, buffer, ext };
@@ -524,6 +736,10 @@ function parseSessionCart(session, productsMap) {
     const stripeRefs = stripeRefsForProduct(product, session?.metadata?.stripeMode || "test");
     const quantity = Math.max(1, Number(qty || 0));
     const unitAmount = Math.max(0, Number(product.amount || 0));
+    const availableStock = Number.isFinite(Number(product.stock)) ? Math.max(0, Number(product.stock)) : null;
+    const backorderQuantity = product.allowBackorder === true && availableStock != null
+      ? Math.max(0, quantity - availableStock)
+      : 0;
     return {
       id,
       name: product.name || id,
@@ -534,18 +750,32 @@ function parseSessionCart(session, productsMap) {
       stripeProductId: stripeRefs.productId || "",
       stripePriceId: stripeRefs.priceId || "",
       image: product.image || "",
+      weightGrams: Math.max(0, Number(product.weightGrams || 0)),
+      inventoryPoolId: String(product.inventoryPoolId || "").trim(),
+      backorder: backorderQuantity > 0,
+      backorderQuantity,
     };
   });
 }
 
-function orderItemsFromCart(items, productsMap, stripeMode = "test") {
+function orderItemsFromCart(items, productsMap, stripeMode = "test", options = {}) {
+  const allowInactive = options.allowInactive === true;
   return (Array.isArray(items) ? items : []).map(({ id, qty }) => {
     const product = productsMap[id] || {};
     if (!product.name && !productsMap[id]) throw new Error(`Unknown product id: ${id}`);
-    if (product.active === false) throw new Error(`Inactive product id: ${id}`);
+    if (product.active === false && !allowInactive) throw new Error(`Inactive product id: ${id}`);
     const stripeRefs = stripeRefsForProduct(product, stripeMode);
     const quantity = Math.max(1, Number(qty || 0));
     const unitAmount = Math.max(0, Number(product.amount || 0));
+    const availableStock = Number.isFinite(Number(product.stock)) ? Math.max(0, Number(product.stock)) : null;
+    if (availableStock != null && quantity > availableStock && product.allowBackorder !== true) {
+      throw new Error(availableStock > 0
+        ? `Only ${availableStock} available for ${product.name || id}`
+        : `${product.name || id} is out of stock`);
+    }
+    const backorderQuantity = product.allowBackorder === true && availableStock != null
+      ? Math.max(0, quantity - availableStock)
+      : 0;
     return {
       id,
       name: product.name || id,
@@ -556,6 +786,10 @@ function orderItemsFromCart(items, productsMap, stripeMode = "test") {
       stripeProductId: stripeRefs.productId || "",
       stripePriceId: stripeRefs.priceId || "",
       image: product.image || "",
+      weightGrams: Math.max(0, Number(product.weightGrams || 0)),
+      inventoryPoolId: String(product.inventoryPoolId || "").trim(),
+      backorder: backorderQuantity > 0,
+      backorderQuantity,
     };
   });
 }
@@ -585,8 +819,12 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
 
   const amountSubtotal = orderItemsSubtotal({ items });
   const amountShipping = Math.max(0, Math.round(Number(input.amountShipping || input.shippingCents || 0)));
-  const amountDiscount = Math.max(0, Math.round(Number(input.amountDiscount || input.discountCents || 0)));
-  const amountTotal = Math.max(0, amountSubtotal + amountShipping - amountDiscount);
+  const baseDiscount = Math.max(0, Math.round(Number(input.amountDiscount || input.discountCents || 0)));
+  const baseTotal = Math.max(0, amountSubtotal + amountShipping - baseDiscount);
+  const hasTotalOverride = input.amountTotalOverride != null || input.totalOverrideCents != null || input.overrideTotalCents != null;
+  const overrideTotal = Math.max(0, Math.round(Number(input.amountTotalOverride ?? input.totalOverrideCents ?? input.overrideTotalCents ?? 0)));
+  const amountTotal = hasTotalOverride ? overrideTotal : baseTotal;
+  const amountDiscount = hasTotalOverride ? Math.max(baseDiscount, amountSubtotal + amountShipping - amountTotal) : baseDiscount;
   const paymentLink = sanitizeStripePaymentLink(input.stripePaymentLink || input.paymentLink || "");
   const orderNumber = String(input.orderNumber || "").trim() || generateOrderNumber();
   const id = `manual_${orderNumber.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${Date.now()}`;
@@ -612,6 +850,7 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
     amountShipping,
     amountDiscount,
     amountDue: amountTotal,
+    manualPricingOverride: hasTotalOverride,
     currency: String(input.currency || "eur").trim().toLowerCase() || "eur",
     items,
     customer: {
@@ -623,6 +862,14 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
       deliveryMethod: String(shipping.deliveryMethod || input.deliveryMethod || "boxnow").trim() || "boxnow",
       name: String(shipping.name || customer.name || input.customerName || "").trim(),
       phone: String(shipping.phone || customer.phone || input.customerPhone || "").trim(),
+      addressLine1: String(shipping.addressLine1 || shipping.line1 || shipping.address || input.addressLine1 || input.line1 || "").trim(),
+      line1: String(shipping.line1 || shipping.addressLine1 || shipping.address || input.line1 || input.addressLine1 || "").trim(),
+      addressLine2: String(shipping.addressLine2 || shipping.line2 || input.addressLine2 || input.line2 || "").trim(),
+      line2: String(shipping.line2 || shipping.addressLine2 || input.line2 || input.addressLine2 || "").trim(),
+      postalCode: String(shipping.postalCode || shipping.postal || shipping.zip || input.postalCode || input.postal || input.zip || "").trim(),
+      postal: String(shipping.postal || shipping.postalCode || shipping.zip || input.postal || input.postalCode || input.zip || "").trim(),
+      city: String(shipping.city || input.city || "").trim(),
+      country: String(shipping.country || input.country || "").trim(),
       cashOnDelivery: false,
       boxNow: {
         id: String(shipping.boxNow?.id || input.boxNowLockerId || "").trim(),
@@ -1091,7 +1338,7 @@ function shippingSummaryForChatbot(shipping = {}, boxNow = {}) {
     override,
     discount,
     `BOX NOW compartments: ${sizes}`,
-    "Packing rule currently used by GRUBZ: flexible 1kg bags can be flattened; up to 6kg can fit in one medium BOX NOW compartment.",
+    "Packing rule currently used by GRUBZ: flexible 1kg bags can be flattened; up to 10kg can fit in one medium BOX NOW compartment for any product.",
   ].join("\n");
 }
 
@@ -1608,6 +1855,49 @@ function publicChatMessage(id, data = {}) {
   };
 }
 
+function marketingSessionId(value = "") {
+  return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 120);
+}
+
+function marketingCartItems(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .slice(0, 30)
+    .map(item => ({
+      id: String(item.id || item.productId || "").trim().slice(0, 120),
+      qty: Math.max(1, Math.min(999, Math.round(Number(item.qty || item.quantity || 1)))),
+      name: String(item.name || "").trim().slice(0, 180),
+      amount: Math.max(0, Math.round(Number(item.amount || item.unitAmount || 0))),
+    }))
+    .filter(item => item.id);
+}
+
+function marketingDocId(...parts) {
+  const key = parts.map(part => String(part || "").trim().toLowerCase()).filter(Boolean).join("|") || randomUUID();
+  return createHash("sha256").update(key).digest("hex").slice(0, 40);
+}
+
+function publicMarketingRecord(id, data = {}) {
+  return {
+    id,
+    email: data.email || "",
+    name: data.name || "",
+    phone: data.phone || "",
+    source: data.source || "",
+    couponCode: data.couponCode || "",
+    status: data.status || "",
+    cartItems: Array.isArray(data.cartItems) ? data.cartItems : [],
+    cartValueCents: Number(data.cartValueCents || 0),
+    notes: data.notes || "",
+    language: data.language || "",
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null,
+    lastCartAt: data.lastCartAt || null,
+    contactedAt: data.contactedAt || null,
+    recoveredAt: data.recoveredAt || null,
+    dismissedAt: data.dismissedAt || null,
+  };
+}
+
 function chatCustomerFromRequest(body = {}, authUser = null) {
   const customer = body.customer && typeof body.customer === "object" ? body.customer : {};
   return {
@@ -1996,6 +2286,15 @@ async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCo
       deliveryMethod: shipping?.deliveryMethod || "boxnow",
       name: shipping?.name || "",
       phone: shipping?.phone || "",
+      line1: String(shipping?.line1 || shipping?.addressLine1 || "").trim(),
+      addressLine1: String(shipping?.addressLine1 || shipping?.line1 || "").trim(),
+      line2: String(shipping?.line2 || shipping?.addressLine2 || "").trim(),
+      addressLine2: String(shipping?.addressLine2 || shipping?.line2 || "").trim(),
+      city: String(shipping?.city || "").trim(),
+      region: String(shipping?.region || "").trim(),
+      postal: String(shipping?.postal || shipping?.postalCode || "").trim(),
+      postalCode: String(shipping?.postalCode || shipping?.postal || "").trim(),
+      country: String(shipping?.country || "Greece").trim() || "Greece",
       cashOnDelivery: true,
       boxNow: {
         id: boxNow.id || "",
@@ -2039,7 +2338,90 @@ async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCo
   };
 
   await db.collection("orders").doc(id).set(order, { merge: true });
+  await transitionOrderInventory(id, "reserved", "cash_on_delivery_order");
   await recordCouponRedemption({ coupon: couponResult.coupon, order, discountCents: discountAmount });
+  return order;
+}
+
+async function createCourierQuoteOrder({ uid, email, items, shipping, couponCode, referralCode = "", productsMap, language = "en" }) {
+  const addressLine1 = String(shipping?.line1 || shipping?.addressLine1 || "").trim();
+  const city = String(shipping?.city || "").trim();
+  if (!addressLine1 || !city) throw new Error("Street address and city are required for courier delivery");
+
+  const stripeMode = sanitizeStripeMode((await getStripeSettings()).mode || "test");
+  const orderItems = orderItemsFromCart(items, productsMap, stripeMode);
+  const amountSubtotal = orderItemsSubtotal({ items: orderItems });
+  const couponResult = await calculateCouponDiscountCents(couponCode, items, productsMap, {
+    uid,
+    email,
+    stripeMode,
+  });
+  const amountDiscount = couponResult.discountCents;
+  const productsTotal = Math.max(0, amountSubtotal - amountDiscount);
+  const orderNumber = generateOrderNumber();
+  const id = `courier_quote_${orderNumber.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
+  const orderLanguage = String(language || "en").trim().toLowerCase() === "el" ? "el" : "en";
+  const orderReferralCode = normalizeReferralCode(referralCode || "");
+  const order = {
+    id,
+    orderNumber,
+    uid,
+    source: "storefront_courier_quote",
+    stripeMode,
+    stripeSessionId: "",
+    stripePaymentIntentId: "",
+    paymentMethod: "payment_link_after_shipping_quote",
+    status: "awaiting_shipping_quote",
+    fulfillmentStatus: "new",
+    language: orderLanguage,
+    paymentStatus: "awaiting_shipping_quote",
+    amountSubtotal,
+    amountShipping: 0,
+    amountDiscount,
+    amountTotal: productsTotal,
+    amountDue: productsTotal,
+    shippingQuotePending: true,
+    currency: "eur",
+    items: orderItems,
+    customer: {
+      email: email || "",
+      name: String(shipping?.name || "").trim(),
+      phone: String(shipping?.phone || "").trim(),
+    },
+    shipping: {
+      deliveryMethod: "courier_quote",
+      name: String(shipping?.name || "").trim(),
+      phone: String(shipping?.phone || "").trim(),
+      line1: addressLine1,
+      addressLine1,
+      line2: String(shipping?.line2 || shipping?.addressLine2 || "").trim(),
+      addressLine2: String(shipping?.line2 || shipping?.addressLine2 || "").trim(),
+      city,
+      region: String(shipping?.region || "").trim(),
+      postal: String(shipping?.postal || shipping?.postalCode || "").trim(),
+      postalCode: String(shipping?.postal || shipping?.postalCode || "").trim(),
+      country: String(shipping?.country || "Greece").trim() || "Greece",
+      cashOnDelivery: false,
+      trackingNumber: "",
+      trackingUrl: "",
+    },
+    couponCode: couponResult.coupon?.code || "",
+    couponId: couponResult.coupon?.id || "",
+    referralCode: orderReferralCode,
+    metadata: {
+      orderNumber,
+      uid,
+      paymentMethod: "payment_link_after_shipping_quote",
+      deliveryMethod: "courier_quote",
+      couponCode: couponResult.coupon?.code || "",
+      referralCode: orderReferralCode,
+      language: orderLanguage,
+    },
+    createdAt: now(),
+    updatedAt: now(),
+  };
+
+  await db.collection("orders").doc(id).set(order);
   return order;
 }
 
@@ -2079,6 +2461,15 @@ async function upsertOrderFromSession(session) {
       deliveryMethod: metadata.deliveryMethod || "boxnow",
       name: metadata.shippingName || session.customer_details?.name || "",
       phone: metadata.shippingPhone || session.customer_details?.phone || "",
+      line1: metadata.shippingAddressLine1 || "",
+      addressLine1: metadata.shippingAddressLine1 || "",
+      line2: metadata.shippingAddressLine2 || "",
+      addressLine2: metadata.shippingAddressLine2 || "",
+      city: metadata.shippingCity || "",
+      region: metadata.shippingRegion || "",
+      postal: metadata.shippingPostalCode || "",
+      postalCode: metadata.shippingPostalCode || "",
+      country: metadata.shippingCountry || "Greece",
       cashOnDelivery: metadata.cashOnDelivery === "true",
       boxNow: {
         id: metadata.boxnowLockerId || "",
@@ -2115,6 +2506,7 @@ async function upsertOrderFromSession(session) {
   };
 
   await db.collection("orders").doc(id).set(order, { merge: true });
+  if (order.paymentStatus === "paid") await transitionOrderInventory(id, "reserved", "stripe_payment");
   if (order.couponCode && order.amountDiscount > 0) {
     const couponSnap = await db.collection(COUPONS_COLLECTION).doc(couponDocId(order.couponCode)).get();
     if (couponSnap.exists) {
@@ -2159,6 +2551,15 @@ async function upsertOrderFromPaymentIntent(intent) {
       deliveryMethod: metadata.deliveryMethod || "boxnow",
       name: metadata.shippingName || "",
       phone: metadata.shippingPhone || "",
+      line1: metadata.shippingAddressLine1 || "",
+      addressLine1: metadata.shippingAddressLine1 || "",
+      line2: metadata.shippingAddressLine2 || "",
+      addressLine2: metadata.shippingAddressLine2 || "",
+      city: metadata.shippingCity || "",
+      region: metadata.shippingRegion || "",
+      postal: metadata.shippingPostalCode || "",
+      postalCode: metadata.shippingPostalCode || "",
+      country: metadata.shippingCountry || "Greece",
       cashOnDelivery: metadata.cashOnDelivery === "true",
       boxNow: {
         id: metadata.boxnowLockerId || "",
@@ -2216,6 +2617,7 @@ function escapeHtml(value) {
 
 function notificationTitle(type) {
   if (type === "cash_on_delivery_order") return "Cash on delivery order";
+  if (type === "courier_quote_order") return "Courier shipping quote requested";
   return type === "purchase_failed" ? "Purchase failed" : "Purchase complete";
 }
 
@@ -2263,6 +2665,68 @@ function millisFromTimestamp(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function analyticsDayKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
+
+function analyticsSafeString(value = "", max = 240) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function sanitizeAnalyticsEvent(input = {}) {
+  const event = analyticsSafeString(input.event || input.name || "", 80)
+    .toLowerCase()
+    .replace(/[^a-z0-9_:-]/g, "_");
+  if (!event) throw Object.assign(new Error("Missing analytics event"), { status: 400 });
+  const sessionId = analyticsSafeString(input.sessionId || "", 120).replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!sessionId) throw Object.assign(new Error("Missing analytics session"), { status: 400 });
+  const props = input.props && typeof input.props === "object" ? input.props : {};
+  const cleanProps = {};
+  for (const [key, value] of Object.entries(props).slice(0, 30)) {
+    const cleanKey = analyticsSafeString(key, 60).replace(/[^a-zA-Z0-9_-]/g, "_");
+    if (!cleanKey) continue;
+    if (typeof value === "number" || typeof value === "boolean") {
+      cleanProps[cleanKey] = value;
+    } else if (value == null) {
+      cleanProps[cleanKey] = "";
+    } else {
+      cleanProps[cleanKey] = analyticsSafeString(value, 300);
+    }
+  }
+  return {
+    event,
+    sessionId,
+    page: analyticsSafeString(input.page || "/", 180),
+    path: analyticsSafeString(input.path || "", 180),
+    referrer: analyticsSafeString(input.referrer || "", 300),
+    attribution: {
+      source: analyticsSafeString(input.attribution?.source || "", 120),
+      medium: analyticsSafeString(input.attribution?.medium || "", 120),
+      campaign: analyticsSafeString(input.attribution?.campaign || "", 180),
+      content: analyticsSafeString(input.attribution?.content || "", 180),
+      term: analyticsSafeString(input.attribution?.term || "", 180),
+      clickId: analyticsSafeString(input.attribution?.clickId || "", 300),
+      landingPage: analyticsSafeString(input.attribution?.landingPage || "", 300),
+    },
+    language: analyticsSafeString(input.language || "", 20),
+    device: analyticsSafeString(input.device || "", 40),
+    props: cleanProps,
+  };
+}
+
+function addAnalyticsBreakdown(map, key, count = 1) {
+  const label = analyticsSafeString(key || "Unknown", 160) || "Unknown";
+  map.set(label, (map.get(label) || 0) + Number(count || 0));
+}
+
+function analyticsMapRows(map, limit = 12) {
+  return [...map.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || a.label.localeCompare(b.label))
+    .slice(0, limit);
+}
+
 function customerKeyForOrder(order = {}) {
   const uid = String(order.uid || "").trim();
   if (uid && uid !== "guest") return `uid:${uid}`;
@@ -2290,14 +2754,49 @@ function mergeCustomerOrder(customer, order = {}) {
   const phone = String(customerInfo.phone || shipping.phone || "").trim();
   const createdAtMs = millisFromTimestamp(order.createdAt);
   const total = Number(order.amountTotal || 0);
-  const status = String(order.status || "").toLowerCase();
+  const status = String(order.status || "").trim().toLowerCase();
+  const paymentStatus = String(order.paymentStatus || "").trim().toLowerCase();
+  const paidStatuses = new Set(["paid", "complete", "succeeded"]);
+  const isPaid = paymentStatus
+    ? paidStatuses.has(paymentStatus)
+    : paidStatuses.has(status);
 
   if (email && !customer.email) customer.email = email;
   if (name && !customer.name) customer.name = name;
   if (phone && !customer.phone) customer.phone = phone;
-  if (shipping && Object.keys(shipping).length && !customer.shipping) customer.shipping = shipping;
+  if (shipping && Object.keys(shipping).length && (!customer.shipping || createdAtMs >= customer.lastOrderAtMs)) {
+    const existingShipping = customer.shipping && typeof customer.shipping === "object" ? customer.shipping : {};
+    const existingBoxNow = existingShipping.boxNow && typeof existingShipping.boxNow === "object" ? existingShipping.boxNow : {};
+    const orderBoxNow = shipping.boxNow && typeof shipping.boxNow === "object" ? shipping.boxNow : {};
+    const savedShippingValue = (...keys) => {
+      for (const key of keys) {
+        if (String(existingShipping[key] || "").trim()) return existingShipping[key];
+      }
+      for (const key of keys) {
+        if (String(shipping[key] || "").trim()) return shipping[key];
+      }
+      return "";
+    };
+    customer.shipping = {
+      ...existingShipping,
+      ...shipping,
+      addressLine1: savedShippingValue("addressLine1", "line1", "address"),
+      line1: savedShippingValue("line1", "addressLine1", "address"),
+      addressLine2: savedShippingValue("addressLine2", "line2"),
+      line2: savedShippingValue("line2", "addressLine2"),
+      postalCode: savedShippingValue("postalCode", "postal", "zip"),
+      postal: savedShippingValue("postal", "postalCode", "zip"),
+      city: savedShippingValue("city"),
+      region: savedShippingValue("region"),
+      country: savedShippingValue("country"),
+      boxNow: {
+        ...existingBoxNow,
+        ...orderBoxNow,
+      },
+    };
+  }
   customer.orderCount += 1;
-  if (status === "paid" || status === "complete" || status === "succeeded") {
+  if (isPaid) {
     customer.totalSpent += total;
   }
   if (createdAtMs > customer.lastOrderAtMs) {
@@ -2313,12 +2812,16 @@ function publicCustomerFromDoc(doc) {
     key: `uid:${doc.id}`,
     uid: doc.id,
     alternateUids: [],
-    email: data.email || "",
+    email: data.email || data.emailLower || "",
     name: data.name || data.displayName || "",
     phone: data.phone || "",
-    shipping: data.shipping || null,
+    shipping: data.shipping && typeof data.shipping === "object"
+      ? normalizeCustomerShipping(data.shipping)
+      : null,
     notes: data.notes || "",
     tags: Array.isArray(data.tags) ? data.tags : [],
+    creatorCollaborator: data.creatorCollaborator === true,
+    collaborationId: data.collaborationId || "",
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     orderCount: 0,
@@ -2343,6 +2846,8 @@ function mergeCustomerProfile(target, source = {}) {
   if (!target.phone && source.phone) target.phone = source.phone;
   if (!target.shipping && source.shipping) target.shipping = source.shipping;
   if (!target.notes && source.notes) target.notes = source.notes;
+  target.creatorCollaborator = target.creatorCollaborator === true || source.creatorCollaborator === true;
+  if (!target.collaborationId && source.collaborationId) target.collaborationId = source.collaborationId;
   const tags = new Set([
     ...(Array.isArray(target.tags) ? target.tags : []),
     ...(Array.isArray(source.tags) ? source.tags : []),
@@ -2382,8 +2887,10 @@ function customerEmailTemplateValue(value = "", customer = {}, context = {}) {
     customerPhone: customer.phone || "",
     coupon: context.coupon || "",
     grubz_url: GRUBZ_URL,
+    feedback_url: context.feedbackUrl || `${GRUBZ_URL}/feedback/`,
+    unsubscribe_url: context.unsubscribeUrl || "",
   };
-  return String(value || "").replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => replacements[key] || "");
+  return String(value || "").replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url|feedback_url|unsubscribe_url)\}/g, (_, key) => replacements[key] || "");
 }
 
 function customerEmailTemplateHtml(value = "", customer = {}, context = {}) {
@@ -2398,10 +2905,12 @@ function customerEmailTemplateHtml(value = "", customer = {}, context = {}) {
     customerPhone: customer.phone || "",
     coupon: context.coupon || "",
     grubz_url: GRUBZ_URL,
+    feedback_url: context.feedbackUrl || `${GRUBZ_URL}/feedback/`,
+    unsubscribe_url: context.unsubscribeUrl || "",
   };
-  const html = String(value || "").replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url)\}/g, (_, key) => {
+  const html = String(value || "").replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url|feedback_url|unsubscribe_url)\}/g, (_, key) => {
     const escaped = escapeHtml(replacements[key] || "");
-    return key === "coupon" && escaped ? `<strong>${escaped}</strong>` : escaped;
+    return (key === "coupon" || key === "orderNumber") && escaped ? `<strong>${escaped}</strong>` : escaped;
   });
   return html
     .replace(/\r\n/g, "\n")
@@ -2531,6 +3040,271 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
   return { ok: failed === 0, id: batchRef.id, sent, skipped, failed, results };
 }
 
+function newsletterSubscriberId(email = "") {
+  return createHash("sha256").update(normalizedEmail(email)).digest("hex");
+}
+
+function newsletterPublicBaseUrl(req = null) {
+  const origin = String(req?.get?.("origin") || "").trim().replace(/\/+$/, "");
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return origin;
+  const forwardedHost = String(req?.get?.("x-forwarded-host") || req?.get?.("host") || "").split(",")[0].trim();
+  if (/^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(forwardedHost)) {
+    const protocol = String(req?.get?.("x-forwarded-proto") || "http").split(",")[0].trim() === "https" ? "https" : "http";
+    return `${protocol}://${forwardedHost}`;
+  }
+  return GRUBZ_URL;
+}
+
+function newsletterUnsubscribeUrl(token = "", publicBaseUrl = GRUBZ_URL) {
+  return `${String(publicBaseUrl || GRUBZ_URL).replace(/\/+$/, "")}/api/newsletter?action=unsubscribe&token=${encodeURIComponent(String(token || ""))}`;
+}
+
+function newsletterFromAddress() {
+  const configured = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
+  const address = emailAddressFromHeader(configured) || secretValue(SMTP_USER) || GRUBZ_INFO_EMAIL;
+  return `GRUBZ Newsletter <${address}>`;
+}
+
+function publicNewsletterSubscriber(doc) {
+  const data = doc.data ? doc.data() : doc;
+  return {
+    id: doc.id || "",
+    email: normalizedEmail(data.email || ""),
+    name: String(data.name || ""),
+    language: String(data.language || "en") === "el" ? "el" : "en",
+    status: data.status === "subscribed" ? "subscribed" : "unsubscribed",
+    source: String(data.source || ""),
+    subscribedAt: data.subscribedAt || null,
+    unsubscribedAt: data.unsubscribedAt || null,
+    updatedAt: data.updatedAt || null,
+  };
+}
+
+async function newsletterImageAttachment(rawImageUrl = "") {
+  const dataMatch = String(rawImageUrl || "").match(/^data:(image\/(?:png|jpe?g|webp));base64,([a-z0-9+/=]+)$/i);
+  if (dataMatch) {
+    return {
+      content: Buffer.from(dataMatch[2], "base64"),
+      contentType: dataMatch[1].toLowerCase() === "image/jpg" ? "image/jpeg" : dataMatch[1].toLowerCase(),
+    };
+  }
+  if (!/^https:\/\//i.test(String(rawImageUrl || ""))) return null;
+  const parsedUrl = new URL(String(rawImageUrl));
+  let storageBucket = "";
+  let storagePath = "";
+  if (parsedUrl.hostname === "storage.googleapis.com") {
+    const parts = parsedUrl.pathname.split("/").filter(Boolean).map(decodeURIComponent);
+    storageBucket = parts.shift() || "";
+    storagePath = parts.join("/");
+  } else if (parsedUrl.hostname === "firebasestorage.googleapis.com") {
+    const match = parsedUrl.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
+    if (match) {
+      storageBucket = decodeURIComponent(match[1]);
+      storagePath = decodeURIComponent(match[2]);
+    }
+  }
+  if (storageBucket && storagePath) {
+    const file = getStorage().bucket(storageBucket).file(storagePath);
+    const [[metadata], [content]] = await Promise.all([file.getMetadata(), file.download()]);
+    const contentType = String(metadata.contentType || "").toLowerCase();
+    if (!/^image\/(?:png|jpeg|jpg|webp)$/.test(contentType)) throw new Error("Newsletter image is not a supported image.");
+    if (!content.length) throw new Error("Newsletter image is empty.");
+    if (content.length > 5 * 1024 * 1024) throw new Error("Newsletter image must be smaller than 5 MB.");
+    return { content, contentType: contentType === "image/jpg" ? "image/jpeg" : contentType };
+  }
+  const response = await fetch(String(rawImageUrl), {
+    redirect: "follow",
+    signal: AbortSignal.timeout(15000),
+    headers: { "user-agent": "GRUBZ Newsletter Image/1.0" },
+  });
+  if (!response.ok) throw new Error(`Newsletter image could not be downloaded (${response.status}).`);
+  const contentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (!/^image\/(?:png|jpeg|jpg|webp)$/.test(contentType)) throw new Error("Newsletter image URL did not return a supported image.");
+  const content = Buffer.from(await response.arrayBuffer());
+  if (!content.length) throw new Error("Newsletter image is empty.");
+  if (content.length > 5 * 1024 * 1024) throw new Error("Newsletter image must be smaller than 5 MB.");
+  return { content, contentType: contentType === "image/jpg" ? "image/jpeg" : contentType };
+}
+
+async function sendNewsletter({ adminUser, subject, body, language = "en", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
+  const cleanSubject = String(subject || "").trim().slice(0, 180);
+  const cleanBody = String(body || "").trim().slice(0, 12000);
+  const emailLanguage = String(language || "en").toLowerCase() === "el" ? "el" : "en";
+  const rawImageUrl = String(image.url || "").trim();
+  const hasRemoteImage = /^https:\/\//i.test(rawImageUrl);
+  const hasInlineImage = /^data:image\/(?:png|jpe?g|webp);base64,/i.test(rawImageUrl);
+  const imageUrl = hasRemoteImage ? rawImageUrl.slice(0, 2000) : (hasInlineImage ? "inline:image" : "");
+  const imageAlt = String(image.alt || "GRUBZ").trim().slice(0, 300) || "GRUBZ";
+  const imageLink = /^https:\/\//i.test(String(image.link || "").trim()) ? String(image.link || "").trim().slice(0, 2000) : "";
+  if (!cleanSubject || !cleanBody) {
+    throw Object.assign(new Error("Enter a newsletter subject and message."), { status: 400 });
+  }
+  if (containsOrderOnlyPlaceholder(`${cleanSubject}\n${cleanBody}`)) {
+    throw Object.assign(new Error("Newsletter templates cannot use order placeholders."), { status: 400 });
+  }
+  const contentHash = createHash("sha256")
+    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, language: emailLanguage, imageUrl, imageAlt, imageLink }))
+    .digest("hex");
+
+  let recipients = [];
+  if (testOnly) {
+    recipients = [{
+      id: "test",
+      email: GRUBZ_INFO_EMAIL,
+      name: "GRUBZ",
+      language: emailLanguage,
+      unsubscribeToken: "test",
+    }];
+  } else {
+    const snap = await db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION)
+      .where("status", "==", "subscribed")
+      .limit(500)
+      .get();
+    recipients = snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(item => validEmailAddress(item.email) && String(item.language || "en") === emailLanguage);
+  }
+  if (!recipients.length) {
+    throw Object.assign(new Error(`No subscribed ${emailLanguage === "el" ? "Greek" : "English"} recipients found.`), { status: 400 });
+  }
+
+  if (!testOnly && !confirmDuplicate) {
+    const recipientEmails = new Set(recipients.map(item => normalizedEmail(item.email)));
+    const previousSnap = await db.collection(NEWSLETTER_SENDS_COLLECTION).orderBy("createdAt", "desc").limit(100).get();
+    const duplicateRecipients = new Map();
+    for (const doc of previousSnap.docs) {
+      const previous = doc.data() || {};
+      if (previous.testOnly) continue;
+      const sameNewsletter = previous.contentHash
+        ? previous.contentHash === contentHash
+        : String(previous.subject || "").trim().toLowerCase() === cleanSubject.toLowerCase() && String(previous.language || "en") === emailLanguage;
+      if (!sameNewsletter) continue;
+      for (const result of Array.isArray(previous.results) ? previous.results : []) {
+        const email = normalizedEmail(result.email || result.deliveredTo || "");
+        if (result.ok && recipientEmails.has(email) && !duplicateRecipients.has(email)) {
+          duplicateRecipients.set(email, previous.sentAt || previous.updatedAt || previous.createdAt || null);
+        }
+      }
+    }
+    if (duplicateRecipients.size) {
+      throw Object.assign(new Error(`This newsletter was already sent to ${duplicateRecipients.size} selected subscriber${duplicateRecipients.size === 1 ? "" : "s"}.`), {
+        status: 409,
+        details: {
+          code: "duplicate_newsletter_recipients",
+          count: duplicateRecipients.size,
+          recipients: [...duplicateRecipients.entries()].slice(0, 50).map(([email, sentAt]) => ({ email, sentAt })),
+        },
+      });
+    }
+  }
+
+  const embeddedImage = imageUrl ? await newsletterImageAttachment(rawImageUrl) : null;
+
+  const sendRef = db.collection(NEWSLETTER_SENDS_COLLECTION).doc();
+  const from = newsletterFromAddress();
+  let emailSettings;
+  try {
+    emailSettings = await getOrderEmailSettings();
+  } catch (err) {
+    if (!testOnly) throw err;
+    logger.warn("Newsletter test is using default email placeholders because settings could not be loaded", { error: err.message || "settings_unavailable" });
+    emailSettings = defaultOrderEmailSettings();
+  }
+  let historyAvailable = true;
+  try {
+    await sendRef.set({
+    subject: cleanSubject,
+    contentHash,
+    language: emailLanguage,
+    recipientCount: recipients.length,
+    testOnly,
+    status: "sending",
+    createdAt: now(),
+    createdBy: adminUser.uid || "",
+    createdByEmail: adminUser.email || "",
+    image: imageUrl ? { url: hasInlineImage ? "inline:image" : imageUrl, alt: imageAlt, link: imageLink } : null,
+    });
+  } catch (err) {
+    if (!testOnly) throw err;
+    historyAvailable = false;
+    logger.warn("Newsletter test history could not be started; continuing with email delivery", { error: err.message || "history_unavailable" });
+  }
+
+  const results = [];
+  let archiveBccSent = false;
+  for (const recipient of recipients) {
+    try {
+      const unsubscribeUrl = testOnly
+        ? `${String(publicBaseUrl || GRUBZ_URL).replace(/\/+$/, "")}/?newsletter=unsubscribed#newsletter`
+        : newsletterUnsubscribeUrl(recipient.unsubscribeToken, publicBaseUrl);
+      const context = {
+        language: emailLanguage,
+        placeholders: emailSettings.placeholders,
+        unsubscribeUrl,
+      };
+      const personalizedSubject = customerEmailTemplateValue(cleanSubject, recipient, context);
+      const imageText = embeddedImage && imageLink ? `\n\n${imageAlt}: ${imageLink}` : "";
+      const personalizedText = `${customerEmailTemplateValue(cleanBody, recipient, context)}${imageText}\n\n${emailLanguage === "el" ? "Διαγραφή από το newsletter" : "Unsubscribe from this newsletter"}: ${unsubscribeUrl}`;
+      let bodyHtml = customerEmailTemplateHtml(cleanBody, recipient, context);
+      if (embeddedImage) {
+        const img = `<img src="cid:newsletter-image" alt="${escapeHtml(imageAlt)}" width="600" style="display:block;width:100%;max-width:600px;height:auto;margin:20px 0;border:0;border-radius:14px;">`;
+        const imageHtml = imageLink ? `<a href="${escapeHtml(imageLink)}" style="display:block;text-decoration:none;">${img}</a>` : img;
+        const firstLineBreak = bodyHtml.indexOf("<br>\n");
+        bodyHtml = firstLineBreak >= 0
+          ? `${bodyHtml.slice(0, firstLineBreak + 5)}${imageHtml}${bodyHtml.slice(firstLineBreak + 5)}`
+          : `${imageHtml}${bodyHtml}`;
+      }
+      const footerLabel = emailLanguage === "el" ? "Διαγραφή από το newsletter" : "Unsubscribe from this newsletter";
+      const personalizedHtml = `${bodyHtml}<br><br><hr style="border:0;border-top:1px solid #e4e4e7"><p style="font-size:12px;color:#71717a"><a href="${escapeHtml(unsubscribeUrl)}">${footerLabel}</a></p>`;
+      const result = await sendEmail({
+        to: recipient.email,
+        from,
+        bcc: !testOnly && !archiveBccSent ? GRUBZ_INFO_EMAIL : "",
+        subject: testOnly ? `[NEWSLETTER TEST] ${personalizedSubject}` : personalizedSubject,
+        text: personalizedText,
+        html: personalizedHtml,
+        attachments: embeddedImage ? [{
+          filename: `newsletter.${embeddedImage.contentType === "image/jpeg" ? "jpg" : embeddedImage.contentType.split("/")[1]}`,
+          content: embeddedImage.content,
+          contentType: embeddedImage.contentType,
+          cid: "newsletter-image",
+        }] : undefined,
+      });
+      if (result.skipped) throw new Error(result.reason || "Email skipped");
+      archiveBccSent = true;
+      results.push({ email: recipient.email, ok: true, messageId: result.messageId || "" });
+    } catch (err) {
+      logger.error("Newsletter email delivery failed", {
+        recipient: recipient.email,
+        code: err.code || "",
+        command: err.command || "",
+        responseCode: err.responseCode || null,
+        response: err.response || "",
+        error: err.message || "Email delivery failed",
+      });
+      results.push({ email: recipient.email, ok: false, error: err.message || "Email failed" });
+    }
+  }
+  const sent = results.filter(item => item.ok).length;
+  const failed = results.length - sent;
+  if (historyAvailable) {
+    try {
+      await sendRef.set({
+        status: failed ? "partial" : "sent",
+        sent,
+        failed,
+        results,
+        updatedAt: now(),
+        sentAt: sent ? now() : null,
+      }, { merge: true });
+    } catch (err) {
+      if (!testOnly) throw err;
+      logger.warn("Newsletter test was delivered but its history could not be updated", { error: err.message || "history_unavailable" });
+    }
+  }
+  return { ok: failed === 0, id: historyAvailable ? sendRef.id : "", sent, failed, results, recipientCount: recipients.length, testOnly };
+}
+
 function boxNowLines(order) {
   const shipping = order.shipping || {};
   const boxNow = shipping.boxNow || {};
@@ -2596,6 +3370,13 @@ function buildOrderNotification(type, order, event) {
   const customer = order.customer || {};
   const itemLines = orderLines(order);
   const lockerLines = boxNowLines(order);
+  const shipping = order.shipping || {};
+  const courierQuote = shipping.deliveryMethod === "courier_quote";
+  const deliveryLines = courierQuote ? [
+    [shipping.addressLine1 || shipping.line1, shipping.addressLine2 || shipping.line2].filter(Boolean).join(", ") || "-",
+    [shipping.postalCode || shipping.postal, shipping.city, shipping.region].filter(Boolean).join(", ") || "-",
+    shipping.country || "Greece",
+  ] : lockerLines;
   const total = formatMoney(order.amountTotal, order.currency);
   const text = [
     title,
@@ -2604,15 +3385,15 @@ function buildOrderNotification(type, order, event) {
     `Status: ${order.status || ""}`,
     `Payment status: ${order.paymentStatus || ""}`,
     `Payment method: ${order.paymentMethod || "card"}`,
-    `Total: ${total}`,
+    `${courierQuote ? "Products total before shipping" : "Total"}: ${total}`,
     "",
     "Customer",
     `Name: ${customer.name || "-"}`,
     `Email: ${customer.email || "-"}`,
     `Phone: ${customer.phone || "-"}`,
     "",
-    "BOX NOW locker",
-    ...lockerLines,
+    courierQuote ? "Courier delivery address" : "BOX NOW locker",
+    ...deliveryLines,
     "",
     "Items",
     ...itemLines,
@@ -2629,13 +3410,13 @@ function buildOrderNotification(type, order, event) {
     <p><strong>Status:</strong> ${escapeHtml(order.status || "")}<br>
     <strong>Payment status:</strong> ${escapeHtml(order.paymentStatus || "")}<br>
     <strong>Payment method:</strong> ${escapeHtml(order.paymentMethod || "card")}<br>
-    <strong>Total:</strong> ${escapeHtml(total)}</p>
+    <strong>${courierQuote ? "Products total before shipping" : "Total"}:</strong> ${escapeHtml(total)}</p>
     <h3>Customer</h3>
     <p>${escapeHtml(customer.name || "-")}<br>
     ${escapeHtml(customer.email || "-")}<br>
     ${escapeHtml(customer.phone || "-")}</p>
-    <h3>BOX NOW locker</h3>
-    <p>${boxNowHtml(order)}</p>
+    <h3>${courierQuote ? "Courier delivery address" : "BOX NOW locker"}</h3>
+    <p>${deliveryLines.map(line => escapeHtml(line)).join("<br>\n")}</p>
     <h3>Items</h3>
     <ul>${htmlItems}</ul>
     <p><strong>Stripe session:</strong> ${escapeHtml(order.stripeSessionId || "-")}<br>
@@ -2768,7 +3549,7 @@ function sanitizeEmailPlaceholderSettings(input = {}, existing = {}) {
 
 function emailTemplateContext(template = {}) {
   const raw = String(template.templateContext || template.context || template.emailContext || "").trim().toLowerCase();
-  if (raw === "customer" || raw === "order") return raw;
+  if (raw === "customer" || raw === "order" || raw === "newsletter" || raw === "feedback") return raw;
   const status = normalizeOrderStatus(template.fulfillmentStatus || template.status || "");
   return status === "abandoned_signup" ? "customer" : "order";
 }
@@ -2811,7 +3592,7 @@ function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true
   const merged = includeDefaults ? [...sanitized] : sanitized;
   if (includeDefaults) {
     for (const template of defaultOrderEmailSettings().templates) {
-      const existing = merged.find(item => item.fulfillmentKey === template.fulfillmentKey);
+      const existing = merged.find(item => item.fulfillmentKey === template.fulfillmentKey && item.templateContext === template.templateContext);
       if (!existing) {
         merged.push(template);
       } else {
@@ -2822,7 +3603,7 @@ function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true
 
   return {
     placeholders,
-    templates: merged.slice(0, 30),
+    templates: merged.slice(0, 50),
     updatedAt: now(),
   };
 }
@@ -2852,10 +3633,11 @@ function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfil
     fulfillmentStatus: order.fulfillmentStatus || "",
     previousFulfillmentStatus,
     trackingNumber: shipping.trackingNumber || "",
-    trackingUrl: shipping.trackingUrl || "",
+    trackingUrl: shipping.trackingUrl || boxNowTrackingUrl(shipping.trackingNumber || order.boxNowShipment?.parcelIds?.[0] || ""),
     total: formatMoney(order.amountTotal, order.currency),
     coupon: order.couponCode || order.metadata?.couponCode || "",
     grubz_url: GRUBZ_URL,
+    feedback_url: String(order.feedbackUrl || order.feedback_url || "").trim(),
     boxNowLocker: boxNow.name || boxNow.id || "",
     orderDetails: orderDetailsText(order),
   };
@@ -2875,6 +3657,9 @@ function renderOrderTemplateHtml(value, vars) {
   const html = String(value || "").replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, key) => {
     const replacement = vars[key] == null ? "" : String(vars[key]);
     const escaped = escapeHtml(replacement);
+    if (key === "feedback_url" && /^https?:\/\//i.test(replacement)) {
+      return `<a href="${escaped}" style="color:#92400e;font-weight:700;">${escaped}</a>`;
+    }
     return key === "coupon" && escaped ? `<strong>${escaped}</strong>` : escaped;
   });
   return html.replace(/\n/g, "<br>\n");
@@ -3020,7 +3805,7 @@ function appendGrubzSignatureToText(text) {
   return `${body}\n\n${GRUBZ_EMAIL_SIGNATURE_TEXT}`;
 }
 
-async function sendEmail({ to, from, bcc, subject, text, html }) {
+async function sendEmail({ to, from, bcc, subject, text, html, attachments }) {
   const user = secretValue(SMTP_USER);
   const pass = secretValue(SMTP_PASS);
   if (!user || !pass) {
@@ -3054,6 +3839,7 @@ async function sendEmail({ to, from, bcc, subject, text, html }) {
     subject,
     text: signedText,
     html: signedHtml,
+    attachments,
   });
   return {
     messageId: info.messageId || "",
@@ -3062,7 +3848,7 @@ async function sendEmail({ to, from, bcc, subject, text, html }) {
   };
 }
 
-async function sendOrderNotificationOnce(type, order, event) {
+async function sendOrderNotificationOnce(type, order, event, recipientOverride = "") {
   const orderId = order.id || order.stripeSessionId || order.stripePaymentIntentId || event?.id;
   const orderNumber = publicOrderId(order);
   const dedupeId =
@@ -3090,12 +3876,13 @@ async function sendOrderNotificationOnce(type, order, event) {
     }, { merge: true });
 
   try {
-    const to = secretValue(ORDER_NOTIFICATION_EMAIL, DEFAULT_NOTIFICATION_EMAIL);
+    const to = String(recipientOverride || "").trim() || secretValue(ORDER_NOTIFICATION_EMAIL, DEFAULT_NOTIFICATION_EMAIL);
     const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
     const message = buildOrderNotification(type, order, event);
     const result = await sendEmail({ to, from, ...message });
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
+      subject: message.subject || "",
       result,
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
@@ -3148,6 +3935,7 @@ async function sendCustomerSuccessEmailOnce(order, event) {
     const result = await sendEmail({ to: customerEmail, from, ...message });
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
+      subject: message.subject || "",
       result,
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
@@ -3163,6 +3951,30 @@ async function sendCustomerSuccessEmailOnce(order, event) {
   }
 }
 
+async function resolveOrderCustomerEmail(order = {}) {
+  const directEmail = normalizedEmail(
+    order.customer?.email ||
+    order.customerEmail ||
+    order.email ||
+    order.receiptEmail ||
+    order.shipping?.email ||
+    ""
+  );
+  if (directEmail) return directEmail;
+
+  const uid = String(order.uid || order.customer?.uid || "").trim();
+  if (uid && uid !== "guest" && !uid.includes("/")) {
+    const snap = await db.collection("users").doc(uid).get();
+    if (snap.exists) {
+      const user = snap.data() || {};
+      const userEmail = normalizedEmail(user.email || user.emailLower || "");
+      if (userEmail) return userEmail;
+    }
+  }
+
+  return "";
+}
+
 async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
   const fulfillmentKey = normalizeOrderStatus(order.fulfillmentStatus);
   const previousFulfillmentKey = normalizeOrderStatus(previousFulfillmentStatus);
@@ -3170,7 +3982,7 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
     return { skipped: true, reason: "fulfillment_unchanged" };
   }
 
-  const customerEmail = String(order.customer?.email || "").trim();
+  const customerEmail = await resolveOrderCustomerEmail(order);
   if (!customerEmail) {
     return { skipped: true, reason: "missing_customer_email" };
   }
@@ -3214,6 +4026,7 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
     const result = await sendEmail({ to: recipientEmail, from, bcc: bccEmail, ...message });
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
+      subject: message.subject || "",
       result,
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
@@ -3228,6 +4041,383 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
     throw err;
   }
 }
+
+async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
+  const customerEmail = await resolveOrderCustomerEmail(order);
+  if (!customerEmail) {
+    throw Object.assign(new Error("This order has no customer email address."), { status: 400 });
+  }
+  const settings = await getOrderEmailSettings();
+  const template = settings.templates.find(item =>
+    item.enabled !== false &&
+    item.templateContext === "feedback" &&
+    item.fulfillmentKey === "feedback_request"
+  );
+  if (!template) {
+    throw Object.assign(new Error("The feedback request email template is missing or disabled."), { status: 400 });
+  }
+  const orderId = order.id || publicOrderId(order);
+  const testOnly = options.testOnly === true;
+  const recipientEmail = testOnly ? GRUBZ_INFO_EMAIL : customerEmail;
+  const feedbackToken = randomUUID();
+  const feedbackRef = db.collection(ORDER_FEEDBACK_COLLECTION).doc(createHash("sha256").update(feedbackToken).digest("hex"));
+  const feedbackUrl = `${GRUBZ_URL}/feedback/?token=${encodeURIComponent(feedbackToken)}`;
+  await feedbackRef.set({
+    orderId,
+    orderNumber: publicOrderId(order),
+    customerName: String(order.customer?.name || order.shipping?.name || "").trim().slice(0, 180),
+    customerEmail,
+    recipientEmail,
+    testOnly,
+    language: String(order.language || order.locale || "en").toLowerCase() === "el" ? "el" : "en",
+    status: "pending",
+    createdAt: now(),
+    createdBy: adminUser.uid || "",
+  });
+  const notificationRef = db.collection("orderNotifications").doc(`order_feedback_${orderStatusDocKey(orderId)}_${Date.now()}`);
+  await notificationRef.set({
+    type: testOnly ? "order_feedback_request_test" : "order_feedback_request",
+    orderId,
+    orderNumber: publicOrderId(order),
+    customerEmail,
+    recipientEmail,
+    bccEmail: testOnly ? "" : GRUBZ_INFO_EMAIL,
+    testOnly,
+    status: "sending",
+    createdAt: now(),
+    createdBy: adminUser.uid || "",
+  });
+  try {
+    const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
+    const message = buildOrderStatusEmail(template, { ...order, feedbackUrl }, order.status || "", order.fulfillmentStatus || "", settings);
+    const result = await sendEmail({
+      to: recipientEmail,
+      ...(testOnly ? {} : { bcc: GRUBZ_INFO_EMAIL }),
+      from,
+      ...message,
+    });
+    await notificationRef.set({
+      status: result.skipped ? "skipped" : "sent",
+      subject: message.subject || "",
+      result,
+      updatedAt: now(),
+      sentAt: result.skipped ? null : now(),
+    }, { merge: true });
+    if (!result.skipped && !testOnly) {
+      await db.collection("orders").doc(orderId).set({
+        feedbackEmailSentAt: now(),
+        feedbackEmailSentBy: adminUser.uid || "",
+        feedbackEmailSendCount: FieldValue.increment(1),
+        updatedAt: now(),
+      }, { merge: true });
+    }
+    return result;
+  } catch (err) {
+    await notificationRef.set({
+      status: "failed",
+      error: err.message || "Email failed",
+      updatedAt: now(),
+    }, { merge: true });
+    throw err;
+  }
+}
+
+async function sendOrderLockerReminderEmail(order, adminUser = {}) {
+  const customerEmail = await resolveOrderCustomerEmail(order);
+  if (!customerEmail) {
+    throw Object.assign(new Error("This order has no customer email address."), { status: 400 });
+  }
+  const locker = order.shipping?.boxNow || order.boxNow || {};
+  if (!String(locker.name || locker.id || "").trim()) {
+    throw Object.assign(new Error("This order has no BOX NOW locker information."), { status: 400 });
+  }
+  const settings = await getOrderEmailSettings();
+  const template = settings.templates.find(item =>
+    item.enabled !== false &&
+    item.templateContext === "order" &&
+    item.fulfillmentKey === "locker_reminder"
+  );
+  if (!template) {
+    throw Object.assign(new Error("The BOX NOW locker reminder template is missing or disabled."), { status: 400 });
+  }
+  const orderId = order.id || publicOrderId(order);
+  const notificationRef = db.collection("orderNotifications").doc(`order_locker_reminder_${orderStatusDocKey(orderId)}_${Date.now()}`);
+  await notificationRef.set({
+    type: "order_locker_reminder",
+    orderId,
+    orderNumber: publicOrderId(order),
+    customerEmail,
+    recipientEmail: customerEmail,
+    bccEmail: GRUBZ_INFO_EMAIL,
+    status: "sending",
+    createdAt: now(),
+    createdBy: adminUser.uid || "",
+  });
+  try {
+    const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
+    const reminderOrder = {
+      ...order,
+      shipping: {
+        ...(order.shipping || {}),
+        boxNow: order.shipping?.boxNow || order.boxNow || {},
+      },
+    };
+    const message = buildOrderStatusEmail(template, reminderOrder, order.status || "", order.fulfillmentStatus || "", settings);
+    const result = await sendEmail({ to: customerEmail, from, bcc: GRUBZ_INFO_EMAIL, ...message });
+    await notificationRef.set({
+      status: result.skipped ? "skipped" : "sent",
+      subject: message.subject || "",
+      result,
+      updatedAt: now(),
+      sentAt: result.skipped ? null : now(),
+    }, { merge: true });
+    if (!result.skipped) {
+      await db.collection("orders").doc(orderId).set({
+        lockerReminderEmailSentAt: now(),
+        lockerReminderEmailSentBy: adminUser.uid || "",
+        lockerReminderEmailSendCount: FieldValue.increment(1),
+        updatedAt: now(),
+      }, { merge: true });
+    }
+    return result;
+  } catch (err) {
+    await notificationRef.set({
+      status: "failed",
+      error: err.message || "Email failed",
+      updatedAt: now(),
+    }, { merge: true });
+    throw err;
+  }
+}
+
+async function scheduleOrderEmail(order, type, sendAtInput, adminUser = {}, previousFulfillmentStatus = "") {
+  const allowedTypes = new Set(["fulfillment", "feedback", "locker_reminder"]);
+  if (!allowedTypes.has(type)) throw Object.assign(new Error("Unknown scheduled email type."), { status: 400 });
+  const sendAt = new Date(String(sendAtInput || ""));
+  if (Number.isNaN(sendAt.getTime()) || sendAt.getTime() <= Date.now()) {
+    throw Object.assign(new Error("Choose a future date and time."), { status: 400 });
+  }
+  if (sendAt.getTime() > Date.now() + 366 * 24 * 60 * 60 * 1000) {
+    throw Object.assign(new Error("Emails can be scheduled up to one year ahead."), { status: 400 });
+  }
+  const ref = db.collection(SCHEDULED_ORDER_EMAILS_COLLECTION).doc();
+  await ref.set({
+    orderId: order.id || publicOrderId(order),
+    orderNumber: publicOrderId(order),
+    type,
+    previousFulfillmentStatus: String(previousFulfillmentStatus || ""),
+    fulfillmentStatus: String(order.fulfillmentStatus || ""),
+    status: "pending",
+    scheduledAt: Timestamp.fromDate(sendAt),
+    createdAt: now(),
+    createdBy: adminUser.uid || "",
+  });
+  return { id: ref.id, scheduledAt: Timestamp.fromDate(sendAt), type };
+}
+
+exports.sendScheduledOrderEmails = onSchedule(
+  {
+    region: "europe-west1",
+    schedule: "every 5 minutes",
+    timeZone: "Europe/Athens",
+    secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM],
+  },
+  async () => {
+    const snap = await db.collection(SCHEDULED_ORDER_EMAILS_COLLECTION)
+      .where("status", "==", "pending")
+      .limit(500)
+      .get();
+    const dueJobs = snap.docs
+      .filter(doc => doc.data().scheduledAt?.toMillis?.() <= Date.now())
+      .sort((a, b) => a.data().scheduledAt.toMillis() - b.data().scheduledAt.toMillis())
+      .slice(0, 50);
+    for (const jobDoc of dueJobs) {
+      const claimed = await db.runTransaction(async transaction => {
+        const current = await transaction.get(jobDoc.ref);
+        if (!current.exists || current.data().status !== "pending") return false;
+        transaction.update(jobDoc.ref, { status: "sending", startedAt: now(), updatedAt: now() });
+        return true;
+      });
+      if (!claimed) continue;
+      const job = jobDoc.data();
+      try {
+        const orderSnap = await db.collection("orders").doc(job.orderId).get();
+        if (!orderSnap.exists) throw new Error("Order not found");
+        const order = { id: orderSnap.id, ...orderSnap.data() };
+        let result;
+        if (job.type === "feedback") result = await sendOrderFeedbackEmail(order, { uid: job.createdBy || "scheduler" });
+        else if (job.type === "locker_reminder") result = await sendOrderLockerReminderEmail(order, { uid: job.createdBy || "scheduler" });
+        else result = await sendOrderStatusEmailOnce(order, job.previousFulfillmentStatus || "");
+        await jobDoc.ref.set({ status: result?.skipped ? "skipped" : "sent", result: result || {}, sentAt: now(), updatedAt: now() }, { merge: true });
+      } catch (err) {
+        logger.error("Scheduled order email failed", { jobId: jobDoc.id, orderId: job.orderId, error: err.message });
+        await jobDoc.ref.set({ status: "failed", error: err.message || "Email failed", updatedAt: now() }, { merge: true });
+      }
+    }
+  }
+);
+
+exports.orderFeedback = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const token = String(req.query.token || req.body?.token || "").trim();
+      if (!token) return jsonError(res, 400, "Missing feedback link.");
+      const ref = db.collection(ORDER_FEEDBACK_COLLECTION).doc(createHash("sha256").update(token).digest("hex"));
+      const snap = await ref.get();
+      if (!snap.exists) return jsonError(res, 404, "This feedback link is invalid.");
+      const feedback = snap.data() || {};
+      if (req.method === "GET") {
+        return res.json({
+          ok: true,
+          orderNumber: feedback.orderNumber || "",
+          customerName: feedback.customerName || "",
+          language: feedback.language || "en",
+          submitted: feedback.status === "submitted",
+        });
+      }
+      if (req.method !== "POST") return jsonError(res, 405, "Use GET or POST.");
+      if (feedback.status === "submitted") return jsonError(res, 409, "Feedback has already been submitted for this order.");
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const rating = Math.round(Number(body.rating || 0));
+      if (rating < 1 || rating > 5) return jsonError(res, 400, "Choose a rating from 1 to 5.");
+      const comment = String(body.comment || "").trim().slice(0, 2000);
+      await ref.set({
+        rating,
+        comment,
+        status: "submitted",
+        submittedAt: now(),
+        updatedAt: now(),
+      }, { merge: true });
+      if (feedback.orderId) {
+        await db.collection("orders").doc(feedback.orderId).set({
+          customerFeedback: {
+            rating,
+            comment,
+            submittedAt: now(),
+          },
+          updatedAt: now(),
+        }, { merge: true });
+      }
+      return res.json({ ok: true });
+    } catch (err) {
+      logger.error("Order feedback failed", { error: err.message || "Order feedback failed" });
+      return jsonError(res, Number(err.status || 400), err.message || "Feedback could not be saved.");
+    }
+  }
+);
+
+exports.adminFeedback = onRequest(
+  { region: "europe-west1", invoker: "public", cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const adminUser = await requireAdmin(req);
+      if (req.method === "GET") {
+        const snap = await db.collection(ORDER_FEEDBACK_COLLECTION).orderBy("createdAt", "desc").limit(500).get();
+        const feedback = snap.docs.map(doc => {
+          const row = doc.data() || {};
+          return {
+            id: doc.id,
+            orderId: row.orderId || "",
+            orderNumber: row.orderNumber || "",
+            customerName: row.customerName || "",
+            customerEmail: row.customerEmail || "",
+            language: row.language || "en",
+            status: row.status || "pending",
+            rating: Number(row.rating || 0),
+            comment: row.comment || "",
+            reviewed: row.reviewed === true,
+            internalNote: row.internalNote || "",
+            createdAt: row.createdAt || null,
+            submittedAt: row.submittedAt || null,
+            reviewedAt: row.reviewedAt || null,
+            reviewedBy: row.reviewedBy || "",
+          };
+        });
+        const submitted = feedback.filter(row => row.status === "submitted" && row.rating > 0);
+        const distribution = [1, 2, 3, 4, 5].map(rating => ({
+          rating,
+          count: submitted.filter(row => row.rating === rating).length,
+        }));
+        const average = submitted.length
+          ? submitted.reduce((sum, row) => sum + row.rating, 0) / submitted.length
+          : 0;
+        return res.json({
+          ok: true,
+          feedback,
+          summary: {
+            requests: feedback.length,
+            responses: submitted.length,
+            awaitingReview: submitted.filter(row => !row.reviewed).length,
+            averageRating: Number(average.toFixed(2)),
+            responseRate: feedback.length ? Number(((submitted.length / feedback.length) * 100).toFixed(1)) : 0,
+            distribution,
+          },
+        });
+      }
+      if (req.method === "PATCH") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const id = String(body.id || "").trim();
+        if (!id || id.includes("/")) return jsonError(res, 400, "Missing feedback ID.");
+        const ref = db.collection(ORDER_FEEDBACK_COLLECTION).doc(id);
+        const snap = await ref.get();
+        if (!snap.exists) return jsonError(res, 404, "Feedback not found.");
+        const existing = snap.data() || {};
+        const reviewed = body.reviewed === true;
+        const update = {
+          reviewed,
+          internalNote: String(body.internalNote || "").trim().slice(0, 2000),
+          reviewedAt: reviewed ? now() : null,
+          reviewedBy: reviewed ? adminUser.uid || "" : "",
+          updatedAt: now(),
+        };
+        await ref.set(update, { merge: true });
+        if (existing.orderId) {
+          await db.collection("orders").doc(existing.orderId).update({
+            "customerFeedback.reviewed": reviewed,
+            "customerFeedback.internalNote": update.internalNote,
+            "customerFeedback.reviewedAt": update.reviewedAt,
+            updatedAt: now(),
+          });
+        }
+        return res.json({ ok: true });
+      }
+      if (req.method === "DELETE") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const id = String(req.query.id || body.id || "").trim();
+        if (!id || id.includes("/")) return jsonError(res, 400, "Missing feedback ID.");
+        const ref = db.collection(ORDER_FEEDBACK_COLLECTION).doc(id);
+        const snap = await ref.get();
+        if (!snap.exists) return jsonError(res, 404, "Feedback not found.");
+        const existing = snap.data() || {};
+        await ref.delete();
+        if (existing.status === "submitted" && existing.orderId) {
+          const orderRef = db.collection("orders").doc(existing.orderId);
+          const orderSnap = await orderRef.get();
+          if (orderSnap.exists) {
+            const storedFeedback = orderSnap.data()?.customerFeedback || {};
+            const storedSubmittedAt = millisFromTimestamp(storedFeedback.submittedAt);
+            const deletedSubmittedAt = millisFromTimestamp(existing.submittedAt);
+            if (!storedSubmittedAt || !deletedSubmittedAt || storedSubmittedAt === deletedSubmittedAt) {
+              await orderRef.set({ customerFeedback: FieldValue.delete(), updatedAt: now() }, { merge: true });
+            }
+          }
+        }
+        logger.info("Admin deleted customer feedback", { feedbackId: id, orderId: existing.orderId || "", adminUid: adminUser.uid || "" });
+        return res.json({ ok: true });
+      }
+      return jsonError(res, 405, "Use GET, PATCH, or DELETE.");
+    } catch (err) {
+      return adminError(res, err);
+    }
+  }
+);
 
 async function sendUserSignupNotification(user = {}) {
   const uid = user.uid || user.email || randomUUID();
@@ -3322,7 +4512,13 @@ exports.verifyCheckout = onRequest(
       const sid = String(req.query.sid || "").trim();
       if (!sid) return res.status(400).json({ error: "Missing sid" });
 
-      const { stripe } = await activeStripeConfig(req);
+      // Stripe Checkout session IDs identify their environment. The success
+      // page is always hosted on production, including checkouts created by a
+      // local storefront, so request origin cannot safely select the key here.
+      const stripeMode = sid.startsWith("cs_test_") ? "test" : "live";
+      const stripeSecret = stripeSecretForMode(stripeMode);
+      if (!stripeSecret) throw new Error(`Stripe ${stripeMode} secret is not configured`);
+      const stripe = stripeClient(stripeSecret);
       const session = await stripe.checkout.sessions.retrieve(sid);
 
       if (session?.metadata?.uid && session.metadata.uid !== "guest" && !uid) {
@@ -3336,11 +4532,14 @@ exports.verifyCheckout = onRequest(
       const paid =
         session?.status === "complete" && session?.payment_status === "paid";
 
+      const order = paid ? await upsertOrderFromSession(session) : null;
+
       return res.json({
         paid,
-        orderNumber: session?.metadata?.orderNumber || "",
+        orderNumber: order?.orderNumber || session?.metadata?.orderNumber || "",
         amount_total: session?.amount_total || null,
         currency: session?.currency || null,
+        inventoryState: order?.inventoryState || (paid ? "reserved" : "none"),
       });
     } catch (e) {
       console.error("verifyCheckout error:", e);
@@ -3552,6 +4751,7 @@ function maskedSecret(value) {
 function defaultBoxNowSettings() {
   return {
     activeEnvironment: "stage",
+    webhookEnvironment: "stage",
     stage: {
       clientId: "",
       clientSecret: "",
@@ -3619,6 +4819,7 @@ function publicBoxNowSettings(settings = {}) {
   }
   return {
     activeEnvironment: sanitizeBoxNowEnvironment(settings.activeEnvironment || "stage"),
+    webhookEnvironment: sanitizeBoxNowEnvironment(settings.webhookEnvironment || "stage"),
     environments: envs,
   };
 }
@@ -3645,6 +4846,7 @@ async function getBoxNowSettings({ includeSecrets = false } = {}) {
   const stored = snap.exists ? snap.data() || {} : {};
   const settings = {
     activeEnvironment: sanitizeBoxNowEnvironment(stored.activeEnvironment || defaults.activeEnvironment),
+    webhookEnvironment: sanitizeBoxNowEnvironment(stored.webhookEnvironment || defaults.webhookEnvironment),
     stage: sanitizeBoxNowEnvConfig(stored.stage || {}, defaults.stage),
     production: sanitizeBoxNowEnvConfig(stored.production || {}, defaults.production),
   };
@@ -3666,8 +4868,10 @@ async function getEffectiveBoxNowSettings(req = null, options = {}) {
 async function saveBoxNowSettings(input = {}, adminUser = {}) {
   const existing = await getBoxNowSettings({ includeSecrets: true });
   const activeEnvironment = sanitizeBoxNowEnvironment(input.activeEnvironment || existing.activeEnvironment);
+  const webhookEnvironment = sanitizeBoxNowEnvironment(input.webhookEnvironment || existing.webhookEnvironment || "stage");
   const settings = {
     activeEnvironment,
+    webhookEnvironment,
     stage: sanitizeBoxNowEnvConfig(input.stage || {}, existing.stage),
     production: sanitizeBoxNowEnvConfig(input.production || {}, existing.production),
     updatedAt: now(),
@@ -3728,6 +4932,9 @@ async function boxNowApiRequest(config, path, options = {}) {
 
 function boxNowDeliveryErrorMessage(response) {
   const code = String(response?.data?.code || "").trim();
+  if (code === "P405" || code === "C404") {
+    return "BOX NOW delivery request failed (400/P405): Invalid phone number. BOX NOW requires the sender and recipient phone numbers in full international format, for example +30 69 1234 5678.";
+  }
   if (code === "P411") {
     return "BOX NOW delivery request failed (400/P411): This BOX NOW account is not eligible for Cash-on-delivery. Select Prepaid as the BOX NOW shipping type, or ask BOX NOW to enable COD for these API credentials.";
   }
@@ -3806,13 +5013,28 @@ function boxNowTrackingUrl(parcelId = "") {
   return id ? `https://track.boxnow.gr/en?track=${encodeURIComponent(id)}` : "";
 }
 
-function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP) {
+function normalizeBoxNowPhone(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  let compact = raw.replace(/[()\s.-]+/g, "");
+  if (compact.startsWith("00")) compact = `+${compact.slice(2)}`;
+  compact = compact.replace(/(?!^\+)[^\d]/g, "");
+  if (compact.startsWith("+")) return `+${compact.slice(1).replace(/\D/g, "")}`;
+  const digits = compact.replace(/\D/g, "");
+  if (/^30\d{10}$/.test(digits)) return `+${digits}`;
+  if (/^\d{10}$/.test(digits)) return `+30${digits}`;
+  return digits ? `+${digits}` : raw;
+}
+
+function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP, compartmentSizeOverride = null) {
   const cartItems = (Array.isArray(order.items) ? order.items : []).map(item => ({
     id: item.id,
     qty: Math.max(1, Number(item.quantity || item.qty || 1)),
   }));
   const parcel = calculateBoxNowParcel(cartItems, productsMap);
   const parcelSizes = Array.isArray(parcel.parcels) && parcel.parcels.length ? parcel.parcels : [parcel];
+  const requestedCompartmentSize = Number(compartmentSizeOverride);
+  const hasCompartmentOverride = [1, 2, 3].includes(requestedCompartmentSize);
   const subtotal = Math.max(0, Number(order.amountSubtotal || orderItemsSubtotal(order)));
   const valuePerParcel = parcelSizes.length ? subtotal / parcelSizes.length / 100 : 0;
   const weightPerParcel = parcelSizes.length ? Math.max(1, Math.round(Number(parcel.weightGrams || order.boxnowFee?.weightGrams || 0) / parcelSizes.length)) : 0;
@@ -3821,8 +5043,36 @@ function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP) {
     name: `${publicOrderId(order)} parcel ${index + 1}`,
     value: valuePerParcel.toFixed(2),
     weight: weightPerParcel,
-    compartmentSize: Number(size.code || parcel.code || 2),
+    compartmentSize: hasCompartmentOverride ? requestedCompartmentSize : Number(size.code || parcel.code || 2),
   }));
+}
+
+function boxNowDestinationEmailFromOrder(order = {}) {
+  return normalizedEmail(
+    order.shipping?.email ||
+    order.customer?.email ||
+    order.customerEmail ||
+    order.email ||
+    order.receiptEmail ||
+    ""
+  );
+}
+
+async function resolveBoxNowDestinationEmail(order = {}) {
+  const orderEmail = boxNowDestinationEmailFromOrder(order);
+  if (orderEmail) return orderEmail;
+
+  const uid = String(order.uid || order.customer?.uid || "").trim();
+  if (uid && uid !== "guest" && !uid.includes("/")) {
+    const userSnap = await db.collection("users").doc(uid).get();
+    if (userSnap.exists) {
+      const user = userSnap.data() || {};
+      const userEmail = normalizedEmail(user.email || user.emailLower || "");
+      if (userEmail) return userEmail;
+    }
+  }
+
+  return GRUBZ_INFO_EMAIL;
 }
 
 function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP, options = {}) {
@@ -3835,10 +5085,10 @@ function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP, o
   if (!config.originContactNumber) throw new Error(`Set the ${config.environment} BOX NOW origin contact phone first`);
 
   const customer = order.customer || {};
-  const destinationPhone = shipping.phone || customer.phone || "";
-  const destinationEmail = customer.email || "";
+  const originPhone = normalizeBoxNowPhone(config.originContactNumber);
+  const destinationPhone = normalizeBoxNowPhone(shipping.phone || customer.phone || "");
+  const destinationEmail = normalizedEmail(options.destinationEmail || boxNowDestinationEmailFromOrder(order) || GRUBZ_INFO_EMAIL);
   if (!destinationPhone) throw new Error("Order is missing the recipient phone number");
-  if (!destinationEmail) throw new Error("Order is missing the recipient email");
 
   const requestedPaymentMode = String(options.paymentMode || "").trim().toLowerCase();
   const isCod = requestedPaymentMode
@@ -3862,7 +5112,7 @@ function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP, o
     paymentMode: isCod ? "cod" : "prepaid",
     amountToBeCollected: isCod ? (amountToBeCollectedCents / 100).toFixed(2) : "0.00",
     origin: {
-      contactNumber: config.originContactNumber,
+      contactNumber: originPhone,
       contactEmail: config.originContactEmail || GRUBZ_INFO_EMAIL,
       contactName: config.originContactName || "GRUBZ",
       locationId: String(config.originLocationId),
@@ -3874,7 +5124,7 @@ function buildBoxNowDeliveryRequest(order, config, productsMap = PRODUCTS_MAP, o
       locationId: destinationLocationId,
       ...(stageDestinationOverride ? { stageDestinationOverride } : {}),
     },
-    items: boxNowParcelItemsForOrder(order, productsMap),
+    items: boxNowParcelItemsForOrder(order, productsMap, options.compartmentSize),
   };
 }
 
@@ -3894,9 +5144,12 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
   const orderEnvironment = order.boxnowFee?.environment || order.boxNowFee?.environment || "";
   const config = boxNowEnvConfig(settings, options.environment || orderEnvironment || settings.activeEnvironment);
   const productsMap = await getProductsMap({ includeInactive: true });
+  const destinationEmail = await resolveBoxNowDestinationEmail(order);
   const payload = buildBoxNowDeliveryRequest(order, config, productsMap, {
     paymentMode: options.paymentMode || "",
+    compartmentSize: options.compartmentSize,
     amountToBeCollectedCents: options.amountToBeCollectedCents,
+    destinationEmail,
   });
   const { token } = await getBoxNowAccessToken(config);
   const response = await boxNowApiRequest(config, "/api/v1/delivery-requests", {
@@ -3906,7 +5159,16 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    throw new Error(boxNowDeliveryErrorMessage(response));
+    console.error("BOX NOW delivery request rejected", {
+      orderId,
+      environment: config.environment,
+      status: response.status,
+      response: response.data || {},
+      request: payload,
+    });
+    const err = new Error(boxNowDeliveryErrorMessage(response));
+    err.details = { status: response.status, response: response.data || {}, request: payload };
+    throw err;
   }
 
   const parcels = Array.isArray(response.data?.parcels) ? response.data.parcels : [];
@@ -3963,17 +5225,33 @@ function cartWeightGrams(items, productsMap = PRODUCTS_MAP) {
 }
 
 function flattenedBagCapacityKg(parcel = {}) {
-  const layers = Math.floor(Number(parcel.heightCm || 0) / ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm);
-  return Math.max(0, layers * BOXNOW_FLATTENED_BAGS_PER_LAYER);
+  const configuredCapacity = Number(parcel.capacityKg);
+  if (Number.isFinite(configuredCapacity) && configuredCapacity > 0) return configuredCapacity;
+  const fitsOneKgBag =
+    Number(parcel.heightCm || 0) >= BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM &&
+    Number(parcel.widthCm || 0) >= ONE_KG_FLEXIBLE_BAG_PARCEL.widthCm &&
+    Number(parcel.lengthCm || 0) >= ONE_KG_FLEXIBLE_BAG_PARCEL.lengthCm;
+  return fitsOneKgBag ? BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT : 0;
 }
 
 function flattenedBagRequiredHeightCm(weightGrams = 0) {
   const kgUnits = Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000);
-  const layers = Math.ceil(kgUnits / BOXNOW_FLATTENED_BAGS_PER_LAYER);
-  return layers * ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm;
+  const compartments = Math.ceil(kgUnits / BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT);
+  return compartments * BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM;
 }
 
-function cheapestParcelCombinationForWeight(weightGrams = 0) {
+function boxNowParcelSizesWithPrices(shippingSettings = {}) {
+  const prices = shippingSettings.boxnowParcelPrices && typeof shippingSettings.boxnowParcelPrices === "object"
+    ? shippingSettings.boxnowParcelPrices
+    : {};
+  return BOXNOW_PARCEL_SIZES.map(parcel => {
+    const customAmount = prices[parcel.code] ?? prices[String(parcel.label || "").toLowerCase()];
+    const amount = Math.max(0, Math.round(Number(customAmount ?? parcel.amount)));
+    return { ...parcel, amount: Number.isFinite(amount) ? amount : parcel.amount };
+  });
+}
+
+function cheapestParcelCombinationForWeight(weightGrams = 0, parcelSizes = BOXNOW_PARCEL_SIZES) {
   const kgUnits = Math.max(1, Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000));
   const maxParcels = kgUnits;
   let best = null;
@@ -3982,9 +5260,9 @@ function cheapestParcelCombinationForWeight(weightGrams = 0) {
     for (let medium = 0; medium <= maxParcels; medium += 1) {
       for (let large = 0; large <= maxParcels; large += 1) {
         const parcels = [
-          ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
-          ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
-          ...Array.from({ length: large }, () => BOXNOW_PARCEL_SIZES[2]),
+          ...Array.from({ length: small }, () => parcelSizes[0]),
+          ...Array.from({ length: medium }, () => parcelSizes[1]),
+          ...Array.from({ length: large }, () => parcelSizes[2]),
         ];
         if (!parcels.length) continue;
         const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
@@ -3994,9 +5272,9 @@ function cheapestParcelCombinationForWeight(weightGrams = 0) {
         const capacityHeightCm = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
         if (
           best &&
-          (amount > best.amount ||
-            (amount === best.amount && count > best.count) ||
-            (amount === best.amount && count === best.count && capacityKg >= best.capacityKg))
+          (count > best.count ||
+            (count === best.count && amount > best.amount) ||
+            (count === best.count && amount === best.amount && capacityKg >= best.capacityKg))
         ) {
           continue;
         }
@@ -4005,7 +5283,7 @@ function cheapestParcelCombinationForWeight(weightGrams = 0) {
     }
   }
 
-  return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
+  return best?.parcels || [parcelSizes[parcelSizes.length - 1]];
 }
 
 function expandParcelItems(items, productsMap = PRODUCTS_MAP) {
@@ -4192,9 +5470,9 @@ function cheapestParcelCombination(items) {
         const count = parcels.length;
         if (
           best &&
-          (amount > best.amount ||
-            (amount === best.amount && count > best.count) ||
-            (amount === best.amount && count === best.count && capacity >= best.capacity))
+          (count > best.count ||
+            (count === best.count && amount > best.amount) ||
+            (count === best.count && amount === best.amount && capacity >= best.capacity))
         ) {
           continue;
         }
@@ -4207,13 +5485,13 @@ function cheapestParcelCombination(items) {
   return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
 }
 
-function calculateBoxNowParcel(items, productsMap = PRODUCTS_MAP) {
+function calculateBoxNowParcel(items, productsMap = PRODUCTS_MAP, parcelSizes = BOXNOW_PARCEL_SIZES) {
   const weightGrams = cartWeightGrams(items, productsMap);
   const kgUnits = Math.max(1, Math.ceil(Math.max(0, weightGrams) / 1000));
-  const parcels = cheapestParcelCombinationForWeight(weightGrams);
+  const parcels = cheapestParcelCombinationForWeight(weightGrams, parcelSizes);
   const largestParcel = parcels.reduce((largest, parcel) => {
     return parcel.heightCm > largest.heightCm ? parcel : largest;
-  }, parcels[0] || BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]);
+  }, parcels[0] || parcelSizes[parcelSizes.length - 1]);
   const amount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
   const capacityHeightCm = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
   const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
@@ -4334,10 +5612,11 @@ async function getBoxNowToken() {
 
 async function calculateBoxNowFee(items, shipping, productsMap = PRODUCTS_MAP, boxNowConfig = null) {
   const weightGrams = cartWeightGrams(items, productsMap);
-  const parcel = calculateBoxNowParcel(items, productsMap);
   const environment = boxNowConfig?.environment || "";
   const apiBaseUrl = boxNowConfig?.apiBaseUrl || "";
   const shippingSettings = await getShippingSettings();
+  const parcelSizes = boxNowParcelSizesWithPrices(shippingSettings);
+  const parcel = calculateBoxNowParcel(items, productsMap, parcelSizes);
   const baseAmount = shippingSettings.boxnowFeeOverrideEnabled
     ? shippingSettings.boxnowFeeOverrideCents
     : parcel.amount;
@@ -4350,7 +5629,7 @@ async function calculateBoxNowFee(items, shipping, productsMap = PRODUCTS_MAP, b
     baseAmount,
     discountCents,
     currency: "eur",
-    source: shippingSettings.boxnowFeeOverrideEnabled ? "admin-override" : "boxnow-parcel-size",
+    source: shippingSettings.boxnowFeeOverrideEnabled ? "admin-override" : "admin-parcel-prices",
     discountSource: discountCents > 0 ? "admin-discount" : "",
     weightGrams,
     parcel,
@@ -4368,11 +5647,20 @@ function sanitizeShippingSettings(input = {}) {
   const rawDiscountCents = input.boxnowFeeDiscountCents ?? input.boxnowFeeDiscountAmountCents ?? null;
   const discountAmount = rawDiscountCents === "" || rawDiscountCents == null ? 0 : Math.round(Number(rawDiscountCents));
   if (!Number.isFinite(discountAmount) || discountAmount < 0) throw new Error("Invalid BOX NOW discount amount");
+  const inputPrices = input.boxnowParcelPrices && typeof input.boxnowParcelPrices === "object" ? input.boxnowParcelPrices : {};
+  const boxnowParcelPrices = {};
+  for (const parcel of BOXNOW_PARCEL_SIZES) {
+    const raw = inputPrices[parcel.code] ?? inputPrices[String(parcel.label || "").toLowerCase()] ?? parcel.amount;
+    const cents = Math.max(0, Math.round(Number(raw)));
+    if (!Number.isFinite(cents)) throw new Error(`Invalid BOX NOW ${parcel.label} price`);
+    boxnowParcelPrices[parcel.code] = cents;
+  }
   return {
     boxnowFeeOverrideEnabled: overrideEnabled,
     boxnowFeeOverrideCents: amount,
     boxnowFeeDiscountEnabled: discountEnabled,
     boxnowFeeDiscountCents: discountAmount,
+    boxnowParcelPrices,
     updatedAt: now(),
   };
 }
@@ -4385,15 +5673,51 @@ async function getShippingSettings() {
       boxnowFeeOverrideCents: 0,
       boxnowFeeDiscountEnabled: false,
       boxnowFeeDiscountCents: 0,
+      boxnowParcelPrices: Object.fromEntries(BOXNOW_PARCEL_SIZES.map(parcel => [parcel.code, parcel.amount])),
     };
   }
   const data = snap.data() || {};
+  const savedPrices = data.boxnowParcelPrices && typeof data.boxnowParcelPrices === "object" ? data.boxnowParcelPrices : {};
   return {
     boxnowFeeOverrideEnabled: data.boxnowFeeOverrideEnabled === true,
     boxnowFeeOverrideCents: Math.max(0, Math.round(Number(data.boxnowFeeOverrideCents || 0))),
     boxnowFeeDiscountEnabled: data.boxnowFeeDiscountEnabled === true,
     boxnowFeeDiscountCents: Math.max(0, Math.round(Number(data.boxnowFeeDiscountCents || 0))),
+    boxnowParcelPrices: Object.fromEntries(BOXNOW_PARCEL_SIZES.map(parcel => {
+      const amount = Math.max(0, Math.round(Number(savedPrices[parcel.code] ?? savedPrices[String(parcel.label || "").toLowerCase()] ?? parcel.amount)));
+      return [parcel.code, Number.isFinite(amount) ? amount : parcel.amount];
+    })),
   };
+}
+
+const DEFAULT_MARKETING_SETTINGS = {
+  firstOrderOffer: {
+    enabled: true,
+    couponCode: "WELCOME10",
+  },
+};
+
+function sanitizeMarketingSettings(input = {}, existing = {}) {
+  const firstOrderInput = input.firstOrderOffer && typeof input.firstOrderOffer === "object" ? input.firstOrderOffer : {};
+  const existingFirstOrder = existing.firstOrderOffer && typeof existing.firstOrderOffer === "object" ? existing.firstOrderOffer : {};
+  const firstOrderOffer = {
+    ...DEFAULT_MARKETING_SETTINGS.firstOrderOffer,
+    ...existingFirstOrder,
+    ...firstOrderInput,
+  };
+  return {
+    firstOrderOffer: {
+      enabled: firstOrderOffer.enabled !== false,
+      couponCode: normalizeCouponCode(firstOrderOffer.couponCode || DEFAULT_MARKETING_SETTINGS.firstOrderOffer.couponCode).slice(0, 80),
+    },
+    updatedAt: now(),
+  };
+}
+
+async function getMarketingSettings() {
+  const snap = await db.doc(MARKETING_SETTINGS_DOC).get();
+  const existing = snap.exists ? snap.data() : {};
+  return sanitizeMarketingSettings(existing, DEFAULT_MARKETING_SETTINGS);
 }
 
 exports.getBoxNowFee = onRequest(
@@ -4431,6 +5755,42 @@ exports.getBoxNowFee = onRequest(
   }
 );
 
+exports.getShippingSettings = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "GET") return jsonError(res, 405, "Use GET");
+
+      const shipping = await getShippingSettings();
+      const marketing = await getMarketingSettings();
+      return res.json({
+        ok: true,
+        shipping: {
+          boxnowFeeOverrideEnabled: shipping.boxnowFeeOverrideEnabled === true,
+          boxnowFeeOverrideCents: Math.max(0, Number(shipping.boxnowFeeOverrideCents || 0)),
+          boxnowFeeDiscountEnabled: shipping.boxnowFeeDiscountEnabled === true,
+          boxnowFeeDiscountCents: Math.max(0, Number(shipping.boxnowFeeDiscountCents || 0)),
+          boxnowParcelPrices: shipping.boxnowParcelPrices || {},
+        },
+        marketing: {
+          firstOrderOffer: {
+            enabled: marketing.firstOrderOffer?.enabled !== false,
+            couponCode: marketing.firstOrderOffer?.couponCode || "",
+          },
+        },
+      });
+    } catch (e) {
+      logger.error("getShippingSettings failed", e);
+      return jsonError(res, 400, e.message || "Shipping settings unavailable");
+    }
+  }
+);
+
 // ===== Create Checkout Session =====
 exports.createCheckoutSession = onRequest(
   {
@@ -4462,10 +5822,37 @@ exports.createCheckoutSession = onRequest(
       const referralCode = normalizeReferralCode(body.referralCode || body.referral || "");
       const language = String(body.language || "").trim().toLowerCase() === "el" ? "el" : "en";
       const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+      const deliveryMethod = String(shipping?.deliveryMethod || "boxnow").trim();
       const boxNow = shipping && shipping.boxNow && typeof shipping.boxNow === "object" ? shipping.boxNow : null;
       const cashOnDelivery = shipping?.cashOnDelivery === true;
 
       if (!items.length) return res.status(400).json({ error: "No items" });
+      const shippingError = validateShipping(shipping);
+      if (shippingError) return res.status(400).json({ error: shippingError });
+      if (uid) {
+        await persistCustomerShipping(uid, shipping, { email: authUser?.email || "" });
+      }
+      if (deliveryMethod === "courier_quote") {
+        if (!uid || !authUser?.email) return res.status(401).json({ error: "Sign in is required to request a courier quote" });
+        const productsMap = await getProductsMap();
+        const order = await createCourierQuoteOrder({
+          uid,
+          email: authUser.email,
+          items,
+          shipping,
+          couponCode,
+          referralCode,
+          productsMap,
+          language,
+        });
+        await sendOrderNotificationOnce("courier_quote_order", order, { id: order.id, type: "courier_quote" }, GRUBZ_INFO_EMAIL);
+        return res.status(200).json({
+          ok: true,
+          courierQuote: true,
+          orderNumber: order.orderNumber,
+          url: `/checkout/success?quote=1&order=${encodeURIComponent(order.orderNumber)}`,
+        });
+      }
       if (!String(boxNow?.id || "").trim()) {
         return res.status(400).json({ error: "Missing BOX NOW locker" });
       }
@@ -4505,6 +5892,12 @@ exports.createCheckoutSession = onRequest(
         if (!p) throw new Error(`Unknown product id: ${id}`);
         if (p.active === false) throw new Error(`Inactive product id: ${id}`);
         const quantity = Math.max(1, Number(qty || 0));
+        const availableStock = Number.isFinite(Number(p.stock)) ? Math.max(0, Number(p.stock)) : null;
+        if (availableStock != null && quantity > availableStock && p.allowBackorder !== true) {
+          throw new Error(availableStock > 0
+            ? `Only ${availableStock} available for ${p.name || id}`
+            : `${p.name || id} is out of stock`);
+        }
         const stripeRefs = stripeRefsForProduct(p, stripeConfig.mode);
         if (stripeRefs.priceId) return { price: stripeRefs.priceId, quantity };
         if (stripeConfig.mode === "live") {
@@ -4556,6 +5949,12 @@ exports.createCheckoutSession = onRequest(
         deliveryMethod: shipping?.deliveryMethod || "boxnow",
         shippingName: String(shipping?.name || "").slice(0, 500),
         shippingPhone: String(shipping?.phone || "").slice(0, 500),
+        shippingAddressLine1: String(shipping?.addressLine1 || shipping?.line1 || "").slice(0, 500),
+        shippingAddressLine2: String(shipping?.addressLine2 || shipping?.line2 || "").slice(0, 500),
+        shippingCity: String(shipping?.city || "").slice(0, 500),
+        shippingRegion: String(shipping?.region || "").slice(0, 500),
+        shippingPostalCode: String(shipping?.postalCode || shipping?.postal || "").slice(0, 500),
+        shippingCountry: String(shipping?.country || "Greece").slice(0, 500),
         cashOnDelivery: shipping?.cashOnDelivery === true ? "true" : "false",
         boxnowLockerId: String(boxNow?.id || "").slice(0, 500),
         boxnowLockerName: String(boxNow?.name || "").slice(0, 500),
@@ -4581,13 +5980,18 @@ exports.createCheckoutSession = onRequest(
         language,
       };
 
+      const requestOrigin = String(req.headers.origin || "").trim();
+      const returnBase = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)
+        ? requestOrigin
+        : HOSTING_BASE;
       const params = {
         mode: "payment",
+        locale: language,
         client_reference_id: orderNumber,
         line_items,
         automatic_tax: { enabled: false },
-        success_url: `${HOSTING_BASE}/checkout/success?sid={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${HOSTING_BASE}/checkout/cancelled`,
+        success_url: `${returnBase}/checkout/success?sid={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${returnBase}/checkout/cancelled`,
         metadata: checkoutMetadata,
         payment_intent_data: { metadata: checkoutMetadata },
       };
@@ -4731,12 +6135,62 @@ exports.adminProducts = onRequest(
         const products = Object.entries(productsMap)
           .map(([id, product]) => productToPublic(id, product))
           .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || a.name.localeCompare(b.name));
-        return res.json({ products });
+        const inventoryPools = await getInventoryPools();
+        const inventoryHistorySnap = await db.collection("inventoryTransactions").orderBy("createdAt", "desc").limit(50).get();
+        const inventoryHistory = inventoryHistorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return res.json({ products, inventoryPools, inventoryHistory });
       }
 
       if (req.method === "POST") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (String(body.action || "").trim() === "saveInventoryPool") {
+          const input = body.pool && typeof body.pool === "object" ? body.pool : {};
+          const id = String(input.id || "").trim().toLowerCase();
+          if (!/^[a-z0-9][a-z0-9-]{1,80}$/.test(id)) return jsonError(res, 400, "Pool ID must use lowercase letters, numbers, and hyphens");
+          const name = String(input.name || "").trim().slice(0, 120);
+          if (!name) return jsonError(res, 400, "Pool name is required");
+          const poolRef = db.collection("inventoryPools").doc(id);
+          const existing = await poolRef.get();
+          await poolRef.set({
+            id,
+            name,
+            material: String(input.material || "").trim().slice(0, 240),
+            active: input.active !== false,
+            allowBackorder: input.allowBackorder === true,
+            onHandGrams: existing.exists ? Math.max(0, Number(existing.data().onHandGrams || 0)) : 0,
+            reservedGrams: existing.exists ? Math.max(0, Number(existing.data().reservedGrams || 0)) : 0,
+            createdAt: existing.exists ? existing.data().createdAt || now() : now(),
+            updatedAt: now(),
+            updatedBy: adminUser.uid,
+          }, { merge:true });
+          return res.json({ ok:true, pool:inventoryPoolView(id, (await poolRef.get()).data()) });
+        }
+        if (String(body.action || "").trim() === "adjustInventory") {
+          const poolId = String(body.poolId || "").trim();
+          const poolCheck = await db.collection("inventoryPools").doc(poolId).get();
+          if (!poolCheck.exists) return jsonError(res, 400, "Unknown inventory pool");
+          const deltaGrams = Math.round(Number(body.deltaGrams || 0));
+          if (!Number.isFinite(deltaGrams) || !deltaGrams) return jsonError(res, 400, "Enter a non-zero stock adjustment");
+          const reason = String(body.reason || "Manual adjustment").trim().slice(0, 500);
+          const poolRef = db.collection("inventoryPools").doc(poolId);
+          const transactionRef = db.collection("inventoryTransactions").doc();
+          let result;
+          await db.runTransaction(async transaction => {
+            const snap = await transaction.get(poolRef);
+            const current = inventoryPoolView(poolId, snap.exists ? snap.data() : {});
+            const onHandGrams = Math.max(0, current.onHandGrams + deltaGrams);
+            const appliedDeltaGrams = onHandGrams - current.onHandGrams;
+            transaction.set(poolRef, { onHandGrams, reservedGrams: current.reservedGrams, updatedAt: now(), updatedBy: adminUser.uid }, { merge: true });
+            transaction.set(transactionRef, { poolId, type: "manual_adjustment", deltaGrams: appliedDeltaGrams, reason, createdAt: now(), createdBy: adminUser.uid });
+            result = inventoryPoolView(poolId, { onHandGrams, reservedGrams: current.reservedGrams, updatedAt: now() });
+          });
+          return res.json({ ok: true, pool: result });
+        }
         const product = sanitizeProductPayload(body.product || body);
+        if (product.inventoryPoolId) {
+          const poolSnap = await db.collection("inventoryPools").doc(product.inventoryPoolId).get();
+          if (!poolSnap.exists) return jsonError(res, 400, "Selected inventory pool does not exist");
+        }
         const ref = db.collection("products").doc(product.id);
         const existing = await ref.get();
         await ref.set(
@@ -4813,6 +6267,38 @@ exports.adminProductImage = onRequest(
       });
       const status = Number(err.status || 400);
       return jsonError(res, status, `${step}_failed: ${err.message || "Product image upload failed"}`);
+    }
+  }
+);
+
+exports.adminNewsletterImage = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+      await requireAdmin(req);
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const upload = parseImageUpload({ ...body, id: `newsletter-${Date.now()}` });
+      const runningInEmulator = process.env.FUNCTIONS_EMULATOR === "true" || Boolean(
+        String(process.env.FIREBASE_STORAGE_EMULATOR_HOST || process.env.STORAGE_EMULATOR_HOST || "").trim()
+      );
+      if (runningInEmulator && !process.env.K_SERVICE) {
+        return res.json({
+          ok: true,
+          image: `data:${upload.contentType};base64,${upload.buffer.toString("base64")}`,
+          inline: true,
+        });
+      }
+      const stored = await saveProductImageToStorage(upload);
+      return res.json({ ok: true, image: stored.image, path: stored.path, bucket: stored.bucketName });
+    } catch (err) {
+      logger.error("adminNewsletterImage failed", { message: err.message || "Newsletter image upload failed" });
+      return adminError(res, err);
     }
   }
 );
@@ -4904,12 +6390,122 @@ exports.adminOrders = onRequest(
 
         const orderRef = db.collection("orders").doc(id);
         const existingSnap = await orderRef.get();
+        if (!existingSnap.exists) return jsonError(res, 404, "Order not found");
         const existingOrder = existingSnap.exists ? { id, ...existingSnap.data() } : { id };
+        if (String(body.action || "").trim() === "sendFeedbackRequest") {
+          const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser);
+          return res.json({ ok: true, feedbackEmail });
+        }
+        if (String(body.action || "").trim() === "sendFeedbackRequestTest") {
+          const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser, { testOnly: true });
+          return res.json({ ok: true, feedbackEmail });
+        }
+        if (String(body.action || "").trim() === "sendLockerReminder") {
+          const lockerReminderEmail = await sendOrderLockerReminderEmail(existingOrder, adminUser);
+          return res.json({ ok: true, lockerReminderEmail });
+        }
+        if (String(body.action || "").trim() === "scheduleEmail") {
+          const scheduledEmail = await scheduleOrderEmail(
+            existingOrder,
+            String(body.emailType || "").trim(),
+            body.sendAt,
+            adminUser,
+            body.previousFulfillmentStatus || ""
+          );
+          return res.json({ ok: true, scheduledEmail });
+        }
+	        if (String(body.action || "").trim() === "uploadInvoiceReceiptPdf") {
+	          const dataUrl = String(body.pdfDataUrl || "");
+	          if (dataUrl.length > 14 * 1024 * 1024) return jsonError(res, 400, "PDF is too large. Use a file up to 10 MB.");
+	          const match = dataUrl.match(/^data:application\/pdf;base64,([a-z0-9+/=\s]+)$/i);
+	          if (!match) return jsonError(res, 400, "Upload a PDF file.");
+	          const buffer = Buffer.from(match[1].replace(/\s/g, ""), "base64");
+	          if (!buffer.length || buffer.length > 10 * 1024 * 1024) return jsonError(res, 400, "PDF must be between 1 byte and 10 MB.");
+	          if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") return jsonError(res, 400, "The uploaded file is not a valid PDF.");
+	          const originalName = String(body.filename || "invoice-receipt.pdf").trim().slice(0, 180) || "invoice-receipt.pdf";
+	          const safeName = originalName.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "invoice-receipt.pdf";
+	          const bucket = getStorage().bucket(FIREBASE_STORAGE_BUCKET);
+	          const path = `order-documents/${id}/${Date.now()}-${safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`}`;
+	          const file = bucket.file(path);
+	          await file.save(buffer, {
+	            resumable: false,
+	            metadata: {
+	              contentType: "application/pdf",
+	              cacheControl: "private, no-store, max-age=0",
+	              metadata: { orderId: id, uploadedBy: adminUser.uid || "" },
+	            },
+	          });
+	          const document = {
+	            bucket: bucket.name,
+	            path,
+	            filename: originalName.toLowerCase().endsWith(".pdf") ? originalName : `${originalName}.pdf`,
+	            size: buffer.length,
+	            uploadedAt: now(),
+	            uploadedBy: adminUser.uid || "",
+	          };
+	          await orderRef.set({ invoiceReceiptPdf: document, updatedAt: now(), updatedBy: adminUser.uid }, { merge: true });
+	          const previous = existingOrder.invoiceReceiptPdf || {};
+	          if (previous.path && previous.path !== path) {
+	            getStorage().bucket(previous.bucket || FIREBASE_STORAGE_BUCKET).file(previous.path).delete({ ignoreNotFound: true })
+	              .catch(err => logger.warn("Old invoice/receipt PDF cleanup failed", { orderId: id, message: err.message || "Delete failed" }));
+	          }
+	          logger.info("Admin uploaded invoice/receipt PDF", { orderId: id, path, size: buffer.length, adminUid: adminUser.uid });
+	          return res.json({ ok: true, document });
+	        }
+	        if (String(body.action || "").trim() === "downloadInvoiceReceiptPdf") {
+	          const document = existingOrder.invoiceReceiptPdf || {};
+	          if (!document.path) return jsonError(res, 404, "No invoice/receipt PDF is attached to this order.");
+	          const [buffer] = await getStorage().bucket(document.bucket || FIREBASE_STORAGE_BUCKET).file(document.path).download();
+	          return res.json({
+	            ok: true,
+	            filename: document.filename || `${publicOrderId(existingOrder)}-invoice-receipt.pdf`,
+	            contentType: "application/pdf",
+	            base64: buffer.toString("base64"),
+	          });
+	        }
         const previousFulfillmentStatus = String(existingOrder.fulfillmentStatus || "");
-        const allowed = {};
-        if (body.status != null) allowed.status = String(body.status).trim();
-        if (body.fulfillmentStatus != null) allowed.fulfillmentStatus = String(body.fulfillmentStatus).trim();
+	        const allowed = {};
+	        if (body.status != null) {
+	          const orderStatus = String(body.status).trim().toLowerCase();
+	          if (!["active", "completed", "cancelled"].includes(orderStatus)) {
+	            return jsonError(res, 400, "Order status must be Active, Completed, or Cancelled.");
+	          }
+	          allowed.status = orderStatus;
+	        }
+	        if (body.paymentStatus != null) allowed.paymentStatus = String(body.paymentStatus).trim();
+	        if (body.fulfillmentStatus != null) allowed.fulfillmentStatus = String(body.fulfillmentStatus).trim();
+	        if (body.invoiceReceiptIssued != null) {
+	          allowed.invoiceReceiptIssued = body.invoiceReceiptIssued === true;
+	          allowed.invoiceReceiptIssuedAt = body.invoiceReceiptIssued === true
+	            ? (existingOrder.invoiceReceiptIssued === true && existingOrder.invoiceReceiptIssuedAt
+	              ? existingOrder.invoiceReceiptIssuedAt
+	              : now())
+	            : null;
+	        }
+	        if (body.aadeInvoiceReceiptId != null) {
+	          allowed.aadeInvoiceReceiptId = String(body.aadeInvoiceReceiptId || "").trim().slice(0, 240);
+	        }
+        if (Object.prototype.hasOwnProperty.call(body, "deliveredAt")) {
+          if (!body.deliveredAt) {
+            allowed.deliveredAt = null;
+          } else {
+            const deliveredDate = new Date(`${String(body.deliveredAt).trim()}T12:00:00`);
+            if (Number.isNaN(deliveredDate.getTime())) return jsonError(res, 400, "Invalid delivered date.");
+            allowed.deliveredAt = Timestamp.fromDate(deliveredDate);
+          }
+        }
         if (body.notes != null) allowed.notes = String(body.notes).slice(0, 5000);
+        if (Object.prototype.hasOwnProperty.call(body, "boxNowPaymentMode")) {
+          const paymentMode = String(body.boxNowPaymentMode || "").trim();
+          allowed.boxNowPaymentMode = ["prepaid", "cod"].includes(paymentMode) ? paymentMode : null;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "boxNowCompartmentSize")) {
+          const compartmentSize = Number(body.boxNowCompartmentSize || 0);
+          allowed.boxNowCompartmentSize = [1, 2, 3].includes(compartmentSize) ? compartmentSize : null;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "boxNowCodAmountCents")) {
+          allowed.boxNowCodAmountCents = Math.max(0, Math.round(Number(body.boxNowCodAmountCents || 0)));
+        }
         if (body.stripePaymentLink != null || body.paymentLink != null) {
           const paymentLink = sanitizeStripePaymentLink(body.stripePaymentLink || body.paymentLink || "");
           allowed.stripePaymentLink = paymentLink;
@@ -4921,6 +6517,29 @@ exports.adminOrders = onRequest(
         }
         if (body.shipping && typeof body.shipping === "object") {
           allowed.shipping = body.shipping;
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "items")) {
+          if (normalizeOrderStatus(existingOrder.fulfillmentStatus || "new") !== "new") {
+            return jsonError(res, 400, "Products can only be edited while fulfillment is New.");
+          }
+          if (existingOrder.boxNowShipment?.deliveryRequestId) {
+            return jsonError(res, 400, "Products cannot be edited after BOX NOW delivery has been created.");
+          }
+          const productsMap = await getProductsMap({ includeInactive: true });
+          const nextItems = orderItemsFromCart(Array.isArray(body.items) ? body.items : [], productsMap, existingOrder.stripeMode || "test", { allowInactive: true });
+          if (!nextItems.length) return jsonError(res, 400, "Add at least one product.");
+          const amountSubtotal = orderItemsSubtotal({ items: nextItems });
+          const amountShipping = Math.max(0, Number(existingOrder.amountShipping || existingOrder.boxnowFee?.amount || 0));
+          const existingPricing = orderPricing(existingOrder);
+          const amountDiscount = Math.max(0, Number(existingOrder.amountDiscount || existingPricing.discount || 0));
+          const amountTotal = Math.max(0, amountSubtotal + amountShipping - amountDiscount);
+          allowed.items = nextItems;
+          allowed.amountSubtotal = amountSubtotal;
+          allowed.amountShipping = amountShipping;
+          allowed.amountDiscount = amountDiscount;
+          allowed.amountTotal = amountTotal;
+          allowed.amountDue = amountTotal;
+          allowed.manualPricingOverride = false;
         }
         if (body.trackingNumber != null || body.trackingUrl != null) {
           allowed.shipping = {
@@ -4936,6 +6555,14 @@ exports.adminOrders = onRequest(
           allowed.fulfillmentStatus != null &&
           normalizeOrderStatus(allowed.fulfillmentStatus) !== normalizeOrderStatus(previousFulfillmentStatus)
         );
+        if (
+          fulfillmentWillChange &&
+          normalizeOrderStatus(allowed.fulfillmentStatus) === "delivered" &&
+          !allowed.deliveredAt &&
+          !existingOrder.deliveredAt
+        ) {
+          allowed.deliveredAt = now();
+        }
         if (fulfillmentWillChange && body.sendFulfillmentEmail === true) {
           const fulfillmentKey = normalizeOrderStatus(allowed.fulfillmentStatus);
           const settings = await getOrderEmailSettings();
@@ -4947,7 +6574,23 @@ exports.adminOrders = onRequest(
           }
         }
 
+        const inventoryNeedsRereservation = Array.isArray(allowed.items) && String(existingOrder.inventoryState || "") === "reserved";
+        if (inventoryNeedsRereservation) await transitionOrderInventory(id, "released", adminUser.uid);
         await orderRef.set(allowed, { merge: true });
+
+        let inventoryUpdate = { skipped: true, reason: "no_inventory_transition" };
+        const nextFulfillment = normalizeOrderStatus(allowed.fulfillmentStatus ?? existingOrder.fulfillmentStatus ?? "new");
+        const nextOrderStatus = String(allowed.status ?? existingOrder.status ?? "").trim().toLowerCase();
+        if (nextOrderStatus === "cancelled" || nextFulfillment === "cancelled") {
+          inventoryUpdate = await transitionOrderInventory(id, "released", adminUser.uid);
+        } else if (["packed", "shipped", "delivered"].includes(nextFulfillment)) {
+          inventoryUpdate = await transitionOrderInventory(id, "consumed", adminUser.uid);
+        } else if (
+          ["paid", "cash_on_delivery_pending"].includes(String(allowed.paymentStatus ?? existingOrder.paymentStatus ?? "").trim().toLowerCase()) &&
+          (String(existingOrder.inventoryState || "none") === "none" || inventoryNeedsRereservation)
+        ) {
+          inventoryUpdate = await transitionOrderInventory(id, "reserved", adminUser.uid);
+        }
 
         let statusEmail = { skipped: true, reason: "fulfillment_not_updated" };
         if (fulfillmentWillChange) {
@@ -4977,16 +6620,56 @@ exports.adminOrders = onRequest(
           }
         }
 
-        return res.json({ ok: true, statusEmail });
+        return res.json({ ok: true, statusEmail, inventoryUpdate });
       }
 
       if (req.method === "DELETE") {
-        const id = String(req.query.id || "").trim();
-        if (!id) return jsonError(res, 400, "Missing order id");
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const requestedIds = Array.isArray(body.ids) ? body.ids : [];
+        const ids = [...new Set(requestedIds.map(value => String(value || "").trim()).filter(Boolean))];
+        if (ids.length) {
+          if (ids.length > 500) return jsonError(res, 400, "Delete at most 500 orders at a time");
+          const refs = ids.map(id => db.collection("orders").doc(id));
+          const snapshots = await db.getAll(...refs);
+          for (const snap of snapshots.filter(item => item.exists)) {
+            if (String(snap.data()?.inventoryState || "") === "reserved") {
+              await transitionOrderInventory(snap.id, "released", adminUser.uid);
+            }
+          }
+          const existingRefs = snapshots.filter(snap => snap.exists).map(snap => snap.ref);
+          for (let offset = 0; offset < existingRefs.length; offset += 450) {
+            const batch = db.batch();
+            existingRefs.slice(offset, offset + 450).forEach(ref => batch.delete(ref));
+            await batch.commit();
+          }
+	          await Promise.allSettled(snapshots.filter(snap => snap.exists && snap.data()?.invoiceReceiptPdf?.path).map(snap => {
+	            const document = snap.data().invoiceReceiptPdf;
+	            return getStorage().bucket(document.bucket || FIREBASE_STORAGE_BUCKET).file(document.path).delete({ ignoreNotFound: true });
+	          }));
+          const deletedIds = existingRefs.map(ref => ref.id);
+          logger.info("Admin bulk deleted orders", {
+            requested: ids.length,
+            deleted: deletedIds.length,
+            orderIds: deletedIds,
+            adminUid: adminUser.uid,
+            adminEmail: adminUser.email || "",
+          });
+          return res.json({ ok: true, requested: ids.length, deleted: deletedIds.length, deletedIds });
+        }
+        const id = String(req.query.id || body.id || "").trim();
+        if (!id) return jsonError(res, 400, "Missing order id or ids");
         const orderRef = db.collection("orders").doc(id);
         const snap = await orderRef.get();
         if (!snap.exists) return jsonError(res, 404, "Order not found");
+        if (String(snap.data()?.inventoryState || "") === "reserved") {
+          await transitionOrderInventory(id, "released", adminUser.uid);
+        }
         await orderRef.delete();
+	        const attachedDocument = snap.data()?.invoiceReceiptPdf || {};
+	        if (attachedDocument.path) {
+	          await getStorage().bucket(attachedDocument.bucket || FIREBASE_STORAGE_BUCKET).file(attachedDocument.path).delete({ ignoreNotFound: true })
+	            .catch(err => logger.warn("Deleted order PDF cleanup failed", { orderId: id, message: err.message || "Delete failed" }));
+	        }
         logger.info("Admin deleted order", {
           orderId: id,
           adminUid: adminUser.uid,
@@ -5001,6 +6684,535 @@ exports.adminOrders = onRequest(
     }
   }
 );
+
+exports.contact = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+    secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM],
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST to send a message.");
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      if (String(body.website || "").trim()) return res.json({ ok: true });
+      const name = String(body.name || "").trim().slice(0, 180);
+      const email = normalizedEmail(body.email || "");
+      const message = String(body.message || "").trim().slice(0, 5000);
+      const language = String(body.language || "en").toLowerCase() === "el" ? "el" : "en";
+      if (!name) return jsonError(res, 400, "Enter your name.");
+      if (!validEmailAddress(email)) return jsonError(res, 400, "Enter a valid email address.");
+      if (message.length < 10) return jsonError(res, 400, "Enter a message of at least 10 characters.");
+      const subject = `GRUBZ website contact: ${name}`;
+      const text = [
+        `Name: ${name}`,
+        `Email: ${email}`,
+        `Language: ${language}`,
+        "",
+        message,
+      ].join("\n");
+      const html = `
+        <h2>GRUBZ website contact</h2>
+        <p><strong>Name:</strong> ${escapeHtml(name)}<br>
+        <strong>Email:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a><br>
+        <strong>Language:</strong> ${escapeHtml(language)}</p>
+        <p style="white-space:pre-wrap">${escapeHtml(message)}</p>
+      `;
+      const result = await sendEmail({
+        to: GRUBZ_INFO_EMAIL,
+        from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+        subject,
+        text,
+        html,
+      });
+      if (result.skipped) throw Object.assign(new Error(result.reason || "Email delivery is unavailable."), { status: 503 });
+      return res.json({ ok: true });
+    } catch (err) {
+      logger.error("Contact form failed", { error: err.message || "Contact form failed" });
+      return jsonError(res, Number(err.status || 400), err.message || "Message could not be sent.");
+    }
+  }
+);
+
+exports.newsletter = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method === "GET" && String(req.query.action || "") === "unsubscribe") {
+        const publicBaseUrl = newsletterPublicBaseUrl(req);
+        const token = String(req.query.token || "").trim();
+        if (!token) return res.redirect(302, `${publicBaseUrl}/?newsletter=invalid#newsletter`);
+        const snap = await db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION)
+          .where("unsubscribeToken", "==", token)
+          .limit(1)
+          .get();
+        if (snap.empty) return res.redirect(302, `${publicBaseUrl}/?newsletter=invalid#newsletter`);
+        await snap.docs[0].ref.set({
+          status: "unsubscribed",
+          unsubscribedAt: now(),
+          updatedAt: now(),
+        }, { merge: true });
+        return res.redirect(302, `${publicBaseUrl}/?newsletter=unsubscribed#newsletter`);
+      }
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST to subscribe.");
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const action = String(body.action || "subscribe").trim().toLowerCase();
+      const email = normalizedEmail(body.email || "");
+      if (!validEmailAddress(email)) return jsonError(res, 400, "Enter a valid email address.");
+      const ref = db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION).doc(newsletterSubscriberId(email));
+      const existingSnap = await ref.get();
+      const existing = existingSnap.exists ? existingSnap.data() : {};
+      if (action === "unsubscribe") {
+        await ref.set({
+          email,
+          status: "unsubscribed",
+          unsubscribedAt: now(),
+          updatedAt: now(),
+        }, { merge: true });
+        return res.json({ ok: true, status: "unsubscribed" });
+      }
+      const language = String(body.language || "en").toLowerCase() === "el" ? "el" : "en";
+      await ref.set({
+        email,
+        emailLower: email,
+        name: String(body.name || "").trim().slice(0, 180),
+        language,
+        status: "subscribed",
+        source: String(body.source || "storefront_footer").trim().slice(0, 120),
+        consentText: String(body.consentText || "").trim().slice(0, 500),
+        consentVersion: "2026-07-27",
+        unsubscribeToken: existing.unsubscribeToken || randomUUID(),
+        subscribedAt: now(),
+        unsubscribedAt: null,
+        createdAt: existing.createdAt || now(),
+        updatedAt: now(),
+      }, { merge: true });
+      return res.json({ ok: true, status: "subscribed" });
+    } catch (err) {
+      logger.error("Newsletter request failed", { error: err.message || "Newsletter request failed" });
+      return jsonError(res, Number(err.status || 400), err.message || "Newsletter request failed");
+    }
+  }
+);
+
+exports.adminNewsletter = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+    timeoutSeconds: 540,
+    secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM, OPENAI_API_KEY],
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const adminUser = await requireAdmin(req);
+      if (req.method === "GET") {
+        const limit = Math.min(500, Math.max(1, Number(req.query.limit || 500)));
+        const snap = await db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION).limit(limit).get();
+        const subscribers = snap.docs
+          .map(publicNewsletterSubscriber)
+          .sort((a, b) => millisFromTimestamp(b.subscribedAt) - millisFromTimestamp(a.subscribedAt));
+        const ideasSnap = await db.collection(NEWSLETTER_IDEAS_COLLECTION).limit(50).get();
+        const ideas = ideasSnap.docs
+          .map(doc => ({ id: doc.id, ...(doc.data() || {}) }))
+          .sort((a, b) => millisFromTimestamp(b.createdAt) - millisFromTimestamp(a.createdAt))
+          .slice(0, 20);
+        return res.json({ subscribers, ideas });
+      }
+      if (req.method === "POST") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (body.action === "send" || body.action === "test") {
+          const result = await sendNewsletter({
+            adminUser,
+            subject: body.subject,
+            body: body.body,
+            language: body.language,
+            testOnly: body.action === "test",
+            confirmDuplicate: body.confirmDuplicate === true,
+            publicBaseUrl: newsletterPublicBaseUrl(req),
+            image: body.image || {},
+          });
+          return res.json(result);
+        }
+        if (body.action === "generateIdeas") {
+          const apiKey = String(OPENAI_API_KEY.value() || "").trim();
+          if (!apiKey) return jsonError(res, 503, "OpenAI is not configured.");
+          const language = body.language === "el" ? "el" : "en";
+          const focus = String(body.focus || "").trim().slice(0, 500);
+          const [productsMap, recentSends] = await Promise.all([
+            getProductsMap(),
+            db.collection(NEWSLETTER_SENDS_COLLECTION).orderBy("createdAt", "desc").limit(12).get(),
+          ]);
+          const products = Object.values(productsMap).map(product => ({
+            name: language === "el" ? (product.nameEl || product.name) : product.name,
+            description: language === "el" ? (product.descriptionEl || product.description) : product.description,
+            price: Number.isFinite(Number(product.amount)) ? `${(Number(product.amount) / 100).toFixed(2)} EUR` : "",
+          }));
+          const recentSubjects = recentSends.docs
+            .map(doc => String((doc.data() || {}).subject || "").trim())
+            .filter(Boolean);
+          const client = new OpenAI({ apiKey });
+          const response = await client.responses.create({
+            model: DEFAULT_CHATBOT_SETTINGS.model,
+            instructions: [
+              "You are the newsletter ideas agent for GRUBZ, a Greek ecommerce brand selling dried black soldier fly larvae and frass products.",
+              `Write in ${language === "el" ? "Greek" : "English"}.`,
+              "Return only valid JSON: an array of exactly 4 objects with keys title, subject, body, and reason.",
+              "Each idea must be distinct, genuinely useful, accurate, warm, concise, and ready to edit as an email.",
+              "Start body with {greeting}. Include {grubz_url} naturally as the call-to-action URL. Do not add an unsubscribe footer; the system adds it.",
+              "Do not invent discounts, research claims, product facts, availability, prices, or guarantees. Use only the supplied product facts.",
+              "Avoid repeating recent newsletter subjects. Do not use markdown code fences.",
+            ].join("\n"),
+            input: JSON.stringify({ focus: focus || "Choose timely, helpful topics for GRUBZ customers.", products, recentSubjects }),
+            max_output_tokens: 2400,
+            store: false,
+          });
+          let raw = responseTextFromOpenAI(response).trim();
+          raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+          let generated;
+          try {
+            generated = JSON.parse(raw);
+          } catch (error) {
+            logger.error("Newsletter ideas JSON parse failed", { error: error.message, raw: raw.slice(0, 1000) });
+            return jsonError(res, 502, "The ideas agent returned an invalid response. Please try again.");
+          }
+          if (!Array.isArray(generated)) return jsonError(res, 502, "The ideas agent returned an invalid response. Please try again.");
+          const ideas = [];
+          for (const item of generated.slice(0, 6)) {
+            const idea = {
+              title: String(item.title || "").trim().slice(0, 180),
+              subject: String(item.subject || "").trim().slice(0, 180),
+              body: String(item.body || "").trim().slice(0, 12000),
+              reason: String(item.reason || "").trim().slice(0, 500),
+            };
+            if (!idea.title || !idea.subject || !idea.body) continue;
+            const ref = db.collection(NEWSLETTER_IDEAS_COLLECTION).doc();
+            const stored = { ...idea, language, focus, status: "available", createdAt: now(), createdBy: adminUser.uid || "" };
+            await ref.set(stored);
+            ideas.push({ id: ref.id, ...stored });
+          }
+          if (!ideas.length) return jsonError(res, 502, "The ideas agent did not produce usable ideas. Please try again.");
+          return res.json({ ok: true, ideas, model: response.model || DEFAULT_CHATBOT_SETTINGS.model });
+        }
+        if (body.action === "useIdea") {
+          const id = String(body.id || "").trim();
+          if (!id) return jsonError(res, 400, "Missing newsletter idea.");
+          await db.collection(NEWSLETTER_IDEAS_COLLECTION).doc(id).set({
+            status: "used",
+            usedAt: now(),
+            usedBy: adminUser.uid || "",
+          }, { merge: true });
+          return res.json({ ok: true });
+        }
+        if (body.action === "translateIdea") {
+          const apiKey = String(OPENAI_API_KEY.value() || "").trim();
+          if (!apiKey) return jsonError(res, 503, "OpenAI is not configured.");
+          const id = String(body.id || "").trim();
+          if (!id) return jsonError(res, 400, "Missing newsletter idea.");
+          const sourceSnap = await db.collection(NEWSLETTER_IDEAS_COLLECTION).doc(id).get();
+          if (!sourceSnap.exists) return jsonError(res, 404, "Newsletter idea not found.");
+          const source = sourceSnap.data() || {};
+          if (source.language === "el") return jsonError(res, 400, "This newsletter idea is already in Greek.");
+          const client = new OpenAI({ apiKey });
+          const response = await client.responses.create({
+            model: DEFAULT_CHATBOT_SETTINGS.model,
+            instructions: [
+              "Translate this GRUBZ newsletter idea into natural, polished Greek.",
+              "Return only valid JSON with keys title, subject, body, and reason.",
+              "Preserve every placeholder exactly, including {greeting}, {customerName}, {customerEmail}, {grubz_url}, and {unsubscribe_url}.",
+              "Preserve meaning, tone, paragraph structure, product names, URLs, quantities, and facts. Do not add claims or offers.",
+              "Do not use markdown code fences.",
+            ].join("\n"),
+            input: JSON.stringify({ title: source.title || "", subject: source.subject || "", body: source.body || "", reason: source.reason || "" }),
+            max_output_tokens: 1800,
+            store: false,
+          });
+          let raw = responseTextFromOpenAI(response).trim();
+          raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+          let translated;
+          try {
+            translated = JSON.parse(raw);
+          } catch (error) {
+            logger.error("Newsletter idea translation JSON parse failed", { error: error.message, raw: raw.slice(0, 1000) });
+            return jsonError(res, 502, "The ideas agent returned an invalid translation. Please try again.");
+          }
+          const idea = {
+            title: String(translated.title || "").trim().slice(0, 180),
+            subject: String(translated.subject || "").trim().slice(0, 180),
+            body: String(translated.body || "").trim().slice(0, 12000),
+            reason: String(translated.reason || "").trim().slice(0, 500),
+          };
+          if (!idea.title || !idea.subject || !idea.body) return jsonError(res, 502, "The ideas agent returned an incomplete translation. Please try again.");
+          const ref = db.collection(NEWSLETTER_IDEAS_COLLECTION).doc();
+          const stored = {
+            ...idea,
+            language: "el",
+            focus: source.focus || "",
+            sourceIdeaId: id,
+            status: "available",
+            createdAt: now(),
+            createdBy: adminUser.uid || "",
+          };
+          await ref.set(stored);
+          await sourceSnap.ref.set({ greekIdeaId: ref.id, updatedAt: now() }, { merge: true });
+          return res.json({ ok: true, idea: { id: ref.id, ...stored }, model: response.model || DEFAULT_CHATBOT_SETTINGS.model });
+        }
+        return jsonError(res, 400, "Unknown newsletter action.");
+      }
+      if (req.method === "PATCH") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const id = String(body.id || "").trim();
+        if (!/^[a-f0-9]{64}$/.test(id)) return jsonError(res, 400, "Invalid subscriber.");
+        if (body.status !== "unsubscribed") return jsonError(res, 400, "Subscribers must opt in again from the storefront.");
+        const status = "unsubscribed";
+        await db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION).doc(id).set({
+          status,
+          unsubscribedAt: now(),
+          updatedAt: now(),
+          updatedBy: adminUser.uid || "",
+        }, { merge: true });
+        return res.json({ ok: true, status });
+      }
+      return jsonError(res, 405, "Use GET, POST, or PATCH.");
+    } catch (err) {
+      return adminError(res, err);
+    }
+  }
+);
+
+function emailHistoryTime(record = {}) {
+  return record.sentAt || record.updatedAt || record.scheduledAt || record.createdAt || null;
+}
+
+function emailHistoryMillis(record = {}) {
+  return millisFromTimestamp(emailHistoryTime(record));
+}
+
+exports.adminEmailHistory = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      await requireAdmin(req);
+      if (req.method !== "GET") return jsonError(res, 405, "Use GET.");
+      const limit = Math.min(1000, Math.max(1, Number(req.query.limit || 500)));
+      const [orderSnap, bulkSnap, newsletterSnap, scheduledSnap] = await Promise.all([
+        db.collection("orderNotifications").orderBy("createdAt", "desc").limit(limit).get(),
+        db.collection("bulkCustomerEmails").orderBy("createdAt", "desc").limit(100).get(),
+        db.collection(NEWSLETTER_SENDS_COLLECTION).orderBy("createdAt", "desc").limit(100).get(),
+        db.collection(SCHEDULED_ORDER_EMAILS_COLLECTION).orderBy("createdAt", "desc").limit(100).get(),
+      ]);
+      const rows = [];
+      for (const doc of orderSnap.docs) {
+        const item = doc.data() || {};
+        const recipient = normalizedEmail(item.recipientEmail || item.customerEmail || item.result?.accepted?.[0] || "");
+        if (!recipient) continue;
+        rows.push({
+          id: doc.id,
+          source: "order",
+          type: item.type || "order_email",
+          subject: item.subject || "",
+          recipient,
+          orderId: item.orderId || "",
+          orderNumber: item.orderNumber || "",
+          status: item.status || "unknown",
+          messageId: item.result?.messageId || "",
+          sentAt: emailHistoryTime(item),
+        });
+      }
+      const expandBatch = (snap, source, fallbackType) => {
+        for (const doc of snap.docs) {
+          const item = doc.data() || {};
+          const results = Array.isArray(item.results) ? item.results : [];
+          for (const result of results) {
+            rows.push({
+              id: `${doc.id}:${normalizedEmail(result.email || result.deliveredTo || "")}`,
+              sendId: doc.id,
+              source,
+              type: fallbackType,
+              subject: item.subject || "",
+              recipient: normalizedEmail(result.email || result.deliveredTo || ""),
+              orderId: "",
+              orderNumber: "",
+              status: result.ok ? "sent" : result.skipped ? "skipped" : "failed",
+              messageId: result.messageId || "",
+              error: result.error || result.reason || "",
+              sentAt: item.sentAt || item.updatedAt || item.createdAt || null,
+            });
+          }
+        }
+      };
+      expandBatch(bulkSnap, "bulk", "customer_email");
+      expandBatch(newsletterSnap, "newsletter", "newsletter");
+      for (const doc of scheduledSnap.docs) {
+        const item = doc.data() || {};
+        if (item.status === "sent") continue;
+        rows.push({
+          id: doc.id,
+          source: "scheduled",
+          type: item.type || "scheduled_email",
+          subject: "",
+          recipient: "",
+          orderId: item.orderId || "",
+          orderNumber: item.orderNumber || "",
+          status: item.status,
+          messageId: "",
+          error: item.error || "",
+          scheduledAt: item.scheduledAt || null,
+          sentAt: item.scheduledAt || item.createdAt || null,
+        });
+      }
+      rows.sort((a, b) => emailHistoryMillis(b) - emailHistoryMillis(a));
+      return res.json({ emails: rows.slice(0, limit) });
+    } catch (err) {
+      return adminError(res, err);
+    }
+  }
+);
+
+async function deleteQueryDocuments(query) {
+  const snap = await query.get();
+  if (snap.empty) return 0;
+  for (let offset = 0; offset < snap.docs.length; offset += 400) {
+    const batch = db.batch();
+    snap.docs.slice(offset, offset + 400).forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+  }
+  return snap.size;
+}
+
+async function scrubCustomerFromBatchEmailHistory(collectionName, email) {
+  if (!email) return 0;
+  const snap = await db.collection(collectionName).orderBy("createdAt", "desc").limit(500).get();
+  let changed = 0;
+  for (const doc of snap.docs) {
+    const data = doc.data() || {};
+    const results = Array.isArray(data.results) ? data.results : [];
+    const recipients = Array.isArray(data.recipients) ? data.recipients : [];
+    const nextResults = results.filter(item => normalizedEmail(item?.email || item?.deliveredTo || "") !== email);
+    const nextRecipients = recipients.filter(item => normalizedEmail(item?.email || item || "") !== email);
+    if (nextResults.length === results.length && nextRecipients.length === recipients.length) continue;
+    const update = { updatedAt: now() };
+    if (Array.isArray(data.results)) update.results = nextResults;
+    if (Array.isArray(data.recipients)) update.recipients = nextRecipients;
+    await doc.ref.set(update, { merge: true });
+    changed += 1;
+  }
+  return changed;
+}
+
+async function deleteCustomerCompletely({ uid, email, adminUser }) {
+  if (!uid || uid === "guest" || uid.includes("/")) throw Object.assign(new Error("Choose a registered customer."), { status: 400 });
+  if (uid === adminUser.uid) throw Object.assign(new Error("You cannot delete your own administrator account."), { status: 400 });
+  const emailKey = normalizedEmail(email || "");
+  const userRef = db.collection("users").doc(uid);
+  const userSnap = await userRef.get();
+  const storedUser = userSnap.exists ? userSnap.data() || {} : {};
+  const resolvedEmail = emailKey || normalizedEmail(storedUser.email || storedUser.emailLower || "");
+
+  const orderDocs = new Map();
+  const uidOrders = await db.collection("orders").where("uid", "==", uid).get();
+  uidOrders.docs.forEach(doc => orderDocs.set(doc.id, doc));
+  if (resolvedEmail) {
+    const emailOrders = await db.collection("orders").where("customer.email", "==", resolvedEmail).get();
+    emailOrders.docs.forEach(doc => orderDocs.set(doc.id, doc));
+  }
+
+  const anonymizedAt = now();
+  const orderIds = [];
+  for (const doc of orderDocs.values()) {
+    const order = doc.data() || {};
+    const shipping = order.shipping && typeof order.shipping === "object" ? order.shipping : {};
+    const metadata = order.metadata && typeof order.metadata === "object" ? order.metadata : {};
+    await doc.ref.set({
+      uid: "",
+      customer: { uid: "", email: "", name: "Deleted customer", phone: "" },
+      shipping: {
+        ...shipping,
+        name: "",
+        phone: "",
+        email: "",
+        addressLine1: "",
+        line1: "",
+        addressLine2: "",
+        line2: "",
+        city: "",
+        region: "",
+        postal: "",
+        postalCode: "",
+      },
+      metadata: {
+        ...metadata,
+        uid: "deleted",
+        shippingName: "",
+        shippingPhone: "",
+      },
+      customerDeleted: true,
+      customerDeletedAt: anonymizedAt,
+      customerDeletedBy: adminUser.uid,
+      updatedAt: anonymizedAt,
+    }, { merge: true });
+    orderIds.push(doc.id);
+  }
+
+  let deletedRelatedRecords = 0;
+  if (resolvedEmail) {
+    const emailQueries = [
+      db.collection(MARKETING_LEADS_COLLECTION).where("email", "==", resolvedEmail),
+      db.collection(ABANDONED_CARTS_COLLECTION).where("email", "==", resolvedEmail),
+      db.collection(ORDER_FEEDBACK_COLLECTION).where("customerEmail", "==", resolvedEmail),
+      db.collection("orderNotifications").where("recipientEmail", "==", resolvedEmail),
+      db.collection("orderNotifications").where("customerEmail", "==", resolvedEmail),
+    ];
+    for (const query of emailQueries) deletedRelatedRecords += await deleteQueryDocuments(query);
+    await Promise.all([
+      db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION).doc(newsletterSubscriberId(resolvedEmail)).delete(),
+      db.collection(EMAIL_RESERVATIONS_COLLECTION).doc(emailReservationDocId(resolvedEmail)).delete(),
+    ]);
+    deletedRelatedRecords += await scrubCustomerFromBatchEmailHistory("bulkCustomerEmails", resolvedEmail);
+    deletedRelatedRecords += await scrubCustomerFromBatchEmailHistory(NEWSLETTER_SENDS_COLLECTION, resolvedEmail);
+  }
+  for (const orderId of orderIds) {
+    deletedRelatedRecords += await deleteQueryDocuments(db.collection("orderNotifications").where("orderId", "==", orderId));
+    deletedRelatedRecords += await deleteQueryDocuments(db.collection(SCHEDULED_ORDER_EMAILS_COLLECTION).where("orderId", "==", orderId));
+  }
+
+  const collaborationId = String(storedUser.collaborationId || "").trim();
+  if (collaborationId && !collaborationId.includes("/")) {
+    const collaborationRef = db.collection(COLLABORATIONS_COLLECTION).doc(collaborationId);
+    const collaborationSnap = await collaborationRef.get();
+    if (collaborationSnap.exists && collaborationSnap.data()?.customerKey === `uid:${uid}`) {
+      await collaborationRef.set({ customerKey: "", updatedAt: now(), updatedBy: adminUser.uid }, { merge: true });
+    }
+  }
+
+  await userRef.delete();
+  try {
+    await getAdminAuth().deleteUser(uid);
+  } catch (err) {
+    if (err?.code !== "auth/user-not-found") throw err;
+  }
+  logger.info("Customer fully deleted", {
+    uid,
+    email: resolvedEmail,
+    anonymizedOrders: orderIds.length,
+    deletedRelatedRecords,
+    deletedBy: adminUser.uid,
+  });
+  return { ok: true, uid, anonymizedOrders: orderIds.length, deletedRelatedRecords };
+}
 
 exports.adminCustomers = onRequest(
   {
@@ -5018,13 +7230,24 @@ exports.adminCustomers = onRequest(
       if (req.method === "OPTIONS") return res.status(204).end();
       const adminUser = await requireAdmin(req);
 
+      if (req.method === "DELETE") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (String(body.confirm || "").trim() !== "DELETE") return jsonError(res, 400, "Type DELETE to confirm customer deletion.");
+        const result = await deleteCustomerCompletely({
+          uid: String(body.uid || "").trim(),
+          email: body.email || "",
+          adminUser,
+        });
+        return res.json(result);
+      }
+
       if (req.method === "GET") {
         const limit = Math.min(500, Math.max(1, Number(req.query.limit || 250)));
         const orderLimit = Math.min(1000, Math.max(limit, Number(req.query.orderLimit || 500)));
         const customersByKey = new Map();
         const customersByEmail = new Map();
 
-        const usersSnap = await db.collection("users").orderBy("createdAt", "desc").limit(limit).get();
+        const usersSnap = await db.collection("users").limit(limit).get();
         for (const doc of usersSnap.docs) {
           const customer = publicCustomerFromDoc(doc);
           const emailKey = normalizedEmail(customer.email);
@@ -5054,6 +7277,8 @@ exports.adminCustomers = onRequest(
             shipping: null,
             notes: "",
             tags: [],
+            creatorCollaborator: false,
+            collaborationId: "",
             createdAt: null,
             updatedAt: null,
             orderCount: 0,
@@ -5104,23 +7329,88 @@ exports.adminCustomers = onRequest(
           return res.json(result);
         }
 
-        const uid = String(body.uid || "").trim();
-        if (!uid || uid === "guest") return jsonError(res, 400, "Choose a registered customer.");
-        const notes = body.notes == null ? null : String(body.notes).slice(0, 5000);
-        const tags = Array.isArray(body.tags)
-          ? body.tags.map(tag => String(tag || "").trim()).filter(Boolean).slice(0, 20)
-          : null;
-        const update = {
-          updatedAt: now(),
-          updatedBy: adminUser.uid,
-        };
-        if (notes != null) update.notes = notes;
-        if (tags) update.tags = tags;
+	        const uid = String(body.uid || "").trim();
+	        if (!uid || uid === "guest") return jsonError(res, 400, "Choose a registered customer.");
+	        const name = body.name == null ? null : String(body.name || "").trim().slice(0, 180);
+	        const email = body.email == null ? null : normalizedEmail(body.email || "");
+	        const phone = body.phone == null ? null : String(body.phone || "").trim().slice(0, 80);
+	        const notes = body.notes == null ? null : String(body.notes).slice(0, 5000);
+	        const tags = Array.isArray(body.tags)
+	          ? body.tags.map(tag => String(tag || "").trim()).filter(Boolean).slice(0, 20)
+	          : null;
+	        const shippingInput = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
+	        const nextCollaborationId = body.collaborationId != null ? String(body.collaborationId || "").trim() : null;
+	        if (nextCollaborationId && nextCollaborationId.includes("/")) return jsonError(res, 400, "Invalid collaboration id");
+	        const existingUserSnap = await db.collection("users").doc(uid).get();
+	        const existingUser = existingUserSnap.exists ? existingUserSnap.data() : {};
+	        const update = {
+	          createdAt: existingUser.createdAt || now(),
+	          updatedAt: now(),
+	          updatedBy: adminUser.uid,
+	        };
+	        if (name != null) {
+	          update.name = name;
+	          update.displayName = name;
+	        }
+	        if (email != null) {
+	          update.email = email;
+	          update.emailLower = email;
+	        }
+	        if (phone != null) update.phone = phone;
+	        if (shippingInput) {
+	          const existingShipping = existingUser.shipping && typeof existingUser.shipping === "object" ? existingUser.shipping : {};
+	          const existingBoxNow = existingShipping.boxNow && typeof existingShipping.boxNow === "object" ? existingShipping.boxNow : {};
+	          const boxNow = shippingInput.boxNow && typeof shippingInput.boxNow === "object" ? shippingInput.boxNow : {};
+	          update.shipping = {
+	            ...existingShipping,
+		            deliveryMethod: String(shippingInput.deliveryMethod || existingShipping.deliveryMethod || "boxnow").trim() || "boxnow",
+		            name: String(shippingInput.name || "").trim().slice(0, 180),
+		            phone: String(shippingInput.phone || "").trim().slice(0, 80),
+		            addressLine1: String(shippingInput.addressLine1 || shippingInput.address || "").trim().slice(0, 240),
+		            addressLine2: String(shippingInput.addressLine2 || "").trim().slice(0, 240),
+		            postalCode: String(shippingInput.postalCode || shippingInput.zip || "").trim().slice(0, 40),
+		            city: String(shippingInput.city || "").trim().slice(0, 120),
+		            country: String(shippingInput.country || "").trim().slice(0, 120),
+		            boxNow: {
+	              ...existingBoxNow,
+	              id: String(boxNow.id || "").trim().slice(0, 120),
+	              name: String(boxNow.name || "").trim().slice(0, 180),
+	              addressLine1: String(boxNow.addressLine1 || "").trim().slice(0, 240),
+	              addressLine2: String(boxNow.addressLine2 || "").trim().slice(0, 240),
+	              postalCode: String(boxNow.postalCode || "").trim().slice(0, 40),
+	              lat: String(boxNow.lat || "").trim().slice(0, 80),
+	              lng: String(boxNow.lng || "").trim().slice(0, 80),
+	            },
+	          };
+	        }
+	        if (notes != null) update.notes = notes;
+	        if (tags) update.tags = tags;
+	        if (body.creatorCollaborator != null) update.creatorCollaborator = body.creatorCollaborator === true;
+	        if (nextCollaborationId != null) update.collaborationId = nextCollaborationId;
+	        const previousCollaborationId = existingUser.collaborationId || "";
         await db.collection("users").doc(uid).set(update, { merge: true });
+        if (previousCollaborationId && previousCollaborationId !== nextCollaborationId) {
+          const previousRef = db.collection(COLLABORATIONS_COLLECTION).doc(previousCollaborationId);
+          const previousSnap = await previousRef.get();
+          if (previousSnap.exists && previousSnap.data()?.customerKey === `uid:${uid}`) {
+            await previousRef.set({
+              customerKey: "",
+              updatedAt: now(),
+              updatedBy: adminUser.uid,
+            }, { merge: true });
+          }
+        }
+        if (update.creatorCollaborator === true && nextCollaborationId) {
+          await db.collection(COLLABORATIONS_COLLECTION).doc(nextCollaborationId).set({
+            customerKey: `uid:${uid}`,
+            updatedAt: now(),
+            updatedBy: adminUser.uid,
+          }, { merge: true });
+        }
         return res.json({ ok: true });
       }
 
-      return jsonError(res, 405, "Use GET or PATCH");
+      return jsonError(res, 405, "Use GET, PATCH, POST, or DELETE");
     } catch (err) {
       return adminError(res, err);
     }
@@ -5402,12 +7692,15 @@ exports.adminSocialAgent = onRequest(
       if (req.method === "GET") {
         const settings = await getSocialAgentSettings();
         const limit = Math.min(100, Math.max(1, Number(req.query.limit || 50)));
-        const snap = await db.collection(SOCIAL_OPPORTUNITIES_COLLECTION)
-          .orderBy("scannedAt", "desc")
-          .limit(limit)
-          .get();
+        const [snap, groupsSnap, postsSnap] = await Promise.all([
+          db.collection(SOCIAL_OPPORTUNITIES_COLLECTION).orderBy("scannedAt", "desc").limit(limit).get(),
+          db.collection(SOCIAL_GROUPS_COLLECTION).orderBy("name").limit(500).get(),
+          db.collection(SOCIAL_POSTS_COLLECTION).orderBy("updatedAt", "desc").limit(500).get(),
+        ]);
         const opportunities = snap.docs.map(doc => publicSocialOpportunity(doc.id, doc.data()));
-        return res.json({ settings, opportunities });
+        const groups = groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return res.json({ settings, opportunities, groups, posts });
       }
 
       if (req.method === "PATCH") {
@@ -5458,6 +7751,73 @@ exports.adminSocialAgent = onRequest(
             updatedBy: adminUser.uid,
           };
           await db.collection(SOCIAL_OPPORTUNITIES_COLLECTION).doc(id).set(update, { merge: true });
+          return res.json({ ok: true });
+        }
+        if (action === "saveGroup") {
+          const group = body.group || {};
+          const name = String(group.name || "").trim().slice(0, 180);
+          const url = String(group.url || "").trim().slice(0, 2000);
+          if (!name || !/^https:\/\/(www\.)?facebook\.com\//i.test(url)) return jsonError(res, 400, "Enter a Facebook group name and URL");
+          const id = String(group.id || "").trim() || db.collection(SOCIAL_GROUPS_COLLECTION).doc().id;
+          const record = {
+            name,
+            url,
+            audience: String(group.audience || "").trim().slice(0, 500),
+            imageUrl: String(group.imageUrl || "").trim().slice(0, 700000),
+            products: Array.isArray(group.products) ? group.products.filter(value => ["happy-chicken", "terragrub"].includes(value)) : [],
+            active: group.active !== false,
+            notes: String(group.notes || "").trim().slice(0, 2000),
+            updatedAt: new Date().toISOString(),
+            updatedBy: adminUser.uid,
+          };
+          await db.collection(SOCIAL_GROUPS_COLLECTION).doc(id).set(record, { merge: true });
+          return res.json({ ok: true, group: { id, ...record } });
+        }
+        if (action === "deleteGroup") {
+          const id = String(body.id || "").trim();
+          if (!id) return jsonError(res, 400, "Missing group id");
+          await db.collection(SOCIAL_GROUPS_COLLECTION).doc(id).delete();
+          return res.json({ ok: true });
+        }
+        if (action === "bulkUpdateGroups") {
+          const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map(value => String(value || "").trim()).filter(value => value && !value.includes("/")))].slice(0, 500);
+          if (!ids.length) return jsonError(res, 400, "Select at least one group");
+          if (typeof body.active !== "boolean") return jsonError(res, 400, "Missing group status");
+          const batch = db.batch();
+          for (const id of ids) batch.set(db.collection(SOCIAL_GROUPS_COLLECTION).doc(id), { active: body.active, updatedAt: new Date().toISOString(), updatedBy: adminUser.uid }, { merge: true });
+          await batch.commit();
+          return res.json({ ok: true, updated: ids.length, active: body.active });
+        }
+        if (action === "savePost") {
+          const post = body.post || {};
+          const title = String(post.title || "").trim().slice(0, 180);
+          const content = String(post.content || "").trim().slice(0, 10000);
+          const platform = ["facebook", "instagram"].includes(post.platform) ? post.platform : "facebook";
+          const product = ["happy-chicken", "terragrub"].includes(post.product) ? post.product : "happy-chicken";
+          if (!title || !content) return jsonError(res, 400, "Post title and content are required");
+          const id = String(post.id || "").trim() || db.collection(SOCIAL_POSTS_COLLECTION).doc().id;
+          const record = {
+            title,
+            content,
+            platform,
+            product,
+            language: ["el", "en"].includes(post.language) ? post.language : "el",
+            status: ["draft", "ready", "posted"].includes(post.status) ? post.status : "draft",
+            destinationGroupIds: platform === "facebook" && Array.isArray(post.destinationGroupIds) ? post.destinationGroupIds.map(String).slice(0, 500) : [],
+            campaign: String(post.campaign || "").trim().replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 100),
+            imageUrl: String(post.imageUrl || "").trim().slice(0, 2000),
+            notes: String(post.notes || "").trim().slice(0, 2000),
+            postedDestinations: Array.isArray(post.postedDestinations) ? post.postedDestinations.slice(0, 1000) : [],
+            updatedAt: new Date().toISOString(),
+            updatedBy: adminUser.uid,
+          };
+          await db.collection(SOCIAL_POSTS_COLLECTION).doc(id).set(record, { merge: true });
+          return res.json({ ok: true, post: { id, ...record } });
+        }
+        if (action === "deletePost") {
+          const id = String(body.id || "").trim();
+          if (!id) return jsonError(res, 400, "Missing post id");
+          await db.collection(SOCIAL_POSTS_COLLECTION).doc(id).delete();
           return res.json({ ok: true });
         }
         return jsonError(res, 400, "Unknown Marketing action");
@@ -5638,7 +7998,8 @@ exports.adminSettings = onRequest(
         const orderEmails = await getOrderEmailSettings();
         const boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
         const chatbot = await getChatbotSettings();
-        return res.json({ shipping, stripe, orderEmails, boxNow, chatbot });
+        const marketing = await getMarketingSettings();
+        return res.json({ shipping, stripe, orderEmails, boxNow, chatbot, marketing });
       }
 
       if (req.method === "PATCH" || req.method === "POST") {
@@ -5653,13 +8014,15 @@ exports.adminSettings = onRequest(
         let orderEmails = null;
         let boxNow = null;
         let chatbot = null;
+        let marketing = null;
 
         if (
           body.shipping ||
           body.boxnowFeeOverrideEnabled != null ||
           body.boxnowFeeOverrideCents != null ||
           body.boxnowFeeDiscountEnabled != null ||
-          body.boxnowFeeDiscountCents != null
+          body.boxnowFeeDiscountCents != null ||
+          body.boxnowParcelPrices != null
         ) {
           shipping = sanitizeShippingSettings(body.shipping || body);
           await db.doc(SHIPPING_SETTINGS_DOC).set(
@@ -5709,12 +8072,25 @@ exports.adminSettings = onRequest(
           );
         }
 
+        if (body.marketing) {
+          const previous = await getMarketingSettings();
+          marketing = sanitizeMarketingSettings(body.marketing, previous);
+          await db.doc(MARKETING_SETTINGS_DOC).set(
+            {
+              ...marketing,
+              updatedBy: adminUser.uid,
+            },
+            { merge: true }
+          );
+        }
+
         if (!shipping) shipping = await getShippingSettings();
         if (!stripe) stripe = await effectiveStripeSettings(req, { forceLocalEnvironment: false });
         if (!orderEmails) orderEmails = await getOrderEmailSettings();
         if (!boxNow) boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
         if (!chatbot) chatbot = await getChatbotSettings();
-        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, chatbot });
+        if (!marketing) marketing = await getMarketingSettings();
+        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, chatbot, marketing });
       }
 
       return jsonError(res, 405, "Use GET or PATCH");
@@ -5741,6 +8117,7 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
         environment: safeEnvironment,
         force: body.force === true,
         paymentMode: body.paymentMode || "",
+        compartmentSize: body.compartmentSize,
         amountToBeCollectedCents: body.amountToBeCollectedCents,
         req,
       }, adminUser),
@@ -5752,14 +8129,18 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
     if (!orderId) throw new Error("Missing order ID");
     const snap = await db.collection("orders").doc(orderId).get();
     if (!snap.exists) throw new Error("Order not found");
+    const order = { id: snap.id, ...snap.data() };
     const productsMap = await getProductsMap({ includeInactive: true });
+    const destinationEmail = await resolveBoxNowDestinationEmail(order);
     return {
       ok: true,
       action,
       environment: safeEnvironment,
-      result: buildBoxNowDeliveryRequest({ id: snap.id, ...snap.data() }, config, productsMap, {
+      result: buildBoxNowDeliveryRequest(order, config, productsMap, {
         paymentMode: body.paymentMode || "",
+        compartmentSize: body.compartmentSize,
         amountToBeCollectedCents: body.amountToBeCollectedCents,
+        destinationEmail,
       }),
     };
   }
@@ -5768,6 +8149,108 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
     const payload = body.payload && typeof body.payload === "object" ? body.payload : {};
     const verified = verifyBoxNowWebhookPayload(JSON.stringify(payload), payload, config.webhookSecret);
     return { ok: true, action, environment: safeEnvironment, result: verified };
+  }
+
+  if (action === "createStagingTestDelivery") {
+    const stageConfig = boxNowEnvConfig(settings, "stage");
+    const productsMap = await getProductsMap();
+    const testProductId = Object.keys(productsMap).find(id => productsMap[id]?.active !== false);
+    if (!testProductId) throw new Error("Create or activate at least one product before generating a staging test parcel");
+    if (!stageConfig.originContactNumber) throw new Error("Set the staging BOX NOW origin phone before generating a test parcel");
+
+    const testOrder = await createManualOrderFromAdmin({
+      orderNumber: `BOXNOW-TEST-${Date.now()}`,
+      customer: {
+        name: "GRUBZ BOX NOW Test",
+        email: stageConfig.originContactEmail || GRUBZ_INFO_EMAIL,
+        phone: stageConfig.originContactNumber,
+      },
+      shipping: {
+        deliveryMethod: "boxnow",
+        name: "GRUBZ BOX NOW Test",
+        phone: stageConfig.originContactNumber,
+        boxNow: {
+          id: BOXNOW_STAGE_TEST_DESTINATION_LOCATION_ID,
+          name: "BOX NOW staging test locker",
+        },
+      },
+      items: [{ id: testProductId, qty: 1 }],
+      amountTotalOverride: 0,
+      status: "test",
+      paymentStatus: "test",
+      notes: "Automatically generated BOX NOW staging webhook test order. Do not fulfill.",
+    }, adminUser);
+
+    let shipment;
+    try {
+      shipment = await createBoxNowDeliveryForOrder(testOrder.id, {
+        environment: "stage",
+        paymentMode: "prepaid",
+        compartmentSize: 1,
+        amountToBeCollectedCents: 0,
+        req,
+      }, adminUser);
+    } catch (err) {
+      await db.collection("orders").doc(testOrder.id).set({
+        boxNowTestCreationError: err.message || "Staging delivery creation failed",
+        updatedAt: now(),
+      }, { merge: true });
+      throw err;
+    }
+
+    const parcelId = String(shipment.parcelIds?.[0] || "").trim();
+    let voucher = null;
+    let voucherError = "";
+    if (parcelId) {
+      const { token: stageToken } = await getBoxNowAccessToken(stageConfig);
+      const labelResponse = await boxNowApiRequest(
+        stageConfig,
+        `/api/v1/parcels/${encodeURIComponent(parcelId)}/label.pdf`,
+        { raw: true, token: stageToken, headers: { accept: "application/pdf" } }
+      );
+      if (labelResponse.ok) voucher = compactBoxNowResult(labelResponse);
+      else voucherError = `Voucher could not be downloaded (${labelResponse.status})`;
+    } else {
+      voucherError = "BOX NOW created the delivery request without returning a parcel ID";
+    }
+
+    return {
+      ok: true,
+      action,
+      environment: "stage",
+      activeEnvironmentUnchanged: settings.activeEnvironment,
+      order: {
+        id: testOrder.id,
+        orderNumber: testOrder.orderNumber,
+        productId: testProductId,
+      },
+      shipment,
+      parcelId,
+      voucher,
+      voucherError,
+    };
+  }
+
+  if (action === "webhookStatus") {
+    const webhookUrl = `${GRUBZ_URL}/api/boxnow/webhook`;
+    const healthSnap = await db.collection("boxNowWebhookHealth").doc(safeEnvironment).get();
+    const health = healthSnap.exists ? healthSnap.data() : null;
+    return {
+      ok: true,
+      action,
+      environment: safeEnvironment,
+      webhookUrl,
+      webhookSecretConfigured: Boolean(config.webhookSecret),
+      registrationManagedBy: "BOX NOW",
+      lastVerifiedEvent: health ? {
+        eventId: health.eventId || "",
+        event: health.event || "",
+        orderNumber: health.orderNumber || "",
+        parcelId: health.parcelId || "",
+        eventTime: health.eventTime || "",
+        receivedAt: health.receivedAt || null,
+      } : null,
+    };
   }
 
   const tokenInfo = await getBoxNowAccessToken(config);
@@ -5900,6 +8383,372 @@ exports.adminBoxNow = onRequest(
   }
 );
 
+exports.marketingEvents = onRequest(
+  { region: "europe-west1", invoker: "public", cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const action = String(body.action || "").trim();
+      const email = normalizedEmail(body.email || body.customer?.email || "");
+      const sessionId = marketingSessionId(body.sessionId || "");
+      const createdAt = now();
+      const common = {
+        email,
+        name: String(body.name || body.customer?.name || "").trim().slice(0, 180),
+        phone: String(body.phone || body.customer?.phone || "").trim().slice(0, 80),
+        source: String(body.source || action || "website").trim().slice(0, 80),
+        language: String(body.language || "").trim().slice(0, 20),
+        sessionId,
+        userAgent: String(req.get("user-agent") || "").slice(0, 500),
+        referrer: String(body.referrer || req.get("referer") || "").slice(0, 500),
+        updatedAt: createdAt,
+      };
+
+      if (action === "first_order_offer") {
+        if (!email) return jsonError(res, 400, "Enter a valid email address");
+        const marketing = await getMarketingSettings();
+        const couponCode = normalizeCouponCode(body.couponCode || marketing.firstOrderOffer?.couponCode || "WELCOME10");
+        const id = marketingDocId("lead", email);
+        const ref = db.collection(MARKETING_LEADS_COLLECTION).doc(id);
+        const snap = await ref.get();
+        await ref.set({
+          ...common,
+          couponCode,
+          status: snap.exists ? (snap.data()?.status || "captured") : "captured",
+          createdAt: snap.exists ? (snap.data()?.createdAt || createdAt) : createdAt,
+        }, { merge: true });
+        return res.json({ ok: true, lead: publicMarketingRecord(id, { ...(snap.data() || {}), ...common, couponCode, status: "captured" }) });
+      }
+
+      if (action === "abandoned_cart" || action === "checkout_started" || action === "cart_cleared") {
+        const cartItems = marketingCartItems(body.items || body.cartItems || []);
+        if (!email && !sessionId) return jsonError(res, 400, "Missing cart identity");
+        const id = marketingDocId("cart", email || sessionId);
+        const ref = db.collection(ABANDONED_CARTS_COLLECTION).doc(id);
+        const snap = await ref.get();
+        const status = action === "checkout_started"
+          ? "checkout_started"
+          : action === "cart_cleared"
+            ? "cleared"
+            : "active";
+        await ref.set({
+          ...common,
+          status,
+          cartItems,
+          cartValueCents: Math.max(0, Math.round(Number(body.cartValueCents || body.cartValue || 0))),
+          couponCode: normalizeCouponCode(body.couponCode || ""),
+          createdAt: snap.exists ? (snap.data()?.createdAt || createdAt) : createdAt,
+          lastCartAt: createdAt,
+        }, { merge: true });
+        return res.json({ ok: true, cart: publicMarketingRecord(id, { ...(snap.data() || {}), ...common, status, cartItems }) });
+      }
+
+      return jsonError(res, 400, "Unknown marketing action");
+    } catch (err) {
+      logger.warn("marketingEvents failed", err);
+      return jsonError(res, err.status || 400, err.message || "Marketing event failed");
+    }
+  }
+);
+
+exports.adminAbandonedCarts = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const adminUser = await requireAdmin(req);
+
+      if (req.method === "GET") {
+        const limit = Math.min(250, Math.max(1, Number(req.query.limit || 100)));
+        const status = String(req.query.status || "").trim().toLowerCase();
+        const snap = await db.collection(ABANDONED_CARTS_COLLECTION).orderBy("lastCartAt", "desc").limit(limit).get();
+        const carts = snap.docs
+          .map(doc => publicMarketingRecord(doc.id, doc.data()))
+          .filter(cart => !status || status === "all" || cart.status === status);
+        return res.json({ carts });
+      }
+
+      if (req.method === "PATCH") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const id = String(body.id || "").trim();
+        if (!id) return jsonError(res, 400, "Missing abandoned cart id");
+        const allowedStatuses = new Set(["active", "checkout_started", "cleared", "contacted", "recovered", "dismissed"]);
+        const status = String(body.status || "").trim().toLowerCase();
+        if (status && !allowedStatuses.has(status)) return jsonError(res, 400, "Invalid abandoned cart status");
+        const notes = String(body.notes || "").trim().slice(0, 2000);
+        const update = {
+          updatedAt: now(),
+          updatedBy: adminUser.uid,
+        };
+        if (status) {
+          update.status = status;
+          if (status === "contacted") update.contactedAt = now();
+          if (status === "recovered") update.recoveredAt = now();
+          if (status === "dismissed") update.dismissedAt = now();
+        }
+        if (body.notes != null) update.notes = notes;
+        await db.collection(ABANDONED_CARTS_COLLECTION).doc(id).set(update, { merge: true });
+        const snap = await db.collection(ABANDONED_CARTS_COLLECTION).doc(id).get();
+        return res.json({ ok: true, cart: publicMarketingRecord(snap.id, snap.data() || {}) });
+      }
+
+      return jsonError(res, 405, "Use GET or PATCH");
+    } catch (err) {
+      logger.error("adminAbandonedCarts failed", { error: err.message || "Abandoned carts failed" });
+      return adminError(res, err);
+    }
+  }
+);
+
+exports.trackEvent = onRequest(
+  { region: "europe-west1", invoker: "public", cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const event = sanitizeAnalyticsEvent(body);
+      const createdAt = now();
+      const day = analyticsDayKey(new Date());
+      const userAgent = analyticsSafeString(req.get("user-agent") || "", 500);
+      await db.collection(ANALYTICS_EVENTS_COLLECTION).add({
+        ...event,
+        day,
+        createdAt,
+        userAgent,
+      });
+      const sessionRef = db.collection(ANALYTICS_SESSIONS_COLLECTION).doc(event.sessionId);
+      await db.runTransaction(async tx => {
+        const sessionDoc = await tx.get(sessionRef);
+        tx.set(sessionRef, {
+          sessionId: event.sessionId,
+          firstSeenAt: sessionDoc.exists ? (sessionDoc.data()?.firstSeenAt || createdAt) : createdAt,
+          lastSeenAt: createdAt,
+          lastEvent: event.event,
+          lastPage: event.page,
+          language: event.language,
+          device: event.device,
+          referrer: event.referrer,
+          attribution: event.attribution,
+          eventCount: FieldValue.increment(1),
+        }, { merge: true });
+      });
+      return res.json({ ok: true });
+    } catch (err) {
+      logger.warn("trackEvent failed", err);
+      return jsonError(res, err.status || 400, err.message || "Analytics event failed");
+    }
+  }
+);
+
+exports.adminAnalytics = onRequest(
+  { region: "europe-west1", invoker: "public", cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      await requireAdmin(req);
+      const range = String(req.query.range || "30").trim();
+      const days = range === "all" ? 3650 : Math.min(365, Math.max(1, Number(range || 30)));
+      const cutoff = new Date();
+      cutoff.setHours(0, 0, 0, 0);
+      cutoff.setDate(cutoff.getDate() - days + 1);
+      const snap = await db.collection(ANALYTICS_EVENTS_COLLECTION)
+        .where("createdAt", ">=", Timestamp.fromDate(cutoff))
+        .orderBy("createdAt", "desc")
+        .limit(2000)
+        .get();
+      const events = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const sessions = new Set();
+      const eventMap = new Map();
+      const pageMap = new Map();
+      const referrerMap = new Map();
+      const trafficSourceMap = new Map();
+      const campaignMap = new Map();
+      const deviceMap = new Map();
+      const productMap = new Map();
+      const dailyMap = new Map();
+      const durationMap = new Map();
+      const sessionMap = new Map();
+      const funnelKeys = [
+        "page_view",
+        "section_view",
+        "product_view",
+        "add_to_cart",
+        "cart_open",
+        "checkout_start",
+        "address_saved",
+        "review_open",
+        "boxnow_locker_selected",
+        "checkout_submit",
+        "checkout_success",
+        "chat_open",
+        "chat_message_sent",
+      ];
+      const funnel = Object.fromEntries(funnelKeys.map(key => [key, { events: 0, sessions: new Set() }]));
+      const orderedEvents = [...events].sort((a, b) => millisFromTimestamp(a.createdAt) - millisFromTimestamp(b.createdAt));
+      for (const event of orderedEvents) {
+        sessions.add(event.sessionId);
+        addAnalyticsBreakdown(eventMap, event.event);
+        addAnalyticsBreakdown(pageMap, event.page || event.path || "/");
+        if (event.device) addAnalyticsBreakdown(deviceMap, event.device);
+        if (event.props?.productId || event.props?.productName) {
+          addAnalyticsBreakdown(productMap, event.props.productName || event.props.productId);
+        }
+        const day = event.day || analyticsDayKey(millisFromTimestamp(event.createdAt));
+        const dayRow = dailyMap.get(day) || { day, events: 0, sessions: new Set() };
+        dayRow.events += 1;
+        dayRow.sessions.add(event.sessionId);
+        dailyMap.set(day, dayRow);
+        if (!funnel[event.event]) funnel[event.event] = { events: 0, sessions: new Set() };
+        funnel[event.event].events += 1;
+        funnel[event.event].sessions.add(event.sessionId);
+        const createdMs = millisFromTimestamp(event.createdAt);
+        const sessionId = String(event.sessionId || "");
+        if (sessionId) {
+          const session = sessionMap.get(sessionId) || {
+            sessionId,
+            firstSeenAt: event.createdAt || null,
+            lastSeenAt: event.createdAt || null,
+            firstMs: createdMs,
+            lastMs: createdMs,
+            eventCount: 0,
+            device: event.device || "",
+            language: event.language || "",
+            referrer: event.referrer || "",
+            attribution: event.attribution || {},
+            firstPage: event.page || event.path || "",
+            lastPage: event.page || event.path || "",
+            lastEvent: event.event,
+            timeline: [],
+            reached: new Set(),
+          };
+          session.eventCount += 1;
+          if (!session.firstMs || (createdMs && createdMs < session.firstMs)) {
+            session.firstMs = createdMs;
+            session.firstSeenAt = event.createdAt || session.firstSeenAt;
+            session.firstPage = event.page || event.path || session.firstPage;
+          }
+          if (createdMs >= session.lastMs) {
+            session.lastMs = createdMs;
+            session.lastSeenAt = event.createdAt || session.lastSeenAt;
+            session.lastPage = event.page || event.path || session.lastPage;
+            session.lastEvent = event.event;
+          }
+          session.device = session.device || event.device || "";
+          session.language = session.language || event.language || "";
+          session.referrer = session.referrer || event.referrer || "";
+          if (!session.attribution?.source && event.attribution?.source) session.attribution = event.attribution;
+          session.reached.add(event.event);
+          if (session.timeline.length < 24 && event.event !== "engagement_time") {
+            session.timeline.push({
+              event: event.event,
+              page: event.page || "",
+              createdAt: event.createdAt || null,
+              props: event.props || {},
+            });
+          }
+          sessionMap.set(sessionId, session);
+        }
+        if (event.event === "engagement_time") {
+          const durationMs = Math.max(0, Math.min(15 * 60 * 1000, Number(event.props?.durationMs || 0)));
+          if (durationMs > 0) {
+            const label = analyticsSafeString(event.props?.section || event.page || event.path || "Unknown", 160) || "Unknown";
+            const row = durationMap.get(label) || { label, count: 0, totalMs: 0 };
+            row.count += 1;
+            row.totalMs += durationMs;
+            durationMap.set(label, row);
+          }
+        }
+      }
+      for (const session of sessionMap.values()) {
+        addAnalyticsBreakdown(referrerMap, session.referrer || "Direct / unknown");
+        addAnalyticsBreakdown(trafficSourceMap, session.attribution?.source || session.referrer || "Direct / unknown");
+        if (session.attribution?.campaign) addAnalyticsBreakdown(campaignMap, session.attribution.campaign);
+      }
+      const primaryFunnel = ["page_view", "product_view", "add_to_cart", "cart_open", "checkout_start", "review_open", "checkout_submit", "checkout_success"];
+      const funnelRows = primaryFunnel.map(event => ({
+        event,
+        events: funnel[event]?.events || 0,
+        sessions: funnel[event]?.sessions.size || 0,
+      }));
+      const dropoffs = funnelRows.slice(0, -1).map((row, index) => {
+        const next = funnelRows[index + 1];
+        const from = Number(row.sessions || 0);
+        const to = Math.min(from, Number(next.sessions || 0));
+        return {
+          from: row.event,
+          to: next.event,
+          sessions: from,
+          continued: to,
+          dropped: Math.max(0, from - to),
+          conversion: from ? Math.round((to / from) * 1000) / 10 : 0,
+        };
+      });
+      const sessionRows = [...sessionMap.values()]
+        .map(session => {
+          const reached = primaryFunnel.filter(step => session.reached.has(step));
+          const dropOffStep = reached.length ? reached[reached.length - 1] : session.lastEvent;
+          return {
+            sessionId: session.sessionId.slice(0, 10),
+            firstSeenAt: session.firstSeenAt,
+            lastSeenAt: session.lastSeenAt,
+            durationMs: Math.max(0, (session.lastMs || 0) - (session.firstMs || 0)),
+            eventCount: session.eventCount,
+            device: session.device,
+            language: session.language,
+            referrer: session.referrer,
+            firstPage: session.firstPage,
+            lastPage: session.lastPage,
+            lastEvent: session.lastEvent,
+            dropOffStep,
+            timeline: session.timeline,
+          };
+        })
+        .sort((a, b) => millisFromTimestamp(b.lastSeenAt) - millisFromTimestamp(a.lastSeenAt))
+        .slice(0, 30);
+      return res.json({
+        ok: true,
+        range,
+        eventCount: events.length,
+        sessionCount: sessions.size,
+        events: analyticsMapRows(eventMap, 16),
+        pages: analyticsMapRows(pageMap, 16),
+        referrers: analyticsMapRows(referrerMap, 12),
+        trafficSources: analyticsMapRows(trafficSourceMap, 12),
+        campaigns: analyticsMapRows(campaignMap, 12),
+        devices: analyticsMapRows(deviceMap, 8),
+        products: analyticsMapRows(productMap, 12),
+        timeSpent: [...durationMap.values()]
+          .map(row => ({ label: row.label, count: row.count, totalMs: row.totalMs, avgMs: row.count ? Math.round(row.totalMs / row.count) : 0 }))
+          .sort((a, b) => Number(b.totalMs || 0) - Number(a.totalMs || 0))
+          .slice(0, 12),
+        dropoffs,
+        sessions: sessionRows,
+        funnel: Object.entries(funnel).map(([event, row]) => ({ event, events: row.events, sessions: row.sessions.size })),
+        daily: [...dailyMap.values()]
+          .map(row => ({ day: row.day, events: row.events, sessions: row.sessions.size }))
+          .sort((a, b) => a.day.localeCompare(b.day)),
+        recent: events.slice(0, 40).map(event => ({
+          id: event.id,
+          event: event.event,
+          page: event.page || "",
+          sessionId: String(event.sessionId || "").slice(0, 10),
+          createdAt: event.createdAt || null,
+          props: event.props || {},
+        })),
+      });
+    } catch (err) {
+      return adminError(res, err);
+    }
+  }
+);
+
 function extractRawJsonProperty(raw, propertyName) {
   const text = Buffer.isBuffer(raw) ? raw.toString("utf8") : String(raw || "");
   const key = `"${propertyName}"`;
@@ -5971,7 +8820,7 @@ function verifyBoxNowWebhookPayload(rawBody, payload, webhookSecret) {
 function boxNowTrackingUpdateFromEvent(payload = {}, environment = "") {
   const data = payload.data || {};
   const parcelId = String(data.parcelId || data.parcelID || payload.subject || "").trim();
-  const event = String(data.event || data.parcelState || "").trim();
+  const event = String(data.event || "").trim();
   const orderNumber = String(data.orderNumber || data.referenceNumber || "").trim();
   return {
     orderNumber,
@@ -6002,15 +8851,22 @@ exports.boxNowWebhook = onRequest(
       if (req.method !== "POST") return res.status(405).send("Use POST");
       const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const settings = await getEffectiveBoxNowSettings(req, { includeSecrets: true });
-      const source = String(payload.source || "");
-      const environment = source.includes("stage") ? "stage" : settings.activeEnvironment;
+      const rawBody = req.rawBody || JSON.stringify(payload);
+      const environment = sanitizeBoxNowEnvironment(settings.webhookEnvironment || "stage");
       const config = boxNowEnvConfig(settings, environment);
-      const verification = verifyBoxNowWebhookPayload(req.rawBody || JSON.stringify(payload), payload, config.webhookSecret);
-      if (verification.verified === false && !verification.skipped) {
-        return res.status(400).send("Invalid BOX NOW webhook signature");
+      const verification = verifyBoxNowWebhookPayload(rawBody, payload, config.webhookSecret);
+      if (!verification.verified) {
+        logger.warn("BOX NOW webhook rejected", {
+          environment,
+          reason: verification.reason || "unverified",
+        });
+        return res.status(verification.skipped ? 503 : 400).send(
+          verification.skipped ? "BOX NOW webhook secret is not configured" : "Invalid BOX NOW webhook signature"
+        );
       }
 
       const update = boxNowTrackingUpdateFromEvent(payload, config.environment);
+      if (!update.event) return res.status(400).send("Missing BOX NOW data.event");
       const eventId = String(payload.id || `${update.parcelId}_${update.event}_${update.eventTime}`).replace(/[\/#?[\]]+/g, "_");
       await db.collection("boxNowWebhookEvents").doc(eventId || String(Date.now())).set({
         payload,
@@ -6018,12 +8874,51 @@ exports.boxNowWebhook = onRequest(
         parsed: update,
         receivedAt: now(),
       }, { merge: true });
+      await db.collection("boxNowWebhookHealth").doc(config.environment).set({
+        eventId,
+        event: update.event,
+        orderNumber: update.orderNumber,
+        parcelId: update.parcelId,
+        eventTime: update.eventTime,
+        receivedAt: now(),
+      }, { merge: true });
 
       if (update.orderNumber) {
         const snap = await db.collection("orders").where("orderNumber", "==", update.orderNumber).limit(1).get();
         if (!snap.empty) {
           const orderRef = snap.docs[0].ref;
-          await orderRef.set({
+          const order = snap.docs[0].data() || {};
+          const parcelKey = orderStatusDocKey(update.parcelId || "unknown");
+          const parcelEvents = {
+            ...(order.boxNowShipment?.parcelEvents || {}),
+          };
+          const previousParcelEvent = parcelEvents[parcelKey] || {};
+          const incomingEventMs = millisFromTimestamp(update.eventTime);
+          const previousEventMs = millisFromTimestamp(previousParcelEvent.eventTime);
+          if (previousEventMs && incomingEventMs && incomingEventMs < previousEventMs) {
+            return res.status(200).send("[ok: stale event ignored]");
+          }
+          const normalizedEvent = normalizeOrderStatus(update.event).replace(/[_\s]+/g, "-");
+          parcelEvents[parcelKey] = {
+            parcelId: update.parcelId,
+            event: normalizedEvent,
+            parcelState: update.parcelState || "",
+            eventTime: update.eventTime || "",
+            webhookEventId: eventId,
+          };
+          const expectedParcelIds = (Array.isArray(order.boxNowShipment?.parcelIds) ? order.boxNowShipment.parcelIds : [])
+            .map(value => String(value || "").trim())
+            .filter(Boolean);
+          const deliveredParcelIds = Object.values(parcelEvents)
+            .filter(item => normalizeOrderStatus(item.event).replace(/[_\s]+/g, "-") === "delivered")
+            .map(item => String(item.parcelId || "").trim())
+            .filter(Boolean);
+          const allParcelsDelivered = normalizedEvent === "delivered" && (
+            expectedParcelIds.length <= 1 ||
+            expectedParcelIds.every(parcelId => deliveredParcelIds.includes(parcelId))
+          );
+          const deliveredEventDate = update.eventTime ? new Date(update.eventTime) : null;
+          const orderUpdate = {
             boxNowShipment: {
               lastEvent: update.event,
               lastParcelState: update.parcelState,
@@ -6031,6 +8926,8 @@ exports.boxNowWebhook = onRequest(
               lastEventAt: update.eventTime,
               lastWebhookAt: now(),
               environment: config.environment,
+              parcelEvents,
+              deliveredParcelIds,
             },
             shipping: {
               trackingNumber: update.parcelId,
@@ -6038,7 +8935,15 @@ exports.boxNowWebhook = onRequest(
             },
             boxNowWebhookEventIds: FieldValue.arrayUnion(eventId),
             updatedAt: now(),
-          }, { merge: true });
+          };
+          if (allParcelsDelivered) {
+            orderUpdate.fulfillmentStatus = "delivered";
+            orderUpdate.deliveredAt = deliveredEventDate && !Number.isNaN(deliveredEventDate.getTime())
+              ? Timestamp.fromDate(deliveredEventDate)
+              : now();
+            orderUpdate.deliveredAutomaticallyBy = "boxnow_webhook";
+          }
+          await orderRef.set(orderUpdate, { merge: true });
         }
       }
 
@@ -6061,9 +8966,15 @@ exports.getStock = onRequest(
     try {
       const result = {};
       const productsMap = await getProductsMap();
+      const pools = Object.fromEntries((await getInventoryPools()).map(pool => [pool.id, pool]));
 
       for (const [clientId, product] of Object.entries(productsMap)) {
-        result[clientId] = Math.max(0, Number(product.stock || 0));
+        const poolId = String(product.inventoryPoolId || "").trim();
+        const pool = pools[poolId];
+        const weightGrams = Math.max(0, Number(product.weightGrams || 0));
+        result[clientId] = pool && weightGrams > 0 && pool.updatedAt
+          ? Math.max(0, Math.floor(pool.availableGrams / weightGrams))
+          : Math.max(0, Number(product.stock || 0));
       }
 
       res.status(200).json(result);
@@ -6138,10 +9049,129 @@ async function uidFromAuthHeader(req) {
 
 function validateShipping(s) {
   if (!s || typeof s !== "object") return "Missing shipping";
-  const reqd = ["name", "phone", "postal", "country"];
-  const missing = reqd.filter((k) => !String(s[k] || "").trim());
+  const requiredValues = {
+    name: s.name,
+    phone: s.phone,
+    addressLine1: s.addressLine1 || s.line1,
+    city: s.city,
+    postal: s.postal || s.postalCode,
+    country: s.country,
+  };
+  const missing = Object.entries(requiredValues)
+    .filter(([, value]) => !String(value || "").trim())
+    .map(([key]) => key);
   return missing.length ? `Missing: ${missing.join(", ")}` : null;
 }
+
+function normalizeCustomerShipping(input = {}, existing = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  const previous = existing && typeof existing === "object" ? existing : {};
+  const line1 = String(source.addressLine1 || source.line1 || source.address || "").trim();
+  const line2 = String(source.addressLine2 || source.line2 || "").trim();
+  const postal = String(source.postalCode || source.postal || source.zip || "").trim();
+  const sourceBoxNow = source.boxNow && typeof source.boxNow === "object" ? source.boxNow : null;
+  const previousBoxNow = previous.boxNow && typeof previous.boxNow === "object" ? previous.boxNow : {};
+  return {
+    ...previous,
+    ...source,
+    name: String(source.name || "").trim(),
+    phone: String(source.phone || "").trim(),
+    line1,
+    addressLine1: line1,
+    line2,
+    addressLine2: line2,
+    postal,
+    postalCode: postal,
+    city: String(source.city || "").trim(),
+    region: String(source.region || "").trim(),
+    country: String(source.country || "Greece").trim() || "Greece",
+    ...(sourceBoxNow ? { boxNow: { ...previousBoxNow, ...sourceBoxNow } } : {}),
+  };
+}
+
+async function persistCustomerShipping(uid, shippingInput = {}, profile = {}) {
+  if (!uid || uid === "guest") return null;
+  const ref = db.doc(`users/${uid}`);
+  const snap = await ref.get();
+  const existing = snap.exists ? snap.data() || {} : {};
+  const shipping = normalizeCustomerShipping(shippingInput, existing.shipping);
+  const update = {
+    shipping,
+    name: shipping.name || existing.name || existing.displayName || "",
+    displayName: shipping.name || existing.displayName || existing.name || "",
+    phone: shipping.phone || existing.phone || "",
+    updatedAt: now(),
+  };
+  const email = normalizedEmail(profile.email || existing.email || existing.emailLower || "");
+  if (email) {
+    update.email = email;
+    update.emailLower = email;
+  }
+  if (!existing.createdAt) update.createdAt = now();
+  await ref.set(update, { merge: true });
+  return shipping;
+}
+
+const CUSTOMER_SESSION_COOKIE = "grubz_customer_session";
+const CUSTOMER_SESSION_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+
+function requestCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || "")
+    .split(";")
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => {
+      const separator = part.indexOf("=");
+      return separator < 0 ? [part, ""] : [part.slice(0, separator), part.slice(separator + 1)];
+    }));
+}
+
+function customerSessionCookie(value, maxAgeSeconds) {
+  return `${CUSTOMER_SESSION_COOKIE}=${value}; Max-Age=${maxAgeSeconds}; Path=/; Domain=grubz.gr; HttpOnly; Secure; SameSite=Lax`;
+}
+
+// Durable customer session fallback for browsers that fail to restore Firebase's
+// IndexedDB/localStorage auth state. The cookie never exposes credentials to JS.
+exports.customerSession = onRequest(
+  { region: "europe-west1", invoker: "public", cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      res.set("Cache-Control", "private, no-store, max-age=0");
+      if (req.method === "OPTIONS") return res.status(204).end();
+
+      if (req.method === "POST") {
+        const match = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
+        if (!match) return jsonError(res, 401, "Unauthorized");
+        const decoded = await getAdminAuth().verifyIdToken(match[1], true);
+        const sessionCookie = await getAdminAuth().createSessionCookie(match[1], { expiresIn: CUSTOMER_SESSION_MAX_AGE_MS });
+        res.setHeader("Set-Cookie", customerSessionCookie(sessionCookie, Math.floor(CUSTOMER_SESSION_MAX_AGE_MS / 1000)));
+        return res.json({ ok: true, uid: decoded.uid, email: decoded.email || "" });
+      }
+
+      if (req.method === "GET") {
+        const sessionCookie = requestCookies(req)[CUSTOMER_SESSION_COOKIE] || "";
+        if (!sessionCookie) return jsonError(res, 401, "No active session");
+        const decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true);
+        const customToken = await getAdminAuth().createCustomToken(decoded.uid);
+        return res.json({ ok: true, customToken });
+      }
+
+      if (req.method === "DELETE") {
+        res.setHeader("Set-Cookie", customerSessionCookie("", 0));
+        return res.json({ ok: true });
+      }
+
+      return jsonError(res, 405, "Use GET, POST, or DELETE");
+    } catch (e) {
+      logger.warn("customerSession failed", e);
+      if (req.method === "DELETE") {
+        res.setHeader("Set-Cookie", customerSessionCookie("", 0));
+        return res.json({ ok: true });
+      }
+      return jsonError(res, 401, "Session unavailable");
+    }
+  },
+);
 
 // --- GET /getProfile
 exports.getProfile = onRequest({ region: "europe-west1", invoker: "public" }, (req, res) =>
@@ -6150,11 +9180,14 @@ exports.getProfile = onRequest({ region: "europe-west1", invoker: "public" }, (r
     const uid = await uidFromAuthHeader(req);
     if (!uid) return res.status(401).json({ error: "Unauthorized" });
 
+    res.set("Cache-Control", "private, no-store, max-age=0");
     const snap = await db.doc(`users/${uid}`).get();
     const data = snap.exists ? snap.data() : {};
     return res.json({
       email: data.email || null,
-      shipping: data.shipping || null,
+      shipping: data.shipping && typeof data.shipping === "object"
+        ? normalizeCustomerShipping(data.shipping)
+        : null,
     });
   })
 );
@@ -6168,11 +9201,11 @@ exports.saveShipping = onRequest({ region: "europe-west1", invoker: "public" }, 
     const uid = await uidFromAuthHeader(req);
     if (!uid) return res.status(401).json({ error: "Unauthorized" });
 
-    const shipping = (req.body && req.body.shipping) || null;
-    const err = validateShipping(shipping);
+    const shippingInput = (req.body && req.body.shipping) || null;
+    const err = validateShipping(shippingInput);
     if (err) return res.status(400).json({ error: err });
 
-    await db.doc(`users/${uid}`).set({ shipping }, { merge: true });
-    return res.json({ ok: true });
+    const shipping = await persistCustomerShipping(uid, shippingInput);
+    return res.json({ ok: true, shipping });
   })
 );

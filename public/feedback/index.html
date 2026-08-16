@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Rate your GRUBZ experience</title>
+    <link rel="stylesheet" href="/styles/tailwind.css">
+  </head>
+  <body class="min-h-screen bg-amber-50 text-zinc-900">
+    <main class="mx-auto flex min-h-screen max-w-xl items-center px-4 py-10">
+      <section class="w-full rounded-2xl border border-amber-200 bg-white p-6 shadow-xl sm:p-8">
+        <a href="/" class="mb-6 inline-flex items-center gap-3" aria-label="GRUBZ home">
+          <img src="/images/grubz-icon-80.png" alt="" class="h-14 w-14 object-contain">
+          <span class="text-2xl font-black tracking-tight">GRUBZ</span>
+        </a>
+        <div id="loading" class="text-sm text-zinc-500">Loading your feedback form…</div>
+        <div id="invalid" class="hidden space-y-3">
+          <h1 class="text-2xl font-black">Feedback link unavailable</h1>
+          <p class="text-zinc-600">This feedback link is invalid or no longer available.</p>
+          <a class="font-bold underline" href="/">Return to GRUBZ</a>
+        </div>
+        <div id="formView" class="hidden space-y-6">
+          <div>
+            <p id="orderLabel" class="text-sm font-bold uppercase tracking-wide text-amber-700"></p>
+            <h1 id="title" class="mt-1 text-3xl font-black">How was your GRUBZ experience?</h1>
+            <p id="intro" class="mt-2 text-zinc-600">Your feedback helps us improve our products and service.</p>
+          </div>
+          <form id="feedbackForm" class="space-y-5">
+            <fieldset>
+              <legend id="ratingLabel" class="mb-2 font-bold">Your rating</legend>
+              <div id="stars" class="flex justify-between gap-2 sm:justify-start" aria-label="Rating from 1 to 5">
+                <button class="star rounded-xl border border-amber-300 px-3 py-2 text-3xl text-amber-500 hover:bg-amber-50" type="button" data-rating="1" aria-label="1 star">☆</button>
+                <button class="star rounded-xl border border-amber-300 px-3 py-2 text-3xl text-amber-500 hover:bg-amber-50" type="button" data-rating="2" aria-label="2 stars">☆</button>
+                <button class="star rounded-xl border border-amber-300 px-3 py-2 text-3xl text-amber-500 hover:bg-amber-50" type="button" data-rating="3" aria-label="3 stars">☆</button>
+                <button class="star rounded-xl border border-amber-300 px-3 py-2 text-3xl text-amber-500 hover:bg-amber-50" type="button" data-rating="4" aria-label="4 stars">☆</button>
+                <button class="star rounded-xl border border-amber-300 px-3 py-2 text-3xl text-amber-500 hover:bg-amber-50" type="button" data-rating="5" aria-label="5 stars">☆</button>
+              </div>
+              <input id="rating" type="hidden" value="">
+            </fieldset>
+            <div>
+              <label id="commentLabel" class="mb-2 block font-bold" for="comment">Tell us more (optional)</label>
+              <textarea id="comment" class="w-full rounded-xl border border-zinc-300 p-3 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200" rows="5" maxlength="2000"></textarea>
+            </div>
+            <p id="message" class="text-sm" role="status" aria-live="polite"></p>
+            <button id="submitBtn" class="w-full rounded-xl bg-zinc-900 px-5 py-3 font-extrabold text-white hover:bg-zinc-700 disabled:opacity-50" type="submit">Send feedback</button>
+          </form>
+        </div>
+        <div id="thanks" class="hidden space-y-3">
+          <h1 id="thanksTitle" class="text-3xl font-black">Thank you!</h1>
+          <p id="thanksBody" class="text-zinc-600">Your feedback has been recorded.</p>
+          <a id="shopLink" class="inline-block font-bold underline" href="/#products">Continue shopping</a>
+        </div>
+      </section>
+    </main>
+    <script>
+      const token = new URLSearchParams(location.search).get("token") || "";
+      let language = "en";
+      let rating = 0;
+      const text = {
+        en: {
+          order: "Order", title: "How was your GRUBZ experience?",
+          intro: "Your feedback helps us improve our products and service.",
+          rating: "Your rating", comment: "Tell us more (optional)", submit: "Send feedback",
+          choose: "Please choose a rating.", saving: "Saving your feedback…",
+          error: "Your feedback could not be saved. Please try again.",
+          thanks: "Thank you!", recorded: "Your feedback has been recorded.", shop: "Continue shopping",
+        },
+        el: {
+          order: "Παραγγελία", title: "Πώς ήταν η εμπειρία σου με το GRUBZ;",
+          intro: "Η γνώμη σου μας βοηθά να βελτιώνουμε τα προϊόντα και την εξυπηρέτησή μας.",
+          rating: "Η αξιολόγησή σου", comment: "Πες μας περισσότερα (προαιρετικά)", submit: "Αποστολή αξιολόγησης",
+          choose: "Επίλεξε μια βαθμολογία.", saving: "Αποθήκευση αξιολόγησης…",
+          error: "Δεν μπορέσαμε να αποθηκεύσουμε την αξιολόγησή σου. Δοκίμασε ξανά.",
+          thanks: "Ευχαριστούμε!", recorded: "Η αξιολόγησή σου καταγράφηκε.", shop: "Συνέχισε τις αγορές",
+        },
+      };
+      const $ = id => document.getElementById(id);
+      function applyLanguage(orderNumber) {
+        const t = text[language];
+        document.documentElement.lang = language;
+        $("orderLabel").textContent = orderNumber ? `${t.order} ${orderNumber}` : "";
+        $("title").textContent = t.title;
+        $("intro").textContent = t.intro;
+        $("ratingLabel").textContent = t.rating;
+        $("commentLabel").textContent = t.comment;
+        $("submitBtn").textContent = t.submit;
+        $("thanksTitle").textContent = t.thanks;
+        $("thanksBody").textContent = t.recorded;
+        $("shopLink").textContent = t.shop;
+      }
+      function showThanks() {
+        $("loading").classList.add("hidden");
+        $("formView").classList.add("hidden");
+        $("thanks").classList.remove("hidden");
+      }
+      async function load() {
+        if (!token) {
+          $("loading").classList.add("hidden");
+          $("invalid").classList.remove("hidden");
+          return;
+        }
+        try {
+          const response = await fetch(`/api/orderFeedback?token=${encodeURIComponent(token)}`);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Invalid link");
+          language = data.language === "el" ? "el" : "en";
+          applyLanguage(data.orderNumber || "");
+          if (data.submitted) return showThanks();
+          $("loading").classList.add("hidden");
+          $("formView").classList.remove("hidden");
+        } catch (_error) {
+          $("loading").classList.add("hidden");
+          $("invalid").classList.remove("hidden");
+        }
+      }
+      document.querySelectorAll(".star").forEach(button => button.addEventListener("click", () => {
+        rating = Number(button.dataset.rating);
+        $("rating").value = String(rating);
+        document.querySelectorAll(".star").forEach(star => {
+          const selected = Number(star.dataset.rating) <= rating;
+          star.textContent = selected ? "★" : "☆";
+          star.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+        $("message").textContent = "";
+      }));
+      $("feedbackForm").addEventListener("submit", async event => {
+        event.preventDefault();
+        const t = text[language];
+        if (!rating) {
+          $("message").className = "text-sm text-red-700";
+          $("message").textContent = t.choose;
+          return;
+        }
+        $("submitBtn").disabled = true;
+        $("message").className = "text-sm text-zinc-500";
+        $("message").textContent = t.saving;
+        try {
+          const response = await fetch("/api/orderFeedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, rating, comment: $("comment").value }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Save failed");
+          showThanks();
+        } catch (_error) {
+          $("submitBtn").disabled = false;
+          $("message").className = "text-sm text-red-700";
+          $("message").textContent = t.error;
+        }
+      });
+      load();
+    </script>
+  </body>
+</html>

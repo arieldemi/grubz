@@ -4,16 +4,23 @@
     <meta charset="utf-8" />
     <!-- Prevent zoom on mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // Firebase Auth persistence is origin-scoped. Keep production checkout
+      // on one canonical origin so login and checkout state survive navigation.
+      if (location.hostname === "grubz.gr") {
+        location.replace(`https://www.grubz.gr${location.pathname}${location.search}${location.hash}`);
+      }
+    </script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
     <link rel="manifest" href="/images/favicon/site.webmanifest">
 
-    <title>GRUBZ — High-Protein BSF Snacks | Made in Greece</title>
-    <meta name="description" content="GRUBZ: high-protein Black Soldier Fly larvae snacks for reptiles, birds, and fish. Made in Greece.">
-    <meta property="og:title" content="GRUBZ — High-Protein BSF Snacks" />
-    <meta property="og:description" content="Natural protein. Sustainable nutrition. Made in Greece." />
+    <title>GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια</title>
+    <meta name="description" content="GRUBZ: φυσική, βιώσιμη και νόστιμη διατροφή για πουλερικά, ερπετά, πτηνά και ψάρια, ελληνικής παραγωγής.">
+    <meta property="og:title" content="GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια" />
+    <meta property="og:description" content="Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.grubz.gr/" />
     <meta property="og:image" content="https://www.grubz.gr/images/social-share.png" />
@@ -21,14 +28,17 @@
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:locale" content="en_GB" />
+    <meta property="og:locale" content="el_GR" />
+    <meta property="og:locale:alternate" content="en_GB" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια" />
+    <meta name="twitter:description" content="Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής." />
     <meta name="twitter:image" content="https://www.grubz.gr/images/social-share.png" />
 
     <link rel="stylesheet" href="/styles/tailwind.css">
 
     <style>
-      :root{ --grubz-1:#d04211; --grubz-2:#e37500; --grubz-3:#daa266; --grubz-4:#71391d; }
+      :root{ --grubz-1:#d04211; --grubz-2:#e37500; --grubz-3:#daa266; --grubz-4:#71391d; --positive:#2f7d52; --positive-hover:#256643; }
       .bg-grubz{ background: linear-gradient(135deg,var(--grubz-1),var(--grubz-2)); }
       .text-shadow{ text-shadow:0 2px 8px rgba(0,0,0,.25) }
       .chip{ background: rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25) }
@@ -43,11 +53,11 @@
       [data-suggest-details],
       .cursor-pointer{ cursor:pointer !important; }
       .btn{
-        background: var(--grubz-1); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700;
+        background: var(--positive); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700;
         transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
         box-shadow: 0 8px 20px rgba(208,66,17,.3);
       }
-      .btn:hover{ transform: translateY(-1px); background:#bd3a0f; box-shadow:0 10px 24px rgba(208,66,17,.35) }
+      .btn:hover{ transform: translateY(-1px); background:var(--positive-hover); box-shadow:0 10px 24px rgba(37,102,67,.28) }
       .btn-outline{ border:2px solid var(--grubz-1); color:var(--grubz-1); background:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
       .btn-outline:hover{ background:var(--grubz-1); color:#fff }
       .btn-soft{ border:1px solid #e5e5e5; background:#fff; color:#0a0a0a; border-radius:.75rem; padding:.7rem 1rem; font-weight:600; }
@@ -76,7 +86,7 @@
         .hero-shell{ padding-top:3.5rem; }
         .hero-title{ margin-top:1.5rem; }
       }
-      .product-thumb { height: 15rem; }
+      .product-thumb { display:block; width:100%; height:15rem; object-fit:cover; }
       @media (min-width: 640px){ .product-thumb { height: 13rem; } }
       :focus-visible { outline: 3px solid #111; outline-offset: 3px; }
       .btn:focus-visible, .btn-outline:focus-visible, .btn-soft:focus-visible, .btn-danger:focus-visible { outline-color: var(--grubz-1); }
@@ -103,6 +113,8 @@
       .boxnow-frame{ width:100%; height:min(76vh,720px); border:0; }
       .product-detail-media{ background:#f8f1eb; }
       .product-detail-image{ aspect-ratio:3/2; background-size:cover; background-repeat:no-repeat; }
+      .product-info-pill{display:inline-flex;align-items:center;border:1px solid #eadfd6;background:#fff7f2;color:#71391d;border-radius:999px;padding:.28rem .55rem;font-size:.74rem;font-weight:800}
+      .sales-panel{border:1px solid #eadfd6;background:#fffaf6;border-radius:1rem}
     </style>
   </head>
 
@@ -142,8 +154,9 @@
           <span class="text-2xl font-extrabold tracking-tight" style="color:var(--grubz-4)">GRUBZ</span>
         </div>
         <nav class="hidden sm:flex items-center gap-6 text-sm">
-          <a href="#benefits" class="hover:opacity-80" data-i18n="navBenefits">Benefits</a>
           <a href="#products" class="hover:opacity-80" data-i18n="navProducts">Products</a>
+          <a href="#usage-calculators" class="hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
+          <a href="#benefits" class="hover:opacity-80" data-i18n="navBenefits">Benefits</a>
           <a href="#faq" class="hover:opacity-80" data-i18n="navFAQ">FAQ</a>
           <a href="#contact" class="hover:opacity-80" data-i18n="navContact">Contact</a>
         </nav>
@@ -159,11 +172,11 @@
         <div class="hero-shell max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-14 grid md:grid-cols-2 gap-10">
           <div>
             <h1 class="hero-title text-4xl sm:text-5xl font-extrabold leading-tight text-shadow mt-6">
-              <span data-i18n="heroTitleL1">High-Protein</span>
-              <span data-i18n="heroTitleL2">BSF Snacks for Pets & Poultry</span>
+              <span data-i18n="heroTitleL1">High Protein</span>
+              <span data-i18n="heroTitleL2">Supplement for Poultry, Reptiles, Birds, and Fish</span>
             </h1>
             <p class="mt-5 text-lg/7 opacity-95" data-i18n="heroSubtitle">
-              Natural nutrition for reptiles, birds, and fish. Sustainable, tasty, and made in Greece.
+              Natural sustainable and tasty nutrition made in Greece
             </p>
             <div class="mt-8 flex flex-wrap gap-3">
               <a href="#products" class="btn" data-i18n="ctaShop">Shop GRUBZ</a>
@@ -187,8 +200,58 @@
         </div>
       </section>
 
+      <!-- Products -->
+      <section id="products" class="bg-white scroll-mt-28">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="productsTitle">Products</h2>
+
+          <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr" aria-live="polite">
+            <p class="text-sm text-zinc-600">Loading products...</p>
+          </div>
+
+          <div class="mt-10 flex flex-wrap gap-3">
+            <button id="checkout" class="btn" data-i18n="btnCheckout">Checkout</button>
+            <button id="clearCart" class="btn btn-outline" data-i18n="btnClear">Clear cart</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="usage-calculators" class="bg-[#f7fbf4] scroll-mt-28">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <div class="max-w-3xl">
+            <h2 class="text-3xl font-extrabold" style="color:var(--grubz-4)" data-i18n="calculatorTitle">Recommended usage calculators</h2>
+            <p class="mt-2 text-zinc-600" data-i18n="calculatorIntro">Estimate how much you need and find a practical package combination. Adjust the usage rate for your own routine.</p>
+          </div>
+          <div class="mt-8 grid gap-6 lg:grid-cols-2">
+            <article id="happy-chicken-calculator" class="card bg-white p-6 space-y-4 scroll-mt-28">
+              <div><h3 class="text-xl font-extrabold" data-i18n="chickenCalcTitle">Happy Chicken calculator</h3><p class="text-sm text-zinc-500" data-i18n="chickenCalcText">For dried BSF larvae used as a supplementary treat, not complete feed.</p></div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div><label class="label block min-h-10" for="chickenPlan" data-i18n="chickenPlan">Feeding plan</label><select id="chickenPlan" class="input"><option value="daily" data-i18n="chickenPlanDaily">Daily adult supplement</option><option value="chicks" data-i18n="chickenPlanChicks">Chicks under 8 weeks</option><option value="growers" data-i18n="chickenPlanGrowers">Growers 8–18 weeks</option><option value="layers" data-i18n="chickenPlanLayers">Laying hens</option><option value="large" data-i18n="chickenPlanLarge">Large breeds / roosters</option><option value="peak" data-i18n="chickenPlanPeak">Peak laying / moulting / recovery</option><option value="reward" data-i18n="chickenPlanReward">Occasional reward</option></select></div>
+                <div><label class="label block min-h-10" for="chickenCount" data-i18n="chickenCount">Chickens</label><input id="chickenCount" class="input" type="number" min="1" step="1" value="10"></div>
+                <div><label class="label block min-h-10" for="chickenRate" data-i18n="chickenRate">Grams per bird/serving</label><input id="chickenRate" class="input" type="number" min="2" max="30" step="0.5" value="10"></div>
+                <div><label class="label block min-h-10" for="chickenDays" data-i18n="usageDays">Plan duration (days)</label><input id="chickenDays" class="input" type="number" min="1" max="365" step="1" value="30"></div>
+              </div>
+              <p id="chickenFeedingGuidance" class="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-950"></p>
+              <div id="chickenCalculatorResult" class="rounded-xl bg-orange-50 p-4 text-sm text-orange-950" aria-live="polite"></div>
+            </article>
+            <article id="terragrub-calculator" class="card bg-white p-6 space-y-4 scroll-mt-28">
+              <div><h3 class="text-xl font-extrabold" data-i18n="terraCalcTitle">TerraGrub calculator</h3><p class="text-sm text-zinc-500" data-i18n="terraCalcText">For BSF frass used as a gentle soil amendment.</p></div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div><label class="label block min-h-10" for="terraUse" data-i18n="terraUse">Application type</label><select id="terraUse" class="input"><option value="general" data-i18n="terraUseGeneral">General / before planting</option><option value="maintenance" data-i18n="terraUseMaintenance">Maintenance / established beds</option><option value="depleted" data-i18n="terraUseDepleted">Poor or depleted soil</option><option value="topdressing" data-i18n="terraUseTopdressing">Top dressing</option></select></div>
+                <div><label class="label block min-h-10" for="terraArea" data-i18n="terraArea">Soil area (m²)</label><input id="terraArea" class="input" type="number" min="0.1" step="0.1" value="20"></div>
+                <div><label class="label block min-h-10" for="terraRate" data-i18n="terraRate">Grams per m²</label><input id="terraRate" class="input" type="number" min="100" max="2000" step="25" value="500"></div>
+                <div><label class="label block min-h-10" for="terraApplications" data-i18n="terraApplications">Applications</label><input id="terraApplications" class="input" type="number" min="1" max="12" step="1" value="1"></div>
+              </div>
+              <p id="terraApplicationGuidance" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950"></p>
+              <div id="terraCalculatorResult" class="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-950" aria-live="polite"></div>
+            </article>
+          </div>
+          <p class="mt-5 text-xs text-zinc-500" data-i18n="calculatorDisclaimer">Starting guidance only. Animal needs and soil conditions vary; adjust gradually and seek professional advice when appropriate.</p>
+        </div>
+      </section>
+
       <!-- Benefits -->
-      <section id="benefits" class="bg-[#fff7f2]">
+      <section id="benefits" class="bg-[#fff7f2] scroll-mt-28">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="benefitsTitle">Why GRUBZ?</h2>
           <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -222,28 +285,70 @@
         </div>
       </section>
 
-      <!-- Products -->
-      <section id="products" class="bg-white">
+      <!-- FAQ -->
+      <section id="faq" class="bg-[#fff7f2] scroll-mt-28">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="productsTitle">Products</h2>
-
-          <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr" aria-live="polite">
-            <p class="text-sm text-zinc-600">Loading products...</p>
-          </div>
-
-          <div class="mt-10 flex flex-wrap gap-3">
-            <button id="checkout" class="btn" data-i18n="btnCheckout">Checkout</button>
-            <button id="clearCart" class="btn btn-outline" data-i18n="btnClear">Clear cart</button>
+          <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="faqTitle">FAQ</h2>
+          <div class="grid gap-4 md:grid-cols-2">
+            <details class="rounded-xl border border-orange-100 bg-white p-5" open>
+              <summary class="cursor-pointer font-extrabold" data-i18n="q1">What animals can eat GRUBZ?</summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a1">Reptiles, birds, and most aquarium and pond fish.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5">
+              <summary class="cursor-pointer font-extrabold" data-i18n="q2">Do I need to add calcium?</summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a2">BSF larvae are naturally calcium-rich. Follow your vet's advice.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5">
+              <summary class="cursor-pointer font-extrabold" data-i18n="q3">How should I store them?</summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a3">Keep sealed in a cool, dry place.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5">
+              <summary class="cursor-pointer font-extrabold" data-i18n="q4">Are they made in Greece?</summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a4">Yes, locally produced to ensure quality and traceability.</p>
+            </details>
           </div>
         </div>
-      </section>  
+      </section>
     </main>
 
-    <footer id="contact" class="bg-zinc-900 text-zinc-100">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-3 gap-8">
+    <section id="contact" class="scroll-mt-28 border-t border-orange-100 bg-white">
+      <div class="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <div>
+          <p class="text-sm font-extrabold uppercase tracking-wide text-[#d04211]" data-i18n="contactEyebrow">Contact GRUBZ</p>
+          <h2 class="mt-2 text-3xl font-extrabold text-[#71391d]" data-i18n="contactTitle">How can we help?</h2>
+          <p class="mt-3 text-zinc-600" data-i18n="contactText">Questions about products, feeding, orders, or collaborations? Send us a message.</p>
+          <a class="mt-4 inline-flex items-center gap-2 font-semibold text-[#d04211] hover:underline" href="mailto:info@grubz.gr">info@grubz.gr</a>
+        </div>
+        <form id="contactForm" class="grid gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-5 sm:grid-cols-2">
+          <label>
+            <span class="label" data-i18n="contactName">Name</span>
+            <input id="contactName" class="input mt-1 bg-white" name="name" autocomplete="name" required maxlength="180">
+          </label>
+          <label>
+            <span class="label" data-i18n="contactEmail">Email</span>
+            <input id="contactEmail" class="input mt-1 bg-white" name="email" type="email" autocomplete="email" required maxlength="254">
+          </label>
+          <label class="hidden" aria-hidden="true">
+            Website
+            <input id="contactWebsite" name="website" tabindex="-1" autocomplete="off">
+          </label>
+          <label class="sm:col-span-2">
+            <span class="label" data-i18n="contactMessage">Message</span>
+            <textarea id="contactMessage" class="input mt-1 bg-white" name="message" rows="6" required minlength="10" maxlength="5000"></textarea>
+          </label>
+          <div class="sm:col-span-2">
+            <button id="contactSubmit" class="btn w-full sm:w-auto" type="submit" data-i18n="contactSend">Send message</button>
+            <p id="contactMsg" class="mt-2 text-sm" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <footer class="bg-zinc-900 text-zinc-100">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         <div>
           <h3 class="font-extrabold text-xl">GRUBZ</h3>
-          <p class="text-sm mt-2 opacity-80" data-i18n="footTag">High-protein BSF snacks — Made in Greece.</p>
+          <p class="text-sm mt-2 opacity-80" data-i18n="footTag">GRUBZ - High Protein Supplement for Poultry, Reptiles, Birds, and Fish</p>
           <button id="manageCookies" class="mt-3 text-xs underline opacity-80 hover:opacity-100" data-i18n="manageCookies">
             Manage cookies
           </button>
@@ -251,10 +356,26 @@
         <div>
           <h4 class="font-bold mb-2" data-i18n="footLinks">Links</h4>
           <ul class="space-y-2 text-sm opacity-90">
-            <li><a href="#benefits" class="hover:underline" data-i18n="navBenefits">Benefits</a></li>
             <li><a href="#products" class="hover:underline" data-i18n="navProducts">Products</a></li>
+            <li><a href="#benefits" class="hover:underline" data-i18n="navBenefits">Benefits</a></li>
             <li><a href="#faq" class="hover:underline" data-i18n="navFAQ">FAQ</a></li>
           </ul>
+        </div>
+        <div id="newsletter">
+          <h4 class="font-bold mb-2" data-i18n="newsletterTitle">GRUBZ newsletter</h4>
+          <p class="text-sm opacity-80 mb-3" data-i18n="newsletterText">Get feeding tips, product news, and occasional offers.</p>
+          <form id="newsletterForm" class="space-y-2">
+            <label class="sr-only" for="newsletterEmail" data-i18n="newsletterEmailLabel">Email address</label>
+            <div class="flex gap-2">
+              <input id="newsletterEmail" class="min-w-0 flex-1 rounded-lg border border-white/25 bg-white px-3 py-2 text-sm text-zinc-900" type="email" autocomplete="email" required placeholder="you@example.com">
+              <button id="newsletterSubmit" class="rounded-lg bg-[#d04211] px-3 py-2 text-sm font-bold text-white hover:bg-[#bd3a0f]" type="submit" data-i18n="newsletterSubscribe">Subscribe</button>
+            </div>
+            <label class="flex items-start gap-2 text-xs opacity-80">
+              <input id="newsletterConsent" class="mt-0.5 h-4 w-4 shrink-0" type="checkbox" required>
+              <span data-i18n="newsletterConsent">I agree to receive GRUBZ marketing emails. I can unsubscribe at any time.</span>
+            </label>
+            <p id="newsletterMsg" class="text-sm" role="status" aria-live="polite"></p>
+          </form>
         </div>
         <div>
           <h4 class="font-bold mb-2" data-i18n="footContact">Contact</h4>
@@ -304,11 +425,21 @@
       </div>
     </footer>
 
+    <div id="newsletterStatusModal" class="fixed inset-0 z-[95] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="newsletterStatusTitle" aria-describedby="newsletterStatusText">
+      <div id="newsletterStatusBackdrop" class="absolute inset-0 bg-black/50"></div>
+      <section class="relative w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
+        <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-orange-50 text-2xl text-[#d04211]" aria-hidden="true">✓</div>
+        <h2 id="newsletterStatusTitle" class="mt-4 text-xl font-extrabold text-zinc-900">Newsletter preferences updated</h2>
+        <p id="newsletterStatusText" class="mt-2 text-sm text-zinc-600"></p>
+        <button id="newsletterStatusClose" class="btn mt-5 w-full" type="button">Close</button>
+      </section>
+    </div>
+
     <!-- Cookie banner -->
     <div id="cookieBanner" class="cookie-banner fixed bottom-0 inset-x-0 z-[60] bg-white border-t border-zinc-200 hidden">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <p class="text-sm text-zinc-700">
-          <span data-i18n="cookieText">We use essential cookies to run this site and, with your consent, analytics to improve it.</span>
+          <span data-i18n="cookieText">We use essential cookies and, with your consent, analytics and advertising cookies to improve the site and measure ads.</span>
           <a href="/privacy" class="underline" data-i18n="cookieLearnMore">Learn more</a>.
         </p>
         <div class="flex gap-2">
@@ -318,17 +449,46 @@
       </div>
     </div>
 
+    <!-- FIRST ORDER OFFER POPUP -->
+    <div id="firstOrderOfferModal" class="fixed inset-0 z-[75] hidden" role="dialog" aria-modal="true" aria-labelledby="firstOrderOfferTitle" aria-describedby="offerText">
+      <div id="firstOrderOfferBackdrop" class="absolute inset-0 bg-black/40"></div>
+      <div id="firstOrderOfferPanel" class="absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="sales-panel rounded-none border-0 p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm font-extrabold uppercase tracking-wide" style="color:var(--grubz-1)" data-i18n="offerEyebrow">First order offer</p>
+              <h2 id="firstOrderOfferTitle" class="mt-1 text-2xl sm:text-3xl font-extrabold" style="color:var(--grubz-4)" data-i18n="offerTitle">Get 10% off your first GRUBZ order</h2>
+            </div>
+            <button id="offerClose" class="p-2 rounded hover:bg-white/70" type="button" aria-label="Close offer">✕</button>
+          </div>
+          <p id="offerText" class="mt-2 text-sm text-zinc-700" data-i18n="offerText">Leave your email and we’ll unlock the starter coupon in your cart.</p>
+          <form id="firstOrderOfferForm" class="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+            <label class="sr-only" for="offerEmail" data-i18n="email">Email</label>
+            <input id="offerEmail" class="input bg-white" type="email" autocomplete="email" placeholder="Email">
+            <button id="offerSubmit" class="btn" type="submit" data-i18n="offerButton">Unlock offer</button>
+            <label class="sm:col-span-2 flex items-start gap-2 text-xs text-zinc-600">
+              <input id="offerNewsletterConsent" class="mt-0.5 h-4 w-4 shrink-0" type="checkbox">
+              <span data-i18n="offerNewsletterConsent">Also send me feeding tips, product news, and occasional offers. I can unsubscribe at any time.</span>
+            </label>
+            <p id="offerMsg" class="sm:col-span-2 text-sm" role="status" aria-live="polite"></p>
+          </form>
+          <button id="offerLater" class="mt-3 text-sm font-semibold text-zinc-500 hover:text-zinc-800" type="button" data-i18n="offerLater">Maybe later</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CART POPUP -->
     <div id="cartModal" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-describedby="cartBody">
       <div id="cartBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
-      <div id="cartPanel" class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2
-                                bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition">
-        <div class="p-4 border-b flex items-center justify-between">
+      <div id="cartPanel" class="absolute left-1/2 top-1/2 w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 -translate-y-1/2
+                                bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition
+                                flex max-h-[calc(100vh-1rem)] max-h-[calc(100dvh-1rem)] flex-col overflow-hidden">
+        <div class="p-4 border-b flex items-center justify-between flex-none">
           <h3 id="cartTitle" class="text-lg font-extrabold" data-i18n="cartTitle">Your cart</h3>
           <button id="cartClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close cart">✕</button>
         </div>
 
-        <div id="cartBody" class="max-h-[55vh] overflow-y-auto p-4">
+        <div id="cartBody" class="min-h-0 flex-1 overflow-y-auto p-4">
           <p id="cartEmpty" class="text-sm text-zinc-500" data-i18n="cartEmpty">Your cart is empty.</p>
           <ul id="cartItems" class="divide-y hidden" aria-live="polite"></ul>
           <div id="cartSuggestions" class="hidden mt-5 border-t pt-4">
@@ -337,12 +497,11 @@
           </div>
         </div>
 
-        <div class="p-4 border-t bg-zinc-50 rounded-b-2xl">
+        <div class="p-4 border-t bg-zinc-50 rounded-b-2xl flex-none">
           <div class="flex items-center justify-between mb-3">
             <span class="text-sm text-zinc-600" data-i18n="cartSubtotal">Subtotal</span>
             <strong id="cartSubtotalValue" class="text-lg">€0.00</strong>
           </div>
-
           <!-- COUPON UI -->
           <div id="couponRow" class="mb-3 flex gap-2 items-center">
             <label class="sr-only" for="couponCode" data-i18n="couponPlaceholder">Coupon code</label>
@@ -375,14 +534,14 @@
         <div class="p-5 border-b">
           <h3 id="authTitle" class="text-lg font-extrabold"><span data-i18n="signIn">Sign in</span> / <span data-i18n="createAccount">Create account</span></h3>
         </div>
-        <form id="authForm" class="p-5 space-y-3">
+        <form id="authForm" class="p-5 space-y-3" method="post" action="/" autocomplete="on">
           <div>
             <label class="label" for="authEmail" data-i18n="email">Email</label>
-            <input id="authEmail" type="email" class="input" autocomplete="email" required aria-describedby="authErr" />
+            <input id="authEmail" name="username" type="email" class="input" autocomplete="username" required aria-describedby="authErr" />
           </div>
           <div>
             <label class="label" for="authPass" data-i18n="password">Password</label>
-            <input id="authPass" type="password" class="input" autocomplete="current-password" required aria-describedby="authErr" />
+            <input id="authPass" name="password" type="password" class="input" autocomplete="current-password" required aria-describedby="authErr" />
           </div>
           <div class="flex gap-2">
             <button id="doSignIn" class="btn flex-1" type="submit" data-i18n="signIn">Sign in</button>
@@ -397,7 +556,7 @@
     </div>
 
     <!-- ADDRESS MODAL -->
-    <div id="addrModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle" aria-describedby="addrErr">
+    <div id="addrModal" class="fixed inset-0 z-[92] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle" aria-describedby="addrErr">
       <div class="absolute inset-0 bg-black/40"></div>
       <div class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
         <div class="p-5 border-b">
@@ -410,16 +569,16 @@
           <div class="sm:col-span-1">
             <label class="label" for="a_phone" data-i18n="phone">Phone</label>
             <input id="a_phone" class="input" autocomplete="tel" required aria-describedby="addrErr"></div>
-          <div class="sm:col-span-2 hidden">
+          <div id="addrLine1Field" class="sm:col-span-2 hidden">
             <label class="label" for="a_line1" data-i18n="line1">Address line 1</label>
             <input id="a_line1" class="input" autocomplete="address-line1"></div>
-          <div class="sm:col-span-2 hidden">
+          <div id="addrLine2Field" class="sm:col-span-2 hidden">
             <label class="label" for="a_line2" data-i18n="line2">Address line 2 (optional)</label>
             <input id="a_line2" class="input" autocomplete="address-line2"></div>
-          <div class="hidden">
+          <div id="addrCityField" class="hidden">
             <label class="label" for="a_city" data-i18n="city">City</label>
             <input id="a_city" class="input" autocomplete="address-level2"></div>
-          <div class="hidden">
+          <div id="addrRegionField" class="hidden">
             <label class="label" for="a_region" data-i18n="region">Region</label>
             <input id="a_region" class="input" autocomplete="address-level1"></div>
           <div>
@@ -442,9 +601,9 @@
       <div id="reviewBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
 
       <div id="reviewPanel"
-           class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2
+           class="absolute left-1/2 top-1/2 w-[min(96vw,800px)] -translate-x-1/2 -translate-y-1/2
                   bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition
-                  flex flex-col max-h-[90vh] overflow-hidden">
+                  flex flex-col max-h-[94vh] overflow-hidden">
 
         <div class="p-4 border-b flex items-center justify-between flex-none">
           <h3 id="reviewTitle" class="text-lg font-extrabold" data-i18n="reviewTitle">Review & confirm</h3>
@@ -452,6 +611,45 @@
         </div>
 
         <div class="p-5 space-y-5 flex-1 overflow-y-auto min-h-0">
+          <section id="secureCheckoutSection" class="overflow-hidden rounded-xl border-2 border-emerald-200 bg-emerald-50 shadow-sm" aria-label="Payment security">
+            <div class="flex items-center gap-3 border-b border-emerald-200 px-4 py-3">
+              <img src="/images/secure-checkout.png" alt="" class="h-16 w-16 flex-none rounded-xl object-contain" aria-hidden="true">
+              <div>
+                <h4 class="text-base font-extrabold text-emerald-950" data-i18n="secureCheckout">Secure checkout</h4>
+                <p class="text-xs text-emerald-800" data-i18n="secureCheckoutHelp">Encrypted payment securely processed by Stripe.</p>
+              </div>
+              <div class="ml-auto hidden flex-wrap items-center justify-end gap-2 sm:flex" aria-label="Accepted payment providers">
+                <span class="inline-flex h-10 w-20 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white px-2 shadow-sm"><img src="/images/visa-icon.webp" alt="Visa" class="w-full object-contain"></span>
+                <span class="inline-flex h-10 w-20 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white px-2 shadow-sm"><img src="/images/mastercard-icon.png" alt="Mastercard" class="w-full object-contain"></span>
+                <span class="inline-flex h-10 w-20 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white px-2 shadow-sm"><img src="/images/paypal-icon.webp" alt="PayPal" class="w-full object-contain"></span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 bg-white px-4 py-3 sm:hidden" aria-label="Accepted payment providers">
+              <span class="inline-flex h-10 w-20 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white px-2 shadow-sm"><img src="/images/visa-icon.webp" alt="Visa" class="w-full object-contain"></span>
+              <span class="inline-flex h-10 w-20 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white px-2 shadow-sm"><img src="/images/mastercard-icon.png" alt="Mastercard" class="w-full object-contain"></span>
+              <span class="inline-flex h-10 w-20 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white px-2 shadow-sm"><img src="/images/paypal-icon.webp" alt="PayPal" class="w-full object-contain"></span>
+            </div>
+            <div class="flex items-center gap-2 border-t border-emerald-100 bg-white px-4 py-2 text-xs font-semibold text-blue-900">
+              <img src="/images/greece-flag-40.png" alt="" class="h-5 w-7 rounded-sm object-cover" aria-hidden="true">
+              <span data-i18n="madeInGr">Made in Greece</span>
+            </div>
+          </section>
+
+          <section class="border rounded-xl p-4">
+            <h4 class="font-bold" data-i18n="deliveryMethodTitle">Delivery method</h4>
+            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+              <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm">
+                <input id="deliveryBoxNow" name="deliveryMethod" value="boxnow" type="radio" class="mt-1 h-4 w-4" checked>
+                <img src="/images/boxnow-logo.png" alt="BOX NOW" class="h-7 w-auto flex-none rounded">
+                <span><strong data-i18n="deliveryBoxNow">BOX NOW locker</strong><span class="block text-xs text-zinc-500" data-i18n="deliveryBoxNowHelp">Choose a nearby locker and pay now.</span></span>
+              </label>
+              <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm">
+                <input id="deliveryCourierQuote" name="deliveryMethod" value="courier_quote" type="radio" class="mt-1 h-4 w-4">
+                <span><strong data-i18n="deliveryCourierQuote">Courier — quote required</strong><span class="block text-xs text-zinc-500" data-i18n="deliveryCourierQuoteHelp">We will confirm the shipping cost and delivery time by email before you pay.</span></span>
+              </label>
+            </div>
+          </section>
+
           <section class="border rounded-xl p-4">
             <div class="flex items-center justify-between">
               <h4 class="font-bold" data-i18n="reviewContact">Contact details</h4>
@@ -460,9 +658,16 @@
             <div id="reviewAddr" class="mt-2 text-sm text-zinc-700 whitespace-pre-line"></div>
           </section>
 
-          <section class="border rounded-xl p-4">
+          <section id="courierQuoteSection" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            <h4 class="font-bold" data-i18n="courierQuoteTitle">Shipping quote required</h4>
+            <p class="mt-1" data-i18n="courierQuoteText">Place this order without payment. We will email you the courier price and estimated delivery time. The order is not binding until you approve and pay the final total.</p>
+          </section>
+
+          <section id="boxnowReviewSection" class="border rounded-xl p-4">
             <div class="flex items-center justify-between gap-3">
-              <h4 class="font-bold" data-i18n="boxnowTitle">BOX NOW locker</h4>
+              <div class="flex min-w-0 items-center gap-2">
+                <h4 class="font-bold" data-i18n="boxnowTitle">BOX NOW locker</h4>
+              </div>
               <button id="boxnowChoose" class="btn-soft text-sm" type="button" data-i18n="boxnowChoose">Choose locker</button>
             </div>
             <div id="boxnowSelected" class="mt-2 text-sm text-zinc-700 whitespace-pre-line" data-i18n="boxnowNone">No locker selected.</div>
@@ -497,6 +702,7 @@
               <strong id="reviewSubtotal" class="text-lg">€0.00</strong>
             </div>
           </section>
+
         </div>
 
         <div class="p-4 border-t bg-zinc-50 rounded-b-2xl flex items-center justify-end gap-2 flex-none">
@@ -529,8 +735,8 @@
           <button id="productClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close product details">✕</button>
         </div>
         <div class="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-0 overflow-y-auto">
-          <div id="productImageWrap" class="product-detail-media flex items-center">
-            <div id="productImage" class="product-detail-image w-full bg-center"></div>
+          <div id="productImageWrap" class="product-detail-media flex items-start">
+            <div id="productImage" class="product-detail-image w-full bg-top"></div>
           </div>
           <div class="p-5 flex flex-col gap-4">
             <div>
@@ -541,6 +747,7 @@
             <div class="flex items-center justify-between gap-4 border-y py-4">
               <div>
                 <div id="productPrice" class="text-2xl font-extrabold" style="color:var(--grubz-1)"></div>
+                <div id="productPricePerKg" class="mt-1 text-sm font-bold" style="color:var(--grubz-4)"></div>
                 <div class="text-xs text-zinc-500" data-i18n="inclVATRate">incl. VAT 24%</div>
               </div>
               <div class="flex items-center gap-2 flex-wrap justify-end">
@@ -551,6 +758,25 @@
             <div>
               <h5 class="font-bold mb-2" data-i18n="productDetailsTitle">Details</h5>
               <p id="productDetailText" class="text-sm text-zinc-700 leading-6"></p>
+            </div>
+            <div id="productInfoPills" class="flex flex-wrap gap-2"></div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-lg border border-zinc-200 p-3">
+                <h5 class="font-bold text-sm" data-i18n="productFeedingTitle">Feeding guidance</h5>
+                <p id="productFeedingText" class="mt-1 text-sm text-zinc-700"></p>
+              </div>
+              <div class="rounded-lg border border-zinc-200 p-3">
+                <h5 class="font-bold text-sm" data-i18n="productStorageTitle">Storage</h5>
+                <p id="productStorageText" class="mt-1 text-sm text-zinc-700"></p>
+              </div>
+              <div class="rounded-lg border border-zinc-200 p-3">
+                <h5 class="font-bold text-sm" data-i18n="productNutritionTitle">Nutrition</h5>
+                <p id="productNutritionText" class="mt-1 text-sm text-zinc-700"></p>
+              </div>
+              <div class="rounded-lg border border-zinc-200 p-3">
+                <h5 class="font-bold text-sm" data-i18n="productShippingTitle">Shipping fit</h5>
+                <p id="productShippingText" class="mt-1 text-sm text-zinc-700"></p>
+              </div>
             </div>
           </div>
         </div>
@@ -618,6 +844,9 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
       const CHAT_API_BASE = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
 const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
 const REFERRAL_STORAGE_KEY = "grubz_referral_code";
+const MARKETING_EMAIL_KEY = "grubz_marketing_email";
+const FIRST_ORDER_OFFER_SEEN_KEY = "grubz_first_order_offer_seen";
+const DEFAULT_FIRST_ORDER_COUPON_CODE = "WELCOME10";
 const normalizeReferralCode = value => String(value || "").trim().toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9_-]/g, "").slice(0, 80);
 function initReferralCode(){
   const params = new URLSearchParams(location.search || "");
@@ -632,12 +861,13 @@ function initReferralCode(){
 initReferralCode();
 const BOXNOW_PARTNER_ID = "";
 const BOXNOW_PARCEL_SIZES = [
-  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60 },
-  { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60 },
-  { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60 },
+  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60, capacityKg: 2 },
+  { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60, capacityKg: 10 },
+  { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60, capacityKg: 20 },
 ];
 const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
-const BOXNOW_FLATTENED_BAGS_PER_LAYER = 2;
+const BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT = 10;
+const BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM = 17;
 const HAPPY_CHICKEN_PACKED_PARCELS = {
   "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
@@ -645,13 +875,23 @@ const HAPPY_CHICKEN_PACKED_PARCELS = {
 };
 async function authedFetch(path, options = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+  const method = String(options.method || "GET").toUpperCase();
+  if (method === "GET") {
+    headers["Cache-Control"] = "no-cache";
+  }
   if (__user) {
     try {
-      const tok = await __user.getIdToken(true);
+      const tok = await __user.getIdToken(false);
       headers.Authorization = "Bearer " + tok;
     } catch (e) { /* ignore */ }
   }
-  return fetch(`${API_BASE}${path}`, { ...options, headers, mode: "cors" });
+  const baseUrl = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
+  return fetch(`${baseUrl}${path}`, {
+    ...options,
+    headers,
+    mode: "cors",
+    cache: options.cache || (method === "GET" ? "no-store" : "default"),
+  });
 }
 
 async function chatFetch(path, options = {}) {
@@ -733,6 +973,18 @@ async function chatFetch(path, options = {}) {
         (first || panel).focus();
         modal._close = () => closeDialog(modalId, panelId);
       }
+      function scrollDialogToTop(panelId, extraScrollIds = []) {
+        const panel = document.getElementById(panelId);
+        const targets = [
+          panel,
+          ...extraScrollIds.map(id => document.getElementById(id)),
+          ...(panel ? Array.from(panel.querySelectorAll(".overflow-y-auto, .overflow-auto")) : []),
+        ].filter(Boolean);
+        requestAnimationFrame(() => {
+          targets.forEach(target => { target.scrollTop = 0; });
+          if (window.scrollY > 0) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        });
+      }
       function closeDialog(modalId, panelId) {
         const modal = document.getElementById(modalId);
         const panel = document.getElementById(panelId);
@@ -747,16 +999,24 @@ async function chatFetch(path, options = {}) {
       }
 
       const Cookie = {
+        domainAttribute(){
+          const hostname = String(location.hostname || "").toLowerCase();
+          return hostname === "grubz.gr" || hostname.endsWith(".grubz.gr") ? "; Domain=grubz.gr" : "";
+        },
         set(name, value, days = 180){
           const exp = new Date(Date.now() + days*864e5).toUTCString();
-          document.cookie = `${name}=${encodeURIComponent(value)}; Expires=${exp}; Path=/; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;
+          const secure = location.protocol === "https:" ? "; Secure" : "";
+          document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax${secure}`;
+          document.cookie = `${name}=${encodeURIComponent(value)}; Expires=${exp}; Path=/; SameSite=Lax${this.domainAttribute()}${secure}`;
         },
         get(name){
           const m = document.cookie.split('; ').find(row => row.startsWith(name + '='));
           return m ? decodeURIComponent(m.split('=')[1]) : null;
         },
         remove(name){
-          document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite:Lax${location.protocol==='https:'?'; Secure':''}`;
+          const secure = location.protocol === "https:" ? "; Secure" : "";
+          document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax${secure}`;
+          document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax${this.domainAttribute()}${secure}`;
         }
       };
 
@@ -766,12 +1026,31 @@ async function chatFetch(path, options = {}) {
       let __boxNowFeePromise = null;
       let __reviewSubmitting = false;
       let __currentReviewAddress = null;
-      let __currentProductId = null;
-      try {
-        const rawLocker = Cookie.get("grubz_boxnow_locker");
-        if (rawLocker) __boxNowLocker = JSON.parse(rawLocker);
-      } catch {}
-
+      let __deliveryMethod = "boxnow";
+      let __reopenReviewAfterAddr = false;
+      let __resumeReviewConfirmAfterAddr = false;
+      const CHECKOUT_CACHE_OWNER_KEY = "grubz_checkout_cache_owner";
+      let __publicShippingSettings = {
+        boxnowFeeOverrideEnabled: false,
+        boxnowFeeOverrideCents: 0,
+        boxnowFeeDiscountEnabled: false,
+        boxnowFeeDiscountCents: 0,
+        boxnowParcelPrices: { "1": 300, "2": 500, "3": 1000 },
+      };
+      let __publicMarketingSettings = {
+        firstOrderOffer: {
+          enabled: true,
+          couponCode: DEFAULT_FIRST_ORDER_COUPON_CODE,
+        },
+      };
+      let __publicSettingsLoaded = false;
+	      let __currentProductId = null;
+	      const ANALYTICS_SESSION_KEY = "grubz_analytics_session";
+	      const ANALYTICS_REFERRER_KEY = "grubz_analytics_entry_referrer";
+	      const ANALYTICS_ATTRIBUTION_KEY = "grubz_analytics_attribution";
+	      let __lastSectionView = "";
+	      let __analyticsActiveSection = "";
+	      let __analyticsEngagementStartedAt = Date.now();
       function showCookieBanner(){ document.getElementById('cookieBanner').classList.remove('hidden'); }
       function hideCookieBanner(){ document.getElementById('cookieBanner').classList.add('hidden'); }
       function getConsent(){
@@ -782,24 +1061,159 @@ async function chatFetch(path, options = {}) {
         Cookie.set('grubz_consent', JSON.stringify(consent));
         applyConsent(consent);
       }
-      function loadAnalyticsOnce(){
-        if (window.__analyticsLoaded) return;
-        window.__analyticsLoaded = true;
-        try { if (window.firebase && firebase.analytics) firebase.analytics(); } catch(e){}
-      }
-      function applyConsent(consent){ if (consent && consent.analytics) loadAnalyticsOnce(); }
-      document.getElementById('cookieAccept').addEventListener('click', () => { setConsent({ necessary: true, analytics: true }); hideCookieBanner(); });
-      document.getElementById('cookieReject').addEventListener('click', () => { setConsent({ necessary: true, analytics: false }); hideCookieBanner(); });
+	      function analyticsSessionId(){
+	        let id = localStorage.getItem(ANALYTICS_SESSION_KEY);
+	        if (!id) {
+	          id = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+	          localStorage.setItem(ANALYTICS_SESSION_KEY, id);
+	        }
+	        return id;
+	      }
+	      function analyticsEntryReferrer(){
+	        try {
+	          const saved = sessionStorage.getItem(ANALYTICS_REFERRER_KEY);
+	          if (saved !== null) return saved;
+	          const referrer = document.referrer || "";
+	          sessionStorage.setItem(ANALYTICS_REFERRER_KEY, referrer);
+	          return referrer;
+	        } catch {
+	          return document.referrer || "";
+	        }
+	      }
+	      function analyticsAttribution(){
+	        try {
+	          const saved = sessionStorage.getItem(ANALYTICS_ATTRIBUTION_KEY);
+	          if (saved) return JSON.parse(saved);
+	          const params = new URLSearchParams(location.search);
+	          const referrer = analyticsEntryReferrer();
+	          let source = (params.get("utm_source") || "").trim();
+	          if (!source && params.get("fbclid")) source = "Facebook / Meta";
+	          if (!source && referrer) {
+	            try {
+	              const host = new URL(referrer).hostname.replace(/^www\./, "");
+	              source = /(^|\.)facebook\.com$|(^|\.)instagram\.com$|(^|\.)fb\.com$/.test(host) ? "Facebook / Meta" : host;
+	            } catch {}
+	          }
+	          const attribution = {
+	            source: source || "Direct / unknown",
+	            medium: (params.get("utm_medium") || "").trim(),
+	            campaign: (params.get("utm_campaign") || "").trim(),
+	            content: (params.get("utm_content") || "").trim(),
+	            term: (params.get("utm_term") || "").trim(),
+	            clickId: (params.get("fbclid") || "").trim(),
+	            landingPage: `${location.pathname}${location.search}`,
+	          };
+	          sessionStorage.setItem(ANALYTICS_ATTRIBUTION_KEY, JSON.stringify(attribution));
+	          return attribution;
+	        } catch {
+	          return { source:"Direct / unknown", medium:"", campaign:"", content:"", term:"", clickId:"", landingPage:location.pathname };
+	        }
+	      }
+	      function analyticsDevice(){
+	        const width = window.innerWidth || 0;
+	        return width < 640 ? "mobile" : width < 1024 ? "tablet" : "desktop";
+	      }
+	      function analyticsLanguage(){
+	        try {
+	          return Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') || (navigator.language.startsWith('el') ? 'el' : 'en');
+	        } catch {
+	          return "en";
+	        }
+	      }
+	      function trackEvent(event, props = {}){
+	        const consent = getConsent();
+	        if (!consent?.analytics) return;
+	        const analyticsBase = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
+	        const payload = {
+	          event,
+	          sessionId: analyticsSessionId(),
+	          page: `${location.pathname}${location.hash || ""}`,
+	          path: location.pathname,
+	          referrer: analyticsEntryReferrer(),
+	          attribution: analyticsAttribution(),
+	          language: analyticsLanguage(),
+	          device: analyticsDevice(),
+	          props,
+	        };
+	        const body = JSON.stringify(payload);
+	        try {
+	          if (navigator.sendBeacon && !LOCAL_HOSTS.has(location.hostname)) {
+	            navigator.sendBeacon(`${analyticsBase}/trackEvent`, new Blob([body], { type: "application/json" }));
+	            return;
+	          }
+	        } catch {}
+	        fetch(`${analyticsBase}/trackEvent`, { method: "POST", headers: { "Content-Type": "application/json" }, body, mode: "cors", keepalive: true }).catch(() => {});
+	      }
+	      function flushAnalyticsEngagement(reason = "update"){
+	        const startedAt = __analyticsEngagementStartedAt || Date.now();
+	        const durationMs = Math.max(0, Date.now() - startedAt);
+	        __analyticsEngagementStartedAt = Date.now();
+	        if (durationMs < 1500) return;
+	        trackEvent("engagement_time", {
+	          durationMs,
+	          section: __analyticsActiveSection || (location.hash || location.pathname || "home"),
+	          reason,
+	        });
+	      }
+	      const META_PIXEL_ID = "2792868587751630";
+	      function loadMetaPixelOnce(){
+	        if (window.__metaPixelLoaded) return;
+	        window.__metaPixelLoaded = true;
+	        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+	        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+	        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+	        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+	        (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+	        fbq('init', META_PIXEL_ID);
+	        fbq('track', 'PageView');
+	      }
+	      function metaTrack(event, params = {}){
+	        if (!getConsent()?.marketing) return;
+	        loadMetaPixelOnce();
+	        window.fbq?.('track', event, params);
+	      }
+	      function loadAnalyticsOnce(){
+	        if (window.__analyticsLoaded) return;
+	        window.__analyticsLoaded = true;
+	        trackEvent("page_view", { title: document.title });
+	      }
+	      function applyConsent(consent){
+	        if (consent?.analytics) loadAnalyticsOnce();
+	        if (consent?.marketing) loadMetaPixelOnce();
+	      }
+	      function marketingEmail(){
+	        return (__user?.email || localStorage.getItem(MARKETING_EMAIL_KEY) || localStorage.getItem("grubz_chat_email") || "").trim().toLowerCase();
+	      }
+	      function marketingEvent(action, payload = {}){
+	        const body = JSON.stringify({
+	          action,
+	          sessionId: analyticsSessionId(),
+	          language: lang(),
+	          referrer: analyticsEntryReferrer(),
+	          ...payload,
+	        });
+	        return fetch(`${API_BASE}/marketingEvents`, {
+	          method: "POST",
+	          headers: { "Content-Type": "application/json" },
+	          body,
+	          mode: "cors",
+	          keepalive: true,
+	        });
+	      }
+      document.getElementById('cookieAccept').addEventListener('click', () => { setConsent({ necessary: true, analytics: true, marketing: true }); hideCookieBanner(); });
+      document.getElementById('cookieReject').addEventListener('click', () => { setConsent({ necessary: true, analytics: false, marketing: false }); hideCookieBanner(); });
       document.getElementById('manageCookies').addEventListener('click', (e) => { e.preventDefault(); showCookieBanner(); });
-      const existingConsent = getConsent(); if (existingConsent) { applyConsent(existingConsent); } else { showCookieBanner(); }
+      const existingConsent = getConsent();
+      if (existingConsent && typeof existingConsent.marketing === "boolean") applyConsent(existingConsent);
+      else showCookieBanner();
 
       const i18n = {
         en: {
           madeInGr:"Made in Greece",
-          navBenefits:"Benefits", navProducts:"Products", navFAQ:"FAQ", navContact:"Contact",
+          navBenefits:"Benefits", navProducts:"Products", navCalculators:"Usage calculators", navFAQ:"FAQ", navContact:"Contact",
           buyNow:"Buy Now",
-          heroTitleL1:"High-Protein", heroTitleL2:"BSF Snacks for Pets & Poultry",
-          heroSubtitle:"Natural nutrition for reptiles, birds, and fish. Sustainable, tasty, and made in Greece.",
+          heroTitleL1:"High Protein", heroTitleL2:"Supplement for Poultry, Reptiles, Birds, and Fish",
+          heroSubtitle:"Natural sustainable and tasty nutrition made in Greece",
           ctaShop:"Shop GRUBZ", ctaLearn:"Why GRUBZ?",
           chipProtein:"Up to 50% protein", chipCalcium:"Naturally high calcium", chipSustainable:"Sustainably produced",
           heroCaption:"Loved by reptiles. Trusted by keepers.",
@@ -809,15 +1223,62 @@ async function chatFetch(path, options = {}) {
           b3Title:"Made in Greece", b3Text:"Fresh, local production you can trust.",
           b4Title:"Sustainable", b4Text:"Lower footprint vs. traditional protein sources.",
           productsTitle:"Products",
+          calculatorTitle:"Recommended usage calculators",
+          calculatorIntro:"Estimate how much you need and find a practical package combination. Adjust the usage rate for your own routine.",
+          chickenCalcTitle:"Happy Chicken calculator", chickenCalcText:"For dried BSF larvae used as a supplementary treat, not complete feed.",
+          chickenCount:"Chickens", chickenRate:"Grams per bird/serving", usageDays:"Plan duration (days)",
+          chickenPlan:"Feeding plan", chickenPlanDaily:"Daily adult supplement", chickenPlanChicks:"Chicks under 8 weeks", chickenPlanGrowers:"Growers 8–18 weeks", chickenPlanLayers:"Laying hens", chickenPlanLarge:"Large breeds / roosters", chickenPlanPeak:"Peak laying / moulting / recovery", chickenPlanReward:"Occasional reward",
+          chickenGuidanceDaily:"Standard recommendation: 10 g per adult hen/day. A 1 kg bag provides 100 hen-days. Feed alongside a complete feed.",
+          chickenGuidanceChicks:"Recommended range: 2–5 g per chick/day. Introduce gradually and feed alongside an age-appropriate complete feed.",
+          chickenGuidanceGrowers:"Recommended range: 5–10 g per bird/day alongside a complete grower feed.",
+          chickenGuidanceLayers:"Recommended range: 10–20 g per laying hen/day. The standard everyday rate is 10 g.",
+          chickenGuidanceLarge:"Recommended range: 15–25 g per bird/day for large breeds and roosters.",
+          chickenGuidancePeak:"Recommended range: 15–20 g per hen/day during peak laying, moulting, or recovery.",
+          chickenGuidanceReward:"Recommended amount: 20–30 g per bird, 2–3 times per week. The calculation uses 2.5 servings per week.",
+          chickenFeedingInstruction:"Scatter on the ground or mix with feed. Always provide fresh drinking water. GRUBZ supplements complete feed; it does not replace it.",
+          terraCalcTitle:"TerraGrub calculator", terraCalcText:"For BSF frass used as a gentle soil amendment.",
+          terraArea:"Soil area (m²)", terraRate:"Grams per m²", terraApplications:"Applications",
+          terraUse:"Application type", terraUseGeneral:"General / before planting", terraUseMaintenance:"Maintenance / established beds", terraUseDepleted:"Poor or depleted soil", terraUseTopdressing:"Top dressing",
+          terraGuidanceGeneral:"Recommended rate: 500 g/m². Spread evenly, lightly mix into the topsoil before planting, and water thoroughly.",
+          terraGuidanceMaintenance:"Recommended range: 200–500 g/m². Apply around established plants, lightly incorporate, and water thoroughly.",
+          terraGuidanceDepleted:"Recommended range: 1–2 kg/m². Work into the top 5–10 cm of poor or depleted soil and water thoroughly.",
+          terraGuidanceTopdressing:"Recommended range: 100–250 g/m². Apply around plants and reapply every 4–8 weeks during the growing season.",
+          calculatorNeed:"Estimated amount", calculatorPackages:"Suggested packages", calculatorCoverage:"Amount supplied", calculatorNoProduct:"Matching products are currently unavailable.",
+          calculatorAdd:"Add suggested packages to cart", calculatorAdded:"Suggested packages added to your cart.", calculatorStockLimited:"Available stock was added; some suggested quantities were unavailable.",
+          calculatorCardLink:"Calculate recommended amount",
+          calculatorDisclaimer:"Starting guidance only. Animal needs and soil conditions vary; adjust gradually and seek professional advice when appropriate.",
           btnAdd:"Add to cart", btnCheckout:"Checkout", btnClear:"Clear cart",
           faqTitle:"FAQ",
           q1:"What animals can eat GRUBZ?", a1:"Reptiles (bearded dragons, geckos), birds (chickens, songbirds), and most aquarium & pond fish.",
           q2:"Do I need to add calcium?", a2:"BSF larvae are naturally calcium-rich. Many keepers still dust occasionally—follow your vet’s advice.",
           q3:"How should I store them?", a3:"Keep sealed in a cool, dry place. Refrigeration extends freshness.",
           q4:"Are they made in Greece?", a4:"Yes—locally produced to ensure quality and traceability.",
-          footTag:"High-protein BSF snacks — Made in Greece.",
+          footTag:"GRUBZ - High Protein Supplement for Poultry, Reptiles, Birds, and Fish",
           footLinks:"Links", footContact:"Contact", footMade:"Made with ❤️ in Greece",
-          cookieText: "We use essential cookies to run this site and, with your consent, analytics to improve it.",
+          contactEyebrow:"Contact GRUBZ",
+          contactTitle:"How can we help?",
+          contactText:"Questions about products, feeding, orders, or collaborations? Send us a message.",
+          contactName:"Name",
+          contactEmail:"Email",
+          contactMessage:"Message",
+          contactSend:"Send message",
+          contactSending:"Sending...",
+          contactSuccess:"Your message was sent. We’ll reply as soon as possible.",
+          contactError:"Your message could not be sent. Please try again or email info@grubz.gr.",
+          newsletterTitle:"GRUBZ newsletter",
+          newsletterText:"Get feeding tips, product news, and occasional offers.",
+          newsletterEmailLabel:"Email address",
+          newsletterSubscribe:"Subscribe",
+          newsletterConsent:"I agree to receive GRUBZ marketing emails. I can unsubscribe at any time.",
+          newsletterSending:"Subscribing...",
+          newsletterSuccess:"You are subscribed. Welcome to the GRUBZ newsletter!",
+          newsletterUnsubscribed:"You have been unsubscribed from the GRUBZ newsletter.",
+          newsletterInvalid:"This unsubscribe link is invalid or has expired.",
+          newsletterUnsubscribedTitle:"You’re unsubscribed",
+          newsletterInvalidTitle:"Link unavailable",
+          newsletterClose:"Close",
+          newsletterError:"Subscription failed. Please try again.",
+          cookieText: "We use essential cookies and, with your consent, analytics and advertising cookies to improve the site and measure ads.",
           cookieLearnMore: "Learn more",
           cookieReject: "Reject non-essential",
           cookieAccept: "Accept all",
@@ -831,6 +1292,19 @@ async function chatFetch(path, options = {}) {
           cartQty:"Qty",
           cartClear:"Clear cart",
           cartSuggestionsTitle:"You may like",
+          secureCheckout:"Secure checkout",
+          secureCheckoutHelp:"Encrypted payment securely processed by Stripe.",
+          stripeProcessed:"Payments processed by Stripe",
+          cardsAccepted:"VISA · Mastercard",
+          offerEyebrow:"First order offer",
+          offerTitle:"Get 10% off your first GRUBZ order",
+          offerText:"Leave your email and we’ll unlock the starter coupon in your cart.",
+          offerButton:"Unlock offer",
+          offerNewsletterConsent:"Also send me feeding tips, product news, and occasional offers. I can unsubscribe at any time.",
+          offerNewsletterSuccess:" You’re also subscribed to the newsletter.",
+          offerLater:"Maybe later",
+          offerSuccess:"Coupon {coupon} is ready in your cart.",
+          offerError:"We couldn't unlock the offer just now. Please check your email and try again.",
           signIn:"Sign in",
           createAccount:"Create account",
           email:"Email",
@@ -849,6 +1323,7 @@ async function chatFetch(path, options = {}) {
           saveAddress:"Save address",
           saveDetails:"Save details",
           contactRequired:"Full name, phone, postal code and country are required",
+	          fullAddressRequired:"Please enter your full street address and city. This is required for your receipt or invoice.",
           signOut:"Sign out",
           myAccount:"My account",
           reviewTitle:"Review & confirm",
@@ -873,9 +1348,20 @@ async function chatFetch(path, options = {}) {
           boxnowFeeRequired:"Calculate BOX NOW delivery before confirming.",
           boxnowCodLabel:"Cash on delivery",
           boxnowCodHelp:"Mark this order as cash-on-delivery.",
+          deliveryMethodTitle:"Delivery method",
+          deliveryBoxNow:"BOX NOW locker",
+          deliveryBoxNowHelp:"Choose a nearby locker and pay now.",
+          deliveryCourierQuote:"Courier — quote required",
+          deliveryCourierQuoteHelp:"We will confirm the shipping cost and delivery time by email before you pay.",
+          courierQuoteTitle:"Shipping quote required",
+          courierQuoteText:"Place this order without payment. We will email you the courier price and estimated delivery time. The order is not binding until you approve and pay the final total.",
+          courierAddressRequired:"Please enter your street address and city for courier delivery.",
+          reviewConfirmQuote:"Request shipping quote",
           inclVATRate: "incl. VAT 24%",
           totalInclVAT: "Total (incl. VAT)",
           outOfStock: "Out of stock",
+          availableOnBackorder: "Available on backorder",
+          backorder: "Backorder",
           notifyMe: "Notify me",
           onlyXLeft: "Only {x} left",
           readMore: "Read more…",
@@ -883,6 +1369,15 @@ async function chatFetch(path, options = {}) {
           productDetailsAria:"Product details",
           productDetailsButton:"Details",
           productViewCart:"View cart",
+          productBestForTitle:"Best for",
+          productFeedingTitle:"Feeding guidance",
+          productStorageTitle:"Storage",
+          productNutritionTitle:"Nutrition",
+          productShippingTitle:"Shipping fit",
+          productFeedingDefault:"Use as a snack or topper as part of a balanced diet. Start with a small amount and adjust to your animal’s needs.",
+          productStorageDefault:"Keep sealed in a cool, dry place away from direct sun. Close the bag after each use.",
+          productNutritionDefault:"Dried black soldier fly larvae: high protein, naturally rich in calcium and healthy fats.",
+          productShippingDefault:"Flexible 1kg packing logic is used for BOX NOW estimates. Up to 10kg can fit in one Medium compartment.",
           inStock:"In stock",
 
           // Coupons
@@ -896,10 +1391,10 @@ async function chatFetch(path, options = {}) {
         },
         el: {
           madeInGr:"Παράγεται στην Ελλάδα",
-          navBenefits:"Οφέλη", navProducts:"Προϊόντα", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
+          navBenefits:"Οφέλη", navProducts:"Προϊόντα", navCalculators:"Υπολογιστές χρήσης", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
           buyNow:"Αγορά τώρα",
-          heroTitleL1:"Πρωτεΐνη Υψηλή", heroTitleL2:"Σνακ BSF για Κατοικίδια & Κοτές",
-          heroSubtitle:"Φυσική διατροφή για ερπετά, πτηνά και ψάρια. Βιώσιμη, νόστιμη και ελληνική.",
+          heroTitleL1:"Υψηλή Πρωτεΐνη", heroTitleL2:"Συμπλήρωμα για Πουλερικά, Ερπετά, Πτηνά και Ψάρια",
+          heroSubtitle:"Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής",
           ctaShop:"Αγορά GRUBZ", ctaLearn:"Γιατί GRUBZ;",
           chipProtein:"Έως 50% πρωτεΐνη", chipCalcium:"Φυσικά υψηλό ασβέστιο", chipSustainable:"Βιώσιμη παραγωγή",
           heroCaption:"Αγαπημένο από τα ερπετά. Εμπιστοσύνη στους κηδεμόνες.",
@@ -909,15 +1404,62 @@ async function chatFetch(path, options = {}) {
           b3Title:"Ελληνικής Παραγωγής", b3Text:"Φρέσκια, τοπική παραγωγή που εμπιστεύεστε.",
           b4Title:"Βιώσιμο", b4Text:"Μικρότερο αποτύπωμα σε σχέση με παραδοσιακές πηγές πρωτεΐνης.",
           productsTitle:"Προϊόντα",
+          calculatorTitle:"Υπολογιστές προτεινόμενης χρήσης",
+          calculatorIntro:"Υπολογίστε την ποσότητα που χρειάζεστε και βρείτε έναν πρακτικό συνδυασμό συσκευασιών. Προσαρμόστε τη δοσολογία στη δική σας ρουτίνα.",
+          chickenCalcTitle:"Υπολογιστής Happy Chicken", chickenCalcText:"Για αποξηραμένες προνύμφες BSF ως συμπληρωματική λιχουδιά, όχι ως πλήρη τροφή.",
+          chickenCount:"Κότες", chickenRate:"Γραμμάρια ανά πτηνό/γεύμα", usageDays:"Διάρκεια πλάνου (ημέρες)",
+          chickenPlan:"Πλάνο χορήγησης", chickenPlanDaily:"Καθημερινό συμπλήρωμα ενηλίκων", chickenPlanChicks:"Νεοσσοί κάτω των 8 εβδομάδων", chickenPlanGrowers:"Νεαρά πτηνά 8–18 εβδομάδων", chickenPlanLayers:"Ωοτόκες όρνιθες", chickenPlanLarge:"Μεγάλες φυλές / κόκορες", chickenPlanPeak:"Έντονη ωοτοκία / πτερόρροια / ανάρρωση", chickenPlanReward:"Περιστασιακή λιχουδιά",
+          chickenGuidanceDaily:"Βασική σύσταση: 10 g ανά ενήλικη όρνιθα/ημέρα. Μία συσκευασία 1 kg προσφέρει 100 όρνιθο-ημέρες. Χορηγείται μαζί με πλήρη τροφή.",
+          chickenGuidanceChicks:"Προτεινόμενο εύρος: 2–5 g ανά νεοσσό/ημέρα. Εισάγετε σταδιακά και χορηγήστε μαζί με κατάλληλη πλήρη τροφή ανάπτυξης.",
+          chickenGuidanceGrowers:"Προτεινόμενο εύρος: 5–10 g ανά πτηνό/ημέρα μαζί με πλήρη τροφή ανάπτυξης.",
+          chickenGuidanceLayers:"Προτεινόμενο εύρος: 10–20 g ανά ωοτόκο όρνιθα/ημέρα. Η βασική καθημερινή δόση είναι 10 g.",
+          chickenGuidanceLarge:"Προτεινόμενο εύρος: 15–25 g ανά πτηνό/ημέρα για μεγάλες φυλές και κόκορες.",
+          chickenGuidancePeak:"Προτεινόμενο εύρος: 15–20 g ανά όρνιθα/ημέρα σε έντονη ωοτοκία, πτερόρροια ή ανάρρωση.",
+          chickenGuidanceReward:"Προτεινόμενη ποσότητα: 20–30 g ανά πτηνό, 2–3 φορές την εβδομάδα. Ο υπολογισμός χρησιμοποιεί 2,5 γεύματα ανά εβδομάδα.",
+          chickenFeedingInstruction:"Σκορπίστε στο έδαφος ή αναμείξτε με την τροφή. Παρέχετε πάντα φρέσκο πόσιμο νερό. Το GRUBZ συμπληρώνει την πλήρη τροφή· δεν την αντικαθιστά.",
+          terraCalcTitle:"Υπολογιστής TerraGrub", terraCalcText:"Για frass BSF ως ήπιο εδαφοβελτιωτικό.",
+          terraArea:"Επιφάνεια εδάφους (m²)", terraRate:"Γραμμάρια ανά m²", terraApplications:"Εφαρμογές",
+          terraUse:"Τύπος εφαρμογής", terraUseGeneral:"Γενική χρήση / πριν τη φύτευση", terraUseMaintenance:"Συντήρηση / εγκατεστημένα παρτέρια", terraUseDepleted:"Φτωχό ή εξαντλημένο έδαφος", terraUseTopdressing:"Επιφανειακή εφαρμογή",
+          terraGuidanceGeneral:"Προτεινόμενη δόση: 500 g/m². Απλώστε ομοιόμορφα, αναμείξτε ελαφρά με το επιφανειακό χώμα πριν τη φύτευση και ποτίστε καλά.",
+          terraGuidanceMaintenance:"Προτεινόμενο εύρος: 200–500 g/m². Εφαρμόστε γύρω από εγκατεστημένα φυτά, ενσωματώστε ελαφρά και ποτίστε καλά.",
+          terraGuidanceDepleted:"Προτεινόμενο εύρος: 1–2 kg/m². Ενσωματώστε στα πρώτα 5–10 cm φτωχού ή εξαντλημένου εδάφους και ποτίστε καλά.",
+          terraGuidanceTopdressing:"Προτεινόμενο εύρος: 100–250 g/m². Εφαρμόστε γύρω από τα φυτά και επαναλάβετε κάθε 4–8 εβδομάδες κατά την καλλιεργητική περίοδο.",
+          calculatorNeed:"Εκτιμώμενη ποσότητα", calculatorPackages:"Προτεινόμενες συσκευασίες", calculatorCoverage:"Συνολική ποσότητα", calculatorNoProduct:"Δεν υπάρχουν διαθέσιμα σχετικά προϊόντα αυτή τη στιγμή.",
+          calculatorAdd:"Προσθήκη προτεινόμενων συσκευασιών στο καλάθι", calculatorAdded:"Οι προτεινόμενες συσκευασίες προστέθηκαν στο καλάθι.", calculatorStockLimited:"Προστέθηκε το διαθέσιμο απόθεμα· ορισμένες προτεινόμενες ποσότητες δεν ήταν διαθέσιμες.",
+          calculatorCardLink:"Υπολογισμός προτεινόμενης ποσότητας",
+          calculatorDisclaimer:"Αποτελεί αρχική καθοδήγηση. Οι ανάγκες των ζώων και οι συνθήκες του εδάφους διαφέρουν· προσαρμόστε σταδιακά και ζητήστε επαγγελματική συμβουλή όπου χρειάζεται.",
           btnAdd:"Προσθήκη στο καλάθι", btnCheckout:"Ολοκλήρωση αγοράς", btnClear:"Καθαρισμός καλαθιού",
           faqTitle:"Συχνές Ερωτήσεις",
           q1:"Ποια ζώα τρώνε GRUBZ;", a1:"Ερπετά (π.χ. beardies, geckos), πουλιά και τα περισσότερα ψάρια.",
           q2:"Χρειάζεται πρόσθετο ασβέστιο;", a2:"Οι προνύμφες BSF είναι πλούσιες σε ασβέστιο. Πολλοί κάνουν περιστασιακό dusting.",
           q3:"Πώς αποθηκεύονται;", a3:"Κλειστά, δροσερό και ξηρό μέρος. Το ψυγείο βοηθά.",
           q4:"Παράγονται στην Ελλάδα;", a4:"Ναι — τοπική παραγωγή με ιχνηλασιμότητα.",
-          footTag:"Πρωτεϊνούχα σνακ BSF — Ελληνικής παραγωγής.",
+          footTag:"GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια",
           footLinks:"Σύνδεσμοι", footContact:"Επικοινωνία", footMade:"Φτιαγμένο με ❤️ στην Ελλάδα",
-          cookieText: "Χρησιμοποιούμε αναγκαία cookies για τη λειτουργία του ιστότοπου και, με τη συγκατάθεσή σας, cookies ανάλυσης για τη βελτίωσή του.",
+          contactEyebrow:"Επικοινωνία με το GRUBZ",
+          contactTitle:"Πώς μπορούμε να βοηθήσουμε;",
+          contactText:"Έχεις ερωτήσεις για προϊόντα, διατροφή, παραγγελίες ή συνεργασίες; Στείλε μας μήνυμα.",
+          contactName:"Όνομα",
+          contactEmail:"Email",
+          contactMessage:"Μήνυμα",
+          contactSend:"Αποστολή μηνύματος",
+          contactSending:"Αποστολή...",
+          contactSuccess:"Το μήνυμά σου στάλθηκε. Θα απαντήσουμε το συντομότερο δυνατό.",
+          contactError:"Δεν ήταν δυνατή η αποστολή. Δοκίμασε ξανά ή στείλε email στο info@grubz.gr.",
+          newsletterTitle:"Newsletter GRUBZ",
+          newsletterText:"Λάβε συμβουλές διατροφής, νέα προϊόντων και περιστασιακές προσφορές.",
+          newsletterEmailLabel:"Διεύθυνση email",
+          newsletterSubscribe:"Εγγραφή",
+          newsletterConsent:"Συμφωνώ να λαμβάνω προωθητικά email από το GRUBZ. Μπορώ να διαγραφώ ανά πάσα στιγμή.",
+          newsletterSending:"Γίνεται εγγραφή...",
+          newsletterSuccess:"Η εγγραφή ολοκληρώθηκε. Καλώς ήρθες στο newsletter του GRUBZ!",
+          newsletterUnsubscribed:"Έχεις διαγραφεί από το newsletter του GRUBZ.",
+          newsletterInvalid:"Ο σύνδεσμος διαγραφής δεν είναι έγκυρος ή έχει λήξει.",
+          newsletterUnsubscribedTitle:"Η διαγραφή ολοκληρώθηκε",
+          newsletterInvalidTitle:"Ο σύνδεσμος δεν είναι διαθέσιμος",
+          newsletterClose:"Κλείσιμο",
+          newsletterError:"Η εγγραφή απέτυχε. Δοκίμασε ξανά.",
+          cookieText: "Χρησιμοποιούμε αναγκαία cookies και, με τη συγκατάθεσή σας, cookies ανάλυσης και διαφήμισης για τη βελτίωση του ιστοτόπου και τη μέτρηση διαφημίσεων.",
           cookieLearnMore: "Μάθετε περισσότερα",
           cookieReject: "Απόρριψη μη αναγκαίων",
           cookieAccept: "Αποδοχή όλων",
@@ -931,6 +1473,19 @@ async function chatFetch(path, options = {}) {
           cartQty:"Ποσ.",
           cartClear:"Καθαρισμός καλαθιού",
           cartSuggestionsTitle:"Ίσως σας αρέσουν",
+          secureCheckout:"Ασφαλής ολοκλήρωση αγοράς",
+          secureCheckoutHelp:"Κρυπτογραφημένη πληρωμή με ασφαλή επεξεργασία από τη Stripe.",
+          stripeProcessed:"Οι πληρωμές διεκπεραιώνονται από τη Stripe",
+          cardsAccepted:"VISA · Mastercard",
+          offerEyebrow:"Προσφορά πρώτης παραγγελίας",
+          offerTitle:"Κερδίστε 10% έκπτωση στην πρώτη παραγγελία GRUBZ",
+          offerText:"Αφήστε το email σας και θα ενεργοποιήσουμε το αρχικό κουπόνι στο καλάθι σας.",
+          offerButton:"Ξεκλείδωμα προσφοράς",
+          offerNewsletterConsent:"Θέλω επίσης συμβουλές διατροφής, νέα προϊόντων και περιστασιακές προσφορές. Μπορώ να διαγραφώ ανά πάσα στιγμή.",
+          offerNewsletterSuccess:" Έγινες επίσης συνδρομητής/ρια στο newsletter.",
+          offerLater:"Ίσως αργότερα",
+          offerSuccess:"Το κουπόνι {coupon} είναι έτοιμο στο καλάθι σας.",
+          offerError:"Δεν μπορέσαμε να ενεργοποιήσουμε την προσφορά αυτή τη στιγμή. Ελέγξτε το email σας και δοκιμάστε ξανά.",
           signIn:"Σύνδεση",
           createAccount:"Δημιουργία λογαριασμού",
           email:"Email",
@@ -949,6 +1504,7 @@ async function chatFetch(path, options = {}) {
           saveAddress:"Αποθήκευση διεύθυνσης",
           saveDetails:"Αποθήκευση στοιχείων",
           contactRequired:"Απαιτούνται ονοματεπώνυμο, τηλέφωνο, Τ.Κ. και χώρα",
+	          fullAddressRequired:"Παρακαλώ συμπληρώστε την πλήρη διεύθυνση και την πόλη σας. Απαιτούνται για την απόδειξη ή το τιμολόγιο.",
           signOut:"Αποσύνδεση",
           myAccount:"Ο λογαριασμός μου",
           reviewTitle:"Έλεγχος & επιβεβαίωση",
@@ -973,6 +1529,15 @@ async function chatFetch(path, options = {}) {
           boxnowFeeRequired:"Υπολογίστε την αποστολή BOX NOW πριν την επιβεβαίωση.",
           boxnowCodLabel:"Αντικαταβολή",
           boxnowCodHelp:"Σημειώστε την παραγγελία ως αντικαταβολή.",
+          deliveryMethodTitle:"Τρόπος αποστολής",
+          deliveryBoxNow:"BOX NOW locker",
+          deliveryBoxNowHelp:"Επιλέξτε κοντινό locker και πληρώστε τώρα.",
+          deliveryCourierQuote:"Courier — απαιτείται προσφορά",
+          deliveryCourierQuoteHelp:"Θα επιβεβαιώσουμε το κόστος και τον χρόνο παράδοσης μέσω email πριν πληρώσετε.",
+          courierQuoteTitle:"Απαιτείται προσφορά μεταφορικών",
+          courierQuoteText:"Καταχωρίστε την παραγγελία χωρίς πληρωμή. Θα σας στείλουμε με email το κόστος courier και τον εκτιμώμενο χρόνο παράδοσης. Η παραγγελία δεν είναι δεσμευτική μέχρι να εγκρίνετε και να πληρώσετε το τελικό ποσό.",
+          courierAddressRequired:"Παρακαλώ συμπληρώστε οδό και πόλη για την παράδοση με courier.",
+          reviewConfirmQuote:"Αίτημα προσφοράς μεταφορικών",
           inclVATRate: "με ΦΠΑ 24%",
           totalInclVAT: "Σύνολο (με ΦΠΑ)",
           outOfStock: "Μη διαθέσιμο",
@@ -983,7 +1548,18 @@ async function chatFetch(path, options = {}) {
           productDetailsAria:"Λεπτομέρειες προϊόντος",
           productDetailsButton:"Λεπτομέρειες",
           productViewCart:"Προβολή καλαθιού",
+          productBestForTitle:"Ιδανικό για",
+          productFeedingTitle:"Οδηγίες σίτισης",
+          productStorageTitle:"Αποθήκευση",
+          productNutritionTitle:"Διατροφικά",
+          productShippingTitle:"Συσκευασία αποστολής",
+          productFeedingDefault:"Χρησιμοποιήστε το ως σνακ ή topping μέσα σε ισορροπημένη διατροφή. Ξεκινήστε με μικρή ποσότητα και προσαρμόστε ανάλογα με τις ανάγκες του ζώου.",
+          productStorageDefault:"Κρατήστε τη συσκευασία κλειστή σε δροσερό και ξηρό μέρος, μακριά από άμεσο ήλιο.",
+          productNutritionDefault:"Αποξηραμένες προνύμφες black soldier fly: υψηλή πρωτεΐνη, φυσικά πλούσιες σε ασβέστιο και καλά λιπαρά.",
+          productShippingDefault:"Οι εκτιμήσεις BOX NOW χρησιμοποιούν τη λογική ευέλικτης συσκευασίας 1kg. Έως 10kg χωρούν σε ένα Medium compartment.",
           inStock:"Διαθέσιμο",
+          availableOnBackorder:"Διαθέσιμο με προπαραγγελία",
+          backorder:"Προπαραγγελία",
 
           // Coupons
           couponPlaceholder: "Κωδικός κουπονιού",
@@ -1063,15 +1639,18 @@ async function chatFetch(path, options = {}) {
           if (dict[key]) el.textContent = dict[key];
         });
         const cp = document.getElementById("couponCode"); if (cp) cp.placeholder = dict.couponPlaceholder || "Coupon code";
+        const offerEmail = document.getElementById("offerEmail"); if (offerEmail) offerEmail.placeholder = dict.email || "Email";
         const ap = document.getElementById("applyCoupon"); if (ap) ap.textContent = dict.couponApply || "Apply";
         const rm = document.getElementById("removeCoupon"); if (rm) rm.textContent = dict.couponRemove || "Remove";
         if (typeof applyStockStatus === "function") applyStockStatus();
         if (typeof wireProductCards === "function") wireProductCards();
         if (typeof renderProducts === "function") renderProducts();
+        if (typeof renderUsageCalculators === "function") renderUsageCalculators();
         document.documentElement.lang = (l==='el'?'el':'en');
         if (window.__cartReady && typeof renderCart === 'function') renderCart();
         if (typeof renderBoxNowSelection === "function") renderBoxNowSelection();
         if (typeof renderProductModal === "function" && __currentProductId) renderProductModal(__currentProductId);
+        if (typeof renderAuthButton === "function") renderAuthButton();
       }
 
       function setLangButtons(l) {
@@ -1088,6 +1667,7 @@ async function chatFetch(path, options = {}) {
 
       /* ---------- Cart ---------- */
       const cart = new Map();
+      let __abandonedCartTimer = null;
       try { const rawCart = Cookie.get('grubz_cart'); if (rawCart) Object.entries(JSON.parse(rawCart)).forEach(([k,v]) => cart.set(k, v)); } catch {}
       function writeCartCookie(){ Cookie.set('grubz_cart', JSON.stringify(Object.fromEntries(cart.entries()))); }
       function cartItemCount(){ return Array.from(cart.values()).reduce((a,b)=>a+b,0); }
@@ -1148,6 +1728,26 @@ async function chatFetch(path, options = {}) {
 
       function productDetail(id, dict = i18n[lang()] || i18n.en){
         return catalogText(id, "detail", "detailKey", dict) || productDescription(id, dict);
+      }
+
+      function productAudienceTags(id, dict = i18n[lang()] || i18n.en){
+        const p = CATALOG[id] || {};
+        const explicit = lang() === "el" && p.bestForEl?.length ? p.bestForEl : p.bestFor;
+        if (Array.isArray(explicit) && explicit.length) return explicit.slice(0, 5);
+        const text = `${productName(id, dict)} ${productDescription(id, dict)} ${productDetail(id, dict)}`.toLowerCase();
+        const tags = [];
+        if (/chicken|κότ|κοτ|hen|poultry/i.test(text)) tags.push(lang() === "el" ? "Κότες" : "Chickens");
+        if (/reptile|dragon|gecko|ερπετ|σαύρ/i.test(text)) tags.push(lang() === "el" ? "Ερπετά" : "Reptiles");
+        if (/fish|ψάρ|aquarium|pond/i.test(text)) tags.push(lang() === "el" ? "Ψάρια" : "Fish");
+        if (/bird|πτην|πουλ/i.test(text)) tags.push(lang() === "el" ? "Πτηνά" : "Birds");
+        if (/frass|terra|soil|λίπασμα|έδαφος/i.test(text)) tags.push(lang() === "el" ? "Φυτά" : "Plants");
+        return tags.length ? tags : [lang() === "el" ? "Καθημερινό σνακ" : "Everyday snack"];
+      }
+
+      function productMarketingText(id, field, fallbackKey, dict = i18n[lang()] || i18n.en){
+        const p = CATALOG[id] || {};
+        const localized = lang() === "el" ? p[`${field}El`] : "";
+        return localized || p[field] || dict[fallbackKey] || "";
       }
 
       function escapeHtml(value){
@@ -1281,14 +1881,15 @@ async function chatFetch(path, options = {}) {
               email,
             },
           };
-          const resp = await chatFetch("/chat", { method:"POST", body: JSON.stringify(body) });
+	          const resp = await chatFetch("/chat", { method:"POST", body: JSON.stringify(body) });
           const data = await resp.json().catch(() => ({}));
           if (!resp.ok) throw new Error(data.error || "Message failed");
           __chatConversationId = data.conversation?.id || __chatConversationId;
           if (__chatConversationId) localStorage.setItem(CHAT_CONVERSATION_KEY, __chatConversationId);
           input.value = "";
-          renderChatMessages(data.messages || []);
-          setChatStatus("Message sent");
+	          renderChatMessages(data.messages || []);
+	          setChatStatus("Message sent");
+	          trackEvent("chat_message_sent", { hasEmail: Boolean(email), conversationId: __chatConversationId || "" });
         } catch (err) {
           setChatStatus(err.message || "Message failed", false);
         } finally {
@@ -1296,8 +1897,9 @@ async function chatFetch(path, options = {}) {
         }
       }
 
-      function openChat(){
-        document.getElementById("chatPanel").classList.remove("hidden");
+	      function openChat(){
+	        trackEvent("chat_open", { signedIn: Boolean(__user) });
+	        document.getElementById("chatPanel").classList.remove("hidden");
         document.getElementById("chatToggle").setAttribute("aria-expanded", "true");
         updateChatAuthFields();
         refreshChat().catch(() => {});
@@ -1342,11 +1944,21 @@ async function chatFetch(path, options = {}) {
         for (const key of Object.keys(CATALOG)) delete CATALOG[key];
         products.forEach((p) => {
           const image = String(p.image || "").trim();
+          const legacyOptimizedImages = {
+            "happy-chicken-1kg": { source:"happy-chicken-1kg-1785069203626.png", optimized:"images/products/happy-chicken-1kg.jpg" },
+            "happy-chicken-2kg": { source:"happy-chicken-2kg-1785068747823.png", optimized:"images/products/happy-chicken-2kg.jpg" },
+            "happy-chicken-3kg": { source:"happy-chicken-3kg-1785068644641.png", optimized:"images/products/happy-chicken-3kg.jpg" },
+            "terragrub-3kg": { source:"terragrub-3kg-1785068024259.png", optimized:"images/products/terragrub-3kg.jpg" },
+          };
+          const legacyImage = legacyOptimizedImages[p.id];
+          const storefrontImage = legacyImage && image.includes(legacyImage.source)
+            ? legacyImage.optimized
+            : image;
           CATALOG[p.id] = {
             price: Number(p.amount || 0) / 100,
             amount: Number(p.amount || 0),
             currency: p.currency || "eur",
-            img: /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(image) ? "" : image,
+            img: /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(storefrontImage) ? "" : storefrontImage,
             bg: p.imageBg || "#f8f1eb",
             name: p.name || p.id,
             nameEl: p.nameEl || p.name || p.id,
@@ -1354,11 +1966,22 @@ async function chatFetch(path, options = {}) {
             descriptionEl: p.descriptionEl || p.description || "",
             detail: p.detail || p.description || "",
             detailEl: p.detailEl || p.detail || p.descriptionEl || "",
+            bestFor: Array.isArray(p.bestFor) ? p.bestFor : [],
+            bestForEl: Array.isArray(p.bestForEl) ? p.bestForEl : [],
+            feeding: p.feeding || "",
+            feedingEl: p.feedingEl || "",
+            storage: p.storage || "",
+            storageEl: p.storageEl || "",
+            nutrition: p.nutrition || "",
+            nutritionEl: p.nutritionEl || "",
+            shippingFit: p.shippingFit || "",
+            shippingFitEl: p.shippingFitEl || "",
             weightGrams: Number(p.weightGrams || 0),
             parcel: p.parcel || {},
             stripeProductId: p.stripeProductId || "",
             stripePriceId: p.stripePriceId || "",
             active: p.active !== false,
+            allowBackorder: p.allowBackorder === true,
             sortOrder: Number(p.sortOrder || 0),
           };
         });
@@ -1380,13 +2003,16 @@ async function chatFetch(path, options = {}) {
         }
         grid.innerHTML = products.map(([id, p]) => `
           <article class="card border p-5 h-full flex flex-col product-card" data-id="${escapeHtml(id)}">
-            <div class="product-thumb mb-4 rounded-lg bg-cover bg-center" style="background-image:url('${escapeHtml(p.img || "")}')" aria-hidden="true"></div>
+            <img src="${escapeHtml(p.img || "")}" alt="${escapeHtml(productName(id, dict))}" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy" decoding="async">
             <h3 class="font-bold">${escapeHtml(productName(id, dict))}</h3>
             <p class="text-sm opacity-80 mt-1">${escapeHtml(productDescription(id, dict))}</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">${productAudienceTags(id, dict).slice(0, 3).map(label => `<span class="product-info-pill">${escapeHtml(label)}</span>`).join("")}</div>
+            ${id.startsWith("happy-chicken-") || id.startsWith("terragrub-") ? `<a class="mt-3 inline-flex w-fit items-center gap-1 text-sm font-bold underline decoration-2 underline-offset-4 hover:opacity-75" style="color:var(--grubz-4)" href="#${id.startsWith("happy-chicken-") ? "happy-chicken-calculator" : "terragrub-calculator"}">${escapeHtml(dict.calculatorCardLink || "Calculate recommended amount")} <span aria-hidden="true">→</span></a>` : ""}
             <div class="mt-auto pt-4 flex items-center justify-between gap-2 flex-wrap">
               <div class="leading-tight">
                 <span class="font-extrabold price" data-id="${escapeHtml(id)}" style="color:var(--grubz-1)">${nf(gross(p.price))}</span>
                 <span class="text-xs opacity-60 ml-1">${escapeHtml(dict.inclVATRate || "incl. VAT 24%")}</span>
+                ${pricePerKg(p) ? `<span class="block mt-1 text-sm font-bold" style="color:var(--grubz-4)">${escapeHtml(pricePerKg(p))}</span>` : ""}
               </div>
               <button class="btn text-sm" data-product="${escapeHtml(id)}">${escapeHtml(dict.btnAdd || "Add to cart")}</button>
             </div>
@@ -1396,6 +2022,120 @@ async function chatFetch(path, options = {}) {
         applyStockStatus();
       }
 
+	      const __calculatorPlans = {};
+
+	      function recommendedPackagePlan(prefix, requiredGrams){
+	        const packages = Object.entries(CATALOG)
+	          .filter(([id, product]) => id.startsWith(prefix) && product.active !== false && Number(product.weightGrams || 0) > 0)
+	          .map(([id, product]) => ({ id, product, units: Math.ceil(Number(product.weightGrams) / 1000), grams:Number(product.weightGrams), cents:Number(product.amount || 0) }));
+	        if (!packages.length) return null;
+	        const targetUnits = Math.max(1, Math.ceil(requiredGrams / 1000));
+	        const maxUnits = targetUnits + Math.max(...packages.map(item => item.units));
+	        const dp = Array(maxUnits + 1).fill(null);
+	        dp[0] = { cents:0, count:0, quantities:{} };
+	        for (let units = 0; units <= maxUnits; units += 1) {
+	          const current = dp[units];
+	          if (!current) continue;
+	          packages.forEach(item => {
+	            const nextUnits = Math.min(maxUnits, units + item.units);
+	            const candidate = {
+	              cents: current.cents + item.cents,
+	              count: current.count + 1,
+	              quantities: { ...current.quantities, [item.id]:(current.quantities[item.id] || 0) + 1 },
+	            };
+	            const existing = dp[nextUnits];
+	            if (!existing || candidate.cents < existing.cents || (candidate.cents === existing.cents && candidate.count < existing.count)) dp[nextUnits] = candidate;
+	          });
+	        }
+	        let best = null;
+	        for (let units = targetUnits; units <= maxUnits; units += 1) {
+	          const candidate = dp[units];
+	          if (!candidate) continue;
+	          if (!best || candidate.cents < best.plan.cents || (candidate.cents === best.plan.cents && units < best.units)) best = { units, plan:candidate };
+	        }
+	        if (!best) return null;
+	        const suppliedGrams = Object.entries(best.plan.quantities).reduce((sum, [id, qty]) => sum + Number(CATALOG[id]?.weightGrams || 0) * qty, 0);
+	        return { ...best.plan, suppliedGrams, packages };
+	      }
+
+	      function calculatorResultHtml(prefix, requiredGrams){
+	        const dict = i18n[lang()] || i18n.en;
+	        const plan = recommendedPackagePlan(prefix, requiredGrams);
+	        if (!plan) {
+	          delete __calculatorPlans[prefix];
+	          return escapeHtml(dict.calculatorNoProduct || "Matching products are currently unavailable.");
+	        }
+	        __calculatorPlans[prefix] = { ...plan.quantities };
+	        const packageText = Object.entries(plan.quantities).map(([id, qty]) => `${qty} × ${productName(id, dict)}`).join(" + ");
+	        return `<div class="font-extrabold text-lg">${escapeHtml(dict.calculatorNeed)}: ${(requiredGrams / 1000).toLocaleString(lang() === "el" ? "el-GR" : "en-GB", { maximumFractionDigits:2 })} kg</div>
+	          <div class="mt-2"><strong>${escapeHtml(dict.calculatorPackages)}:</strong> ${escapeHtml(packageText)}</div>
+	          <div class="mt-1"><strong>${escapeHtml(dict.calculatorCoverage)}:</strong> ${(plan.suppliedGrams / 1000).toLocaleString(lang() === "el" ? "el-GR" : "en-GB", { maximumFractionDigits:2 })} kg · ${nf(gross(plan.cents / 100))}</div>
+	          <button class="btn mt-4 w-full text-sm" type="button" data-calculator-add="${escapeHtml(prefix)}">${escapeHtml(dict.calculatorAdd || "Add suggested packages to cart")}</button>`;
+	      }
+
+	      function renderUsageCalculators(){
+	        const dict = i18n[lang()] || i18n.en;
+	        const chickenPlan = document.getElementById("chickenPlan")?.value || "daily";
+	        const chickenCount = Math.max(1, Number(document.getElementById("chickenCount")?.value || 1));
+	        const chickenRate = Math.max(2, Number(document.getElementById("chickenRate")?.value || 10));
+	        const chickenDays = Math.max(1, Number(document.getElementById("chickenDays")?.value || 30));
+	        const chickenServings = chickenPlan === "reward" ? chickenDays * 2.5 / 7 : chickenDays;
+	        const chickenGuidanceKey = { daily:"chickenGuidanceDaily", chicks:"chickenGuidanceChicks", growers:"chickenGuidanceGrowers", layers:"chickenGuidanceLayers", large:"chickenGuidanceLarge", peak:"chickenGuidancePeak", reward:"chickenGuidanceReward" }[chickenPlan] || "chickenGuidanceDaily";
+	        document.getElementById("chickenFeedingGuidance").textContent = `${dict[chickenGuidanceKey] || ""} ${dict.chickenFeedingInstruction || ""}`.trim();
+	        const terraArea = Math.max(0.1, Number(document.getElementById("terraArea")?.value || 0.1));
+	        const terraRate = Math.max(100, Number(document.getElementById("terraRate")?.value || 500));
+	        const terraApplications = Math.max(1, Number(document.getElementById("terraApplications")?.value || 1));
+	        const terraUse = document.getElementById("terraUse")?.value || "general";
+	        const guidanceKey = { general:"terraGuidanceGeneral", maintenance:"terraGuidanceMaintenance", depleted:"terraGuidanceDepleted", topdressing:"terraGuidanceTopdressing" }[terraUse] || "terraGuidanceGeneral";
+	        document.getElementById("terraApplicationGuidance").textContent = dict[guidanceKey] || "";
+	        document.getElementById("chickenCalculatorResult").innerHTML = calculatorResultHtml("happy-chicken-", chickenCount * chickenRate * chickenServings);
+	        document.getElementById("terraCalculatorResult").innerHTML = calculatorResultHtml("terragrub-", terraArea * terraRate * terraApplications);
+	      }
+
+	      ["chickenCount", "chickenRate", "chickenDays", "terraArea", "terraRate", "terraApplications"].forEach(id => {
+	        document.getElementById(id)?.addEventListener("input", renderUsageCalculators);
+	      });
+	      document.getElementById("chickenPlan")?.addEventListener("change", event => {
+	        const rates = { daily:10, chicks:3.5, growers:7.5, layers:10, large:20, peak:17.5, reward:25 };
+	        document.getElementById("chickenRate").value = rates[event.target.value] || 10;
+	        renderUsageCalculators();
+	      });
+	      document.getElementById("terraUse")?.addEventListener("change", event => {
+	        const rates = { general:500, maintenance:350, depleted:1500, topdressing:175 };
+	        document.getElementById("terraRate").value = rates[event.target.value] || 500;
+	        renderUsageCalculators();
+	      });
+	      document.getElementById("usage-calculators")?.addEventListener("click", event => {
+	        const button = event.target.closest("[data-calculator-add]");
+	        if (!button) return;
+	        const quantities = __calculatorPlans[button.dataset.calculatorAdd] || {};
+	        let added = 0;
+	        let requested = 0;
+	        Object.entries(quantities).forEach(([id, rawQty]) => {
+	          const qty = Math.max(0, Math.round(Number(rawQty || 0)));
+	          requested += qty;
+	          const current = Number(cart.get(id) || 0);
+	          const available = getStock(id);
+	          const next = CATALOG[id]?.allowBackorder
+	            ? current + qty
+	            : (Number.isFinite(available) ? Math.min(current + qty, Math.max(0, available)) : current + qty);
+	          const increment = Math.max(0, next - current);
+	          if (!increment) return;
+	          cart.set(id, next);
+	          added += increment;
+	          trackEvent("add_to_cart", { productId:id, productName:productName(id, i18n[lang()] || i18n.en), quantity:increment, source:"usage_calculator", cartItems:cartItemCount() });
+	        });
+	        updateCartInfo();
+	        renderCart();
+	        if (added) pingCart();
+	        const dict = i18n[lang()] || i18n.en;
+	        const message = added < requested ? dict.calculatorStockLimited : dict.calculatorAdded;
+	        announce(message);
+	        button.textContent = message;
+	        button.classList.add("btn-added", "btn-pop");
+	        setTimeout(() => { button.textContent = dict.calculatorAdd; button.classList.remove("btn-added", "btn-pop"); }, 1800);
+	      });
+
       async function loadProducts(){
         try {
           const resp = await fetch(`${API_BASE}/getProducts`, { method: "GET", mode: "cors" });
@@ -1403,6 +2143,7 @@ async function chatFetch(path, options = {}) {
           const data = await resp.json();
           if (!Array.isArray(data.products)) throw new Error("Products response is invalid");
           setCatalogProducts(data.products);
+	          renderUsageCalculators();
           __productsLoaded = true;
           __productsLoadError = data.products.length ? "" : "empty";
           renderProducts();
@@ -1459,7 +2200,7 @@ async function chatFetch(path, options = {}) {
 
       function inStock(id){
         const s = getStock(id);
-        return s === Infinity || s > 0;
+        return s === Infinity || s > 0 || CATALOG[id]?.allowBackorder === true;
       }
 
       function setCardStockUI(card, id){
@@ -1483,13 +2224,14 @@ async function chatFetch(path, options = {}) {
 
         const available = getStock(id);
         if (available <= 0){
-          addBtn.disabled = true;
-          addBtn.setAttribute("aria-disabled","true");
-          addBtn.textContent = ldict.outOfStock || "Out of stock";
-          addBtn.setAttribute("aria-label", `${ldict.outOfStock || "Out of stock"}: ${name}`);
+          const backorder = CATALOG[id]?.allowBackorder === true;
+          addBtn.disabled = !backorder;
+          addBtn.setAttribute("aria-disabled",String(!backorder));
+          addBtn.textContent = backorder ? (ldict.backorder || "Backorder") : (ldict.outOfStock || "Out of stock");
+          addBtn.setAttribute("aria-label", `${addBtn.textContent}: ${name}`);
           const b = document.createElement("span");
-          b.className = "badge-oos";
-          b.textContent = ldict.outOfStock || "Out of stock";
+          b.className = backorder ? "badge-low" : "badge-oos";
+          b.textContent = backorder ? (ldict.availableOnBackorder || "Available on backorder") : (ldict.outOfStock || "Out of stock");
           card.prepend(b);
         } else {
           addBtn.disabled = false;
@@ -1513,10 +2255,17 @@ async function chatFetch(path, options = {}) {
       }
 
       const nf = (n)=> new Intl.NumberFormat(lang()==='el' ? 'el-GR' : 'en-GB', { style:'currency', currency:'EUR' }).format(n);
+      const nfTenths = (n)=> new Intl.NumberFormat(lang()==='el' ? 'el-GR' : 'en-GB', { style:'currency', currency:'EUR', minimumFractionDigits:1, maximumFractionDigits:1 }).format(Math.round(n * 10) / 10);
       document.querySelectorAll('.product-thumb').forEach(el => el.setAttribute('aria-hidden','true'));
 
       const VAT_RATE = 0; // gross already
       const gross = n => n * (1 + VAT_RATE);
+      const pricePerKg = product => {
+        const weightGrams = Number(product?.weightGrams || 0);
+        const price = Number(product?.price || 0);
+        if (!(weightGrams > 0) || !(price >= 0)) return "";
+        return `${nfTenths(gross(price) / (weightGrams / 1000))}/${lang() === "el" ? "κιλό" : "kg"}`;
+      };
 
       function setCardPrices(){
         document.querySelectorAll(".price[data-id]").forEach(el=>{
@@ -1527,6 +2276,7 @@ async function chatFetch(path, options = {}) {
       }
       setCardPrices();
       applyStockStatus();      // will show optimistic buttons
+      loadPublicShippingSettings();
       loadProducts().then(() => loadStockFromStripe());   // later flips __stockReady and re-renders
       const _initialLang = lang();
       applyLang(_initialLang);
@@ -1535,19 +2285,31 @@ async function chatFetch(path, options = {}) {
 
       function addProductToCart(id, sourceBtn){
         const available = getStock(id);
-        if (available <= 0){
+        const backorder = CATALOG[id]?.allowBackorder === true;
+        if (available <= 0 && !backorder){
           announce((i18n[lang()]||i18n.en).outOfStock || "Out of stock");
           return false;
         }
         const cur = cart.get(id) || 0;
-        const next = Math.min(cur + 1, available);
+        const next = backorder ? cur + 1 : Math.min(cur + 1, available);
         if (next === cur){
           announce((i18n[lang()]||i18n.en).outOfStock || "Out of stock");
           return false;
         }
-        cart.set(id, next);
-        updateCartInfo(); renderCart();
-        if (sourceBtn) morphAddButton(sourceBtn);
+	        cart.set(id, next);
+	        updateCartInfo(); renderCart();
+	        const addedProduct = CATALOG[id] || {};
+	        const addedName = productName(id, i18n[lang()] || i18n.en);
+	        trackEvent("add_to_cart", { productId: id, productName: addedName, quantity: next, cartItems: cartItemCount() });
+	        metaTrack("AddToCart", {
+	          content_ids: [id],
+	          content_name: addedName,
+	          content_type: "product",
+	          contents: [{ id, quantity: 1 }],
+	          value: Number(addedProduct.price || 0),
+	          currency: "EUR",
+	        });
+	        if (sourceBtn) morphAddButton(sourceBtn);
         pingCart();
 
         const dict = i18n[lang()] || i18n.en;
@@ -1567,6 +2329,7 @@ async function chatFetch(path, options = {}) {
         const dict = i18n[lang()] || i18n.en;
         if (!stockIsKnown(id)) return "";
         const available = getStock(id);
+        if (available <= 0 && CATALOG[id]?.allowBackorder === true) return dict.availableOnBackorder || "Available on backorder";
         if (available <= 0) return dict.outOfStock || "Out of stock";
         if (Number.isFinite(available) && available <= LOW_STOCK_CUTOFF) {
           return (dict.onlyXLeft || "Only {x} left").replace("{x}", String(available));
@@ -1587,7 +2350,16 @@ async function chatFetch(path, options = {}) {
         document.getElementById("productDesc").textContent = productDescription(id, dict);
         document.getElementById("productDetailText").textContent = productDetail(id, dict);
         document.getElementById("productPrice").textContent = nf(gross(p.price));
+        document.getElementById("productPricePerKg").textContent = pricePerKg(p);
         document.getElementById("productStock").textContent = productStockLabel(id);
+        document.getElementById("productInfoPills").innerHTML = [
+          ...productAudienceTags(id, dict),
+          p.weightGrams ? `${Math.round(Number(p.weightGrams || 0) / 1000 * 10) / 10}kg` : "",
+        ].filter(Boolean).slice(0, 6).map(label => `<span class="product-info-pill">${escapeHtml(label)}</span>`).join("");
+        document.getElementById("productFeedingText").textContent = productMarketingText(id, "feeding", "productFeedingDefault", dict);
+        document.getElementById("productStorageText").textContent = productMarketingText(id, "storage", "productStorageDefault", dict);
+        document.getElementById("productNutritionText").textContent = productMarketingText(id, "nutrition", "productNutritionDefault", dict);
+        document.getElementById("productShippingText").textContent = productMarketingText(id, "shippingFit", "productShippingDefault", dict);
         document.getElementById("productImageWrap").style.backgroundColor = p.bg || "#f8f1eb";
         const productImage = document.getElementById("productImage");
         productImage.setAttribute("role", "img");
@@ -1596,9 +2368,12 @@ async function chatFetch(path, options = {}) {
         productImage.style.backgroundImage = `url('${p.img}')`;
 
         addBtn.dataset.productDetailAdd = id;
-        addBtn.disabled = available <= 0;
-        addBtn.setAttribute("aria-disabled", String(available <= 0));
-        addBtn.textContent = available <= 0 ? (dict.outOfStock || "Out of stock") : (dict.btnAdd || "Add to cart");
+        const backorder = p.allowBackorder === true;
+        addBtn.disabled = available <= 0 && !backorder;
+        addBtn.setAttribute("aria-disabled", String(available <= 0 && !backorder));
+        addBtn.textContent = available <= 0
+          ? (backorder ? (dict.backorder || "Backorder") : (dict.outOfStock || "Out of stock"))
+          : (dict.btnAdd || "Add to cart");
         addBtn.setAttribute("aria-label", `${addBtn.textContent}: ${productName(id, dict)}`);
         if (viewCartBtn) {
           viewCartBtn.textContent = dict.productViewCart || dict.cartTitle || "View cart";
@@ -1606,9 +2381,10 @@ async function chatFetch(path, options = {}) {
         }
       }
 
-      function openProductModal(id, openerEl){
-        __currentProductId = id;
-        renderProductModal(id);
+	      function openProductModal(id, openerEl){
+	        __currentProductId = id;
+	        trackEvent("product_view", { productId: id, productName: productName(id, i18n[lang()] || i18n.en) });
+	        renderProductModal(id);
         openDialog("productModal", "productPanel", openerEl);
       }
 
@@ -1673,6 +2449,10 @@ async function chatFetch(path, options = {}) {
       });
 
       function clearCart({ close = false } = {}){
+        const email = marketingEmail();
+        if (email && cart.size) {
+          marketingEvent("cart_cleared", { email, source: "clear_cart", items: cartSnapshot(), cartValueCents: 0 }).catch(() => {});
+        }
         cart.clear();
         updateCartInfo();
         renderCart();
@@ -1682,8 +2462,10 @@ async function chatFetch(path, options = {}) {
       document.getElementById("clearCart").addEventListener("click", ()=> clearCart());
 
       const modal = document.getElementById("cartModal"), panel = document.getElementById("cartPanel"), backdrop = document.getElementById("cartBackdrop");
-      function openCart(){
-        openDialog('cartModal', 'cartPanel', document.getElementById('cartBtn'));
+	      function openCart(){
+	        trackEvent("cart_open", { cartItems: cartItemCount(), cartValue: cartTotals().grand });
+	        openDialog('cartModal', 'cartPanel', document.getElementById('cartBtn'));
+	        scrollDialogToTop('cartPanel', ['cartBody']);
         const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
         requestAnimationFrame(()=>{
           backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
@@ -1694,7 +2476,10 @@ async function chatFetch(path, options = {}) {
         const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
         backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
         panel.classList.add("opacity-0","scale-95"); panel.classList.remove("opacity-100","scale-100");
-        setTimeout(()=> closeDialog('cartModal', 'cartPanel'), 150);
+        setTimeout(()=> {
+          closeDialog('cartModal', 'cartPanel');
+          renderAuthButton();
+        }, 150);
       }
       document.getElementById("cartBtn").addEventListener("click", openCart);
       document.getElementById("cartClose").addEventListener("click", closeCart);
@@ -1712,6 +2497,35 @@ async function chatFetch(path, options = {}) {
         const discount = currentDiscount();
         const grand = Math.max(0, total - discount);
         return { net, vat, total, discount, grand };
+      }
+
+      function cartSnapshot(){
+        return Array.from(cart.entries()).map(([id, qty]) => {
+          const p = CATALOG[id] || {};
+          return {
+            id,
+            qty: Math.max(1, Math.round(Number(qty || 1))),
+            name: productName(id, i18n[lang()] || i18n.en),
+            amount: Math.max(0, Math.round(Number(p.amount || 0))),
+          };
+        }).filter(item => item.id && item.qty > 0);
+      }
+
+      function scheduleAbandonedCartCapture(reason = "cart_update"){
+        clearTimeout(__abandonedCartTimer);
+        __abandonedCartTimer = setTimeout(() => {
+          const email = marketingEmail();
+          const items = cartSnapshot();
+          if (!email || !items.length) return;
+          const totals = cartTotals();
+          marketingEvent("abandoned_cart", {
+            email,
+            source: reason,
+            items,
+            cartValueCents: Math.round(totals.grand * 100),
+            couponCode: __coupon?.code || "",
+          }).catch(() => {});
+        }, 900);
       }
 
       function renderCart(){
@@ -1732,15 +2546,17 @@ async function chatFetch(path, options = {}) {
             .forEach(([id, p]) => {
               const item = document.createElement("div");
               item.dataset.suggestProduct = id;
-              item.className = "w-full rounded-lg border border-zinc-200 p-3 flex items-center gap-3 hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer";
+              item.className = "w-full min-w-0 rounded-lg border border-zinc-200 p-3 grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-3 hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer";
               item.innerHTML = `
               <img src="${escapeHtml(p.img)}" alt="" class="w-14 h-14 rounded-md object-cover bg-zinc-100 flex-none">
                 <span class="min-w-0 flex-1">
                   <span class="block font-semibold truncate">${escapeHtml(productName(id, dict))}</span>
                   <span class="block text-sm font-bold mt-0.5" style="color:var(--grubz-1)">${nf(gross(p.price))}</span>
                 </span>
-                <button type="button" class="details-btn text-sm px-3 py-2 flex-none" data-suggest-details="${escapeHtml(id)}" aria-label="${escapeHtml(dict.productDetailsButton || "Details")}: ${escapeHtml(productName(id, dict))}">${escapeHtml(dict.productDetailsButton || "Details")}</button>
-                <button type="button" class="btn text-sm px-3 py-2 flex-none" data-suggest-add="${escapeHtml(id)}" aria-label="${escapeHtml(dict.btnAdd || "Add to cart")}: ${escapeHtml(productName(id, dict))}">${escapeHtml(dict.btnAdd || "Add")}</button>
+                <div class="col-span-2 grid min-w-0 grid-cols-2 gap-2">
+                  <button type="button" class="details-btn min-w-0 w-full text-sm px-2 py-2" data-suggest-details="${escapeHtml(id)}" aria-label="${escapeHtml(dict.productDetailsButton || "Details")}: ${escapeHtml(productName(id, dict))}">${escapeHtml(dict.productDetailsButton || "Details")}</button>
+                  <button type="button" class="btn min-w-0 w-full text-sm px-2 py-2" data-suggest-add="${escapeHtml(id)}" aria-label="${escapeHtml(dict.btnAdd || "Add to cart")}: ${escapeHtml(productName(id, dict))}">${escapeHtml(dict.btnAdd || "Add")}</button>
+                </div>
               `;
               suggestionsList.appendChild(item);
             });
@@ -1750,7 +2566,7 @@ async function chatFetch(path, options = {}) {
           suggestionsEl.classList.add("hidden");
           for (const [id, qty0] of cart){
             let qty = cart.get(id) || 0;
-            if (stockIsKnown(id)) {
+            if (stockIsKnown(id) && !CATALOG[id]?.allowBackorder) {
               const available = getStock(id);
               qty = Math.min(qty, available);
               if (qty <= 0) { cart.delete(id); continue; } // only delete when stock is known
@@ -1770,6 +2586,7 @@ async function chatFetch(path, options = {}) {
                   <div>
                     <div class="font-medium">${escapeHtml(name)}</div>
                     <div class="text-xs text-zinc-500">${escapeHtml(dict.cartQty)}: <span class="font-semibold">${qty}</span></div>
+                    ${p.allowBackorder && stockIsKnown(id) && qty > getStock(id) ? `<div class="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">${escapeHtml(dict.availableOnBackorder || "Available on backorder")}</div>` : ""}
                   </div>
                   <div class="text-right">
                     <div class="font-semibold">${nf(gross(p.price) * qty)}</div>
@@ -1801,6 +2618,7 @@ async function chatFetch(path, options = {}) {
         }
 
         writeCartCookie();
+        scheduleAbandonedCartCapture("cart_render");
       }
 
       window.__cartReady = true;
@@ -1813,7 +2631,7 @@ async function chatFetch(path, options = {}) {
         if (e.target.classList.contains("inc")){
           const available = getStock(id);
           const cur = cart.get(id) || 0;
-          const next = Math.min(cur + 1, available);
+          const next = CATALOG[id]?.allowBackorder ? cur + 1 : Math.min(cur + 1, available);
           cart.set(id, next);
           updateCartInfo(); renderCart();
         } else if (e.target.classList.contains("dec")){
@@ -1826,7 +2644,7 @@ async function chatFetch(path, options = {}) {
         }
       });
       document.getElementById("cartContinue").addEventListener("click", closeCart);
-      document.getElementById("cartClear").addEventListener("click", ()=> clearCart({ close: true }));
+      document.getElementById("cartClear").addEventListener("click", ()=> clearCart());
       document.getElementById("cartSuggestionsList").addEventListener("click", (e)=>{
         const addBtn = e.target.closest("[data-suggest-add]");
         if (addBtn) {
@@ -1849,6 +2667,104 @@ async function chatFetch(path, options = {}) {
 
       /* ---------- AUTH ---------- */
       const auth = () => firebase.auth();
+      const authPersistenceReady = auth()
+        .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .catch(err => {
+          console.warn("Could not enable persistent sign-in", err);
+        });
+      let __resolveAuthInitialization;
+      let __authInitializationSettled = false;
+      const authInitializationReady = new Promise(resolve => { __resolveAuthInitialization = resolve; });
+      let __explicitSignOutInProgress = false;
+      // Remove the former UI-only marker. Authentication UI must reflect an
+      // actual Firebase user restored from Firebase or the secure server cookie.
+      localStorage.removeItem("grubz_authenticated_session");
+
+      function finishAuthInitialization(){
+        if (__authInitializationSettled) return;
+        __authInitializationSettled = true;
+        document.getElementById("authBtn").disabled = false;
+        __resolveAuthInitialization();
+      }
+
+      async function establishCustomerSession(user, attempts = 3){
+        if (!user) return false;
+        let lastFailure = "";
+        for (let attempt = 0; attempt < attempts; attempt += 1) {
+          try {
+            // Force-refresh after a failed attempt in case the first token was
+            // close to expiry or had just been rotated by Firebase.
+            const token = await user.getIdToken(attempt > 0);
+            const resp = await fetch(`${API_BASE}/customerSession`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              credentials: "include",
+              body: "{}"
+            });
+            if (resp.ok) return true;
+            lastFailure = `HTTP ${resp.status}`;
+          } catch (err) {
+            lastFailure = err?.message || String(err);
+          }
+          if (attempt + 1 < attempts) {
+            await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+          }
+        }
+        console.warn("Could not establish durable customer session", lastFailure);
+        return false;
+      }
+
+      // Firebase persists the user locally. This secure server session is a
+      // second recovery path and is renewed during long-running tabs and when
+      // the customer returns to the page.
+      const CUSTOMER_SESSION_RENEW_INTERVAL_MS = 12 * 60 * 60 * 1000;
+      let __lastCustomerSessionRenewal = 0;
+      async function renewCustomerSessionIfNeeded(force = false){
+        const user = auth().currentUser || __user;
+        if (!user) return false;
+        const now = Date.now();
+        if (!force && now - __lastCustomerSessionRenewal < CUSTOMER_SESSION_RENEW_INTERVAL_MS) return true;
+        const established = await establishCustomerSession(user);
+        if (established) __lastCustomerSessionRenewal = Date.now();
+        return established;
+      }
+
+      async function restoreCustomerSession(){
+        try {
+          const resp = await fetch(`${API_BASE}/customerSession`, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store"
+          });
+          if (!resp.ok) return null;
+          const data = await resp.json();
+          if (!data.customToken) return null;
+          const credential = await auth().signInWithCustomToken(data.customToken);
+          return credential.user || null;
+        } catch (err) {
+          console.warn("Could not restore customer session", err);
+          return null;
+        }
+      }
+
+      async function clearCustomerSession(){
+        try {
+          await fetch(`${API_BASE}/customerSession`, {
+            method: "DELETE",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (err) {
+          console.warn("Could not clear server session", err);
+        }
+      }
+
+      function renderAuthButton(){
+        const btn = document.getElementById("authBtn");
+        if (!btn) return;
+        const dict = i18n[lang()] || i18n.en;
+        btn.textContent = __user ? dict.signOut : dict.signIn;
+      }
 
       function show(el){ el.classList.remove("hidden"); }
       function hide(el){ el.classList.add("hidden"); }
@@ -1856,9 +2772,60 @@ async function chatFetch(path, options = {}) {
       function openAuth(){ openDialog('authModal', 'authModal', document.getElementById('authBtn')); }
       function closeAuth(){ closeDialog('authModal', 'authModal'); document.getElementById("authErr").textContent=""; }
 
+      function friendlyAuthError(error, action = "signin") {
+        const greek = lang() === "el";
+        const rawCode = String(error?.code || "").trim().toLowerCase();
+        const messageCode = String(error?.message || "").match(/\((auth\/[a-z0-9-]+)\)/i)?.[1]?.toLowerCase() || "";
+        const code = rawCode || messageCode;
+        const messages = greek ? {
+          "auth/invalid-email": "Παρακαλώ εισάγετε μια έγκυρη διεύθυνση email.",
+          "auth/missing-password": "Παρακαλώ εισάγετε τον κωδικό πρόσβασής σας.",
+          "auth/weak-password": "Ο κωδικός πρέπει να περιέχει τουλάχιστον 6 χαρακτήρες.",
+          "auth/email-already-in-use": "Υπάρχει ήδη λογαριασμός με αυτό το email. Δοκιμάστε να συνδεθείτε.",
+          "auth/email-already-exists": "Υπάρχει ήδη λογαριασμός με αυτό το email. Δοκιμάστε να συνδεθείτε.",
+          "auth/invalid-credential": "Το email ή ο κωδικός πρόσβασης δεν είναι σωστός. Δοκιμάστε ξανά.",
+          "auth/invalid-login-credentials": "Το email ή ο κωδικός πρόσβασης δεν είναι σωστός. Δοκιμάστε ξανά.",
+          "auth/user-not-found": "Το email ή ο κωδικός πρόσβασης δεν είναι σωστός. Δοκιμάστε ξανά.",
+          "auth/wrong-password": "Το email ή ο κωδικός πρόσβασης δεν είναι σωστός. Δοκιμάστε ξανά.",
+          "auth/user-disabled": "Αυτός ο λογαριασμός έχει απενεργοποιηθεί. Επικοινωνήστε μαζί μας στο info@grubz.gr.",
+          "auth/too-many-requests": "Έγιναν πολλές προσπάθειες. Περιμένετε λίγο και δοκιμάστε ξανά.",
+          "auth/network-request-failed": "Δεν ήταν δυνατή η σύνδεση. Ελέγξτε το διαδίκτυό σας και δοκιμάστε ξανά.",
+          "auth/operation-not-allowed": "Η σύνδεση δεν είναι διαθέσιμη αυτή τη στιγμή. Δοκιμάστε ξανά αργότερα.",
+          "auth/configuration-not-found": "Η σύνδεση δεν είναι διαθέσιμη αυτή τη στιγμή. Δοκιμάστε ξανά αργότερα.",
+        } : {
+          "auth/invalid-email": "Please enter a valid email address.",
+          "auth/missing-password": "Please enter your password.",
+          "auth/weak-password": "Your password must be at least 6 characters long.",
+          "auth/email-already-in-use": "An account already exists for this email. Try signing in instead.",
+          "auth/email-already-exists": "An account already exists for this email. Try signing in instead.",
+          "auth/invalid-credential": "The email or password is incorrect. Please try again.",
+          "auth/invalid-login-credentials": "The email or password is incorrect. Please try again.",
+          "auth/user-not-found": "The email or password is incorrect. Please try again.",
+          "auth/wrong-password": "The email or password is incorrect. Please try again.",
+          "auth/user-disabled": "This account has been disabled. Please contact us at info@grubz.gr.",
+          "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
+          "auth/network-request-failed": "We could not connect. Check your internet connection and try again.",
+          "auth/operation-not-allowed": "Sign-in is temporarily unavailable. Please try again later.",
+          "auth/configuration-not-found": "Sign-in is temporarily unavailable. Please try again later.",
+        };
+        return messages[code] || (greek
+          ? (action === "signup" ? "Δεν ήταν δυνατή η δημιουργία λογαριασμού. Δοκιμάστε ξανά." : "Δεν ήταν δυνατή η σύνδεση. Ελέγξτε τα στοιχεία σας και δοκιμάστε ξανά.")
+          : (action === "signup" ? "We could not create your account. Please try again." : "We could not sign you in. Check your details and try again."));
+      }
+
       document.getElementById("authBtn").addEventListener("click", async ()=>{
-        if (__user) {
-          await auth().signOut();
+        await authInitializationReady;
+        if (__user || auth().currentUser) {
+          __explicitSignOutInProgress = true;
+          try {
+            await clearCustomerSession();
+            if (auth().currentUser) await auth().signOut();
+            __user = null;
+            clearCustomerCheckoutCache({ clearOwner: true });
+          } finally {
+            __explicitSignOutInProgress = false;
+            renderAuthButton();
+          }
         } else {
           openAuth();
         }
@@ -1867,43 +2834,37 @@ async function chatFetch(path, options = {}) {
 
       async function signIn(email, pass){
         try {
-          await auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-          await auth().signInWithEmailAndPassword(email, pass);
+          await authPersistenceReady;
+          const credential = await auth().signInWithEmailAndPassword(email, pass);
+          __user = credential?.user || auth().currentUser || null;
+          if (__user) {
+            try { await __user.getIdToken(true); } catch { /* authed requests retry token retrieval */ }
+            await renewCustomerSessionIfNeeded(true);
+          }
           closeAuth();
         }
         catch(e){
-          const m = {
-            'auth/configuration-not-found': 'Project config missing. Add /__/firebase/init.js on Hosting or provide GRUBZ_FIREBASE_CONFIG with authDomain.',
-            'auth/operation-not-allowed': 'Email/Password provider is disabled in Firebase Console.',
-            'auth/invalid-email': 'Invalid email address.',
-            'auth/user-not-found': 'No user found with this email.',
-            'auth/wrong-password': 'Incorrect password.'
-          };
-          const msg = m[e.code] || e.message || "Sign-in failed";
+          const msg = friendlyAuthError(e, "signin");
           document.getElementById("authErr").textContent = msg;
           announce(msg);
         }
       }
       async function signUp(email, pass){
         try {
-          await auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          await authPersistenceReady;
           const existingMethods = await auth().fetchSignInMethodsForEmail(email);
           if (existingMethods.length) {
             throw { code: "auth/email-already-in-use" };
           }
-          await auth().createUserWithEmailAndPassword(email, pass);
+          const credential = await auth().createUserWithEmailAndPassword(email, pass);
+          __user = credential?.user || auth().currentUser || null;
+          if (__user) {
+            try { await __user.getIdToken(true); } catch { /* authed requests retry token retrieval */ }
+            await renewCustomerSessionIfNeeded(true);
+          }
           closeAuth();
-          openAddr(true);
         } catch(e){
-          const m = {
-            'auth/configuration-not-found': 'Project config missing.',
-            'auth/operation-not-allowed': 'Email/Password provider is disabled in Console.',
-            'auth/email-already-in-use': 'That email is already registered.',
-            'auth/email-already-exists': 'That email is already registered.',
-            'auth/invalid-email': 'Invalid email address.',
-            'auth/weak-password': 'Password is too weak (min 6 characters).'
-          };
-          const msg = m[e.code] || (/already registered|already exists|already in use/i.test(e.message || "") ? "That email is already registered." : e.message) || "Sign-up failed";
+          const msg = friendlyAuthError(e, "signup");
           document.getElementById("authErr").textContent = msg;
           announce(msg);
         }
@@ -1914,38 +2875,133 @@ async function chatFetch(path, options = {}) {
       });
       document.getElementById("doSignUp").addEventListener("click", ()=>signUp(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
 
-      auth().onAuthStateChanged(async (u) => {
+      function clearCustomerCheckoutCache({ clearOwner = false } = {}) {
+        Cookie.remove("grubz_shipto");
+        Cookie.remove("grubz_boxnow_locker");
+        __boxNowLocker = null;
+        __currentReviewAddress = null;
+        fillAddrForm({ country: "Greece" });
+        invalidateBoxNowFee();
+        renderBoxNowSelection();
+        if (clearOwner) {
+          localStorage.removeItem(CHECKOUT_CACHE_OWNER_KEY);
+          Cookie.remove(CHECKOUT_CACHE_OWNER_KEY);
+        }
+      }
+
+      function restoreLockerForCurrentUser() {
+        __boxNowLocker = null;
+        try {
+          const rawLocker = Cookie.get("grubz_boxnow_locker");
+          if (rawLocker) __boxNowLocker = JSON.parse(rawLocker);
+        } catch {
+          Cookie.remove("grubz_boxnow_locker");
+        }
+        invalidateBoxNowFee();
+        renderBoxNowSelection();
+      }
+
+      document.getElementById("authBtn").disabled = true;
+      authPersistenceReady.then(async () => {
+        await new Promise(resolve => {
+          const unsubscribe = auth().onAuthStateChanged(() => {
+            unsubscribe();
+            resolve();
+          });
+        });
+        if (!auth().currentUser) await restoreCustomerSession();
+        auth().onAuthStateChanged(async (u) => {
+        if (!u && !__explicitSignOutInProgress && __user) {
+          finishAuthInitialization();
+          renderAuthButton();
+          return;
+        }
         __user = u || null;
-        const dict = i18n[lang()] || i18n.en;
-        const btn = document.getElementById("authBtn");
+        finishAuthInitialization();
         if (u) {
-          btn.textContent = dict.signOut;
+          renewCustomerSessionIfNeeded(true).catch(err => console.warn("Could not refresh customer session", err));
+          const cachedOwner = localStorage.getItem(CHECKOUT_CACHE_OWNER_KEY) || Cookie.get(CHECKOUT_CACHE_OWNER_KEY) || "";
+          if (cachedOwner && cachedOwner !== u.uid) {
+            clearCustomerCheckoutCache();
+          } else {
+            restoreLockerForCurrentUser();
+          }
+          localStorage.setItem(CHECKOUT_CACHE_OWNER_KEY, u.uid);
+          Cookie.set(CHECKOUT_CACHE_OWNER_KEY, u.uid);
+          renderAuthButton();
           updateChatAuthFields();
           try {
+            const profileFormSnapshot = JSON.stringify(readAddrForm());
             const resp = await authedFetch("/getProfile", { method: "GET" });
+            if (auth().currentUser?.uid !== u.uid) return;
             if (resp.ok) {
               const data = await resp.json();
               if (data && data.shipping) {
-                fillAddrForm(data.shipping);
                 Cookie.set("grubz_shipto", JSON.stringify(data.shipping));
+                if (JSON.stringify(readAddrForm()) === profileFormSnapshot) {
+                  fillAddrForm(data.shipping);
+                }
+                if (!hasBoxNowLocker() && hasBoxNowLocker(data.shipping.boxNow)) {
+                  __boxNowLocker = data.shipping.boxNow;
+                  Cookie.set("grubz_boxnow_locker", JSON.stringify(__boxNowLocker));
+                  invalidateBoxNowFee();
+                  renderBoxNowSelection();
+                  updateReviewConfirmState();
+                }
+              } else {
+                Cookie.remove("grubz_shipto");
+                fillAddrForm({ country: "Greece" });
               }
             }
-          } catch (e) { /* ignore */ }
+          } catch (e) { /* Keep this user's current form on transient profile-read failures. */ }
         } else {
-          btn.textContent = dict.signIn;
+          renderAuthButton();
           updateChatAuthFields();
         }
+        });
+      });
+      setInterval(() => {
+        renewCustomerSessionIfNeeded().catch(err => console.warn("Could not renew customer session", err));
+      }, CUSTOMER_SESSION_RENEW_INTERVAL_MS);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          renewCustomerSessionIfNeeded().catch(err => console.warn("Could not renew customer session", err));
+        }
+      });
+      window.addEventListener("online", () => {
+        renewCustomerSessionIfNeeded(true).catch(err => console.warn("Could not renew customer session", err));
       });
 
       /* ---------- ADDRESS ---------- */
+      function normalizeAddress(a = {}){
+        const source = a && typeof a === "object" ? a : {};
+        const line1 = String(source.line1 || source.addressLine1 || source.address || "").trim();
+        const line2 = String(source.line2 || source.addressLine2 || "").trim();
+        const postal = String(source.postal || source.postalCode || source.zip || "").trim();
+        return {
+          ...source,
+          name: String(source.name || "").trim(),
+          phone: String(source.phone || "").trim(),
+          line1,
+          addressLine1: line1,
+          line2,
+          addressLine2: line2,
+          city: String(source.city || "").trim(),
+          region: String(source.region || "").trim(),
+          postal,
+          postalCode: postal,
+          country: String(source.country || "Greece").trim() || "Greece"
+        };
+      }
       function fillAddrForm(a){
+        a = normalizeAddress(a);
         document.getElementById("a_name").value = a.name || "";
         document.getElementById("a_phone").value = a.phone || "";
-        document.getElementById("a_line1").value = a.line1 || "";
-        document.getElementById("a_line2").value = a.line2 || "";
+        document.getElementById("a_line1").value = a.line1 || a.addressLine1 || "";
+        document.getElementById("a_line2").value = a.line2 || a.addressLine2 || "";
         document.getElementById("a_city").value = a.city || "";
         document.getElementById("a_region").value = a.region || "";
-        document.getElementById("a_postal").value = a.postal || "";
+        document.getElementById("a_postal").value = a.postal || a.postalCode || "";
         document.getElementById("a_country").value = a.country || "Greece";
       }
       function readAddrForm(){
@@ -1962,25 +3018,51 @@ async function chatFetch(path, options = {}) {
       }
       function validAddr(a){
         if (!a || typeof a !== "object") return false;
-        const norm = {
-          name: (a.name||"").trim(),
-          phone: (a.phone||"").trim(),
-          postal: (a.postal||"").trim(),
-          country: (a.country||"Greece").trim() || "Greece"
-        };
+        const norm = normalizeAddress(a);
         return !!(norm.name && norm.phone && norm.postal && norm.country);
       }
 
-      function openAddr(force=false){ openDialog('addrModal', 'addrModal'); if (!force) document.getElementById("addrErr").textContent=""; }
+      function validCourierAddr(a){
+        const norm = normalizeAddress(a);
+        return validAddr(norm) && !!norm.line1 && !!norm.city;
+      }
+
+      function setCourierAddressFields(_show){
+        ["addrLine1Field", "addrLine2Field", "addrCityField", "addrRegionField"].forEach(id => {
+          document.getElementById(id)?.classList.remove("hidden");
+        });
+        document.getElementById("a_line1").required = true;
+        document.getElementById("a_city").required = true;
+      }
+
+      function openAddr(force=false, courier=false){
+        setCourierAddressFields(courier);
+        openDialog('addrModal', 'addrModal');
+        if (!force) document.getElementById("addrErr").textContent="";
+      }
       function closeAddr(){ closeDialog('addrModal', 'addrModal'); document.getElementById("addrErr").textContent=""; }
 
-      document.getElementById("addrCancel").addEventListener("click", closeAddr);
+      function openAddressFromReview(courier = false, resumeCheckout = false){
+        if (__currentReviewAddress) fillAddrForm(__currentReviewAddress);
+        __reopenReviewAfterAddr = true;
+        __resumeReviewConfirmAfterAddr = Boolean(resumeCheckout);
+        openAddr(true, courier);
+      }
+
+      function openCourierAddressFromReview(resumeCheckout = false){ openAddressFromReview(true, resumeCheckout); }
+
+      document.getElementById("addrCancel").addEventListener("click", () => {
+        __reopenReviewAfterAddr = false;
+        __resumeReviewConfirmAfterAddr = false;
+        closeAddr();
+      });
       document.getElementById("addrSave").addEventListener("click", async ()=>{
+        if (!__user && auth().currentUser) __user = auth().currentUser;
         if (!__user){ openAuth(); return; }
         const a = readAddrForm();
-        if (!validAddr(a)){
+        if (!validCourierAddr(a)){
           const d = i18n[lang()]||i18n.en;
-          const msg = d.contactRequired || "Full name, phone, postal code and country are required";
+          const msg = d.fullAddressRequired || d.courierAddressRequired || "Please enter your full address for the receipt or invoice.";
           document.getElementById("addrErr").textContent = msg;
           announce(msg);
           return;
@@ -1988,18 +3070,31 @@ async function chatFetch(path, options = {}) {
         try{
           const resp = await authedFetch("/saveShipping", {
             method: "POST",
-            body: JSON.stringify({ shipping: a })
+            body: JSON.stringify({ shipping: { ...a, ...(hasBoxNowLocker() ? { boxNow: __boxNowLocker } : {}) } })
           });
           if (!resp.ok) {
             const e = await resp.json().catch(()=> ({}));
             throw new Error(e.error || `Save failed (${resp.status})`);
           }
-          Cookie.set("grubz_shipto", JSON.stringify(a));
-          closeAddr();
+	          const contentType = resp.headers.get("content-type") || "";
+	          if (!contentType.includes("application/json")) {
+	            throw new Error("Address service is unavailable. Please refresh and try again.");
+	          }
+	          const saved = await resp.json();
+	          if (saved?.ok !== true) throw new Error("Your address was not saved. Please try again.");
+	          Cookie.set("grubz_shipto", JSON.stringify(a));
+	          __currentReviewAddress = a;
+	          trackEvent("address_saved", { hasLine1: Boolean(a.line1), postal: a.postal || "", country: a.country || "" });
+	          closeAddr();
           if (__reopenReviewAfterAddr) {
+            const resumeCheckout = __resumeReviewConfirmAfterAddr;
             __reopenReviewAfterAddr = false;
+            __resumeReviewConfirmAfterAddr = false;
             __currentReviewAddress = a;
             openReview(a);
+            if (resumeCheckout) {
+              setTimeout(() => document.getElementById("reviewConfirm")?.click(), 0);
+            }
           }
         } catch(e){
           const msg = e.message || "Failed to save";
@@ -2009,7 +3104,15 @@ async function chatFetch(path, options = {}) {
       });
 
       async function ensureSignedIn(){
+        await authInitializationReady;
+        if (!__user && auth().currentUser) __user = auth().currentUser;
         if (__user) return __user;
+        const restoredUser = await restoreCustomerSession();
+        __user = restoredUser || auth().currentUser || null;
+        if (__user) {
+          renderAuthButton();
+          return __user;
+        }
         openAuth();
         return new Promise(resolve=>{
           const off = auth().onAuthStateChanged(u=>{ if(u){ off(); resolve(u); }});
@@ -2022,27 +3125,28 @@ async function chatFetch(path, options = {}) {
             if (resp.ok) {
               const data = await resp.json();
               if (data && data.shipping && validAddr(data.shipping)) {
-                Cookie.set("grubz_shipto", JSON.stringify(data.shipping));
-                return data.shipping;
+                const shipping = normalizeAddress(data.shipping);
+                Cookie.set("grubz_shipto", JSON.stringify(shipping));
+                return shipping;
               }
             }
           } catch (e) { /* ignore */ }
         }
         try {
           const raw = Cookie.get("grubz_shipto");
-          if (raw) return JSON.parse(raw);
+          if (raw) return normalizeAddress(JSON.parse(raw));
         } catch {}
         return null;
       }
 
       async function ensureAddress(){
         let a = await getSavedAddress();
-        if (a && validAddr(a)) return a;
-        openAddr(true);
+        if (a && validCourierAddr(a)) return a;
+        openAddr(true, true);
         return new Promise(resolve=>{
           const handler = async ()=>{
             a = readAddrForm();
-            if (validAddr(a)) {
+            if (validCourierAddr(a)) {
               document.getElementById("addrSave").removeEventListener("click", handler);
               resolve(a);
             }
@@ -2050,8 +3154,6 @@ async function chatFetch(path, options = {}) {
           document.getElementById("addrSave").addEventListener("click", handler);
         });
       }
-
-      let __reopenReviewAfterAddr = false;
 
       function boxNowLockerLines(locker){
         if (!locker) return [];
@@ -2090,6 +3192,69 @@ async function chatFetch(path, options = {}) {
         if (typeof updateReviewConfirmState === "function") updateReviewConfirmState();
       }
 
+      async function loadPublicShippingSettings(){
+        try {
+          let resp = await fetch(`${API_BASE}/getShippingSettings`, { method: "GET", mode: "cors" });
+          const contentType = resp.headers.get("content-type") || "";
+          if ((!resp.ok || contentType.includes("text/html")) && LOCAL_HOSTS.has(location.hostname)) {
+            resp = await fetch(`${LOCAL_FUNCTION_API_BASE}/getShippingSettings`, { method: "GET", mode: "cors" });
+          }
+          if (!resp.ok) throw new Error(`Shipping settings fetch failed (${resp.status})`);
+          if ((resp.headers.get("content-type") || "").includes("text/html")) throw new Error("Shipping settings endpoint returned HTML");
+          const data = await resp.json();
+          if (!data?.shipping || typeof data.shipping !== "object") throw new Error("Shipping settings response is invalid");
+          __publicShippingSettings = {
+            ...__publicShippingSettings,
+            ...data.shipping,
+            boxnowParcelPrices: {
+              ...(__publicShippingSettings.boxnowParcelPrices || {}),
+              ...(data.shipping.boxnowParcelPrices || {}),
+            },
+          };
+          if (data.marketing && typeof data.marketing === "object") {
+            __publicMarketingSettings = {
+              ...__publicMarketingSettings,
+              ...data.marketing,
+              firstOrderOffer: {
+                ...(__publicMarketingSettings.firstOrderOffer || {}),
+                ...(data.marketing.firstOrderOffer || {}),
+              },
+            };
+          }
+          invalidateBoxNowFee();
+          if (typeof renderCart === "function") renderCart();
+        } catch (err) {
+          console.warn("Shipping settings unavailable", err);
+        } finally {
+          __publicSettingsLoaded = true;
+          if (typeof renderCart === "function") renderCart();
+          if (typeof maybeOpenFirstOrderOffer === "function") maybeOpenFirstOrderOffer();
+        }
+      }
+
+      function boxNowParcelSizes(){
+        const prices = __publicShippingSettings?.boxnowParcelPrices || {};
+        return BOXNOW_PARCEL_SIZES.map(parcel => {
+          const rawAmount = prices[parcel.code] ?? prices[String(parcel.label || "").toLowerCase()] ?? parcel.amount;
+          const amount = Math.max(0, Math.round(Number(rawAmount)));
+          return { ...parcel, amount: Number.isFinite(amount) ? amount : parcel.amount };
+        });
+      }
+
+      function boxNowEstimatedAmountCents(parcelAmount = 0){
+        const baseAmount = __publicShippingSettings.boxnowFeeOverrideEnabled
+          ? Math.max(0, Math.round(Number(__publicShippingSettings.boxnowFeeOverrideCents || 0)))
+          : Math.max(0, Math.round(Number(parcelAmount || 0)));
+        const discountCents = __publicShippingSettings.boxnowFeeDiscountEnabled
+          ? Math.min(baseAmount, Math.max(0, Math.round(Number(__publicShippingSettings.boxnowFeeDiscountCents || 0))))
+          : 0;
+        return Math.max(0, baseAmount - discountCents);
+      }
+
+      function firstOrderOfferCouponCode(){
+        return String(__publicMarketingSettings?.firstOrderOffer?.couponCode || DEFAULT_FIRST_ORDER_COUPON_CODE).trim().toUpperCase();
+      }
+
       function boxNowFeeKey(addr){
         return JSON.stringify({
           items: Array.from(cart.entries()).map(([id, qty]) => ({ id, qty })),
@@ -2110,27 +3275,33 @@ async function chatFetch(path, options = {}) {
       }
 
       function flattenedBagCapacityKg(parcel = {}){
-        const layers = Math.floor(Number(parcel.heightCm || 0) / ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm);
-        return Math.max(0, layers * BOXNOW_FLATTENED_BAGS_PER_LAYER);
+        const configuredCapacity = Number(parcel.capacityKg);
+        if (Number.isFinite(configuredCapacity) && configuredCapacity > 0) return configuredCapacity;
+        const fitsOneKgBag =
+          Number(parcel.heightCm || 0) >= BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM &&
+          Number(parcel.widthCm || 0) >= ONE_KG_FLEXIBLE_BAG_PARCEL.widthCm &&
+          Number(parcel.lengthCm || 0) >= ONE_KG_FLEXIBLE_BAG_PARCEL.lengthCm;
+        return fitsOneKgBag ? BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT : 0;
       }
 
       function flattenedBagRequiredHeightCm(weightGrams = 0){
         const kgUnits = Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000);
-        const layers = Math.ceil(kgUnits / BOXNOW_FLATTENED_BAGS_PER_LAYER);
-        return layers * ONE_KG_FLEXIBLE_BAG_PARCEL.heightCm;
+        const compartments = Math.ceil(kgUnits / BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT);
+        return compartments * BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM;
       }
 
       function cheapestParcelCombinationForWeight(weightGrams = 0){
         const kgUnits = Math.max(1, Math.ceil(Math.max(0, Number(weightGrams || 0)) / 1000));
+        const parcelSizes = boxNowParcelSizes();
         const maxParcels = kgUnits;
         let best = null;
         for (let small = 0; small <= maxParcels; small += 1) {
           for (let medium = 0; medium <= maxParcels; medium += 1) {
             for (let large = 0; large <= maxParcels; large += 1) {
               const parcels = [
-                ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
-                ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
-                ...Array.from({ length: large }, () => BOXNOW_PARCEL_SIZES[2]),
+                ...Array.from({ length: small }, () => parcelSizes[0]),
+                ...Array.from({ length: medium }, () => parcelSizes[1]),
+                ...Array.from({ length: large }, () => parcelSizes[2]),
               ];
               if (!parcels.length) continue;
               const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
@@ -2139,9 +3310,9 @@ async function chatFetch(path, options = {}) {
               const count = parcels.length;
               if (
                 best &&
-                (amount > best.amount ||
-                  (amount === best.amount && count > best.count) ||
-                  (amount === best.amount && count === best.count && capacityKg >= best.capacityKg))
+                (count > best.count ||
+                  (count === best.count && amount > best.amount) ||
+                  (count === best.count && amount === best.amount && capacityKg >= best.capacityKg))
               ) {
                 continue;
               }
@@ -2149,7 +3320,7 @@ async function chatFetch(path, options = {}) {
             }
           }
         }
-        return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
+        return best?.parcels || [parcelSizes[parcelSizes.length - 1]];
       }
 
       function packingOrientationsForParcel(item, parcel){
@@ -2307,15 +3478,16 @@ async function chatFetch(path, options = {}) {
 
       function cheapestParcelCombination(items){
         if (!items.length) return [];
+        const parcelSizes = boxNowParcelSizes();
         const maxParcels = Math.max(1, items.length);
         let best = null;
         for (let small = 0; small <= maxParcels; small += 1) {
           for (let medium = 0; medium <= maxParcels; medium += 1) {
             for (let large = 0; large <= maxParcels; large += 1) {
               const parcels = [
-                ...Array.from({ length: small }, () => BOXNOW_PARCEL_SIZES[0]),
-                ...Array.from({ length: medium }, () => BOXNOW_PARCEL_SIZES[1]),
-                ...Array.from({ length: large }, () => BOXNOW_PARCEL_SIZES[2]),
+                ...Array.from({ length: small }, () => parcelSizes[0]),
+                ...Array.from({ length: medium }, () => parcelSizes[1]),
+                ...Array.from({ length: large }, () => parcelSizes[2]),
               ];
               if (!parcels.length) continue;
               const capacity = parcels.reduce((sum, parcel) => sum + parcel.heightCm, 0);
@@ -2323,9 +3495,9 @@ async function chatFetch(path, options = {}) {
               const count = parcels.length;
               if (
                 best &&
-                (amount > best.amount ||
-                  (amount === best.amount && count > best.count) ||
-                  (amount === best.amount && count === best.count && capacity >= best.capacity))
+                (count > best.count ||
+                  (count === best.count && amount > best.amount) ||
+                  (count === best.count && amount === best.amount && capacity >= best.capacity))
               ) {
                 continue;
               }
@@ -2334,7 +3506,7 @@ async function chatFetch(path, options = {}) {
             }
           }
         }
-        return best?.parcels || [BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]];
+        return best?.parcels || [parcelSizes[parcelSizes.length - 1]];
       }
 
       function currentBoxNowParcel(){
@@ -2345,9 +3517,12 @@ async function chatFetch(path, options = {}) {
           parcel.heightCm > largest.heightCm ? parcel : largest
         ), parcels[0] || BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]);
         const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
+        const parcelAmount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
+        const amount = boxNowEstimatedAmountCents(parcelAmount);
         return {
           ...largestParcel,
-          amount: parcels.reduce((sum, parcel) => sum + parcel.amount, 0),
+          amount,
+          baseAmount: parcelAmount,
           label: parcelCombinationLabel(parcels) || largestParcel.label,
           count: parcels.length,
           parcels,
@@ -2392,12 +3567,25 @@ async function chatFetch(path, options = {}) {
         const total = document.getElementById("reviewSubtotal");
         if (!total) return;
         const { grand } = cartTotals();
-        const deliveryFee = __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0;
+        const deliveryFee = __deliveryMethod === "boxnow" && __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0;
         total.textContent = nf(grand + deliveryFee);
       }
 
       function canConfirmReview(){
-        return Boolean(__currentReviewAddress && hasBoxNowLocker() && __boxNowFee && !__boxNowFeePromise && !__reviewSubmitting);
+        if (!validCourierAddr(__currentReviewAddress)) {
+          const formAddress = normalizeAddress(readAddrForm());
+          if (validCourierAddr(formAddress)) __currentReviewAddress = formAddress;
+        }
+        if (!hasBoxNowLocker()) {
+          try {
+            const cachedLocker = JSON.parse(Cookie.get("grubz_boxnow_locker") || "null");
+            if (hasBoxNowLocker(cachedLocker)) __boxNowLocker = cachedLocker;
+          } catch { /* Ignore an invalid legacy locker cookie. */ }
+        }
+        if (__deliveryMethod === "courier_quote") {
+          return Boolean(validCourierAddr(__currentReviewAddress) && !__reviewSubmitting);
+        }
+        return Boolean(validCourierAddr(__currentReviewAddress) && hasBoxNowLocker() && !__reviewSubmitting);
       }
 
       function updateReviewConfirmState(){
@@ -2407,6 +3595,8 @@ async function chatFetch(path, options = {}) {
         b.disabled = disabled;
         b.classList.toggle("opacity-60", disabled);
         b.classList.toggle("pointer-events-none", disabled);
+        b.removeAttribute("aria-describedby");
+        b.title = "";
         if (__reviewSubmitting) {
           b.textContent = "Processing…";
         } else {
@@ -2524,14 +3714,24 @@ async function chatFetch(path, options = {}) {
           lat: boxNowMessageValue(data, ["boxnowLockerLat", "lat", "latitude"]),
           lng: boxNowMessageValue(data, ["boxnowLockerLng", "lng", "lon", "longitude"])
         };
-        Cookie.set("grubz_boxnow_locker", JSON.stringify(__boxNowLocker));
-        const err = document.getElementById("boxnowErr");
+	        Cookie.set("grubz_boxnow_locker", JSON.stringify(__boxNowLocker));
+	        const profileAddress = normalizeAddress(__currentReviewAddress || readAddrForm());
+	        if (validCourierAddr(profileAddress)) __currentReviewAddress = profileAddress;
+	        if ((auth().currentUser || __user) && validCourierAddr(profileAddress)) {
+	          authedFetch("/saveShipping", {
+	            method: "POST",
+	            body: JSON.stringify({ shipping: { ...profileAddress, boxNow: __boxNowLocker } })
+	          }).catch(err => console.warn("BOX NOW locker profile save failed", err));
+	        }
+	        trackEvent("boxnow_locker_selected", { lockerId, postalCode: __boxNowLocker.postalCode || "" });
+	        const err = document.getElementById("boxnowErr");
         if (err) err.textContent = "";
         invalidateBoxNowFee();
         closeBoxNowWidget();
         const selected = document.getElementById("boxnowSelected");
         if (selected) selected.textContent = boxNowLockerLines(__boxNowLocker).join("\n");
-        renderBoxNowSelection();
+	        renderBoxNowSelection();
+	        updateReviewConfirmState();
         renderBoxNowFee();
         refreshBoxNowFee(__currentReviewAddress);
       }
@@ -2546,10 +3746,14 @@ async function chatFetch(path, options = {}) {
         if (boxNowMessageValue(data, ["boxnowLockerId", "lockerId", "locationId", "id"])) acceptBoxNowLocker(data);
       });
 
-      function openReview(addr){
-        __currentReviewAddress = addr || __currentReviewAddress;
-        renderReview(__currentReviewAddress);
+	      function openReview(addr){
+	        const nextAddress = normalizeAddress(addr || __currentReviewAddress || readAddrForm());
+	        if (validCourierAddr(nextAddress)) __currentReviewAddress = nextAddress;
+	        __reviewSubmitting = false;
+	        trackEvent("review_open", { cartItems: cartItemCount(), cartValue: cartTotals().grand, hasLocker: hasBoxNowLocker() });
+	        renderReview(__currentReviewAddress);
         openDialog('reviewModal', 'reviewPanel');
+        scrollDialogToTop('reviewPanel');
         const backdrop = document.getElementById("reviewBackdrop"), panel = document.getElementById("reviewPanel");
         requestAnimationFrame(()=>{
           backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
@@ -2570,6 +3774,7 @@ async function chatFetch(path, options = {}) {
 
       function reviewConfirmLabel(){
         const d = i18n[lang()]||i18n.en;
+        if (__deliveryMethod === "courier_quote") return d.reviewConfirmQuote || "Request shipping quote";
         return document.getElementById("boxnowCod")?.checked === true
           ? (d.reviewConfirmOrder || "Confirm order")
           : d.reviewConfirmPay;
@@ -2584,9 +3789,18 @@ async function chatFetch(path, options = {}) {
         const lines = [
           a.name || "",
           a.phone ? `📞 ${a.phone}` : "",
-          [a.postal, a.country || "Greece"].filter(Boolean).join(", ")
+          [a.line1, a.line2].filter(Boolean).join(", "),
+          [a.postal, a.city, a.region].filter(Boolean).join(", "),
+          a.country || "Greece"
         ].filter(Boolean);
         document.getElementById("reviewAddr").textContent = lines.join("\n");
+
+        const isCourierQuote = __deliveryMethod === "courier_quote";
+        document.getElementById("deliveryBoxNow").checked = !isCourierQuote;
+        document.getElementById("deliveryCourierQuote").checked = isCourierQuote;
+        document.getElementById("boxnowReviewSection").classList.toggle("hidden", isCourierQuote);
+        document.getElementById("courierQuoteSection").classList.toggle("hidden", !isCourierQuote);
+        document.getElementById("secureCheckoutSection").classList.toggle("hidden", isCourierQuote);
 
         const dict = i18n[lang()] || i18n.en;
         const ul = document.getElementById("reviewItems"); ul.innerHTML = "";
@@ -2598,6 +3812,7 @@ async function chatFetch(path, options = {}) {
             <div class="min-w-0">
               <div class="font-medium">${escapeHtml(productName(id, dict))}</div>
               <div class="text-xs text-zinc-500">${dict.cartQty}: <span class="font-semibold">${qty}</span></div>
+              ${p.allowBackorder && stockIsKnown(id) && qty > getStock(id) ? `<div class="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">${escapeHtml(dict.availableOnBackorder || "Available on backorder")}</div>` : ""}
             </div>
             <div class="font-semibold">${nf(gross(p.price) * qty)}</div>
           `;
@@ -2610,7 +3825,7 @@ async function chatFetch(path, options = {}) {
         renderBoxNowSelection();
         renderBoxNowFee();
         updateReviewConfirmState();
-        refreshBoxNowFee(__currentReviewAddress);
+        if (!isCourierQuote) refreshBoxNowFee(__currentReviewAddress);
 
         const row = document.getElementById("reviewDiscountRow");
         const val = document.getElementById("reviewDiscountValue");
@@ -2628,16 +3843,45 @@ async function chatFetch(path, options = {}) {
         document.getElementById("reviewClose").addEventListener("click", closeReview);
         document.getElementById("reviewCancel").addEventListener("click", closeReview);
         document.getElementById("reviewEdit").addEventListener("click", () => {
-          __reopenReviewAfterAddr = true;
-          closeReview();
-          openAddr(true);
+          openAddressFromReview(true);
+        });
+        document.querySelectorAll('input[name="deliveryMethod"]').forEach(input => {
+          input.addEventListener("change", () => {
+            __deliveryMethod = input.value === "courier_quote" ? "courier_quote" : "boxnow";
+            renderReview(__currentReviewAddress);
+          });
         });
         document.getElementById("boxnowChoose").addEventListener("click", openBoxNowWidget);
         document.getElementById("boxnowCod").addEventListener("change", refreshReviewConfirmLabel);
         document.getElementById("boxnowBackdrop").addEventListener("click", closeBoxNowWidget);
         document.getElementById("boxnowClose").addEventListener("click", closeBoxNowWidget);
-        document.getElementById("reviewConfirm").addEventListener("click", async () => {
-          if (!__currentReviewAddress) { openAddr(true); return; }
+	        document.getElementById("reviewConfirm").addEventListener("click", async () => {
+	          trackEvent("checkout_submit", { cartItems: cartItemCount(), cartValue: cartTotals().grand, deliveryMethod: __deliveryMethod, cod: __deliveryMethod === "boxnow" && document.getElementById("boxnowCod")?.checked === true });
+          if (__deliveryMethod === "courier_quote") {
+            if (!validCourierAddr(__currentReviewAddress)) {
+              const msg = (i18n[lang()] || i18n.en).courierAddressRequired || "Please enter your street address and city for courier delivery.";
+              announce(msg);
+              openCourierAddressFromReview(true);
+              return;
+            }
+            setReviewLoading(true);
+            try {
+              await createCheckout({
+                ...__currentReviewAddress,
+                deliveryMethod: "courier_quote",
+                cashOnDelivery: false
+              });
+            } finally {
+              setReviewLoading(false);
+            }
+            return;
+          }
+          if (!validCourierAddr(__currentReviewAddress)) {
+            const msg = (i18n[lang()] || i18n.en).fullAddressRequired || "Please enter your full address for the receipt or invoice.";
+            announce(msg);
+            openAddressFromReview(true, true);
+            return;
+          }
           if (!hasBoxNowLocker()) {
             const msg = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
             document.getElementById("boxnowErr").textContent = msg;
@@ -2645,18 +3889,16 @@ async function chatFetch(path, options = {}) {
             openBoxNowWidget();
             return;
           }
-          if (!__boxNowFee || __boxNowFeePromise) {
-            const msg = (i18n[lang()] || i18n.en).boxnowFeeRequired || "Calculate BOX NOW delivery before confirming.";
-            document.getElementById("boxnowErr").textContent = msg;
-            announce(msg);
-            refreshBoxNowFee(__currentReviewAddress);
-            updateReviewConfirmState();
-            return;
-          }
           setReviewLoading(true);
           try {
-            await refreshBoxNowFee(__currentReviewAddress);
-            await createCheckout({
+            const boxNowFee = await refreshBoxNowFee(__currentReviewAddress);
+            if (!boxNowFee) {
+              const msg = (i18n[lang()] || i18n.en).boxnowFeeRequired || "Calculate BOX NOW delivery before confirming.";
+              document.getElementById("boxnowErr").textContent = msg;
+              announce(msg);
+              return;
+            }
+	            await createCheckout({
               ...__currentReviewAddress,
               deliveryMethod: "boxnow",
               boxNow: __boxNowLocker,
@@ -2681,6 +3923,15 @@ async function chatFetch(path, options = {}) {
         });
       }
 
+      // Browsers may restore checkout from the back-forward cache after the
+      // customer returns from Stripe. Reset transient submission state because
+      // the navigation can suspend the page before the normal finally blocks run.
+      window.addEventListener("pageshow", () => {
+        __reviewSubmitting = false;
+        setCheckoutLoading(false);
+        updateReviewConfirmState();
+      });
+
       // ===== Coupon state & helpers (frontend preview) =====
       function currentSubtotal(){
         let net = 0;
@@ -2697,12 +3948,13 @@ async function chatFetch(path, options = {}) {
       }
 
       // FINAL: apply coupon -> store the normalized code and preview discount
-      async function applyCouponFromInput(){
+	      async function applyCouponFromInput(){
         const codeEl = document.getElementById("couponCode");
         const msgEl  = document.getElementById("couponMsg");
         const dict = i18n[lang()] || i18n.en;
-        const code = (codeEl?.value || "").trim();
-        if (!code) return;
+	        const code = (codeEl?.value || "").trim();
+	        if (!code) return;
+	        trackEvent("coupon_apply", { code });
 
         try{
           const items = Array.from(cart.entries()).map(([id, qty]) => ({ id, qty }));
@@ -2712,7 +3964,7 @@ async function chatFetch(path, options = {}) {
           });
           const data = await resp.json().catch(()=> ({}));
 
-          if (resp.ok && data && data.ok){
+	          if (resp.ok && data && data.ok){
             __coupon = {
               code: data.code || code,
               discount: Number(data.discount || 0),
@@ -2721,9 +3973,10 @@ async function chatFetch(path, options = {}) {
             msgEl.className = "text-sm text-green-700";
             msgEl.textContent = dict.couponApplied || "Coupon applied";
             announce(msgEl.textContent);
-            document.getElementById("removeCoupon")?.classList.remove("hidden");
-            document.getElementById("applyCoupon")?.classList.add("hidden");
-          } else {
+	            document.getElementById("removeCoupon")?.classList.remove("hidden");
+	            document.getElementById("applyCoupon")?.classList.add("hidden");
+	            trackEvent("coupon_applied", { code: data.code || code, discountCents: Number(data.discountCents || 0) });
+	          } else {
             __coupon = null;
             msgEl.className = "text-sm text-red-600";
             msgEl.textContent =
@@ -2731,9 +3984,10 @@ async function chatFetch(path, options = {}) {
               ? (dict.couponConditions || "Coupon conditions not met")
               : (dict.couponInvalid || "Invalid coupon");
             announce(msgEl.textContent);
-            document.getElementById("removeCoupon")?.classList.add("hidden");
-            document.getElementById("applyCoupon")?.classList.remove("hidden");
-          }
+	            document.getElementById("removeCoupon")?.classList.add("hidden");
+	            document.getElementById("applyCoupon")?.classList.remove("hidden");
+	            trackEvent("coupon_failed", { code, reason: data?.error || "invalid" });
+	          }
         } catch(e){
           __coupon = null;
           if (msgEl){
@@ -2741,9 +3995,10 @@ async function chatFetch(path, options = {}) {
             msgEl.textContent = (i18n[lang()]||i18n.en).couponInvalid || "Invalid coupon";
             announce(msgEl.textContent);
           }
-          document.getElementById("removeCoupon")?.classList.add("hidden");
-          document.getElementById("applyCoupon")?.classList.remove("hidden");
-        }
+	          document.getElementById("removeCoupon")?.classList.add("hidden");
+	          document.getElementById("applyCoupon")?.classList.remove("hidden");
+	          trackEvent("coupon_failed", { code, reason: e.message || "error" });
+	        }
 
         renderCart();
         if (typeof renderReview === "function") renderReview(__currentReviewAddress);
@@ -2762,8 +4017,117 @@ async function chatFetch(path, options = {}) {
       document.getElementById("couponCode")?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyCouponFromInput(); });
       document.getElementById("removeCoupon")?.addEventListener("click", removeCoupon);
 
+      function closeFirstOrderOffer(markSeen = true){
+        if (markSeen) localStorage.setItem(FIRST_ORDER_OFFER_SEEN_KEY, "1");
+        closeDialog("firstOrderOfferModal", "firstOrderOfferPanel");
+      }
+
+      function shouldShowFirstOrderOffer(){
+        return __publicSettingsLoaded &&
+          __publicMarketingSettings?.firstOrderOffer?.enabled !== false &&
+          Boolean(firstOrderOfferCouponCode()) &&
+          !location.hash &&
+          !localStorage.getItem(FIRST_ORDER_OFFER_SEEN_KEY) &&
+          !localStorage.getItem(MARKETING_EMAIL_KEY);
+      }
+
+      function maybeOpenFirstOrderOffer(){
+        if (!shouldShowFirstOrderOffer()) return;
+        setTimeout(() => {
+          if (!shouldShowFirstOrderOffer()) return;
+          const anyModalOpen = ["cartModal", "authModal", "addrModal", "reviewModal", "boxnowModal", "productModal"]
+            .some(id => !document.getElementById(id)?.classList.contains("hidden"));
+          if (anyModalOpen) return;
+          openDialog("firstOrderOfferModal", "firstOrderOfferPanel");
+          trackEvent("first_order_offer_popup_view", {});
+        }, 1400);
+      }
+
+      document.getElementById("firstOrderOfferForm")?.addEventListener("submit", async event => {
+        event.preventDefault();
+        const emailEl = document.getElementById("offerEmail");
+        const msgEl = document.getElementById("offerMsg");
+        const button = document.getElementById("offerSubmit");
+        const dict = i18n[lang()] || i18n.en;
+        const email = String(emailEl?.value || "").trim().toLowerCase();
+        if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+          if (msgEl) {
+            msgEl.className = "text-sm text-red-600";
+            msgEl.textContent = dict.offerError || "Could not save the offer. Please check your email and try again.";
+          }
+          return;
+        }
+        try {
+          const couponCode = firstOrderOfferCouponCode();
+          if (!couponCode) throw new Error("First order coupon is not configured");
+          if (button) button.disabled = true;
+          await marketingEvent("first_order_offer", {
+            email,
+            source: "first_order_offer",
+            couponCode,
+          });
+          let newsletterNote = "";
+          if (document.getElementById("offerNewsletterConsent")?.checked) {
+            try {
+              const newsletterResponse = await fetch(`${API_BASE}/newsletter`, {
+                method:"POST",
+                headers:{ "Content-Type":"application/json" },
+                body:JSON.stringify({
+                  action:"subscribe",
+                  email,
+                  language:lang(),
+                  source:"first_order_offer",
+                  consentText:dict.offerNewsletterConsent || "",
+                }),
+              });
+              const newsletterData = await newsletterResponse.json().catch(() => ({}));
+              if (!newsletterResponse.ok || newsletterData.ok !== true || newsletterData.status !== "subscribed") {
+                throw new Error(newsletterData.error || newsletterData.message || dict.newsletterError);
+              }
+              newsletterNote = dict.offerNewsletterSuccess || "";
+            } catch (newsletterError) {
+              newsletterNote = ` ${dict.newsletterError || "Newsletter subscription failed. Please try again."}`;
+            }
+          }
+          localStorage.setItem(MARKETING_EMAIL_KEY, email);
+          localStorage.setItem(FIRST_ORDER_OFFER_SEEN_KEY, "1");
+          const couponInput = document.getElementById("couponCode");
+          if (couponInput) couponInput.value = couponCode;
+          if (msgEl) {
+            msgEl.className = "text-sm text-green-700";
+            msgEl.textContent = `${(dict.offerSuccess || "Coupon {coupon} is ready in your cart.").replace("{coupon}", couponCode)}${newsletterNote}`;
+          }
+          trackEvent("first_order_offer_capture", { hasCart: cartItemCount() > 0 });
+          if (cartItemCount() > 0) await applyCouponFromInput();
+          scheduleAbandonedCartCapture("first_order_offer");
+        } catch (err) {
+          if (msgEl) {
+            msgEl.className = "text-sm text-red-600";
+            msgEl.textContent = dict.offerError || "Could not save the offer. Please check your email and try again.";
+          }
+        } finally {
+          if (button) button.disabled = false;
+        }
+      });
+      if (document.getElementById("offerEmail") && localStorage.getItem(MARKETING_EMAIL_KEY)) {
+        document.getElementById("offerEmail").value = localStorage.getItem(MARKETING_EMAIL_KEY) || "";
+      }
+      document.getElementById("offerClose")?.addEventListener("click", () => closeFirstOrderOffer(true));
+      document.getElementById("offerLater")?.addEventListener("click", () => closeFirstOrderOffer(true));
+      document.getElementById("firstOrderOfferBackdrop")?.addEventListener("click", () => closeFirstOrderOffer(true));
+      maybeOpenFirstOrderOffer();
+
       // FINAL: create checkout -> pass coupon code; backend validates and applies it
-      async function createCheckout(shipping) {
+	      async function createCheckout(shipping) {
+	        trackEvent("checkout_start", { cartItems: cartItemCount(), cartValue: cartTotals().grand, coupon: __coupon?.code || "", cod: shipping?.cashOnDelivery === true });
+	        metaTrack("InitiateCheckout", {
+	          content_ids: Array.from(cart.keys()),
+	          contents: Array.from(cart.entries()).map(([id, quantity]) => ({ id, quantity })),
+	          content_type: "product",
+	          num_items: cartItemCount(),
+	          value: cartTotals().grand,
+	          currency: "EUR",
+	        });
         const CLIENT_TO_SERVER_ID = {
           "grubz-100g":"grubz-100g",
           "grubz-300g":"grubz-300g",
@@ -2784,7 +4148,18 @@ async function chatFetch(path, options = {}) {
           return;
         }
 
-        if (!hasBoxNowLocker(shipping?.boxNow)) {
+        const recoveryEmail = marketingEmail();
+        if (recoveryEmail) {
+          marketingEvent("checkout_started", {
+            email: recoveryEmail,
+            source: "checkout",
+            items: cartSnapshot(),
+            cartValueCents: Math.round(cartTotals().grand * 100),
+            couponCode: __coupon?.code || "",
+          }).catch(() => {});
+        }
+
+        if (shipping?.deliveryMethod !== "courier_quote" && !hasBoxNowLocker(shipping?.boxNow)) {
           const msg = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
           document.getElementById("boxnowErr").textContent = msg;
           announce(msg);
@@ -2815,13 +4190,15 @@ async function chatFetch(path, options = {}) {
             const msg = data.error || data.message || `Checkout failed (${resp.status})`;
             throw new Error(msg);
           }
-          if (!data || !data.url) throw new Error("No checkout URL returned.");
-          location.href = data.url;
-        } catch (e) {
+	          if (!data || !data.url) throw new Error("No checkout URL returned.");
+	          trackEvent("checkout_success", { cartItems: cartItemCount(), cartValue: cartTotals().grand, cod: shipping?.cashOnDelivery === true });
+	          location.href = data.url;
+	        } catch (e) {
           console.error("Checkout error:", e);
           const msg = e.message || "Checkout failed.";
-          announce(msg);
-          alert(msg);
+	          announce(msg);
+	          trackEvent("checkout_failed", { reason: msg });
+	          alert(msg);
         } finally {
           setCheckoutLoading(false);
         }
@@ -2830,15 +4207,72 @@ async function chatFetch(path, options = {}) {
       async function guardedCheckout(){
         const u = await ensureSignedIn();
         if (!u) return;
-        const addr = await ensureAddress();
-        if (!addr) return;
-        openReview(addr);
+        const addr = await getSavedAddress();
+        if (!validCourierAddr(addr)) {
+          if (addr) fillAddrForm(addr);
+          __currentReviewAddress = addr || {};
+          __reopenReviewAfterAddr = true;
+          openAddr(true, true);
+          return;
+        }
+        openReview(addr || {});
       }
 
-      document.getElementById("checkout").addEventListener("click", guardedCheckout);
-      document.getElementById("cartCheckout").addEventListener("click", guardedCheckout);
+	      document.getElementById("checkout").addEventListener("click", guardedCheckout);
+	      document.getElementById("cartCheckout").addEventListener("click", guardedCheckout);
 
-      (function heroCrossfade(){
+	      function trackSection(section){
+	        if (!section || section === __lastSectionView) return;
+	        flushAnalyticsEngagement("section_change");
+	        __lastSectionView = section;
+	        __analyticsActiveSection = section;
+	        trackEvent("section_view", { section });
+	      }
+	      function scrollToPageHash(hash = location.hash){
+	        const id = decodeURIComponent(String(hash || "").replace(/^#/, ""));
+	        if (!id) return false;
+	        const target = document.getElementById(id);
+	        if (!target) return false;
+	        target.scrollIntoView({ block:"start", behavior:"auto" });
+	        return true;
+	      }
+	      document.addEventListener("click", event => {
+	        const link = event.target.closest('a[href^="#"]');
+	        if (!link) return;
+	        const hash = link.getAttribute("href") || "";
+	        if (!hash || hash === "#") return;
+	        event.preventDefault();
+	        if (location.hash !== hash) history.pushState(null, "", hash);
+	        scrollToPageHash(hash);
+	        trackEvent("page_view", { hash, title:document.title });
+	      });
+	      window.addEventListener("hashchange", () => {
+	        flushAnalyticsEngagement("hash_change");
+	        scrollToPageHash();
+	        trackEvent("page_view", { hash: location.hash || "", title: document.title });
+	      });
+	      window.addEventListener("load", () => {
+	        if (!location.hash) return;
+	        requestAnimationFrame(() => scrollToPageHash());
+	        setTimeout(() => scrollToPageHash(), 250);
+	      });
+	      document.addEventListener("visibilitychange", () => {
+	        if (document.visibilityState === "hidden") flushAnalyticsEngagement("hidden");
+	      });
+	      window.addEventListener("pagehide", () => flushAnalyticsEngagement("pagehide"));
+	      window.setInterval(() => {
+	        if (document.visibilityState === "visible") flushAnalyticsEngagement("heartbeat");
+	      }, 30000);
+	      if ("IntersectionObserver" in window) {
+	        const sectionObserver = new IntersectionObserver(entries => {
+	          entries.forEach(entry => {
+	            if (entry.isIntersecting) trackSection(entry.target.id || entry.target.dataset.analyticsSection || "home");
+	          });
+	        }, { threshold: 0.45 });
+	        document.querySelectorAll("section[id], footer[id]").forEach(section => sectionObserver.observe(section));
+	      }
+
+	      (function heroCrossfade(){
         const root = document.getElementById('heroSlider');
         if (!root) return;
 
@@ -2906,6 +4340,111 @@ async function chatFetch(path, options = {}) {
 
         new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: .2 }).observe(root);
         start();
+      })();
+
+      (function initNewsletter(){
+        const form = document.getElementById("newsletterForm");
+        const emailInput = document.getElementById("newsletterEmail");
+        const consentInput = document.getElementById("newsletterConsent");
+        const submitButton = document.getElementById("newsletterSubmit");
+        const message = document.getElementById("newsletterMsg");
+        const statusModal = document.getElementById("newsletterStatusModal");
+        const statusTitle = document.getElementById("newsletterStatusTitle");
+        const statusText = document.getElementById("newsletterStatusText");
+        const statusClose = document.getElementById("newsletterStatusClose");
+        const statusBackdrop = document.getElementById("newsletterStatusBackdrop");
+        if (!form || !emailInput || !consentInput || !submitButton || !message) return;
+        const text = key => (i18n[lang()] || i18n.en)[key] || key;
+        const status = new URLSearchParams(location.search).get("newsletter");
+        const closeStatusModal = () => {
+          statusModal?.classList.add("hidden");
+          statusModal?.classList.remove("flex");
+          const url = new URL(location.href);
+          url.searchParams.delete("newsletter");
+          url.hash = "";
+          history.replaceState({}, "", `${url.pathname}${url.search}`);
+        };
+        if (statusModal && statusTitle && statusText && statusClose && ["unsubscribed", "invalid"].includes(status)) {
+          statusTitle.textContent = text(status === "unsubscribed" ? "newsletterUnsubscribedTitle" : "newsletterInvalidTitle");
+          statusText.textContent = text(status === "unsubscribed" ? "newsletterUnsubscribed" : "newsletterInvalid");
+          statusClose.textContent = text("newsletterClose");
+          statusModal.classList.remove("hidden");
+          statusModal.classList.add("flex");
+          setTimeout(() => statusClose.focus(), 0);
+          statusClose.addEventListener("click", closeStatusModal);
+          statusBackdrop?.addEventListener("click", closeStatusModal);
+          document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !statusModal.classList.contains("hidden")) closeStatusModal();
+          });
+        }
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          if (!form.reportValidity()) return;
+          submitButton.disabled = true;
+          message.textContent = text("newsletterSending");
+          try {
+            const consentText = text("newsletterConsent");
+            const response = await fetch(`${API_BASE}/newsletter`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "subscribe",
+                email: emailInput.value.trim(),
+                language: lang(),
+                source: "storefront_footer",
+                consentText,
+              }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.ok !== true || data.status !== "subscribed") {
+              throw new Error(data.error || data.message || text("newsletterError"));
+            }
+            message.textContent = text("newsletterSuccess");
+            form.reset();
+          } catch (error) {
+            message.textContent = error.message || text("newsletterError");
+          } finally {
+            submitButton.disabled = false;
+          }
+        });
+      })();
+
+      (function initContactForm(){
+        const form = document.getElementById("contactForm");
+        const submit = document.getElementById("contactSubmit");
+        const message = document.getElementById("contactMsg");
+        if (!form || !submit || !message) return;
+        const text = key => (i18n[lang()] || i18n.en)[key] || key;
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          if (!form.reportValidity()) return;
+          submit.disabled = true;
+          message.className = "mt-2 text-sm text-zinc-600";
+          message.textContent = text("contactSending");
+          try {
+            const response = await fetch(`${API_BASE}/contact`, {
+              method:"POST",
+              headers:{ "Content-Type":"application/json" },
+              body:JSON.stringify({
+                name:document.getElementById("contactName").value.trim(),
+                email:document.getElementById("contactEmail").value.trim(),
+                message:document.getElementById("contactMessage").value.trim(),
+                website:document.getElementById("contactWebsite").value,
+                language:lang(),
+              }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.ok !== true) throw new Error(data.error || data.message || text("contactError"));
+            form.reset();
+            message.className = "mt-2 text-sm text-green-700";
+            message.textContent = text("contactSuccess");
+          } catch (error) {
+            message.className = "mt-2 text-sm text-red-600";
+            message.textContent = error.message || text("contactError");
+          } finally {
+            submit.disabled = false;
+          }
+        });
       })();
     </script>
   </body>
