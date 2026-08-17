@@ -56,7 +56,7 @@ const BOXNOW_STAGE_TEST_DESTINATION_LOCATION_ID = "9";
 const BOXNOW_CONFIGURED_FEE_ENDPOINT = "";
 const BOXNOW_FALLBACK_FEE_CENTS = 0;
 const BOXNOW_PARCEL_SIZES = [
-  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60, capacityKg: 2 },
+  { code: "1", label: "Small", amount: 300, heightCm: 8, widthCm: 45, lengthCm: 60, capacityKg: 0 },
   { code: "2", label: "Medium", amount: 500, heightCm: 17, widthCm: 45, lengthCm: 60, capacityKg: 10 },
   { code: "3", label: "Large", amount: 1000, heightCm: 36, widthCm: 45, lengthCm: 60, capacityKg: 20 },
 ];
@@ -5034,17 +5034,22 @@ function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP, compartmen
   const parcel = calculateBoxNowParcel(cartItems, productsMap);
   const parcelSizes = Array.isArray(parcel.parcels) && parcel.parcels.length ? parcel.parcels : [parcel];
   const requestedCompartmentSize = Number(compartmentSizeOverride);
-  const hasCompartmentOverride = [1, 2, 3].includes(requestedCompartmentSize);
+  const hasCompartmentOverride = [2, 3].includes(requestedCompartmentSize);
   const subtotal = Math.max(0, Number(order.amountSubtotal || orderItemsSubtotal(order)));
   const valuePerParcel = parcelSizes.length ? subtotal / parcelSizes.length / 100 : 0;
   const weightPerParcel = parcelSizes.length ? Math.max(1, Math.round(Number(parcel.weightGrams || order.boxnowFee?.weightGrams || 0) / parcelSizes.length)) : 0;
-  return parcelSizes.map((size, index) => ({
-    id: `${publicOrderId(order)}-${index + 1}`,
-    name: `${publicOrderId(order)} parcel ${index + 1}`,
-    value: valuePerParcel.toFixed(2),
-    weight: weightPerParcel,
-    compartmentSize: hasCompartmentOverride ? requestedCompartmentSize : Number(size.code || parcel.code || 2),
-  }));
+  return parcelSizes.map((size, index) => {
+    const calculatedCompartmentSize = Number(size.code || parcel.code || 2);
+    const compartmentSize = hasCompartmentOverride ? requestedCompartmentSize : calculatedCompartmentSize;
+    return {
+      id: `${publicOrderId(order)}-${index + 1}`,
+      name: `${publicOrderId(order)} parcel ${index + 1}`,
+      value: valuePerParcel.toFixed(2),
+      weight: weightPerParcel,
+      // GRUBZ does not use Small compartments, even if stale data calculates size 1.
+      compartmentSize: compartmentSize === 3 ? 3 : 2,
+    };
+  });
 }
 
 function boxNowDestinationEmailFromOrder(order = {}) {
@@ -6501,7 +6506,7 @@ exports.adminOrders = onRequest(
         }
         if (Object.prototype.hasOwnProperty.call(body, "boxNowCompartmentSize")) {
           const compartmentSize = Number(body.boxNowCompartmentSize || 0);
-          allowed.boxNowCompartmentSize = [1, 2, 3].includes(compartmentSize) ? compartmentSize : null;
+          allowed.boxNowCompartmentSize = [2, 3].includes(compartmentSize) ? compartmentSize : null;
         }
         if (Object.prototype.hasOwnProperty.call(body, "boxNowCodAmountCents")) {
           allowed.boxNowCodAmountCents = Math.max(0, Math.round(Number(body.boxNowCodAmountCents || 0)));
@@ -8186,7 +8191,7 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
       shipment = await createBoxNowDeliveryForOrder(testOrder.id, {
         environment: "stage",
         paymentMode: "prepaid",
-        compartmentSize: 1,
+        compartmentSize: 2,
         amountToBeCollectedCents: 0,
         req,
       }, adminUser);

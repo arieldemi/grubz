@@ -1,6 +1,10 @@
 {
   "scripts": {
-    "build:css": "tailwindcss -i ./src/tailwind.css -o ./public/styles/tailwind.css --minify"
+    "build:css": "tailwindcss -i ./src/tailwind.css -o ./public/styles/tailwind.css --minify",
+    "dev": "firebase emulators:start --only hosting,functions,storage",
+    "serve": "npm run dev",
+    "serve:hosting": "firebase emulators:start --only hosting",
+    "serve:static": "python3 -m http.server 8000 --bind 127.0.0.1 --directory public"
   },
   "dependencies": {
     "firebase": "^12.2.1"
