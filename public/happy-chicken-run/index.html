@@ -54,6 +54,10 @@
     .sound:focus-visible,.back-link:focus-visible{outline:3px solid #fff;outline-offset:3px}
     .play{margin-top:1rem;min-width:155px;font-size:1rem}
     .control-hint{margin:.85rem 0 0;color:#6b5649;font-size:.72rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+    .best-summary{margin:.55rem 0 0;color:#5c493d;font-size:.78rem;font-weight:850}
+    .reset-score{align-self:center;margin:.3rem auto 0;padding:.3rem .5rem;border:0;background:transparent;color:#8b4b2a;font:inherit;font-size:.72rem;font-weight:850;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+    .reset-score:hover{color:var(--orange)}
+    .reset-score:focus-visible{outline:3px solid #fff;outline-offset:2px;border-radius:.3rem}
     .stats{margin:.75rem auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;max-width:370px}
     .stat{padding:.7rem .4rem;border-radius:.8rem;background:#fff;border:1px solid #ebdac9;color:#675044;font-size:.68rem;font-weight:850;text-transform:uppercase}
     .stat strong{display:block;margin-top:.18rem;color:var(--brown);font-size:1.28rem}
@@ -99,6 +103,8 @@
               <p class="tagline" data-en="Jump. Grab the treats. Keep your chicken happy." data-el="Πήδα. Μάζεψε τις λιχουδιές. Κράτα την κότα σου χαρούμενη.">Jump. Grab the treats. Keep your chicken happy.</p>
               <button class="primary play" id="playButton" type="button"><span data-en="Play" data-el="Παίξε">Play</span> <span aria-hidden="true">▶</span></button>
               <p class="control-hint" id="controlHint">Space / ↑ jump · Hold ↓ to duck</p>
+              <p class="best-summary"><span data-en="High score" data-el="Υψηλότερο σκορ">High score</span>: <strong id="startBest">0</strong></p>
+              <button class="reset-score" type="button" data-reset-best data-en="Reset high score" data-el="Μηδενισμός υψηλότερου σκορ">Reset high score</button>
             </div>
           </div>
 
@@ -123,6 +129,7 @@
                 <button class="primary" id="replayButton" type="button" data-en="Play again" data-el="Παίξε ξανά">Play again</button>
                 <a class="secondary" id="shopButton" href="/#products" data-en="Shop Happy Chicken" data-el="Αγόρασε Happy Chicken">Shop Happy Chicken</a>
               </div>
+              <button class="reset-score" type="button" data-reset-best data-en="Reset high score" data-el="Μηδενισμός υψηλότερου σκορ">Reset high score</button>
               <p class="sales-copy"><strong data-en="Your chicken wants the real thing." data-el="Η κότα σου θέλει το αληθινό.">Your chicken wants the real thing.</strong> <span data-en="Give your flock dried BSFL produced in Greece." data-el="Δώσε στο κοπάδι σου αποξηραμένες προνύμφες BSFL που παράγονται στην Ελλάδα.">Give your flock dried BSFL produced in Greece.</span></p>
             </div>
           </div>
@@ -162,6 +169,7 @@
     const hud = document.getElementById("hud");
     const scoreEl = document.getElementById("score");
     const bestEl = document.getElementById("best");
+    const startBestEl = document.getElementById("startBest");
     const startOverlay = document.getElementById("startOverlay");
     const pauseOverlay = document.getElementById("pauseOverlay");
     const gameOverOverlay = document.getElementById("gameOverOverlay");
@@ -206,6 +214,13 @@
     let muted = safeReadBoolean(CONFIG.muteStorageKey, false);
     let audioContext = null;
     let lastHudScore = -1;
+    let runNumber = 0;
+    let runAnalytics = null;
+    let pauseStartedAt = 0;
+    let pauseReason = "";
+    const timeMilestones = [10,25,50,100];
+    const scoreMilestones = [50,100,250,500,1000];
+    const treatMilestones = [1,5,10,25];
 
     const chickenFocusedSprite = new Image();
     chickenFocusedSprite.src = "./chicken-focused-v2.png";
@@ -230,7 +245,63 @@
     function safeReadNumber(key){ try { return Math.max(0, Number(localStorage.getItem(key)) || 0); } catch (_) { return 0; } }
     function safeReadBoolean(key,fallback){ try { const value=localStorage.getItem(key); return value===null?fallback:value==="true"; } catch (_) { return fallback; } }
     function safeWrite(key,value){ try { localStorage.setItem(key,String(value)); } catch (_) {} }
+    function safeRemove(key){ try { localStorage.removeItem(key); } catch (_) {} }
     function currentScore(){ return Math.floor(survivalScore + treatScore); }
+
+    function newRunAnalytics(){
+      runNumber+=1;
+      return {
+        id:`run_${Date.now()}_${runNumber}`,
+        number:runNumber,
+        startedAt:Date.now(),
+        jumps:0,ducks:0,pauses:0,pauseSeconds:0,obstaclesPassed:0,
+        obstacleTypes:{},controls:{},timeMilestones:new Set(),scoreMilestones:new Set(),treatMilestones:new Set()
+      };
+    }
+    function runProps(extra={}){
+      const analytics=runAnalytics;
+      return {
+        run_id:analytics?.id||"",run_number:analytics?.number||0,
+        score:currentScore(),treats_collected:treatsCollected,survival_time:Number(elapsed.toFixed(1)),
+        wall_time:Number((analytics?Math.max(0,Date.now()-analytics.startedAt)/1000:0).toFixed(1)),
+        speed:Math.round(speed),jumps:analytics?.jumps||0,ducks:analytics?.ducks||0,
+        pauses:analytics?.pauses||0,pause_seconds:Number((analytics?.pauseSeconds||0).toFixed(1)),
+        obstacles_passed:analytics?.obstaclesPassed||0,
+        obstacle_types:JSON.stringify(analytics?.obstacleTypes||{}),controls:JSON.stringify(analytics?.controls||{}),
+        ...extra
+      };
+    }
+    function recordControl(control){
+      if(!runAnalytics)return;
+      runAnalytics.controls[control]=(runAnalytics.controls[control]||0)+1;
+      if(Object.values(runAnalytics.controls).reduce((sum,count)=>sum+count,0)===1){
+        trackEvent("happy_chicken_run_first_control",runProps({control}));
+      }
+    }
+    function trackMilestones(){
+      if(!runAnalytics)return;
+      const score=currentScore();
+      for(const seconds of timeMilestones){
+        if(elapsed>=seconds&&!runAnalytics.timeMilestones.has(seconds)){
+          runAnalytics.timeMilestones.add(seconds);trackEvent("happy_chicken_run_time_milestone",runProps({milestone_seconds:seconds}));
+        }
+      }
+      for(const milestoneScore of scoreMilestones){
+        if(score>=milestoneScore&&!runAnalytics.scoreMilestones.has(milestoneScore)){
+          runAnalytics.scoreMilestones.add(milestoneScore);trackEvent("happy_chicken_run_score_milestone",runProps({milestone_score:milestoneScore}));
+        }
+      }
+    }
+
+    function resetHighScore(){
+      const message=language==="el"?"Να μηδενιστεί το υψηλότερο σκορ;":"Reset the high score?";
+      if(!window.confirm(message)){trackEvent("happy_chicken_run_high_score_reset_cancelled",{previous_best:bestScore,state});return;}
+      const previousBest=bestScore;
+      bestScore=0;safeRemove(CONFIG.bestStorageKey);
+      bestEl.textContent="0";startBestEl.textContent="0";
+      document.getElementById("finalBest").textContent="0";
+      trackEvent("happy_chicken_run_high_score_reset",{previous_best:previousBest,state});
+    }
 
     function readConsent(){
       try {
@@ -287,41 +358,52 @@
       updateHud(true);
     }
     function beginGame(isRestart=false){
-      unlockAudio();resetGame();state="playing";previousState="playing";
+      unlockAudio();resetGame();runAnalytics=newRunAnalytics();state="playing";previousState="playing";
       startOverlay.hidden=true;gameOverOverlay.hidden=true;pauseOverlay.hidden=true;hud.hidden=false;
       canvas.focus({preventScroll:true});lastTime=performance.now();
-      trackEvent(isRestart?"happy_chicken_run_restarted":"happy_chicken_run_started",{best:bestScore});
+      trackEvent(isRestart?"happy_chicken_run_restarted":"happy_chicken_run_started",runProps({best_before_run:bestScore,muted,viewport_width:innerWidth,viewport_height:innerHeight}));
     }
-    function pauseGame(){
-      if(state!=="playing")return;previousState=state;state="paused";chicken.ducking=false;pauseOverlay.hidden=false;resumeButton.focus({preventScroll:true});
+    function pauseGame(reason="manual"){
+      if(state!=="playing")return;previousState=state;state="paused";chicken.ducking=false;pauseStartedAt=performance.now();pauseReason=reason;
+      if(runAnalytics)runAnalytics.pauses+=1;
+      pauseOverlay.hidden=false;resumeButton.focus({preventScroll:true});trackEvent("happy_chicken_run_paused",runProps({reason}));
     }
     function resumeGame(){
-      if(state!=="paused")return;state="playing";pauseOverlay.hidden=true;canvas.focus({preventScroll:true});lastTime=performance.now();
+      if(state!=="paused")return;
+      const pausedFor=Math.max(0,(performance.now()-pauseStartedAt)/1000);if(runAnalytics)runAnalytics.pauseSeconds+=pausedFor;
+      state="playing";pauseOverlay.hidden=true;canvas.focus({preventScroll:true});lastTime=performance.now();
+      trackEvent("happy_chicken_run_resumed",runProps({reason:pauseReason,paused_for:Number(pausedFor.toFixed(1))}));pauseReason="";
     }
-    function endGame(){
+    function endGame(collision=null){
       if(state!=="playing")return;
       state="gameover";chicken.crashed=true;shake=10;playTone("crash");
       const score=currentScore();
-      if(score>bestScore){bestScore=score;safeWrite(CONFIG.bestStorageKey,bestScore);}
+      const previousBest=bestScore;const isPersonalBest=score>bestScore;
+      if(isPersonalBest){bestScore=score;safeWrite(CONFIG.bestStorageKey,bestScore);}
       document.getElementById("finalTreats").textContent=String(treatsCollected);
       document.getElementById("finalScore").textContent=String(score);
       document.getElementById("finalBest").textContent=String(bestScore);
       bestEl.textContent=String(bestScore);
-      trackEvent("happy_chicken_run_game_over",{score,treats_collected:treatsCollected,personal_best:bestScore,survival_time:Number(elapsed.toFixed(1))});
+      startBestEl.textContent=String(bestScore);
+      trackEvent("happy_chicken_run_game_over",runProps({personal_best:bestScore,previous_best:previousBest,is_personal_best:isPersonalBest,collision_type:collision?.type||"unknown"}));
+      if(isPersonalBest)trackEvent("happy_chicken_run_personal_best",runProps({previous_best:previousBest,new_best:bestScore}));
       window.setTimeout(()=>{gameOverOverlay.hidden=false;replayButton.focus({preventScroll:true});},320);
     }
-    function jump(){
+    function jump(control="unknown"){
       if(state!=="playing"||!chicken.grounded||chicken.ducking)return;
+      if(runAnalytics)runAnalytics.jumps+=1;recordControl(control);
       chicken.vy=CONFIG.jumpVelocity;chicken.grounded=false;playTone("jump");
       for(let i=0;i<5;i++)particles.push({type:"dust",x:chicken.x+20+Math.random()*30,y:CONFIG.floorY-4,vx:-50-Math.random()*70,vy:-20-Math.random()*45,life:.35+Math.random()*.2,maxLife:.55,size:5+Math.random()*7});
     }
-    function setDucking(value){
-      chicken.ducking=Boolean(value&&state==="playing"&&chicken.grounded);
+    function setDucking(value,control="keyboard"){
+      const next=Boolean(value&&state==="playing"&&chicken.grounded);
+      if(next&&!chicken.ducking){if(runAnalytics)runAnalytics.ducks+=1;recordControl(control);}
+      chicken.ducking=next;
     }
-    function primaryAction(){
+    function primaryAction(control="unknown"){
       unlockAudio();
       if(state==="start")beginGame(false);
-      else if(state==="playing")jump();
+      else if(state==="playing")jump(control);
       else if(state==="paused")resumeGame();
     }
 
@@ -336,7 +418,7 @@
       const scale=.88+Math.random()*.18;
       const height=base.height*scale;
       const y=base.duckObstacle?CONFIG.floorY-72-height*.5:CONFIG.floorY-height;
-      obstacles.push({...base,x:CONFIG.worldWidth+30,y,width:base.width*scale,height});
+      obstacles.push({...base,x:CONFIG.worldWidth+30,y,width:base.width*scale,height,passed:false});
       if(Math.random()<.68)spawnTreatPattern(CONFIG.worldWidth+70+Math.random()*75,base.duckObstacle?CONFIG.floorY-42:base.height>50?CONFIG.floorY-128:CONFIG.floorY-100,Math.random()<.34?3:2);
     }
     function spawnTreatPattern(startX,baseY,count){
@@ -373,6 +455,11 @@
       if(treatTimer<=0){if(!obstacles.some(o=>o.x>760))spawnFreeTreats();treatTimer=2.4+Math.random()*2.7;}
 
       for(const obstacle of obstacles)obstacle.x-=speed*dt;
+      for(const obstacle of obstacles){
+        if(!obstacle.passed&&obstacle.x+obstacle.width<chicken.x){
+          obstacle.passed=true;if(runAnalytics){runAnalytics.obstaclesPassed+=1;runAnalytics.obstacleTypes[obstacle.type]=(runAnalytics.obstacleTypes[obstacle.type]||0)+1;}
+        }
+      }
       for(const treat of treats){treat.x-=speed*dt;treat.phase+=dt*5.5;}
       while(obstacles.length&&obstacles[0].x+obstacles[0].width<-20)obstacles.shift();
       while(treats.length&&treats[0].x+treats[0].width<-20)treats.shift();
@@ -382,7 +469,7 @@
         :{x:chicken.x+18,y:chicken.y+13,width:chicken.width-35,height:chicken.height-18};
       for(const obstacle of obstacles){
         const box={x:obstacle.x+7,y:obstacle.y+7,width:obstacle.width-14,height:obstacle.height-7};
-        if(overlaps(playerBox,box)){endGame();break;}
+        if(overlaps(playerBox,box)){endGame(obstacle);break;}
       }
       for(const treat of treats){
         if(treat.collected)continue;
@@ -390,11 +477,18 @@
         if(overlaps(playerBox,box))collectTreat(treat);
       }
       survivalScore+=CONFIG.distancePointsPerSecond*dt;
-      updateParticles(dt);updateHud();
+      updateParticles(dt);updateHud();trackMilestones();
     }
     function overlaps(a,b){return a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;}
     function collectTreat(treat){
       treat.collected=true;treatScore+=CONFIG.treatPoints;treatsCollected++;chicken.collectFlash=1;playTone("collect");
+      if(runAnalytics){
+        for(const milestone of treatMilestones){
+          if(treatsCollected>=milestone&&!runAnalytics.treatMilestones.has(milestone)){
+            runAnalytics.treatMilestones.add(milestone);trackEvent("happy_chicken_run_treat_milestone",runProps({milestone_treats:milestone}));
+          }
+        }
+      }
       for(let i=0;i<9;i++){const angle=(Math.PI*2*i)/9;particles.push({type:"spark",x:treat.x+14,y:treat.y+9,vx:Math.cos(angle)*(65+Math.random()*45),vy:Math.sin(angle)*(65+Math.random()*45),life:.42,maxLife:.42,size:3+Math.random()*3});}
       treats.splice(treats.indexOf(treat),1);updateHud(true);
     }
@@ -537,28 +631,31 @@
       const dt=Math.min(.035,Math.max(0,(now-lastTime)/1000||0));lastTime=now;update(dt);render();requestAnimationFrame(frame);
     }
     playButton.addEventListener("click",()=>beginGame(false));
-    replayButton.addEventListener("click",()=>beginGame(true));
+    replayButton.addEventListener("click",()=>{trackEvent("happy_chicken_run_replay_clicked",runProps());beginGame(true);});
+    document.querySelectorAll("[data-reset-best]").forEach(button=>button.addEventListener("click",resetHighScore));
     resumeButton.addEventListener("click",resumeGame);
-    langEn.addEventListener("click",()=>applyLanguage("en"));
-    langEl.addEventListener("click",()=>applyLanguage("el"));
-    shopButton.addEventListener("click",()=>trackEvent("happy_chicken_run_shop_clicked",{score:currentScore(),treats_collected:treatsCollected}));
-    soundToggle.addEventListener("click",event=>{event.stopPropagation();muted=!muted;safeWrite(CONFIG.muteStorageKey,muted);if(!muted)unlockAudio();updateSoundButton();});
-    canvas.addEventListener("pointerdown",event=>{event.preventDefault();canvas.focus({preventScroll:true});primaryAction();});
+    langEn.addEventListener("click",()=>{const previous=language;applyLanguage("en");trackEvent("happy_chicken_run_language_changed",{from:previous,to:"en",state});});
+    langEl.addEventListener("click",()=>{const previous=language;applyLanguage("el");trackEvent("happy_chicken_run_language_changed",{from:previous,to:"el",state});});
+    shopButton.addEventListener("click",()=>trackEvent("happy_chicken_run_shop_clicked",runProps({placement:"game_over"})));
+    soundToggle.addEventListener("click",event=>{event.stopPropagation();muted=!muted;safeWrite(CONFIG.muteStorageKey,muted);if(!muted)unlockAudio();updateSoundButton();trackEvent("happy_chicken_run_sound_toggled",{muted,state,run_id:runAnalytics?.id||""});});
+    canvas.addEventListener("pointerdown",event=>{event.preventDefault();canvas.focus({preventScroll:true});primaryAction("pointer");});
     document.addEventListener("keydown",event=>{
       const gameFocused=document.activeElement===canvas||state==="playing";
       if(!gameFocused&&state!=="start")return;
       if(event.code==="ArrowDown"){
-        event.preventDefault();setDucking(true);return;
+        event.preventDefault();setDucking(true,"keyboard");return;
       }
       if((event.code!=="Space"&&event.code!=="ArrowUp")||event.repeat)return;
-      event.preventDefault();primaryAction();
+      event.preventDefault();primaryAction(event.code==="Space"?"keyboard_space":"keyboard_up");
     },{passive:false});
     document.addEventListener("keyup",event=>{if(event.code==="ArrowDown"){event.preventDefault();setDucking(false);}},{passive:false});
-    document.addEventListener("visibilitychange",()=>{if(document.hidden)pauseGame();});
-    window.addEventListener("blur",()=>{if(state==="playing")pauseGame();});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden)pauseGame("hidden");});
+    window.addEventListener("blur",()=>{if(state==="playing")pauseGame("blur");});
+    window.addEventListener("pagehide",()=>{if(state==="playing"||state==="paused")trackEvent("happy_chicken_run_abandoned",runProps({state,pause_reason:pauseReason}));},{once:true});
     window.addEventListener("resize",resizeCanvas,{passive:true});
     new ResizeObserver(resizeCanvas).observe(gameArea);
-    bestEl.textContent=String(bestScore);applyLanguage(language);resizeCanvas();lastTime=performance.now();requestAnimationFrame(frame);
+    bestEl.textContent=String(bestScore);startBestEl.textContent=String(bestScore);applyLanguage(language);resizeCanvas();lastTime=performance.now();requestAnimationFrame(frame);
+    trackEvent("happy_chicken_run_viewed",{best:bestScore,muted,viewport_width:innerWidth,viewport_height:innerHeight,device_pixel_ratio:Number((devicePixelRatio||1).toFixed(2)),referrer_host:(()=>{try{return new URL(document.referrer).hostname;}catch(_){return "";}})()});
   })();
   </script>
 </body>

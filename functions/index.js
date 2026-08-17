@@ -8717,6 +8717,78 @@ exports.adminAnalytics = onRequest(
         })
         .sort((a, b) => millisFromTimestamp(b.lastSeenAt) - millisFromTimestamp(a.lastSeenAt))
         .slice(0, 30);
+      const gameEvents = orderedEvents.filter(event => String(event.event || "").startsWith("happy_chicken_run_"));
+      const gameEventMap = new Map();
+      const gameCollisionMap = new Map();
+      const gameControlMap = new Map();
+      const gameDailyMap = new Map();
+      const gameSessions = new Set();
+      const gameRuns = new Set();
+      const completedRuns = [];
+      const gameFunnelKeys = [
+        "happy_chicken_run_viewed",
+        "happy_chicken_run_started",
+        "happy_chicken_run_game_over",
+        "happy_chicken_run_replay_clicked",
+        "happy_chicken_run_shop_clicked",
+      ];
+      const gameFunnel = Object.fromEntries(gameFunnelKeys.map(key => [key, { events: 0, sessions: new Set() }]));
+      for (const event of gameEvents) {
+        const props = event.props || {};
+        addAnalyticsBreakdown(gameEventMap, event.event);
+        gameSessions.add(event.sessionId);
+        if (props.run_id) gameRuns.add(props.run_id);
+        if (gameFunnel[event.event]) {
+          gameFunnel[event.event].events += 1;
+          gameFunnel[event.event].sessions.add(event.sessionId);
+        }
+        const day = event.day || analyticsDayKey(millisFromTimestamp(event.createdAt));
+        const dayRow = gameDailyMap.get(day) || { day, events: 0, sessions: new Set(), starts: 0, completions: 0 };
+        dayRow.events += 1;
+        dayRow.sessions.add(event.sessionId);
+        if (["happy_chicken_run_started", "happy_chicken_run_restarted"].includes(event.event)) dayRow.starts += 1;
+        if (event.event === "happy_chicken_run_game_over") {
+          dayRow.completions += 1;
+          completedRuns.push(props);
+          addAnalyticsBreakdown(gameCollisionMap, props.collision_type || "unknown");
+          try {
+            const controls = JSON.parse(props.controls || "{}");
+            for (const [control, count] of Object.entries(controls)) addAnalyticsBreakdown(gameControlMap, control, count);
+          } catch (_) {}
+        }
+        gameDailyMap.set(day, dayRow);
+      }
+      const gameTotal = key => gameEvents.filter(event => event.event === key).length;
+      const gameSum = key => completedRuns.reduce((sum, run) => sum + Number(run[key] || 0), 0);
+      const gameAverage = key => completedRuns.length ? Math.round((gameSum(key) / completedRuns.length) * 10) / 10 : 0;
+      const gameStarts = gameTotal("happy_chicken_run_started") + gameTotal("happy_chicken_run_restarted");
+      const gameAnalytics = {
+        eventCount: gameEvents.length,
+        sessionCount: gameSessions.size,
+        runCount: gameRuns.size || gameStarts,
+        starts: gameStarts,
+        completions: completedRuns.length,
+        completionRate: gameStarts ? Math.round((completedRuns.length / gameStarts) * 1000) / 10 : 0,
+        replays: gameTotal("happy_chicken_run_replay_clicked"),
+        abandoned: gameTotal("happy_chicken_run_abandoned"),
+        personalBests: gameTotal("happy_chicken_run_personal_best"),
+        shopClicks: gameTotal("happy_chicken_run_shop_clicked"),
+        avgScore: gameAverage("score"),
+        highScore: completedRuns.reduce((max, run) => Math.max(max, Number(run.score || 0)), 0),
+        avgSurvivalSeconds: gameAverage("survival_time"),
+        avgTreats: gameAverage("treats_collected"),
+        totalTreats: gameSum("treats_collected"),
+        avgJumps: gameAverage("jumps"),
+        avgDucks: gameAverage("ducks"),
+        avgObstaclesPassed: gameAverage("obstacles_passed"),
+        avgPauses: gameAverage("pauses"),
+        funnel: gameFunnelKeys.map(event => ({ event, events: gameFunnel[event].events, sessions: gameFunnel[event].sessions.size })),
+        events: analyticsMapRows(gameEventMap, 30),
+        collisions: analyticsMapRows(gameCollisionMap, 12),
+        controls: analyticsMapRows(gameControlMap, 12),
+        daily: [...gameDailyMap.values()].map(row => ({ day: row.day, events: row.events, sessions: row.sessions.size, starts: row.starts, completions: row.completions })).sort((a, b) => a.day.localeCompare(b.day)),
+        recent: [...gameEvents].reverse().slice(0, 20).map(event => ({ event: event.event, sessionId: String(event.sessionId || "").slice(0, 10), createdAt: event.createdAt || null, props: event.props || {} })),
+      };
       return res.json({
         ok: true,
         range,
@@ -8747,6 +8819,7 @@ exports.adminAnalytics = onRequest(
           createdAt: event.createdAt || null,
           props: event.props || {},
         })),
+        game: gameAnalytics,
       });
     } catch (err) {
       return adminError(res, err);

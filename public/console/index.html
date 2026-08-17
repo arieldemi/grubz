@@ -424,6 +424,44 @@
 	                <div id="uxAnalyticsSessions" class="mt-2 space-y-2 text-sm"></div>
 	              </div>
 	            </div>
+	            <div class="panel p-4 space-y-4">
+	              <div class="flex flex-wrap items-center justify-between gap-3">
+	                <div>
+	                  <h3 class="font-extrabold">Happy Chicken Run analytics</h3>
+	                  <p class="text-xs text-zinc-500">Game acquisition, run completion, engagement, controls, obstacles, and shop conversion.</p>
+	                </div>
+	                <span id="gameAnalyticsSummary" class="text-xs text-zinc-500"></span>
+	              </div>
+	              <div id="gameAnalyticsKpis" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"></div>
+	              <div class="grid gap-4 xl:grid-cols-3">
+	                <div>
+	                  <h4 class="font-bold text-sm">Game funnel</h4>
+	                  <div id="gameAnalyticsFunnel" class="mt-2 space-y-2 text-sm"></div>
+	                </div>
+	                <div>
+	                  <h4 class="font-bold text-sm">Collision obstacles</h4>
+	                  <div id="gameAnalyticsCollisions" class="mt-2 space-y-2 text-sm"></div>
+	                </div>
+	                <div>
+	                  <h4 class="font-bold text-sm">Control methods</h4>
+	                  <div id="gameAnalyticsControls" class="mt-2 space-y-2 text-sm"></div>
+	                </div>
+	              </div>
+	              <div class="grid gap-4 xl:grid-cols-2">
+	                <div>
+	                  <h4 class="font-bold text-sm">Run performance</h4>
+	                  <div id="gameAnalyticsPerformance" class="mt-2 grid gap-2 sm:grid-cols-2 text-sm"></div>
+	                </div>
+	                <div>
+	                  <h4 class="font-bold text-sm">Game events</h4>
+	                  <div id="gameAnalyticsEvents" class="mt-2 space-y-2 text-sm"></div>
+	                </div>
+	              </div>
+	              <div>
+	                <h4 class="font-bold text-sm">Recent game activity</h4>
+	                <div id="gameAnalyticsRecent" class="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3 text-sm"></div>
+	              </div>
+	            </div>
 	            <p id="uxAnalyticsMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
@@ -8014,6 +8052,52 @@
 		        }).join("") : `<div class="text-zinc-500">No session journeys yet.</div>`;
 		      }
 
+		      function renderGameAnalytics(){
+		        if (!$("gameAnalyticsKpis")) return;
+		        const game = uxAnalytics?.game || {};
+		        $("gameAnalyticsSummary").textContent = game.eventCount
+		          ? `${Number(game.eventCount || 0).toLocaleString("en-GB")} game event(s) · ${Number(game.sessionCount || 0).toLocaleString("en-GB")} player session(s)`
+		          : "No consented game activity in this range";
+		        const kpis = [
+		          ["Players", game.sessionCount || 0, "anonymous sessions"],
+		          ["Runs", game.runCount || 0, `${game.starts || 0} starts`],
+		          ["Completed", game.completions || 0, `${game.completionRate || 0}% of starts`],
+		          ["High score", game.highScore || 0, `avg ${game.avgScore || 0}`],
+		          ["Avg survival", `${game.avgSurvivalSeconds || 0}s`, `${game.avgObstaclesPassed || 0} obstacles passed`],
+		          ["Treats", game.totalTreats || 0, `avg ${game.avgTreats || 0} per run`],
+		          ["Replays", game.replays || 0, `${game.abandoned || 0} abandoned`],
+		          ["Shop clicks", game.shopClicks || 0, `${game.personalBests || 0} personal bests`],
+		        ];
+		        $("gameAnalyticsKpis").innerHTML = kpis.map(([label, value, hint]) => `
+		          <div class="rounded border border-zinc-200 p-3">
+		            <div class="text-xs font-bold uppercase tracking-wide text-zinc-500">${esc(label)}</div>
+		            <div class="mt-1 text-2xl font-extrabold">${esc(value)}</div>
+		            <div class="mt-1 text-xs text-zinc-500">${esc(hint)}</div>
+		          </div>
+		        `).join("");
+		        const gameEventLabel = value => uxEventLabel(String(value || "").replace(/^happy_chicken_run_/, ""));
+		        const funnel = (game.funnel || []).map(row => ({ ...row, event: gameEventLabel(row.event), count: row.sessions }));
+		        renderUxRows("gameAnalyticsFunnel", funnel, { total: Math.max(1, game.sessionCount || 0), limit: 10 });
+		        renderUxRows("gameAnalyticsCollisions", game.collisions || [], { total: (game.collisions || []).reduce((sum, row) => sum + Number(row.count || 0), 0) });
+		        renderUxRows("gameAnalyticsControls", game.controls || [], { eventLabels: true, total: (game.controls || []).reduce((sum, row) => sum + Number(row.count || 0), 0) });
+		        renderUxRows("gameAnalyticsEvents", (game.events || []).map(row => ({ ...row, label: gameEventLabel(row.label) })), { total: game.eventCount || 0, limit: 12 });
+		        $("gameAnalyticsPerformance").innerHTML = [
+		          ["Average jumps", game.avgJumps || 0],
+		          ["Average ducks", game.avgDucks || 0],
+		          ["Average pauses", game.avgPauses || 0],
+		          ["Average obstacles passed", game.avgObstaclesPassed || 0],
+		        ].map(([label, value]) => `<div class="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-3 py-2"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
+		        $("gameAnalyticsRecent").innerHTML = (game.recent || []).map(event => {
+		          const props = event.props || {};
+		          const meta = [
+		            props.score != null ? `score ${props.score}` : "",
+		            props.survival_time != null ? `${props.survival_time}s` : "",
+		            props.collision_type || "",
+		          ].filter(Boolean).join(" · ");
+		          return `<div class="rounded border border-zinc-200 p-2"><div class="font-bold">${esc(gameEventLabel(event.event))}</div><div class="text-xs text-zinc-500">${esc(ts(event.createdAt) || "")}${meta ? ` · ${esc(meta)}` : ""}</div></div>`;
+		        }).join("") || `<div class="text-zinc-500">No recent game activity.</div>`;
+		      }
+
 		      function renderUxAnalytics(){
 		        if (!$("uxAnalyticsKpis")) return;
 		        const data = uxAnalytics || {};
@@ -8038,6 +8122,7 @@
 		        renderUxDropoffs(data.dropoffs || []);
 		        renderUxTimeSpent(data.timeSpent || []);
 		        renderUxSessions(data.sessions || []);
+		        renderGameAnalytics();
 		        renderAnalyticsTrafficSources();
 		        $("uxAnalyticsRecent").innerHTML = (data.recent || []).slice(0, 10).map(event => `
 		          <div class="rounded border border-zinc-200 p-2">
