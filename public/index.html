@@ -82,6 +82,10 @@
       .fade-dots button.active{ background:#fff; }
       .hero-shell{ padding-top:2rem; }
       .hero-title{ margin-top:0; }
+      .shop-hero-shade{ background:linear-gradient(90deg,rgba(20,10,4,.88) 0%,rgba(20,10,4,.68) 44%,rgba(20,10,4,.12) 76%,rgba(20,10,4,.22) 100%); }
+      @media (max-width: 767px){
+        .shop-hero-shade{ background:linear-gradient(180deg,rgba(20,10,4,.9) 0%,rgba(20,10,4,.72) 58%,rgba(20,10,4,.28) 100%); }
+      }
       @media (min-width: 640px){
         .hero-shell{ padding-top:3.5rem; }
         .hero-title{ margin-top:1.5rem; }
@@ -168,10 +172,15 @@
 
     <main id="main" tabindex="-1" role="main">
       <!-- Hero -->
-      <section class="bg-grubz text-white">
-        <div class="hero-shell max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-14 grid md:grid-cols-2 gap-10">
-          <div>
-            <h1 class="hero-title text-4xl sm:text-5xl font-extrabold leading-tight text-shadow mt-6">
+      <section class="relative isolate flex min-h-[calc(100svh-130px)] w-full items-start overflow-hidden bg-zinc-950 text-white">
+        <video id="shopHeroVideo" class="absolute inset-0 -z-20 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata" poster="/images/chicken-rectangle-highres.png" aria-label="Chickens enjoying Happy Chicken larvae">
+          <source src="/images/videos/happy-chicken-hero.mp4" type="video/mp4">
+          <img src="/images/chicken-rectangle-highres.png" alt="Chickens enjoying Happy Chicken larvae" class="h-full w-full object-cover">
+        </video>
+        <div class="shop-hero-shade absolute inset-0 -z-10"></div>
+        <div class="hero-shell mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6 sm:pt-14 lg:pt-20">
+          <div class="max-w-2xl">
+            <h1 class="hero-title text-3xl font-extrabold leading-tight text-shadow sm:text-4xl lg:text-5xl">
               <span data-i18n="heroTitleL1">High Protein</span>
               <span data-i18n="heroTitleL2">Supplement for Poultry, Reptiles, Birds, and Fish</span>
             </h1>
@@ -188,16 +197,21 @@
               <span class="chip rounded px-3 py-1" data-i18n="chipSustainable">Sustainably produced</span>
             </div>
           </div>
-          <div class="card bg-white/95 p-6">
-            <div id="heroSlider" class="fade-slider aspect-[16/10]">
-              <noscript>
-                <img src="images/bearded-dragon-rectangle.png" alt="Happy reptile with GRUBZ"
-                     class="absolute inset-0 w-full h-full object-cover">
-              </noscript>
-              <div class="fade-dots" aria-label="Hero images"></div>
-            </div>
-          </div>
         </div>
+      </section>
+
+      <section class="bg-white px-4 sm:px-6 py-7" aria-labelledby="gamePromoTitle">
+        <a id="gamePromo" href="/happy-chicken-run/" class="group relative mx-auto grid max-w-6xl grid-cols-[1fr_112px] items-center overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-sky-100 px-5 py-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-400 sm:grid-cols-[180px_1fr_auto] sm:gap-7 sm:px-8 sm:py-5">
+          <div class="order-2 flex h-28 items-end justify-center self-end sm:order-1 sm:h-40">
+            <img src="/images/chicken-cartoon-happy.png" alt="Happy Chicken Run character" class="h-36 w-36 max-w-none object-contain drop-shadow-xl transition duration-300 group-hover:rotate-3 group-hover:scale-110 sm:h-52 sm:w-52" loading="lazy">
+          </div>
+          <div class="order-1 min-w-0 sm:order-2">
+            <span class="inline-flex rounded-full bg-orange-600 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white" data-i18n="gamePromoBadge">Free browser game · No download</span>
+            <h2 id="gamePromoTitle" class="mt-3 text-2xl font-extrabold leading-tight text-[#71391d] sm:text-3xl" data-i18n="gamePromoTitle">Think your chicken can beat the high score?</h2>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-700 sm:text-base" data-i18n="gamePromoText">Jump obstacles, collect GRUBZ treats and challenge your flock.</p>
+          </div>
+          <span class="order-3 col-span-2 mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#d04211] px-6 py-3 font-extrabold text-white shadow-md transition group-hover:bg-[#b9360d] sm:col-span-1 sm:mt-0" data-i18n="gamePromoCta">Play Happy Chicken Run →</span>
+        </a>
       </section>
 
       <!-- Products -->
@@ -357,6 +371,7 @@
           <h4 class="font-bold mb-2" data-i18n="footLinks">Links</h4>
           <ul class="space-y-2 text-sm opacity-90">
             <li><a href="#products" class="hover:underline" data-i18n="navProducts">Products</a></li>
+            <li><a href="/happy-chicken-run/" class="hover:underline" data-i18n="navGame">Happy Chicken Run</a></li>
             <li><a href="#benefits" class="hover:underline" data-i18n="navBenefits">Benefits</a></li>
             <li><a href="#faq" class="hover:underline" data-i18n="navFAQ">FAQ</a></li>
           </ul>
@@ -498,10 +513,6 @@
         </div>
 
         <div class="p-4 border-t bg-zinc-50 rounded-b-2xl flex-none">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm text-zinc-600" data-i18n="cartSubtotal">Subtotal</span>
-            <strong id="cartSubtotalValue" class="text-lg">€0.00</strong>
-          </div>
           <!-- COUPON UI -->
           <div id="couponRow" class="mb-3 flex gap-2 items-center">
             <label class="sr-only" for="couponCode" data-i18n="couponPlaceholder">Coupon code</label>
@@ -509,12 +520,17 @@
             <button id="applyCoupon" class="btn-soft text-sm">Apply</button>
             <button id="removeCoupon" class="btn-soft text-sm hidden">Remove</button>
           </div>
-          <p id="couponMsg" class="text-sm" role="status" aria-live="polite"></p>
+          <p id="couponMsg" class="mb-3 text-sm empty:hidden" role="status" aria-live="polite"></p>
 
           <!-- Discount line -->
-          <div id="cartDiscountRow" class="hidden flex items-center justify-between mb-3">
-            <span class="text-sm text-zinc-600" data-i18n="discountLabel">Discount</span>
-            <strong id="cartDiscountValue" class="text-lg">-€0.00</strong>
+          <div id="cartDiscountRow" class="mb-3 hidden flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
+            <span class="text-sm font-semibold" data-i18n="discountLabel">Discount</span>
+            <strong id="cartDiscountValue" class="text-lg text-emerald-700">-€0.00</strong>
+          </div>
+
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-sm text-zinc-600" data-i18n="cartSubtotal">Subtotal</span>
+            <strong id="cartSubtotalValue" class="text-lg">€0.00</strong>
           </div>
 
           <div class="flex flex-wrap gap-2">
@@ -685,17 +701,20 @@
             <h4 class="font-bold mb-2" data-i18n="reviewItems">Items</h4>
             <ul id="reviewItems" class="divide-y"></ul>
 
-            <!-- Discount line in review -->
-            <div id="reviewDiscountRow" class="hidden mt-3 flex items-center justify-between">
-              <span class="text-sm text-zinc-600" data-i18n="discountLabel">Discount</span>
-              <strong id="reviewDiscountValue" class="text-lg">-€0.00</strong>
-            </div>
-
             <div id="reviewDeliveryRow" class="hidden mt-3 flex items-center justify-between">
-              <span class="text-sm text-zinc-600" data-i18n="boxnowFeeLabel">BOX NOW delivery</span>
+              <span class="flex items-center gap-2 text-sm text-zinc-600">
+                <img src="/images/boxnow-logo.png" alt="" class="h-5 w-auto object-contain" aria-hidden="true">
+                <span data-i18n="boxnowFeeLabel">BOX NOW delivery</span>
+              </span>
               <strong id="reviewDeliveryValue" class="text-lg">€0.00</strong>
             </div>
             <p id="reviewDeliveryMsg" class="mt-1 text-xs text-zinc-500"></p>
+
+            <!-- Discount line in review -->
+            <div id="reviewDiscountRow" class="mt-3 hidden flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
+              <span class="text-sm font-semibold" data-i18n="discountLabel">Discount</span>
+              <strong id="reviewDiscountValue" class="text-lg text-emerald-700">-€0.00</strong>
+            </div>
 
             <div class="mt-3 flex items-center justify-between">
               <span class="text-sm text-zinc-600" data-i18n="reviewTotal">Subtotal</span>
@@ -825,6 +844,11 @@
     <script>
       let __user = null;   // Firebase auth user
       let __coupon = null; // { code, discount, discountCents }
+      let __couponCartSignature = "";
+      let __couponRefreshTimer = null;
+      let __couponRefreshSequence = 0;
+      let __linkedCouponApplied = false;
+      let __pendingCouponCode = "";
       let __referralCode = "";
     </script>
 
@@ -1088,6 +1112,9 @@ async function chatFetch(path, options = {}) {
 	          const referrer = analyticsEntryReferrer();
 	          let source = (params.get("utm_source") || "").trim();
 	          if (!source && params.get("fbclid")) source = "Facebook / Meta";
+	          if (!source && params.get("gclid")) source = "Google";
+	          if (!source && params.get("ttclid")) source = "TikTok";
+	          if (!source && params.get("msclkid")) source = "Microsoft Ads";
 	          if (!source && referrer) {
 	            try {
 	              const host = new URL(referrer).hostname.replace(/^www\./, "");
@@ -1100,7 +1127,7 @@ async function chatFetch(path, options = {}) {
 	            campaign: (params.get("utm_campaign") || "").trim(),
 	            content: (params.get("utm_content") || "").trim(),
 	            term: (params.get("utm_term") || "").trim(),
-	            clickId: (params.get("fbclid") || "").trim(),
+	            clickId: (params.get("fbclid") || params.get("gclid") || params.get("ttclid") || params.get("msclkid") || "").trim(),
 	            landingPage: `${location.pathname}${location.search}`,
 	          };
 	          sessionStorage.setItem(ANALYTICS_ATTRIBUTION_KEY, JSON.stringify(attribution));
@@ -1211,6 +1238,7 @@ async function chatFetch(path, options = {}) {
         en: {
           madeInGr:"Made in Greece",
           navBenefits:"Benefits", navProducts:"Products", navGame:"Happy Chicken Run", navCalculators:"Usage calculators", navFAQ:"FAQ", navContact:"Contact",
+          gamePromoBadge:"Free browser game · No download", gamePromoTitle:"Think your chicken can beat the high score?", gamePromoText:"Jump obstacles, collect GRUBZ treats and challenge your flock.", gamePromoCta:"Play Happy Chicken Run →",
           buyNow:"Buy Now",
           heroTitleL1:"High Protein", heroTitleL2:"Supplement for Poultry, Reptiles, Birds, and Fish",
           heroSubtitle:"Natural sustainable and tasty nutrition made in Greece",
@@ -1387,11 +1415,13 @@ async function chatFetch(path, options = {}) {
           couponApplied: "Coupon applied",
           couponInvalid: "Invalid coupon",
           couponConditions: "Coupon conditions not met",
+          couponEmptyCart: "Add a product to use this coupon.",
           discountLabel: "Discount",
         },
         el: {
           madeInGr:"Παράγεται στην Ελλάδα",
           navBenefits:"Οφέλη", navProducts:"Προϊόντα", navGame:"Happy Chicken Run", navCalculators:"Υπολογιστές χρήσης", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
+          gamePromoBadge:"Δωρεάν παιχνίδι browser · Χωρίς λήψη", gamePromoTitle:"Μπορεί η κότα σου να σπάσει το ρεκόρ;", gamePromoText:"Πήδα εμπόδια, μάζεψε λιχουδιές GRUBZ και δοκίμασε το κοπάδι σου.", gamePromoCta:"Παίξε Happy Chicken Run →",
           buyNow:"Αγορά τώρα",
           heroTitleL1:"Υψηλή Πρωτεΐνη", heroTitleL2:"Συμπλήρωμα για Πουλερικά, Ερπετά, Πτηνά και Ψάρια",
           heroSubtitle:"Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής",
@@ -1568,6 +1598,7 @@ async function chatFetch(path, options = {}) {
           couponApplied: "Το κουπόνι εφαρμόστηκε",
           couponInvalid: "Μη έγκυρο κουπόνι",
           couponConditions: "Δεν πληρούνται οι προϋποθέσεις του κουπονιού",
+          couponEmptyCart: "Πρόσθεσε ένα προϊόν για να χρησιμοποιήσεις αυτό το κουπόνι.",
           discountLabel: "Έκπτωση",
         }
       };
@@ -2453,6 +2484,15 @@ async function chatFetch(path, options = {}) {
         if (email && cart.size) {
           marketingEvent("cart_cleared", { email, source: "clear_cart", items: cartSnapshot(), cartValueCents: 0 }).catch(() => {});
         }
+        __coupon = null;
+        __pendingCouponCode = "";
+        __couponCartSignature = "";
+        __couponRefreshSequence += 1;
+        clearTimeout(__couponRefreshTimer);
+        const couponMsg = document.getElementById("couponMsg");
+        if (couponMsg) { couponMsg.textContent = ""; couponMsg.className = "mb-3 text-sm empty:hidden"; }
+        document.getElementById("removeCoupon")?.classList.add("hidden");
+        document.getElementById("applyCoupon")?.classList.remove("hidden");
         cart.clear();
         updateCartInfo();
         renderCart();
@@ -2619,6 +2659,9 @@ async function chatFetch(path, options = {}) {
 
         writeCartCookie();
         scheduleAbandonedCartCapture("cart_render");
+        scheduleAppliedCouponRefresh();
+        initCouponFromLink();
+        applyPendingCouponWhenReady();
       }
 
       window.__cartReady = true;
@@ -2918,6 +2961,7 @@ async function chatFetch(path, options = {}) {
         }
         __user = u || null;
         finishAuthInitialization();
+        initCouponFromLink();
         if (u) {
           renewCustomerSessionIfNeeded(true).catch(err => console.warn("Could not refresh customer session", err));
           const cachedOwner = localStorage.getItem(CHECKOUT_CACHE_OWNER_KEY) || Cookie.get(CHECKOUT_CACHE_OWNER_KEY) || "";
@@ -3943,8 +3987,104 @@ async function chatFetch(path, options = {}) {
       }
       function currentDiscount(){
         const sub = currentSubtotal();
-        const d = Math.max(0, Number(__coupon?.discount || 0));
-        return Math.min(d, sub);
+        const grossSubtotal = sub * (1 + VAT_RATE);
+        const d = __coupon?.type === "percent"
+          ? grossSubtotal * Math.max(0, Number(__coupon.percentOff || 0)) / 100
+          : Math.max(0, Number(__coupon?.discount || 0));
+        return Math.min(d, grossSubtotal);
+      }
+
+      function couponCartSignature(){
+        return Array.from(cart.entries())
+          .map(([id, qty]) => `${id}:${Math.max(0, Number(qty || 0))}`)
+          .sort()
+          .join("|");
+      }
+
+      function setCouponUiState(applied, message = ""){
+        const msgEl = document.getElementById("couponMsg");
+        const dict = i18n[lang()] || i18n.en;
+        if (msgEl) {
+          msgEl.className = message === null ? "mb-3 text-sm empty:hidden" : (applied ? "mb-3 text-sm text-green-700 empty:hidden" : "mb-3 text-sm text-red-600 empty:hidden");
+          msgEl.textContent = message === null ? "" : (message || (applied ? (dict.couponApplied || "Coupon applied") : (dict.couponConditions || "Coupon conditions not met")));
+        }
+        document.getElementById("removeCoupon")?.classList.toggle("hidden", !applied);
+        document.getElementById("applyCoupon")?.classList.toggle("hidden", applied);
+      }
+
+      function scheduleAppliedCouponRefresh(){
+        if (!__coupon?.code) return;
+        const signature = couponCartSignature();
+        if (signature === __couponCartSignature) return;
+        clearTimeout(__couponRefreshTimer);
+        __couponRefreshTimer = setTimeout(() => refreshAppliedCoupon(signature), 250);
+      }
+
+      async function refreshAppliedCoupon(signature = couponCartSignature()){
+        if (!__coupon?.code) return;
+        const sequence = ++__couponRefreshSequence;
+        const code = __coupon.code;
+        const items = Array.from(cart.entries()).map(([id, qty]) => ({ id, qty }));
+        if (!items.length) {
+          __coupon = null;
+          __couponCartSignature = signature;
+          setCouponUiState(false, null);
+          renderCart();
+          if (typeof renderReview === "function") renderReview(__currentReviewAddress);
+          return;
+        }
+        try {
+          const resp = await authedFetch("/validateCoupon", { method:"POST", body:JSON.stringify({ code, items }) });
+          const data = await resp.json().catch(() => ({}));
+          if (sequence !== __couponRefreshSequence || code !== __coupon?.code) return;
+          if (!resp.ok || !data?.ok) {
+            __coupon = null;
+            __couponCartSignature = signature;
+            setCouponUiState(false, data?.error === "Conditions not met"
+              ? ((i18n[lang()] || i18n.en).couponConditions || "Coupon conditions not met")
+              : ((i18n[lang()] || i18n.en).couponInvalid || "Invalid coupon"));
+          } else {
+            __coupon = {
+              code:data.code || code,
+              discount:Number(data.discount || 0),
+              discountCents:Number(data.discountCents || 0),
+              type:data.type || "",
+              percentOff:Number(data.percentOff || 0),
+              amountOffCents:Number(data.amountOffCents || 0),
+            };
+            __couponCartSignature = signature;
+            setCouponUiState(true);
+          }
+          renderCart();
+          if (typeof renderReview === "function") renderReview(__currentReviewAddress);
+        } catch (_error) {
+          // Keep the locally recalculated preview during a transient network failure.
+        }
+      }
+
+      function linkedCouponCode(){
+        return String(new URLSearchParams(location.search || "").get("coupon") || "")
+          .trim().toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9_-]/g, "").slice(0, 80);
+      }
+
+      function initCouponFromLink(){
+        const code = linkedCouponCode();
+        const input = document.getElementById("couponCode");
+        if (!code || !input) return;
+        if (!input.value.trim()) input.value = code;
+        if (!__linkedCouponApplied && __user && cart.size) {
+          __linkedCouponApplied = true;
+          __pendingCouponCode = "";
+          applyCouponFromInput();
+        }
+      }
+
+      function applyPendingCouponWhenReady(){
+        if (!__pendingCouponCode || !__user || !cart.size || __coupon?.code) return;
+        const input = document.getElementById("couponCode");
+        if (input) input.value = __pendingCouponCode;
+        __pendingCouponCode = "";
+        applyCouponFromInput();
       }
 
       // FINAL: apply coupon -> store the normalized code and preview discount
@@ -3954,6 +4094,17 @@ async function chatFetch(path, options = {}) {
         const dict = i18n[lang()] || i18n.en;
 	        const code = (codeEl?.value || "").trim();
 	        if (!code) return;
+	        if (!cart.size) {
+	          __coupon = null;
+	          __pendingCouponCode = code;
+	          msgEl.className = "mb-3 text-sm text-amber-700 empty:hidden";
+	          msgEl.textContent = dict.couponEmptyCart || "Add a product to use this coupon.";
+	          document.getElementById("removeCoupon")?.classList.add("hidden");
+	          document.getElementById("applyCoupon")?.classList.remove("hidden");
+	          announce(msgEl.textContent);
+	          return;
+	        }
+	        __pendingCouponCode = "";
 	        trackEvent("coupon_apply", { code });
 
         try{
@@ -3968,9 +4119,13 @@ async function chatFetch(path, options = {}) {
             __coupon = {
               code: data.code || code,
               discount: Number(data.discount || 0),
-              discountCents: Number(data.discountCents || 0)
+              discountCents: Number(data.discountCents || 0),
+              type: data.type || "",
+              percentOff: Number(data.percentOff || 0),
+              amountOffCents: Number(data.amountOffCents || 0)
             };
-            msgEl.className = "text-sm text-green-700";
+            __couponCartSignature = couponCartSignature();
+            msgEl.className = "mb-3 text-sm text-green-700 empty:hidden";
             msgEl.textContent = dict.couponApplied || "Coupon applied";
             announce(msgEl.textContent);
 	            document.getElementById("removeCoupon")?.classList.remove("hidden");
@@ -3978,7 +4133,7 @@ async function chatFetch(path, options = {}) {
 	            trackEvent("coupon_applied", { code: data.code || code, discountCents: Number(data.discountCents || 0) });
 	          } else {
             __coupon = null;
-            msgEl.className = "text-sm text-red-600";
+            msgEl.className = "mb-3 text-sm text-red-600 empty:hidden";
             msgEl.textContent =
               (data && data.error === "Conditions not met")
               ? (dict.couponConditions || "Coupon conditions not met")
@@ -3991,7 +4146,7 @@ async function chatFetch(path, options = {}) {
         } catch(e){
           __coupon = null;
           if (msgEl){
-            msgEl.className = "text-sm text-red-600";
+            msgEl.className = "mb-3 text-sm text-red-600 empty:hidden";
             msgEl.textContent = (i18n[lang()]||i18n.en).couponInvalid || "Invalid coupon";
             announce(msgEl.textContent);
           }
@@ -4006,8 +4161,12 @@ async function chatFetch(path, options = {}) {
 
       function removeCoupon(){
         __coupon = null;
+        __pendingCouponCode = "";
+        __couponCartSignature = "";
+        __couponRefreshSequence += 1;
+        clearTimeout(__couponRefreshTimer);
         const msgEl = document.getElementById("couponMsg");
-        if (msgEl){ msgEl.textContent = ""; msgEl.className = "text-sm"; }
+        if (msgEl){ msgEl.textContent = ""; msgEl.className = "mb-3 text-sm empty:hidden"; }
         document.getElementById("removeCoupon")?.classList.add("hidden");
         document.getElementById("applyCoupon")?.classList.remove("hidden");
         renderCart();
@@ -4016,6 +4175,7 @@ async function chatFetch(path, options = {}) {
       document.getElementById("applyCoupon")?.addEventListener("click", applyCouponFromInput);
       document.getElementById("couponCode")?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyCouponFromInput(); });
       document.getElementById("removeCoupon")?.addEventListener("click", removeCoupon);
+      initCouponFromLink();
 
       function closeFirstOrderOffer(markSeen = true){
         if (markSeen) localStorage.setItem(FIRST_ORDER_OFFER_SEEN_KEY, "1");
@@ -4183,7 +4343,18 @@ async function chatFetch(path, options = {}) {
         try {
           const resp = await authedFetch(
             "/createCheckoutSession",
-            { method: "POST", body: JSON.stringify({ items, couponCode, referralCode: __referralCode || "", shipping, language: lang() === "el" ? "el" : "en" }) }
+            { method: "POST", body: JSON.stringify({
+              items,
+              couponCode,
+              referralCode: __referralCode || "",
+              shipping,
+              language: lang() === "el" ? "el" : "en",
+              attribution: {
+                ...analyticsAttribution(),
+                referrer: analyticsEntryReferrer(),
+                sessionId: analyticsSessionId(),
+              },
+            }) }
           );
           const data = await resp.json().catch(()=> ({}));
           if (!resp.ok) {
@@ -4246,6 +4417,9 @@ async function chatFetch(path, options = {}) {
 	        scrollToPageHash(hash);
 	        trackEvent("page_view", { hash, title:document.title });
 	      });
+	      document.getElementById("gamePromo")?.addEventListener("click", () => {
+	        trackEvent("happy_chicken_run_promo_clicked", { placement:"home_feature_card" });
+	      });
 	      window.addEventListener("hashchange", () => {
 	        flushAnalyticsEngagement("hash_change");
 	        scrollToPageHash();
@@ -4271,76 +4445,6 @@ async function chatFetch(path, options = {}) {
 	        }, { threshold: 0.45 });
 	        document.querySelectorAll("section[id], footer[id]").forEach(section => sectionObserver.observe(section));
 	      }
-
-	      (function heroCrossfade(){
-        const root = document.getElementById('heroSlider');
-        if (!root) return;
-
-        const slides = [
-          { src: 'images/chicken-rectangle.png',        alt: 'Chicken with GRUBZ' },
-          { src: 'images/bearded-dragon-rectangle.png', alt: 'Bearded dragon with GRUBZ' },
-          { src: 'images/budgerigar-rectangle.png',     alt: 'Budgerigar with GRUBZ' },
-          { src: 'images/leopard-gecko-rectangle.png',  alt: 'Leopard Gecko with GRUBZ' },
-          { src: 'images/cockatiel-rectangle.png',      alt: 'Cockatiel with GRUBZ' }
-        ];
-
-        root.setAttribute('role', 'region');
-        root.setAttribute('aria-roledescription', 'carousel');
-        root.setAttribute('aria-label', 'Featured animals enjoying GRUBZ');
-        root.tabIndex = 0;
-
-        const dotBar = root.querySelector('.fade-dots');
-        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        const nodes = slides.map((s, idx) => {
-          const wrap = document.createElement('div');
-          wrap.className = 'fade-slide' + (idx===0?' active':'');
-          wrap.setAttribute('role', 'group');
-          wrap.setAttribute('aria-roledescription', 'slide');
-          wrap.setAttribute('aria-label', `Slide ${idx+1} of ${slides.length}`);
-
-          const img = new Image();
-          img.src = s.src; img.alt = s.alt; img.decoding = 'async';
-          img.className = 'absolute inset-0 w-full h-full object-cover';
-          wrap.appendChild(img);
-          root.appendChild(wrap);
-
-          const dot = document.createElement('button');
-          dot.type = 'button';
-          dot.className = idx===0 ? 'active' : '';
-          dot.setAttribute('aria-label', `Go to slide ${idx+1}`);
-          dot.addEventListener('click', () => show(idx, true));
-          dotBar.appendChild(dot);
-
-          return wrap;
-        });
-
-        let i = 0, timer = null, hovering = false, visible = true;
-
-        function show(n, user=false){
-          nodes[i].classList.remove('active');
-          dotBar.children[i].classList.remove('active');
-          i = (n + nodes.length) % nodes.length;
-          nodes[i].classList.add('active');
-          dotBar.children[i].classList.add('active');
-          if (user) restart();
-        }
-        function next(){ show(i+1); }
-        function start(){ if(!timer && !prefersReduced) timer = setInterval(()=>{ if(!hovering && visible) next(); }, 5000); }
-        function stop(){ clearInterval(timer); timer = null; }
-        function restart(){ stop(); start(); }
-
-        root.addEventListener('mouseenter', ()=> hovering = true);
-        root.addEventListener('mouseleave', ()=> hovering = false);
-
-        root.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowRight') { next(); e.preventDefault(); }
-          if (e.key === 'ArrowLeft') { show(i-1); e.preventDefault(); }
-        });
-
-        new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: .2 }).observe(root);
-        start();
-      })();
 
       (function initNewsletter(){
         const form = document.getElementById("newsletterForm");

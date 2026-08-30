@@ -2,6 +2,7 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "scripts": {
+    "test": "node --test *.test.js",
     "lint": "echo 'skipping lint'",
     "build": "echo 'no build'",
     "serve": "firebase emulators:start --only functions",
@@ -21,6 +22,7 @@
     "firebase-functions": "^6.6.0",
     "nodemailer": "^9.0.3",
     "openai": "^6.48.0",
+    "pdf-lib": "^1.17.1",
     "stripe": "^18.5.0"
   },
   "devDependencies": {

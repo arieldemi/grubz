@@ -9,11 +9,16 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
 const { getAuth: getAdminAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
-const { randomUUID, createHash, createHmac, timingSafeEqual } = require("crypto");
+const { randomUUID, createHash, timingSafeEqual } = require("crypto");
 const Stripe = require("stripe");
+const { sanitizePilot, pilotMetrics } = require("./collaborationPilot");
 const OpenAI = require("openai");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
+const { brandBoxNowLabelPdf, composeA4BoxNowLabels, prepareA4BoxNowLabelPdf } = require("./boxNowLabelPdf");
+const { verifyBoxNowWebhookPayload } = require("./boxNowWebhookSignature");
+const { boxNowFulfillmentForEvent } = require("./boxNowFulfillment");
+const { normalizeOrderLanguage, resolveOrderLanguage } = require("./orderLanguage");
 
 // ----- Secrets -----
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
@@ -88,7 +93,10 @@ const NEWSLETTER_SUBSCRIBERS_COLLECTION = "newsletterSubscribers";
 const NEWSLETTER_SENDS_COLLECTION = "newsletterSends";
 const NEWSLETTER_IDEAS_COLLECTION = "newsletterIdeas";
 const ORDER_FEEDBACK_COLLECTION = "orderFeedback";
+const FEEDBACK_CUSTOMERS_COLLECTION = "feedbackCustomers";
 const SCHEDULED_ORDER_EMAILS_COLLECTION = "scheduledOrderEmails";
+const FEEDBACK_LINK_LIFETIME_DAYS = 30;
+const FEEDBACK_COUPON_LIFETIME_DAYS = 90;
 const GRUBZ_SIGNATURE_IMAGE_URL = "https://grubz.gr/images/grubz-email-signature.png";
 const GRUBZ_INFO_EMAIL = "info@grubz.gr";
 const GRUBZ_URL = "https://grubz.gr";
@@ -221,11 +229,24 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     templateContext: "feedback",
     fulfillmentStatus: "feedback_request",
     subject: "How was your GRUBZ order {orderNumber}?",
-    body: "{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nWe would love to hear your feedback. Rate your experience here:\n{feedback_url}\n\nYour feedback helps us improve.\n\nGRUBZ",
+    body: "{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nShare your feedback using your personal link below. After you submit the form, we will email you a unique 10% discount code for your next order.\n\n{feedback_url}\n\nThe link can be used once and expires after 30 days.\n\nGRUBZ",
     translations: {
       el: {
         subject: "Πώς σου φάνηκε η παραγγελία GRUBZ {orderNumber};",
-        body: "{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΘα χαρούμε πολύ να ακούσουμε τη γνώμη σου. Αξιολόγησε την εμπειρία σου εδώ:\n{feedback_url}\n\nΗ γνώμη σου μας βοηθά να γινόμαστε καλύτεροι.\n\nGRUBZ",
+        body: "{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΜοιράσου τη γνώμη σου μέσω του προσωπικού συνδέσμου παρακάτω. Μετά την υποβολή, θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.\n\n{feedback_url}\n\nΟ σύνδεσμος χρησιμοποιείται μία φορά και λήγει σε 30 ημέρες.\n\nGRUBZ",
+      },
+    },
+  },
+  {
+    enabled: true,
+    templateContext: "order",
+    fulfillmentStatus: "locker_arrival",
+    subject: "Your GRUBZ parcel is ready for pickup",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has arrived at the BOX NOW locker:\n\n{boxNowLocker}\n\nYou can collect it now using the PIN sent by BOX NOW.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
+    translations: {
+      el: {
+        subject: "Το δέμα GRUBZ είναι έτοιμο για παραλαβή",
+        body: "{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} έφτασε στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΜπορείς να την παραλάβεις τώρα χρησιμοποιώντας το PIN που έστειλε η BOX NOW.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ",
       },
     },
   },
@@ -1525,7 +1546,7 @@ function parseFeedItems(xml = "", source = {}) {
 
 const COLLABORATION_STATUSES = new Set(["lead", "contacted", "negotiating", "trial_sent", "active", "paused", "ended"]);
 const COLLABORATION_TYPES = new Set(["free_product", "discount_code", "paid_post", "ambassador", "testimonial", "case_study", "other"]);
-const COLLABORATION_CATEGORIES = new Set(["farm", "homestead", "reptile_keeper", "chicken_owner", "pet_shop", "breeder", "aquarium", "creator", "other"]);
+const COLLABORATION_CATEGORIES = new Set(["farm", "homestead", "reptile_keeper", "chicken_owner", "facebook_group_admin", "pet_shop", "breeder", "aquarium", "creator", "other"]);
 
 function collaborationLines(value = "", max = 30) {
   return String(value || "").split(/\r?\n/).map(item => item.trim()).filter(Boolean).slice(0, max);
@@ -1555,6 +1576,7 @@ function sanitizeCollaborationInput(input = {}, existing = {}) {
     phone: String(merged.phone || "").trim().slice(0, 80),
     customerKey: String(merged.customerKey || "").trim().slice(0, 180),
     orderId: String(merged.orderId || "").trim().slice(0, 180),
+    facebookGroupId: String(merged.facebookGroupId || "").trim().slice(0, 180),
     category,
     status,
     type,
@@ -1574,6 +1596,7 @@ function sanitizeCollaborationInput(input = {}, existing = {}) {
     contentLinks: collaborationLines(Array.isArray(merged.contentLinks) ? merged.contentLinks.join("\n") : merged.contentLinks, 50),
     notes: String(merged.notes || "").trim().slice(0, 5000),
     nextFollowUp: String(merged.nextFollowUp || "").trim().slice(0, 40),
+    pilot: sanitizePilot(merged.pilot || {}, existing.pilot || {}),
     startedAt: merged.startedAt || existing.startedAt || now(),
   };
 }
@@ -1587,6 +1610,7 @@ function publicCollaboration(id, data = {}) {
     phone: data.phone || "",
     customerKey: data.customerKey || "",
     orderId: data.orderId || "",
+    facebookGroupId: data.facebookGroupId || "",
     category: data.category || "creator",
     status: data.status || "lead",
     type: data.type || "discount_code",
@@ -1599,6 +1623,7 @@ function publicCollaboration(id, data = {}) {
     contentLinks: Array.isArray(data.contentLinks) ? data.contentLinks : [],
     notes: data.notes || "",
     nextFollowUp: data.nextFollowUp || "",
+    pilot: sanitizePilot(data.pilot || {}),
     startedAt: data.startedAt || null,
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
@@ -1649,6 +1674,19 @@ function collaborationMetricsForAttribution({ couponCode = "", referralCode = ""
     }
   }
   const matchedOrders = Array.from(matchedById.values());
+  const matchedCustomerKeys = new Set(matchedOrders.map(customerKeyForOrder).filter(Boolean));
+  const earliestOrderByCustomer = new Map();
+  for (const order of orders) {
+    const customerKey = customerKeyForOrder(order);
+    if (!customerKey || !matchedCustomerKeys.has(customerKey)) continue;
+    const createdMs = millisFromTimestamp(order.createdAt);
+    const current = earliestOrderByCustomer.get(customerKey);
+    if (!current || createdMs < current.createdMs) earliestOrderByCustomer.set(customerKey, { createdMs, order });
+  }
+  const matchedOrderKeys = new Set(matchedOrders.map((order, index) => collaborationOrderKey(order, index)));
+  const newCustomerCount = [...earliestOrderByCustomer.values()].filter(item => (
+    matchedOrderKeys.has(collaborationOrderKey(item.order))
+  )).length;
   const currency = matchedOrders.find(order => order.currency)?.currency || "eur";
   const totals = matchedOrders.reduce((acc, order) => {
     const pricing = orderPricing(order);
@@ -1670,6 +1708,8 @@ function collaborationMetricsForAttribution({ couponCode = "", referralCode = ""
     orderCount: matchedOrders.length,
     couponOrderCount: couponOrders,
     referralOrderCount: referralOrders,
+    customerCount: matchedCustomerKeys.size,
+    newCustomerCount,
     revenueCents: totals.revenueCents,
     discountCents: totals.discountCents,
     subtotalCents: totals.subtotalCents,
@@ -1685,6 +1725,13 @@ function collaborationMetricsForAttribution({ couponCode = "", referralCode = ""
       customerName: order.customer?.name || "",
     })),
   };
+}
+
+function collaborationMetrics(collaboration = {}, orders = []) {
+  return pilotMetrics(collaborationMetricsForAttribution({
+    couponCode: collaboration.offer?.couponCode || "",
+    referralCode: collaboration.referralCode || "",
+  }, orders), collaboration.pilot || {});
 }
 
 function collaborationMetricsForCode(couponCode = "", orders = []) {
@@ -1705,7 +1752,11 @@ async function collaborationMetricsMap(collaborations = []) {
   const metrics = new Map();
   for (const key of keys) {
     const [couponCode, referralCode] = key.split("::");
-    metrics.set(key, collaborationMetricsForAttribution({ couponCode, referralCode }, orders));
+    const collaboration = collaborations.find(item => (
+      normalizeCouponCode(item.offer?.couponCode || "") === couponCode &&
+      normalizeReferralCode(item.referralCode || "") === referralCode
+    ));
+    metrics.set(key, collaborationMetrics(collaboration || {}, orders));
   }
   return metrics;
 }
@@ -2097,6 +2148,10 @@ async function evaluateCoupon({ code, items, productsMap, uid = "", email = "", 
   if (coupon.maxRedemptions && Number(coupon.redemptionCount || 0) >= Number(coupon.maxRedemptions)) {
     throw new Error("Conditions not met");
   }
+  const assignedEmail = normalizedEmail(coupon.assignedEmail || "");
+  if (assignedEmail && assignedEmail !== normalizedEmail(email || "")) {
+    throw new Error("This coupon belongs to a different customer");
+  }
   const effectiveStripeMode = sanitizeStripeMode(stripeMode || (await getStripeSettings()).mode || "test");
   const orderItems = orderItemsFromCart(items, productsMap, effectiveStripeMode);
   const eligibleSubtotal = couponEligibleSubtotalCents(coupon, orderItems);
@@ -2204,6 +2259,7 @@ async function ensureStripePromotionCodeForCoupon(coupon, mode, orderItems = [],
       coupon: stripeCoupon.id,
       code: promoCode,
       active: coupon.active !== false,
+      ...(Number(coupon.maxRedemptions || 0) > 0 ? { max_redemptions: Number(coupon.maxRedemptions) } : {}),
       metadata: { grubzCouponCode: coupon.code, grubzCouponId: docId, grubzCouponSignature: signature },
     });
     return rememberPromotion(promo);
@@ -2240,7 +2296,36 @@ async function recordCouponRedemption({ coupon, order, discountCents }) {
   }, { merge: true });
 }
 
-async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCode, referralCode = "", productsMap, stripeMode = "", language = "en", boxNowConfig = null }) {
+function normalizeOrderAttribution(input = {}) {
+  const source = analyticsSafeString(input.source || "Direct / unknown", 120) || "Direct / unknown";
+  return {
+    source,
+    medium: analyticsSafeString(input.medium || "", 120),
+    campaign: analyticsSafeString(input.campaign || "", 180),
+    content: analyticsSafeString(input.content || "", 180),
+    term: analyticsSafeString(input.term || "", 180),
+    clickId: analyticsSafeString(input.clickId || "", 300),
+    landingPage: analyticsSafeString(input.landingPage || "", 500),
+    referrer: analyticsSafeString(input.referrer || "", 500),
+    sessionId: analyticsSafeString(input.sessionId || "", 160),
+  };
+}
+
+function orderAttributionFromMetadata(metadata = {}) {
+  return normalizeOrderAttribution({
+    source: metadata.attributionSource,
+    medium: metadata.attributionMedium,
+    campaign: metadata.attributionCampaign,
+    content: metadata.attributionContent,
+    term: metadata.attributionTerm,
+    clickId: metadata.attributionClickId,
+    landingPage: metadata.attributionLandingPage,
+    referrer: metadata.attributionReferrer,
+    sessionId: metadata.attributionSessionId,
+  });
+}
+
+async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCode, referralCode = "", attribution = {}, productsMap, stripeMode = "", language = "en", boxNowConfig = null }) {
   const effectiveStripeMode = sanitizeStripeMode(stripeMode || (await getStripeSettings()).mode || "test");
   const orderLanguage = String(language || "en").trim().toLowerCase() === "el" ? "el" : "en";
   const orderReferralCode = normalizeReferralCode(referralCode || shipping?.referralCode || "");
@@ -2324,6 +2409,7 @@ async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCo
     couponCode: couponResult.coupon?.code || "",
     couponId: couponResult.coupon?.id || "",
     referralCode: orderReferralCode,
+    attribution: normalizeOrderAttribution(attribution),
     metadata: {
       orderNumber,
       uid: uid || "guest",
@@ -2343,7 +2429,7 @@ async function createCashOnDeliveryOrder({ uid, email, items, shipping, couponCo
   return order;
 }
 
-async function createCourierQuoteOrder({ uid, email, items, shipping, couponCode, referralCode = "", productsMap, language = "en" }) {
+async function createCourierQuoteOrder({ uid, email, items, shipping, couponCode, referralCode = "", attribution = {}, productsMap, language = "en" }) {
   const addressLine1 = String(shipping?.line1 || shipping?.addressLine1 || "").trim();
   const city = String(shipping?.city || "").trim();
   if (!addressLine1 || !city) throw new Error("Street address and city are required for courier delivery");
@@ -2408,6 +2494,7 @@ async function createCourierQuoteOrder({ uid, email, items, shipping, couponCode
     couponCode: couponResult.coupon?.code || "",
     couponId: couponResult.coupon?.id || "",
     referralCode: orderReferralCode,
+    attribution: normalizeOrderAttribution(attribution),
     metadata: {
       orderNumber,
       uid,
@@ -2499,6 +2586,7 @@ async function upsertOrderFromSession(session) {
     couponCode: metadata.couponCode || "",
     couponId: metadata.couponId || "",
     referralCode: normalizeReferralCode(metadata.referralCode || ""),
+    attribution: orderAttributionFromMetadata(metadata),
     amountDiscount: Number(session.total_details?.amount_discount || metadata.couponDiscountCents || 0),
     metadata,
     createdAt: session.created ? Timestamp.fromMillis(session.created * 1000) : now(),
@@ -2589,6 +2677,7 @@ async function upsertOrderFromPaymentIntent(intent) {
     couponCode: metadata.couponCode || "",
     couponId: metadata.couponId || "",
     referralCode: normalizeReferralCode(metadata.referralCode || ""),
+    attribution: orderAttributionFromMetadata(metadata),
     metadata,
     createdAt: intent.created ? Timestamp.fromMillis(intent.created * 1000) : now(),
     updatedAt: now(),
@@ -3666,7 +3755,7 @@ function renderOrderTemplateHtml(value, vars) {
 }
 
 function templateContentForLanguage(template = {}, language = "en") {
-  const lang = String(language || "en").trim().toLowerCase();
+	const lang = normalizeOrderLanguage(language);
   const translated = lang !== "en" ? template.translations?.[lang] : null;
   return {
     subject: translated?.subject || template.subject || "",
@@ -3676,7 +3765,7 @@ function templateContentForLanguage(template = {}, language = "en") {
 
 function buildOrderStatusEmail(template, order, previousStatus, previousFulfillmentStatus = previousStatus, settings = {}) {
   const vars = orderStatusTemplateVars(order, previousStatus, previousFulfillmentStatus, settings.placeholders);
-  const content = templateContentForLanguage(template, order.language || order.locale || "en");
+	const content = templateContentForLanguage(template, resolveOrderLanguage(order));
   const subject = renderOrderTemplate(content.subject, vars);
   const text = renderOrderTemplate(content.body, vars);
   return { subject, text, html: renderOrderTemplateHtml(content.body, vars) };
@@ -3994,7 +4083,7 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
   if (!template) {
     return { skipped: true, reason: "missing_template" };
   }
-  const content = templateContentForLanguage(template, order.language || order.locale || "en");
+	const content = templateContentForLanguage(template, resolveOrderLanguage(order));
   const orderCouponCode = normalizeCouponCode(order.couponCode || order.coupon || order.metadata?.couponCode || order.metadata?.coupon || "");
   if (containsCouponPlaceholder(content.body) && !orderCouponCode) {
     throw Object.assign(new Error("This fulfillment template uses {coupon}, but the order has no coupon code. Remove the placeholder before sending."), { status: 400 });
@@ -4042,6 +4131,120 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
   }
 }
 
+async function sendBoxNowFulfillmentEmailOnce(order, previousFulfillmentStatus = "", eventId = "") {
+  const fulfillmentKey = normalizeOrderStatus(order.fulfillmentStatus);
+  const orderId = String(order.id || publicOrderId(order) || "").trim();
+  if (!orderId || !["shipped", "delivered"].includes(fulfillmentKey)) {
+    return { skipped: true, reason: "unsupported_boxnow_fulfillment" };
+  }
+
+  const notificationRef = db.collection("orderNotifications").doc(
+    `boxnow_fulfillment_${orderStatusDocKey(orderId)}_${orderStatusDocKey(fulfillmentKey)}`
+  );
+  const claimed = await db.runTransaction(async transaction => {
+    const existing = await transaction.get(notificationRef);
+    if (existing.exists) return false;
+    transaction.set(notificationRef, {
+      type: "boxnow_fulfillment_automatic",
+      orderId,
+      orderNumber: publicOrderId(order),
+      fulfillmentStatus: fulfillmentKey,
+      previousFulfillmentStatus,
+      language: resolveOrderLanguage(order),
+      webhookEventId: eventId,
+      status: "sending",
+      createdAt: now(),
+      updatedAt: now(),
+    });
+    return true;
+  });
+  if (!claimed) return { skipped: true, reason: "boxnow_fulfillment_email_already_processed" };
+
+  try {
+    const result = await sendOrderStatusEmailOnce(order, previousFulfillmentStatus);
+    await notificationRef.set({
+      status: result?.skipped ? "skipped" : "sent",
+      result: result || {},
+      sentAt: result?.skipped ? null : now(),
+      updatedAt: now(),
+    }, { merge: true });
+    return result;
+  } catch (err) {
+    await notificationRef.set({
+      status: "failed",
+      error: err.message || "Email failed",
+      updatedAt: now(),
+    }, { merge: true });
+    throw err;
+  }
+}
+
+function feedbackCustomerKey(email = "") {
+  return createHash("sha256").update(normalizedEmail(email)).digest("hex");
+}
+
+function feedbackCouponCode() {
+  return `THANKS10-${randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
+}
+
+function feedbackThankYouMessage(feedback = {}, couponCode = "") {
+  const greek = feedback.language === "el";
+  const testOnly = feedback.testOnly === true;
+  const expiry = couponDateMillis(feedback.couponEndsAt);
+  const expiryText = expiry
+    ? new Intl.DateTimeFormat(greek ? "el-GR" : "en-GB", { dateStyle: "long", timeZone: "Europe/Athens" }).format(new Date(expiry))
+    : "";
+  const shopUrl = `${GRUBZ_URL}/?coupon=${encodeURIComponent(couponCode)}#products`;
+  const subjectBase = greek ? "Ευχαριστούμε για την αξιολόγησή σου – έκπτωση 10%" : "Thank you for your feedback – your 10% discount";
+  const subject = testOnly ? `[TEST] ${subjectBase}` : subjectBase;
+  const baseText = greek
+    ? `Σε ευχαριστούμε για την αξιολόγησή σου.\n\nΟ μοναδικός κωδικός έκπτωσης 10% για την επόμενη παραγγελία σου είναι: ${couponCode}\n\nΟ κωδικός μπορεί να χρησιμοποιηθεί μία φορά${expiryText ? ` έως ${expiryText}` : ""} και συνδέεται με αυτή τη διεύθυνση email.\n\nΑγορές: ${shopUrl}`
+    : `Thank you for your feedback.\n\nYour unique 10% discount code for your next order is: ${couponCode}\n\nThe code can be used once${expiryText ? ` until ${expiryText}` : ""} and is linked to this email address.\n\nShop: ${shopUrl}`;
+  const testNote = greek
+    ? "\n\nΔΟΚΙΜΗ: Ο κωδικός λειτουργεί μόνο για το info@grubz.gr. Σε Stripe live mode η κάρτα θα χρεωθεί κανονικά."
+    : "\n\nTEST: This code works only for info@grubz.gr. In Stripe live mode, the card will be charged normally.";
+  const text = `${baseText}${testOnly ? testNote : ""}`;
+  const html = textToBasicHtml(text)
+    .replace(escapeHtml(couponCode), `<strong style="font-size:18px;letter-spacing:0.04em;">${escapeHtml(couponCode)}</strong>`)
+    .replace(escapeHtml(shopUrl), `<a href="${escapeHtml(shopUrl)}" style="font-weight:700;color:#c2410c;">${greek ? "Αγόρασε προϊόντα GRUBZ" : "Shop GRUBZ products"}</a>`);
+  return { subject, text, html };
+}
+
+function ensureFeedbackIncentiveMessage(message = {}, language = "en") {
+  if (/10\s*%/.test(`${message.subject || ""}\n${message.text || ""}`)) return message;
+  const greek = language === "el";
+  const note = greek
+    ? "Μετά την υποβολή, θα λάβεις με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου. Ο σύνδεσμος λήγει σε 30 ημέρες."
+    : "After submitting, you will receive a unique 10% discount code by email for your next order. This link expires in 30 days.";
+  return {
+    ...message,
+    text: `${message.text || ""}\n\n${note}`,
+    html: `${message.html || textToBasicHtml(message.text || "")}<p>${escapeHtml(note)}</p>`,
+  };
+}
+
+async function sendFeedbackThankYouEmail(feedbackRef, feedback, couponCode) {
+  const recipientEmail = feedback.testOnly ? GRUBZ_INFO_EMAIL : feedback.customerEmail;
+  const message = feedbackThankYouMessage(feedback, couponCode);
+  try {
+    const result = await sendEmail({
+      to: recipientEmail,
+      from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+      ...message,
+    });
+    await feedbackRef.set({
+      thankYouEmailStatus: result.skipped ? "skipped" : "sent",
+      thankYouEmailSentAt: result.skipped ? null : now(),
+      thankYouEmailResult: result,
+      updatedAt: now(),
+    }, { merge: true });
+    return result;
+  } catch (err) {
+    await feedbackRef.set({ thankYouEmailStatus: "failed", thankYouEmailError: err.message || "Email failed", updatedAt: now() }, { merge: true });
+    throw err;
+  }
+}
+
 async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
   const customerEmail = await resolveOrderCustomerEmail(order);
   if (!customerEmail) {
@@ -4059,19 +4262,38 @@ async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
   const orderId = order.id || publicOrderId(order);
   const testOnly = options.testOnly === true;
   const recipientEmail = testOnly ? GRUBZ_INFO_EMAIL : customerEmail;
+  const bccEmail = !testOnly && options.includeMonitoringBcc !== false ? GRUBZ_INFO_EMAIL : "";
   const feedbackToken = randomUUID();
   const feedbackRef = db.collection(ORDER_FEEDBACK_COLLECTION).doc(createHash("sha256").update(feedbackToken).digest("hex"));
-  const feedbackUrl = `${GRUBZ_URL}/feedback/?token=${encodeURIComponent(feedbackToken)}`;
+  const customerKey = feedbackCustomerKey(customerEmail);
+  if (!testOnly) {
+    const priorFeedback = await db.collection(ORDER_FEEDBACK_COLLECTION).where("customerEmail", "==", customerEmail).limit(20).get();
+    if (priorFeedback.docs.some(doc => ["pending", "submitted"].includes(String(doc.data()?.status || "")) && doc.data()?.testOnly !== true)) {
+      return { skipped: true, reason: "customer_already_invited" };
+    }
+    const claimRef = db.collection(FEEDBACK_CUSTOMERS_COLLECTION).doc(customerKey);
+    const claimed = await db.runTransaction(async transaction => {
+      const claim = await transaction.get(claimRef);
+      if (claim.exists && ["pending", "submitted"].includes(String(claim.data()?.status || ""))) return false;
+      transaction.set(claimRef, { customerEmail, feedbackId: feedbackRef.id, orderId, status: "pending", createdAt: now(), updatedAt: now() });
+      return true;
+    });
+    if (!claimed) return { skipped: true, reason: "customer_already_invited" };
+  }
+  const feedbackBaseUrl = String(options.feedbackBaseUrl || GRUBZ_URL).replace(/\/$/, "");
+  const feedbackUrl = `${feedbackBaseUrl}/feedback/?token=${encodeURIComponent(feedbackToken)}`;
   await feedbackRef.set({
     orderId,
     orderNumber: publicOrderId(order),
     customerName: String(order.customer?.name || order.shipping?.name || "").trim().slice(0, 180),
     customerEmail,
     recipientEmail,
+    customerKey,
     testOnly,
     language: String(order.language || order.locale || "en").toLowerCase() === "el" ? "el" : "en",
     status: "pending",
     createdAt: now(),
+    expiresAt: Timestamp.fromMillis(Date.now() + FEEDBACK_LINK_LIFETIME_DAYS * 24 * 60 * 60 * 1000),
     createdBy: adminUser.uid || "",
   });
   const notificationRef = db.collection("orderNotifications").doc(`order_feedback_${orderStatusDocKey(orderId)}_${Date.now()}`);
@@ -4081,7 +4303,7 @@ async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
     orderNumber: publicOrderId(order),
     customerEmail,
     recipientEmail,
-    bccEmail: testOnly ? "" : GRUBZ_INFO_EMAIL,
+    bccEmail,
     testOnly,
     status: "sending",
     createdAt: now(),
@@ -4089,10 +4311,14 @@ async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
   });
   try {
     const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
-    const message = buildOrderStatusEmail(template, { ...order, feedbackUrl }, order.status || "", order.fulfillmentStatus || "", settings);
+    const language = String(order.language || order.locale || "en").toLowerCase() === "el" ? "el" : "en";
+    const message = ensureFeedbackIncentiveMessage(
+      buildOrderStatusEmail(template, { ...order, feedbackUrl }, order.status || "", order.fulfillmentStatus || "", settings),
+      language
+    );
     const result = await sendEmail({
       to: recipientEmail,
-      ...(testOnly ? {} : { bcc: GRUBZ_INFO_EMAIL }),
+      ...(bccEmail ? { bcc: bccEmail } : {}),
       from,
       ...message,
     });
@@ -4103,6 +4329,10 @@ async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
     }, { merge: true });
+    if (result.skipped && !testOnly) {
+      await db.collection(FEEDBACK_CUSTOMERS_COLLECTION).doc(customerKey).delete().catch(() => {});
+      await feedbackRef.set({ status: "delivery_failed", updatedAt: now() }, { merge: true });
+    }
     if (!result.skipped && !testOnly) {
       await db.collection("orders").doc(orderId).set({
         feedbackEmailSentAt: now(),
@@ -4111,8 +4341,11 @@ async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
         updatedAt: now(),
       }, { merge: true });
     }
-    return result;
+    return { ...result, ...(testOnly ? { feedbackUrl } : {}) };
   } catch (err) {
+    if (!testOnly) {
+      await db.collection(FEEDBACK_CUSTOMERS_COLLECTION).doc(customerKey).delete().catch(() => {});
+    }
     await notificationRef.set({
       status: "failed",
       error: err.message || "Email failed",
@@ -4190,6 +4423,96 @@ async function sendOrderLockerReminderEmail(order, adminUser = {}) {
   }
 }
 
+async function sendBoxNowLockerArrivalEmail(order, parcelId = "") {
+  const customerEmail = await resolveOrderCustomerEmail(order);
+  if (!customerEmail) return { skipped: true, reason: "missing_customer_email" };
+  const settings = await getOrderEmailSettings();
+  const template = settings.templates.find(item =>
+    item.enabled !== false && item.templateContext === "order" && item.fulfillmentKey === "locker_arrival"
+  );
+  if (!template) return { skipped: true, reason: "missing_template" };
+
+  const orderId = order.id || publicOrderId(order);
+  const notificationRef = db.collection("orderNotifications").doc(
+    `order_boxnow_locker_arrival_${orderStatusDocKey(orderId)}_${orderStatusDocKey(parcelId || "parcel")}`
+  );
+  const existing = await notificationRef.get();
+  if (existing.exists && ["sending", "sent"].includes(String(existing.data()?.status || ""))) {
+    return { skipped: true, reason: "already_sent" };
+  }
+  await notificationRef.set({
+    type: "order_boxnow_locker_arrival",
+    orderId,
+    orderNumber: publicOrderId(order),
+    parcelId,
+    customerEmail,
+    recipientEmail: customerEmail,
+    bccEmail: GRUBZ_INFO_EMAIL,
+    status: "sending",
+    createdAt: existing.exists ? existing.data()?.createdAt || now() : now(),
+    lastAttemptAt: now(),
+    createdBy: "boxnow_webhook",
+  }, { merge: true });
+
+  try {
+    const message = buildOrderStatusEmail(template, order, order.status || "", order.fulfillmentStatus || "", settings);
+    const result = await sendEmail({
+      to: customerEmail,
+      from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+      bcc: GRUBZ_INFO_EMAIL,
+      ...message,
+    });
+    await notificationRef.set({
+      status: result.skipped ? "skipped" : "sent",
+      subject: message.subject || "",
+      result,
+      sentAt: result.skipped ? null : now(),
+      updatedAt: now(),
+    }, { merge: true });
+    return result;
+  } catch (err) {
+    await notificationRef.set({ status: "failed", error: err.message || "Email failed", updatedAt: now() }, { merge: true });
+    throw err;
+  }
+}
+
+async function scheduleAutomaticBoxNowLockerReminder(order, eventRecord = {}) {
+  const orderId = order.id || publicOrderId(order);
+  const parcelId = String(eventRecord.parcelId || "").trim();
+  const ref = db.collection(SCHEDULED_ORDER_EMAILS_COLLECTION).doc(
+    `boxnow_locker_reminder_${orderStatusDocKey(orderId)}_${orderStatusDocKey(parcelId || "parcel")}`
+  );
+  const existing = await ref.get();
+  if (existing.exists && ["pending", "sending", "sent"].includes(String(existing.data()?.status || ""))) {
+    return { skipped: true, reason: "already_scheduled", id: ref.id };
+  }
+  const eventMs = millisFromTimestamp(eventRecord.eventTime) || Date.now();
+  const sendAt = new Date(Math.max(Date.now() + 5 * 60 * 1000, eventMs + 18 * 60 * 60 * 1000));
+  await ref.set({
+    orderId,
+    orderNumber: publicOrderId(order),
+    parcelId,
+    type: "locker_reminder",
+    automaticBoxNow: true,
+    status: "pending",
+    scheduledAt: Timestamp.fromDate(sendAt),
+    createdAt: existing.exists ? existing.data()?.createdAt || now() : now(),
+    updatedAt: now(),
+    createdBy: "boxnow_webhook",
+  }, { merge: true });
+  return { id: ref.id, scheduledAt: Timestamp.fromDate(sendAt) };
+}
+
+async function cancelAutomaticBoxNowLockerReminder(orderId, parcelId, event = "") {
+  const ref = db.collection(SCHEDULED_ORDER_EMAILS_COLLECTION).doc(
+    `boxnow_locker_reminder_${orderStatusDocKey(orderId)}_${orderStatusDocKey(parcelId || "parcel")}`
+  );
+  const snap = await ref.get();
+  if (!snap.exists || snap.data()?.status !== "pending") return { skipped: true };
+  await ref.set({ status: "cancelled", cancelReason: event || "parcel_no_longer_waiting", cancelledAt: now(), updatedAt: now() }, { merge: true });
+  return { cancelled: true };
+}
+
 async function scheduleOrderEmail(order, type, sendAtInput, adminUser = {}, previousFulfillmentStatus = "") {
   const allowedTypes = new Set(["fulfillment", "feedback", "locker_reminder"]);
   if (!allowedTypes.has(type)) throw Object.assign(new Error("Unknown scheduled email type."), { status: 400 });
@@ -4244,6 +4567,17 @@ exports.sendScheduledOrderEmails = onSchedule(
         const orderSnap = await db.collection("orders").doc(job.orderId).get();
         if (!orderSnap.exists) throw new Error("Order not found");
         const order = { id: orderSnap.id, ...orderSnap.data() };
+        if (job.type === "locker_reminder" && job.automaticBoxNow === true) {
+          const parcelKey = orderStatusDocKey(job.parcelId || "unknown");
+          const latestEvent = normalizeOrderStatus(order.boxNowShipment?.parcelEvents?.[parcelKey]?.event).replace(/[_\s]+/g, "-");
+          const review = order.boxNowNotificationReview || {};
+          const approved = review.status === "approved" && String(review.parcelId || "") === String(job.parcelId || "");
+          if (latestEvent !== "final-destination" || !approved) {
+            const cancelReason = latestEvent !== "final-destination" ? `parcel_event_${latestEvent || "unknown"}` : "approval_missing";
+            await jobDoc.ref.set({ status: "cancelled", cancelReason, cancelledAt: now(), updatedAt: now() }, { merge: true });
+            continue;
+          }
+        }
         let result;
         if (job.type === "feedback") result = await sendOrderFeedbackEmail(order, { uid: job.createdBy || "scheduler" });
         else if (job.type === "locker_reminder") result = await sendOrderLockerReminderEmail(order, { uid: job.createdBy || "scheduler" });
@@ -4261,6 +4595,7 @@ exports.orderFeedback = onRequest(
   {
     region: "europe-west1",
     invoker: "public",
+    secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM],
     cors: ALLOWED_ORIGIN_LIST,
   },
   async (req, res) => {
@@ -4273,6 +4608,8 @@ exports.orderFeedback = onRequest(
       if (!snap.exists) return jsonError(res, 404, "This feedback link is invalid.");
       const feedback = snap.data() || {};
       if (req.method === "GET") {
+        const expired = feedback.status !== "submitted" && couponDateMillis(feedback.expiresAt) > 0 && couponDateMillis(feedback.expiresAt) < Date.now();
+        if (expired) return jsonError(res, 410, "This feedback link has expired.");
         return res.json({
           ok: true,
           orderNumber: feedback.orderNumber || "",
@@ -4282,19 +4619,63 @@ exports.orderFeedback = onRequest(
         });
       }
       if (req.method !== "POST") return jsonError(res, 405, "Use GET or POST.");
-      if (feedback.status === "submitted") return jsonError(res, 409, "Feedback has already been submitted for this order.");
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const rating = Math.round(Number(body.rating || 0));
       if (rating < 1 || rating > 5) return jsonError(res, 400, "Choose a rating from 1 to 5.");
       const comment = String(body.comment || "").trim().slice(0, 2000);
-      await ref.set({
-        rating,
-        comment,
-        status: "submitted",
-        submittedAt: now(),
-        updatedAt: now(),
-      }, { merge: true });
-      if (feedback.orderId) {
+      const couponCode = feedbackCouponCode();
+      const couponEndsAt = Timestamp.fromMillis(Date.now() + FEEDBACK_COUPON_LIFETIME_DAYS * 24 * 60 * 60 * 1000);
+      const couponRef = db.collection(COUPONS_COLLECTION).doc(couponDocId(couponCode));
+      const committedFeedback = await db.runTransaction(async transaction => {
+        const currentSnap = await transaction.get(ref);
+        if (!currentSnap.exists) throw Object.assign(new Error("This feedback link is invalid."), { status: 404 });
+        const current = currentSnap.data() || {};
+        if (current.status === "submitted") throw Object.assign(new Error("Feedback has already been submitted."), { status: 409 });
+        if (couponDateMillis(current.expiresAt) > 0 && couponDateMillis(current.expiresAt) < Date.now()) {
+          throw Object.assign(new Error("This feedback link has expired."), { status: 410 });
+        }
+        const coupon = {
+          code: couponCode,
+          active: true,
+          type: "percent",
+          percentOff: 10,
+          amountOffCents: 0,
+          currency: "eur",
+          minimumSubtotalCents: 0,
+          maxRedemptions: 1,
+          maxRedemptionsPerCustomer: 1,
+          redemptionCount: 0,
+          allowedProductIds: [],
+          startsAt: now(),
+          endsAt: couponEndsAt,
+          assignedEmail: current.testOnly === true ? GRUBZ_INFO_EMAIL : normalizedEmail(current.customerEmail || ""),
+          testOnly: current.testOnly === true,
+          source: "feedback_reward",
+          feedbackId: ref.id,
+          description: current.testOnly ? "TEST feedback reward (info@grubz.gr only)" : "10% feedback thank-you reward",
+          createdAt: now(),
+          updatedAt: now(),
+        };
+        transaction.create(couponRef, coupon);
+        transaction.set(ref, {
+          rating,
+          comment,
+          status: "submitted",
+          couponCode,
+          couponEndsAt,
+          couponId: couponRef.id,
+          thankYouEmailStatus: "pending",
+          submittedAt: now(),
+          updatedAt: now(),
+        }, { merge: true });
+        if (!current.testOnly && current.customerKey) {
+          transaction.set(db.collection(FEEDBACK_CUSTOMERS_COLLECTION).doc(current.customerKey), {
+            status: "submitted", feedbackId: ref.id, couponCode, submittedAt: now(), updatedAt: now(),
+          }, { merge: true });
+        }
+        return { ...current, couponEndsAt };
+      });
+      if (feedback.orderId && committedFeedback.testOnly !== true) {
         await db.collection("orders").doc(feedback.orderId).set({
           customerFeedback: {
             rating,
@@ -4304,7 +4685,14 @@ exports.orderFeedback = onRequest(
           updatedAt: now(),
         }, { merge: true });
       }
-      return res.json({ ok: true });
+      let thankYouEmail = { skipped: true, reason: "not_attempted" };
+      try {
+        thankYouEmail = await sendFeedbackThankYouEmail(ref, committedFeedback, couponCode);
+      } catch (emailError) {
+        logger.error("Feedback thank-you email failed", { feedbackId: ref.id, error: emailError.message || "Email failed" });
+        thankYouEmail = { failed: true, error: emailError.message || "Email failed" };
+      }
+      return res.json({ ok: true, thankYouEmailSent: !thankYouEmail.skipped && !thankYouEmail.failed });
     } catch (err) {
       logger.error("Order feedback failed", { error: err.message || "Order feedback failed" });
       return jsonError(res, Number(err.status || 400), err.message || "Feedback could not be saved.");
@@ -4312,8 +4700,83 @@ exports.orderFeedback = onRequest(
   }
 );
 
+async function feedbackBulkEligibility() {
+  const [ordersSnap, claimsSnap, feedbackSnap] = await Promise.all([
+    db.collection("orders").orderBy("createdAt", "desc").limit(1000).get(),
+    db.collection(FEEDBACK_CUSTOMERS_COLLECTION).limit(1000).get(),
+    db.collection(ORDER_FEEDBACK_COLLECTION).orderBy("createdAt", "desc").limit(1000).get(),
+  ]);
+  const claimed = new Map(claimsSnap.docs.map(doc => [doc.id, doc.data() || {}]));
+  for (const doc of feedbackSnap.docs) {
+    const row = doc.data() || {};
+    if (row.testOnly === true) continue;
+    const email = normalizedEmail(row.customerEmail || "");
+    if (!email) continue;
+    const key = feedbackCustomerKey(email);
+    const existing = claimed.get(key);
+    if (!existing || row.status === "submitted") claimed.set(key, { status: row.status || "pending", feedbackId: doc.id });
+  }
+  const customers = new Map();
+  const counts = { deliveredOrders: 0, eligible: 0, alreadyInvited: 0, alreadySubmitted: 0, missingEmail: 0, duplicateCustomers: 0 };
+  for (const doc of ordersSnap.docs) {
+    const order = { id: doc.id, ...doc.data() };
+    if (normalizeOrderStatus(order.fulfillmentStatus) !== "delivered" || String(order.status || "").toLowerCase() === "cancelled") continue;
+    counts.deliveredOrders += 1;
+    const email = await resolveOrderCustomerEmail(order);
+    if (!email || !validEmailAddress(email)) { counts.missingEmail += 1; continue; }
+    const key = feedbackCustomerKey(email);
+    if (customers.has(key)) { counts.duplicateCustomers += 1; continue; }
+    const claim = claimed.get(key);
+    if (claim?.status === "submitted") { counts.alreadySubmitted += 1; continue; }
+    if (claim?.status === "pending") { counts.alreadyInvited += 1; continue; }
+    customers.set(key, order);
+  }
+  counts.eligible = customers.size;
+  return { counts, orders: [...customers.values()] };
+}
+
+async function sendBulkFeedbackRequests(adminUser, { testOnly = false, feedbackBaseUrl = GRUBZ_URL } = {}) {
+  const eligibility = await feedbackBulkEligibility();
+  let selectedOrders = eligibility.orders.slice(0, 250);
+  if (testOnly) {
+    const snap = await db.collection("orders").orderBy("createdAt", "desc").limit(250).get();
+    selectedOrders = [];
+    for (const doc of snap.docs) {
+      const order = { id: doc.id, ...doc.data() };
+      if (normalizeOrderStatus(order.fulfillmentStatus) !== "delivered" || String(order.status || "").toLowerCase() === "cancelled") continue;
+      const email = await resolveOrderCustomerEmail(order);
+      if (email && validEmailAddress(email)) { selectedOrders = [order]; break; }
+    }
+  }
+  if (!selectedOrders.length) throw Object.assign(new Error("No eligible delivered customers were found."), { status: 400 });
+  const results = [];
+  let monitoringBccSent = false;
+  for (const order of selectedOrders) {
+    try {
+      const result = await sendOrderFeedbackEmail(order, adminUser, {
+        testOnly,
+        feedbackBaseUrl,
+        includeMonitoringBcc: !testOnly && !monitoringBccSent,
+      });
+      if (!testOnly && !result.skipped && !monitoringBccSent) monitoringBccSent = true;
+      results.push({ orderId: order.id, email: await resolveOrderCustomerEmail(order), ok: !result.skipped, ...result });
+    } catch (err) {
+      results.push({ orderId: order.id, email: await resolveOrderCustomerEmail(order), ok: false, error: err.message || "Email failed" });
+    }
+  }
+  return {
+    testOnly,
+    attempted: results.length,
+    sent: results.filter(item => item.ok).length,
+    skipped: results.filter(item => item.skipped).length,
+    failed: results.filter(item => !item.ok && !item.skipped).length,
+    remainingEligible: testOnly ? eligibility.counts.eligible : Math.max(0, eligibility.counts.eligible - selectedOrders.length),
+    results,
+  };
+}
+
 exports.adminFeedback = onRequest(
-  { region: "europe-west1", invoker: "public", cors: ALLOWED_ORIGIN_LIST },
+  { region: "europe-west1", invoker: "public", secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM], cors: ALLOWED_ORIGIN_LIST },
   async (req, res) => {
     try {
       if (req.method === "OPTIONS") return res.status(204).end();
@@ -4329,6 +4792,7 @@ exports.adminFeedback = onRequest(
             customerName: row.customerName || "",
             customerEmail: row.customerEmail || "",
             language: row.language || "en",
+            testOnly: row.testOnly === true,
             status: row.status || "pending",
             rating: Number(row.rating || 0),
             comment: row.comment || "",
@@ -4336,11 +4800,15 @@ exports.adminFeedback = onRequest(
             internalNote: row.internalNote || "",
             createdAt: row.createdAt || null,
             submittedAt: row.submittedAt || null,
+            couponCode: row.couponCode || "",
+            couponEndsAt: row.couponEndsAt || null,
+            thankYouEmailStatus: row.thankYouEmailStatus || "",
             reviewedAt: row.reviewedAt || null,
             reviewedBy: row.reviewedBy || "",
           };
         });
-        const submitted = feedback.filter(row => row.status === "submitted" && row.rating > 0);
+        const productionFeedback = feedback.filter(row => row.testOnly !== true);
+        const submitted = productionFeedback.filter(row => row.status === "submitted" && row.rating > 0);
         const distribution = [1, 2, 3, 4, 5].map(rating => ({
           rating,
           count: submitted.filter(row => row.rating === rating).length,
@@ -4352,14 +4820,42 @@ exports.adminFeedback = onRequest(
           ok: true,
           feedback,
           summary: {
-            requests: feedback.length,
+            requests: productionFeedback.length,
             responses: submitted.length,
             awaitingReview: submitted.filter(row => !row.reviewed).length,
             averageRating: Number(average.toFixed(2)),
-            responseRate: feedback.length ? Number(((submitted.length / feedback.length) * 100).toFixed(1)) : 0,
+            responseRate: productionFeedback.length ? Number(((submitted.length / productionFeedback.length) * 100).toFixed(1)) : 0,
             distribution,
           },
         });
+      }
+      if (req.method === "POST") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        const action = String(body.action || "").trim();
+        if (action === "previewBulk") {
+          const eligibility = await feedbackBulkEligibility();
+          return res.json({ ok: true, counts: eligibility.counts, sample: eligibility.orders.slice(0, 10).map(order => ({
+            orderId: order.id, orderNumber: publicOrderId(order), customerName: order.customer?.name || order.shipping?.name || "", customerEmail: order.customer?.email || "",
+          })) });
+        }
+        if (action === "sendBulk") return res.json({ ok: true, ...(await sendBulkFeedbackRequests(adminUser)) });
+        if (action === "sendBulkTest") {
+          const origin = String(req.headers.origin || "").trim();
+          const feedbackBaseUrl = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin) ? origin : GRUBZ_URL;
+          return res.json({ ok: true, ...(await sendBulkFeedbackRequests(adminUser, { testOnly: true, feedbackBaseUrl })) });
+        }
+        if (action === "retryThankYouEmail") {
+          const id = String(body.id || "").trim();
+          if (!id || id.includes("/")) return jsonError(res, 400, "Missing feedback ID.");
+          const feedbackRef = db.collection(ORDER_FEEDBACK_COLLECTION).doc(id);
+          const feedbackSnap = await feedbackRef.get();
+          if (!feedbackSnap.exists) return jsonError(res, 404, "Feedback not found.");
+          const row = feedbackSnap.data() || {};
+          if (row.status !== "submitted" || !row.couponCode) return jsonError(res, 400, "This feedback has no reward email to retry.");
+          const result = await sendFeedbackThankYouEmail(feedbackRef, row, row.couponCode);
+          return res.json({ ok: true, result });
+        }
+        return jsonError(res, 400, "Unknown feedback action.");
       }
       if (req.method === "PATCH") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
@@ -4378,7 +4874,7 @@ exports.adminFeedback = onRequest(
           updatedAt: now(),
         };
         await ref.set(update, { merge: true });
-        if (existing.orderId) {
+        if (existing.orderId && existing.testOnly !== true) {
           await db.collection("orders").doc(existing.orderId).update({
             "customerFeedback.reviewed": reviewed,
             "customerFeedback.internalNote": update.internalNote,
@@ -4397,7 +4893,13 @@ exports.adminFeedback = onRequest(
         if (!snap.exists) return jsonError(res, 404, "Feedback not found.");
         const existing = snap.data() || {};
         await ref.delete();
-        if (existing.status === "submitted" && existing.orderId) {
+        if (existing.testOnly === true && existing.couponId) {
+          await db.collection(COUPONS_COLLECTION).doc(existing.couponId).delete().catch(() => {});
+        }
+        if (existing.testOnly !== true && existing.customerKey && existing.status !== "submitted") {
+          await db.collection(FEEDBACK_CUSTOMERS_COLLECTION).doc(existing.customerKey).delete().catch(() => {});
+        }
+        if (existing.status === "submitted" && existing.orderId && existing.testOnly !== true) {
           const orderRef = db.collection("orders").doc(existing.orderId);
           const orderSnap = await orderRef.get();
           if (orderSnap.exists) {
@@ -4412,7 +4914,7 @@ exports.adminFeedback = onRequest(
         logger.info("Admin deleted customer feedback", { feedbackId: id, orderId: existing.orderId || "", adminUid: adminUser.uid || "" });
         return res.json({ ok: true });
       }
-      return jsonError(res, 405, "Use GET, PATCH, or DELETE.");
+      return jsonError(res, 405, "Use GET, POST, PATCH, or DELETE.");
     } catch (err) {
       return adminError(res, err);
     }
@@ -5001,6 +5503,7 @@ function compactBoxNowResult(result) {
     contentType: result.contentType || "",
   };
   if (result.data != null) compact.data = result.data;
+  if (result.layout) compact.layout = result.layout;
   if (result.buffer) {
     compact.size = result.buffer.length;
     compact.base64 = result.buffer.toString("base64");
@@ -5733,6 +6236,9 @@ exports.getBoxNowFee = onRequest(
       BOXNOW_CLIENT_ID,
       BOXNOW_CLIENT_SECRET,
       BOXNOW_PARTNER_ID,
+      SMTP_USER,
+      SMTP_PASS,
+      ORDER_NOTIFICATION_FROM,
     ],
     cors: ALLOWED_ORIGIN_LIST,
   },
@@ -5825,6 +6331,7 @@ exports.createCheckoutSession = onRequest(
       const items = Array.isArray(body.items) ? body.items : [];
       const couponCode = normalizeCouponCode(body.couponCode || body.code || "");
       const referralCode = normalizeReferralCode(body.referralCode || body.referral || "");
+      const attribution = normalizeOrderAttribution(body.attribution && typeof body.attribution === "object" ? body.attribution : {});
       const language = String(body.language || "").trim().toLowerCase() === "el" ? "el" : "en";
       const shipping = body.shipping && typeof body.shipping === "object" ? body.shipping : null;
       const deliveryMethod = String(shipping?.deliveryMethod || "boxnow").trim();
@@ -5847,6 +6354,7 @@ exports.createCheckoutSession = onRequest(
           shipping,
           couponCode,
           referralCode,
+          attribution,
           productsMap,
           language,
         });
@@ -5875,6 +6383,7 @@ exports.createCheckoutSession = onRequest(
           shipping: { ...shipping, cashOnDelivery: true },
           couponCode,
           referralCode,
+          attribution,
           productsMap,
           stripeMode: stripeConfig.mode,
           language,
@@ -5982,6 +6491,15 @@ exports.createCheckoutSession = onRequest(
         couponId: couponResult?.coupon?.id || "",
         couponDiscountCents: String(couponResult?.discountCents || 0).slice(0, 500),
         referralCode,
+        attributionSource: attribution.source,
+        attributionMedium: attribution.medium,
+        attributionCampaign: attribution.campaign,
+        attributionContent: attribution.content,
+        attributionTerm: attribution.term,
+        attributionClickId: attribution.clickId,
+        attributionLandingPage: attribution.landingPage,
+        attributionReferrer: attribution.referrer,
+        attributionSessionId: attribution.sessionId,
         language,
       };
 
@@ -6402,12 +6920,48 @@ exports.adminOrders = onRequest(
           return res.json({ ok: true, feedbackEmail });
         }
         if (String(body.action || "").trim() === "sendFeedbackRequestTest") {
-          const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser, { testOnly: true });
+          const origin = String(req.headers.origin || "").trim();
+          const feedbackBaseUrl = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin) ? origin : GRUBZ_URL;
+          const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser, { testOnly: true, feedbackBaseUrl });
           return res.json({ ok: true, feedbackEmail });
         }
         if (String(body.action || "").trim() === "sendLockerReminder") {
           const lockerReminderEmail = await sendOrderLockerReminderEmail(existingOrder, adminUser);
           return res.json({ ok: true, lockerReminderEmail });
+        }
+        if (String(body.action || "").trim() === "approveBoxNowLockerNotifications") {
+          const review = existingOrder.boxNowNotificationReview || {};
+          if (review.status !== "pending") return jsonError(res, 409, "This BOX NOW notification recommendation is no longer pending.");
+          const parcelId = String(review.parcelId || "").trim();
+          const parcelKey = orderStatusDocKey(parcelId || "unknown");
+          const latestEvent = normalizeOrderStatus(existingOrder.boxNowShipment?.parcelEvents?.[parcelKey]?.event).replace(/[_\s]+/g, "-");
+          if (latestEvent !== "final-destination") return jsonError(res, 409, "This parcel is no longer waiting at the locker.");
+          const arrivalEmail = await sendBoxNowLockerArrivalEmail(existingOrder, parcelId);
+          const reminder = await scheduleAutomaticBoxNowLockerReminder(existingOrder, {
+            parcelId,
+            eventTime: review.eventTime || existingOrder.boxNowShipment?.parcelEvents?.[parcelKey]?.eventTime || "",
+          });
+          await orderRef.set({
+            boxNowNotificationReview: {
+              ...review,
+              status: "approved",
+              approvedAt: now(),
+              approvedBy: adminUser.uid || "",
+              arrivalEmail,
+              reminder,
+            },
+            updatedAt: now(),
+          }, { merge: true });
+          return res.json({ ok: true, arrivalEmail, reminder });
+        }
+        if (String(body.action || "").trim() === "dismissBoxNowLockerNotifications") {
+          const review = existingOrder.boxNowNotificationReview || {};
+          if (review.status !== "pending") return jsonError(res, 409, "This BOX NOW notification recommendation is no longer pending.");
+          await orderRef.set({
+            boxNowNotificationReview: { ...review, status: "dismissed", dismissedAt: now(), dismissedBy: adminUser.uid || "" },
+            updatedAt: now(),
+          }, { merge: true });
+          return res.json({ ok: true });
         }
         if (String(body.action || "").trim() === "scheduleEmail") {
           const scheduledEmail = await scheduleOrderEmail(
@@ -6479,6 +7033,7 @@ exports.adminOrders = onRequest(
 	        }
 	        if (body.paymentStatus != null) allowed.paymentStatus = String(body.paymentStatus).trim();
 	        if (body.fulfillmentStatus != null) allowed.fulfillmentStatus = String(body.fulfillmentStatus).trim();
+	        if (normalizeOrderStatus(allowed.fulfillmentStatus) === "delivered") allowed.status = "completed";
 	        if (body.invoiceReceiptIssued != null) {
 	          allowed.invoiceReceiptIssued = body.invoiceReceiptIssued === true;
 	          allowed.invoiceReceiptIssuedAt = body.invoiceReceiptIssued === true
@@ -7894,7 +8449,7 @@ exports.adminCollaborations = onRequest(
           const referral = normalizeReferralCode(collaboration.referralCode || "");
           const key = `${code}::${referral}`;
           collaboration.metrics = code || referral
-            ? metricsByCode.get(key) || collaborationMetricsForAttribution({ couponCode: code, referralCode: referral }, [])
+            ? metricsByCode.get(key) || collaborationMetrics(collaboration, [])
             : null;
         }
         return res.json({ collaborations });
@@ -7965,7 +8520,7 @@ exports.adminCollaborations = onRequest(
         const referral = normalizeReferralCode(collaboration.referralCode || "");
         if (code || referral) {
           const metricsByCode = await collaborationMetricsMap([collaboration]);
-          collaboration.metrics = metricsByCode.get(`${code}::${referral}`) || collaborationMetricsForAttribution({ couponCode: code, referralCode: referral }, []);
+          collaboration.metrics = metricsByCode.get(`${code}::${referral}`) || collaborationMetrics(collaboration, []);
         }
         return res.json({ ok: true, collaboration });
       }
@@ -8111,6 +8666,63 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
   const config = boxNowEnvConfig(settings, body.environment || settings.activeEnvironment);
   const safeEnvironment = config.environment;
 
+  if (action === "fetchBulkOrderLabels") {
+    const orderIds = [...new Set((Array.isArray(body.orderIds) ? body.orderIds : [])
+      .map(value => String(value || "").trim()).filter(Boolean))];
+    if (!orderIds.length) throw new Error("Select at least one order");
+    if (orderIds.length > 50) throw new Error("Select no more than 50 orders at a time");
+
+    const snapshots = await Promise.all(orderIds.map(id => db.collection("orders").doc(id).get()));
+    const missing = snapshots.filter(snapshot => !snapshot.exists).map(snapshot => snapshot.id);
+    if (missing.length) throw new Error(`Orders not found: ${missing.join(", ")}`);
+    const ordersToPrint = snapshots.map(snapshot => ({ id: snapshot.id, ...snapshot.data() }));
+    const tokenPromises = new Map();
+    const brandedLabels = await Promise.all(ordersToPrint.map(async order => {
+      const shipment = order.boxNowShipment || {};
+      const environment = sanitizeBoxNowEnvironment(shipment.environment || settings.activeEnvironment);
+      const orderConfig = boxNowEnvConfig(settings, environment);
+      if (!tokenPromises.has(environment)) tokenPromises.set(environment, getBoxNowAccessToken(orderConfig));
+      const { token } = await tokenPromises.get(environment);
+      const requestIds = [
+        shipment.deliveryRequestId,
+        ...(Array.isArray(shipment.deliveryRequestIds) ? shipment.deliveryRequestIds : []),
+        order.orderNumber,
+      ].map(value => String(value || "").trim()).filter(Boolean);
+      const parcelId = Array.isArray(shipment.parcelIds) ? String(shipment.parcelIds[0] || "").trim() : "";
+      if (!requestIds.length && !parcelId) throw new Error(`${order.orderNumber || order.id} has no BOX NOW shipment`);
+
+      let response = null;
+      for (const id of requestIds) {
+        response = await boxNowApiRequest(orderConfig, `/api/v1/delivery-requests/${encodeURIComponent(id)}/label.pdf`, {
+          raw: true,
+          token,
+          headers: { accept: "application/pdf" },
+        });
+        if (response.ok) break;
+      }
+      if ((!response || !response.ok) && parcelId) {
+        response = await boxNowApiRequest(orderConfig, `/api/v1/parcels/${encodeURIComponent(parcelId)}/label.pdf`, {
+          raw: true,
+          token,
+          headers: { accept: "application/pdf" },
+        });
+      }
+      if (!response?.ok || !response.buffer) {
+        throw new Error(`BOX NOW label unavailable for ${order.orderNumber || order.id} (${response?.status || "unknown"})`);
+      }
+      return brandBoxNowLabelPdf(response.buffer);
+    }));
+
+    const combined = await composeA4BoxNowLabels(brandedLabels, { labelWidthCm: 9 });
+    return {
+      ok: true,
+      action,
+      result: compactBoxNowResult({ ok: true, status: 200, contentType: "application/pdf", buffer: combined.buffer }),
+      layout: combined.layout,
+      orderNumbers: ordersToPrint.map(order => order.orderNumber || order.id),
+    };
+  }
+
   if (action === "createOrderDelivery") {
     const orderId = String(body.orderId || "").trim();
     if (!orderId) throw new Error("Missing order ID");
@@ -8213,7 +8825,12 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
         `/api/v1/parcels/${encodeURIComponent(parcelId)}/label.pdf`,
         { raw: true, token: stageToken, headers: { accept: "application/pdf" } }
       );
-      if (labelResponse.ok) voucher = compactBoxNowResult(labelResponse);
+      if (labelResponse.ok) {
+        const prepared = await prepareA4BoxNowLabelPdf(labelResponse.buffer);
+        labelResponse.buffer = prepared.buffer;
+        labelResponse.contentType = "application/pdf";
+        voucher = compactBoxNowResult(labelResponse);
+      }
       else voucherError = `Voucher could not be downloaded (${labelResponse.status})`;
     } else {
       voucherError = "BOX NOW created the delivery request without returning a parcel ID";
@@ -8237,9 +8854,35 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
   }
 
   if (action === "webhookStatus") {
-    const webhookUrl = `${GRUBZ_URL}/api/boxnow/webhook`;
+    const webhookUrl = `${GRUBZ_URL}/api/boxnow/webhook/${safeEnvironment}`;
     const healthSnap = await db.collection("boxNowWebhookHealth").doc(safeEnvironment).get();
     const health = healthSnap.exists ? healthSnap.data() : null;
+    const [attemptsSnap, verifiedSnap] = await Promise.all([
+      db.collection("boxNowWebhookAttempts").doc(safeEnvironment).collection("attempts")
+        .orderBy("receivedAt", "desc").limit(50).get(),
+      db.collection("boxNowWebhookEvents").orderBy("receivedAt", "desc").limit(50).get(),
+    ]);
+    const attempts = attemptsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const recordedEventIds = new Set(attempts.map(item => String(item.eventId || "")).filter(Boolean));
+    const legacyVerifiedAttempts = verifiedSnap.docs
+      .map(doc => ({ id: doc.id, ...(doc.data() || {}) }))
+      .filter(item => String(item.parsed?.environment || "") === safeEnvironment && !recordedEventIds.has(item.id))
+      .map(item => ({
+        id: `event_${item.id}`,
+        receivedAt: item.receivedAt || null,
+        method: "POST",
+        httpStatus: 200,
+        outcome: "verified",
+        verificationReason: "verified",
+        eventId: item.id,
+        event: item.parsed?.event || "",
+        orderNumber: item.parsed?.orderNumber || "",
+        parcelId: item.parsed?.parcelId || "",
+        historical: true,
+      }));
+    const webhookAttempts = [...attempts, ...legacyVerifiedAttempts]
+      .sort((a, b) => millisFromTimestamp(b.receivedAt) - millisFromTimestamp(a.receivedAt))
+      .slice(0, 50);
     return {
       ok: true,
       action,
@@ -8255,6 +8898,8 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
         eventTime: health.eventTime || "",
         receivedAt: health.receivedAt || null,
       } : null,
+      webhookAttempts,
+      attemptRetentionStarted: attempts.length ? attempts[attempts.length - 1].receivedAt || null : null,
     };
   }
 
@@ -8345,6 +8990,12 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
       });
       labelId = parcelId;
       source = "parcel-fallback";
+    }
+    if (type === "pdf" && response?.ok && response.buffer) {
+      const prepared = await prepareA4BoxNowLabelPdf(response.buffer);
+      response.buffer = prepared.buffer;
+      response.contentType = "application/pdf";
+      response.layout = prepared.layout;
     }
     return { ok: response.ok, action, environment: safeEnvironment, labelId, source, result: compactBoxNowResult(response) };
   }
@@ -8827,45 +9478,6 @@ exports.adminAnalytics = onRequest(
   }
 );
 
-function extractRawJsonProperty(raw, propertyName) {
-  const text = Buffer.isBuffer(raw) ? raw.toString("utf8") : String(raw || "");
-  const key = `"${propertyName}"`;
-  const keyIndex = text.indexOf(key);
-  if (keyIndex < 0) return "";
-  const colonIndex = text.indexOf(":", keyIndex + key.length);
-  if (colonIndex < 0) return "";
-  let index = colonIndex + 1;
-  while (/\s/.test(text[index] || "")) index += 1;
-  const opener = text[index];
-  const closer = opener === "{" ? "}" : opener === "[" ? "]" : "";
-  if (!closer) return "";
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let i = index; i < text.length; i += 1) {
-    const ch = text[i];
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (ch === "\\") {
-        escaped = true;
-      } else if (ch === "\"") {
-        inString = false;
-      }
-      continue;
-    }
-    if (ch === "\"") {
-      inString = true;
-    } else if (ch === opener) {
-      depth += 1;
-    } else if (ch === closer) {
-      depth -= 1;
-      if (depth === 0) return text.slice(index, i + 1);
-    }
-  }
-  return "";
-}
-
 function safeTimingEqual(a, b) {
   const left = Buffer.from(String(a || ""), "hex");
   const right = Buffer.from(String(b || ""), "hex");
@@ -8876,23 +9488,6 @@ function safeStringEqual(a, b) {
   const left = Buffer.from(String(a || ""));
   const right = Buffer.from(String(b || ""));
   return left.length === right.length && left.length > 0 && timingSafeEqual(left, right);
-}
-
-function hmacHex(value, secret) {
-  return createHmac("sha256", secret).update(value).digest("hex");
-}
-
-function verifyBoxNowWebhookPayload(rawBody, payload, webhookSecret) {
-  const signature = String(payload?.datasignature || payload?.dataSignature || "").trim();
-  if (!signature) return { verified: false, skipped: true, reason: "missing_datasignature" };
-  if (!webhookSecret) return { verified: false, skipped: true, reason: "missing_webhook_secret" };
-  const rawData = extractRawJsonProperty(rawBody, "data");
-  const candidates = [rawData, payload?.data ? JSON.stringify(payload.data) : ""].filter(Boolean);
-  for (const candidate of candidates) {
-    const digest = hmacHex(candidate, webhookSecret);
-    if (safeTimingEqual(digest, signature)) return { verified: true, digest };
-  }
-  return { verified: false, reason: "signature_mismatch" };
 }
 
 function boxNowTrackingUpdateFromEvent(payload = {}, environment = "") {
@@ -8914,23 +9509,53 @@ function boxNowTrackingUpdateFromEvent(payload = {}, environment = "") {
   };
 }
 
-exports.boxNowWebhook = onRequest(
-  {
+async function recordBoxNowWebhookAttempt(attemptRef, data = {}) {
+  if (!attemptRef) return;
+  try {
+    await attemptRef.set({
+      ...data,
+      updatedAt: now(),
+    }, { merge: true });
+  } catch (err) {
+    logger.error("BOX NOW webhook attempt audit failed", { error: err.message || "Audit write failed" });
+  }
+}
+
+const boxNowWebhookOptions = {
     region: "europe-west1",
     invoker: "public",
     secrets: [
       BOXNOW_CLIENT_ID,
       BOXNOW_CLIENT_SECRET,
       BOXNOW_PARTNER_ID,
+      SMTP_USER,
+      SMTP_PASS,
+      ORDER_NOTIFICATION_FROM,
     ],
-  },
-  async (req, res) => {
+  };
+
+function boxNowWebhookHandler(fixedEnvironment) {
+  return async (req, res) => {
+    let attemptRef = null;
+    let environment = sanitizeBoxNowEnvironment(fixedEnvironment);
     try {
-      if (req.method !== "POST") return res.status(405).send("Use POST");
-      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const settings = await getEffectiveBoxNowSettings(req, { includeSecrets: true });
+      attemptRef = db.collection("boxNowWebhookAttempts").doc(environment).collection("attempts").doc();
+      await recordBoxNowWebhookAttempt(attemptRef, {
+        receivedAt: now(),
+        environment,
+        method: String(req.method || "").slice(0, 12),
+        contentType: String(req.get("content-type") || "").slice(0, 160),
+        userAgent: String(req.get("user-agent") || "").slice(0, 500),
+        sourceIp: String(req.get("x-forwarded-for") || req.ip || "").split(",")[0].trim().slice(0, 100),
+        outcome: "received",
+      });
+      if (req.method !== "POST") {
+        await recordBoxNowWebhookAttempt(attemptRef, { outcome: "method_not_allowed", httpStatus: 405 });
+        return res.status(405).send("Use POST");
+      }
+      const payload = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const rawBody = req.rawBody || JSON.stringify(payload);
-      const environment = sanitizeBoxNowEnvironment(settings.webhookEnvironment || "stage");
       const config = boxNowEnvConfig(settings, environment);
       const verification = verifyBoxNowWebhookPayload(rawBody, payload, config.webhookSecret);
       if (!verification.verified) {
@@ -8938,14 +9563,45 @@ exports.boxNowWebhook = onRequest(
           environment,
           reason: verification.reason || "unverified",
         });
-        return res.status(verification.skipped ? 503 : 400).send(
+        const rejectionStatus = verification.skipped ? 503 : 400;
+        await recordBoxNowWebhookAttempt(attemptRef, {
+          outcome: "rejected",
+          httpStatus: rejectionStatus,
+          verificationReason: verification.reason || "unverified",
+        });
+        return res.status(rejectionStatus).send(
           verification.skipped ? "BOX NOW webhook secret is not configured" : "Invalid BOX NOW webhook signature"
         );
       }
 
+      logger.info("BOX NOW webhook payload received", {
+        environment: config.environment,
+        payload,
+      });
+
       const update = boxNowTrackingUpdateFromEvent(payload, config.environment);
-      if (!update.event) return res.status(400).send("Missing BOX NOW data.event");
       const eventId = String(payload.id || `${update.parcelId}_${update.event}_${update.eventTime}`).replace(/[\/#?[\]]+/g, "_");
+      if (!update.event) {
+        await recordBoxNowWebhookAttempt(attemptRef, {
+          outcome: "rejected",
+          httpStatus: 400,
+          verificationReason: "missing_event",
+          eventId,
+          orderNumber: update.orderNumber,
+          parcelId: update.parcelId,
+        });
+        return res.status(400).send("Missing BOX NOW data.event");
+      }
+      await recordBoxNowWebhookAttempt(attemptRef, {
+        outcome: "verified",
+        httpStatus: 200,
+        verificationReason: "verified",
+        eventId,
+        event: update.event,
+        orderNumber: update.orderNumber,
+        parcelId: update.parcelId,
+        eventTime: update.eventTime,
+      });
       await db.collection("boxNowWebhookEvents").doc(eventId || String(Date.now())).set({
         payload,
         verification,
@@ -8974,16 +9630,26 @@ exports.boxNowWebhook = onRequest(
           const incomingEventMs = millisFromTimestamp(update.eventTime);
           const previousEventMs = millisFromTimestamp(previousParcelEvent.eventTime);
           if (previousEventMs && incomingEventMs && incomingEventMs < previousEventMs) {
+            await recordBoxNowWebhookAttempt(attemptRef, { outcome: "stale_ignored", httpStatus: 200 });
             return res.status(200).send("[ok: stale event ignored]");
           }
           const normalizedEvent = normalizeOrderStatus(update.event).replace(/[_\s]+/g, "-");
-          parcelEvents[parcelKey] = {
+          const eventRecord = {
             parcelId: update.parcelId,
             event: normalizedEvent,
             parcelState: update.parcelState || "",
             eventTime: update.eventTime || "",
+            eventLocation: update.eventLocation || null,
             webhookEventId: eventId,
           };
+          parcelEvents[parcelKey] = eventRecord;
+          const eventHistory = (Array.isArray(order.boxNowShipment?.eventHistory)
+            ? order.boxNowShipment.eventHistory
+            : Object.values(order.boxNowShipment?.parcelEvents || {}))
+            .filter(item => item && String(item.webhookEventId || "") !== eventId)
+            .concat(eventRecord)
+            .sort((a, b) => millisFromTimestamp(a.eventTime) - millisFromTimestamp(b.eventTime))
+            .slice(-100);
           const expectedParcelIds = (Array.isArray(order.boxNowShipment?.parcelIds) ? order.boxNowShipment.parcelIds : [])
             .map(value => String(value || "").trim())
             .filter(Boolean);
@@ -8995,6 +9661,17 @@ exports.boxNowWebhook = onRequest(
             expectedParcelIds.length <= 1 ||
             expectedParcelIds.every(parcelId => deliveredParcelIds.includes(parcelId))
           );
+          const automaticFulfillment = boxNowFulfillmentForEvent(normalizedEvent, {
+            allParcelsDelivered,
+            parcelState: update.parcelState,
+          });
+          const previousFulfillmentStatus = normalizeOrderStatus(order.fulfillmentStatus || "new");
+          const fulfillmentRank = { new: 0, processing: 1, packed: 2, shipped: 3, delivered: 4 };
+          const shouldAdvanceFulfillment = (
+            automaticFulfillment &&
+            String(order.status || "").trim().toLowerCase() !== "cancelled" &&
+            Number(fulfillmentRank[automaticFulfillment] ?? -1) > Number(fulfillmentRank[previousFulfillmentStatus] ?? -1)
+          );
           const deliveredEventDate = update.eventTime ? new Date(update.eventTime) : null;
           const orderUpdate = {
             boxNowShipment: {
@@ -9005,6 +9682,7 @@ exports.boxNowWebhook = onRequest(
               lastWebhookAt: now(),
               environment: config.environment,
               parcelEvents,
+              eventHistory,
               deliveredParcelIds,
             },
             shipping: {
@@ -9014,24 +9692,112 @@ exports.boxNowWebhook = onRequest(
             boxNowWebhookEventIds: FieldValue.arrayUnion(eventId),
             updatedAt: now(),
           };
-          if (allParcelsDelivered) {
-            orderUpdate.fulfillmentStatus = "delivered";
+          if (shouldAdvanceFulfillment) {
+            orderUpdate.fulfillmentStatus = automaticFulfillment;
+            orderUpdate.fulfillmentAutomaticallyBy = "boxnow_webhook";
+          }
+          if (shouldAdvanceFulfillment && automaticFulfillment === "delivered") {
+            orderUpdate.status = "completed";
             orderUpdate.deliveredAt = deliveredEventDate && !Number.isNaN(deliveredEventDate.getTime())
               ? Timestamp.fromDate(deliveredEventDate)
               : now();
             orderUpdate.deliveredAutomaticallyBy = "boxnow_webhook";
           }
+          if (config.environment === "production") {
+            const currentReview = order.boxNowNotificationReview || {};
+            if (normalizedEvent === "final-destination" && !(
+              String(currentReview.parcelId || "") === update.parcelId &&
+              ["pending", "approved", "dismissed"].includes(String(currentReview.status || ""))
+            )) {
+              const eventMs = millisFromTimestamp(update.eventTime) || Date.now();
+              orderUpdate.boxNowNotificationReview = {
+                status: "pending",
+                parcelId: update.parcelId,
+                event: normalizedEvent,
+                eventTime: update.eventTime || "",
+                webhookEventId: eventId,
+                proposedReminderAt: Timestamp.fromMillis(eventMs + 18 * 60 * 60 * 1000),
+                createdAt: now(),
+              };
+            } else if (
+              ["delivered", "expired", "returned", "canceled", "missing"].includes(normalizedEvent) &&
+              currentReview.status === "pending" &&
+              String(currentReview.parcelId || "") === update.parcelId
+            ) {
+              orderUpdate.boxNowNotificationReview = {
+                ...currentReview,
+                status: "cancelled",
+                cancelReason: normalizedEvent,
+                cancelledAt: now(),
+              };
+            }
+          }
           await orderRef.set(orderUpdate, { merge: true });
+
+          if (config.environment === "production" && shouldAdvanceFulfillment) {
+            const updatedOrder = {
+              ...order,
+              ...orderUpdate,
+              id: orderRef.id,
+              fulfillmentStatus: automaticFulfillment,
+              shipping: {
+                ...(order.shipping || {}),
+                ...(orderUpdate.shipping || {}),
+              },
+              boxNowShipment: {
+                ...(order.boxNowShipment || {}),
+                ...(orderUpdate.boxNowShipment || {}),
+              },
+            };
+            try {
+              await sendBoxNowFulfillmentEmailOnce(updatedOrder, previousFulfillmentStatus, eventId);
+            } catch (emailError) {
+              logger.error("Automatic BOX NOW fulfillment email failed", {
+                orderId: orderRef.id,
+                fulfillmentStatus: automaticFulfillment,
+                webhookEventId: eventId,
+                error: emailError.message || "Email failed",
+              });
+            }
+          }
+
+          if (config.environment === "production") {
+            try {
+              if (["delivered", "expired", "returned", "canceled", "missing"].includes(normalizedEvent)) {
+                await cancelAutomaticBoxNowLockerReminder(orderRef.id, update.parcelId, normalizedEvent);
+              }
+            } catch (automationError) {
+              logger.error("BOX NOW customer notification automation failed", {
+                orderId: orderRef.id,
+                parcelId: update.parcelId,
+                event: normalizedEvent,
+                error: automationError.message || "Notification automation failed",
+              });
+            }
+          }
         }
       }
 
       return res.status(200).send("[ok]");
     } catch (err) {
       logger.error("BOX NOW webhook failed", err);
+      await recordBoxNowWebhookAttempt(attemptRef, {
+        environment,
+        outcome: "handler_error",
+        httpStatus: 500,
+        error: String(err.message || "Webhook failed").slice(0, 500),
+      });
       return res.status(500).send("BOX NOW webhook failed");
     }
-  }
-);
+  };
+}
+
+// Keep the original registered URL pinned to production so an admin setting can
+// never accidentally break live callbacks. New registrations should use the
+// explicit environment URLs below.
+exports.boxNowWebhook = onRequest(boxNowWebhookOptions, boxNowWebhookHandler("production"));
+exports.boxNowWebhookStage = onRequest(boxNowWebhookOptions, boxNowWebhookHandler("stage"));
+exports.boxNowWebhookProduction = onRequest(boxNowWebhookOptions, boxNowWebhookHandler("production"));
 
 // ===== Public stock (from Firestore product stock) =====
 exports.getStock = onRequest(

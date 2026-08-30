@@ -4,7 +4,12 @@
     "dev": "firebase emulators:start --only hosting,functions,storage",
     "serve": "npm run dev",
     "serve:hosting": "firebase emulators:start --only hosting",
-    "serve:static": "python3 -m http.server 8000 --bind 127.0.0.1 --directory public"
+    "serve:static": "python3 -m http.server 8000 --bind 127.0.0.1 --directory public",
+    "local:install": "zsh scripts/install-local-emulators.sh",
+    "local:start": "zsh scripts/start-local-emulators.sh",
+    "local:stop": "zsh scripts/stop-local-emulators.sh",
+    "local:status": "zsh scripts/status-local-emulators.sh",
+    "local:logs": "tail -f .local-emulators/logs/emulators.log .local-emulators/logs/emulators-error.log"
   },
   "dependencies": {
     "firebase": "^12.2.1"

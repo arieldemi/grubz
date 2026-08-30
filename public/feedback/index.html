@@ -24,7 +24,7 @@
           <div>
             <p id="orderLabel" class="text-sm font-bold uppercase tracking-wide text-amber-700"></p>
             <h1 id="title" class="mt-1 text-3xl font-black">How was your GRUBZ experience?</h1>
-            <p id="intro" class="mt-2 text-zinc-600">Your feedback helps us improve our products and service.</p>
+          <p id="intro" class="mt-2 text-zinc-600">Submit your feedback and we’ll email you a unique 10% discount code for your next order.</p>
           </div>
           <form id="feedbackForm" class="space-y-5">
             <fieldset>
@@ -48,7 +48,7 @@
         </div>
         <div id="thanks" class="hidden space-y-3">
           <h1 id="thanksTitle" class="text-3xl font-black">Thank you!</h1>
-          <p id="thanksBody" class="text-zinc-600">Your feedback has been recorded.</p>
+          <p id="thanksBody" class="text-zinc-600">Your feedback has been recorded. Check your email for your unique 10% discount code.</p>
           <a id="shopLink" class="inline-block font-bold underline" href="/#products">Continue shopping</a>
         </div>
       </section>
@@ -60,19 +60,19 @@
       const text = {
         en: {
           order: "Order", title: "How was your GRUBZ experience?",
-          intro: "Your feedback helps us improve our products and service.",
+          intro: "Submit your feedback and we’ll email you a unique 10% discount code for your next order.",
           rating: "Your rating", comment: "Tell us more (optional)", submit: "Send feedback",
           choose: "Please choose a rating.", saving: "Saving your feedback…",
           error: "Your feedback could not be saved. Please try again.",
-          thanks: "Thank you!", recorded: "Your feedback has been recorded.", shop: "Continue shopping",
+          thanks: "Thank you!", recorded: "Your feedback has been recorded. Check your email for your unique 10% discount code.", shop: "Continue shopping",
         },
         el: {
           order: "Παραγγελία", title: "Πώς ήταν η εμπειρία σου με το GRUBZ;",
-          intro: "Η γνώμη σου μας βοηθά να βελτιώνουμε τα προϊόντα και την εξυπηρέτησή μας.",
+          intro: "Υπόβαλε την αξιολόγησή σου και θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.",
           rating: "Η αξιολόγησή σου", comment: "Πες μας περισσότερα (προαιρετικά)", submit: "Αποστολή αξιολόγησης",
           choose: "Επίλεξε μια βαθμολογία.", saving: "Αποθήκευση αξιολόγησης…",
           error: "Δεν μπορέσαμε να αποθηκεύσουμε την αξιολόγησή σου. Δοκίμασε ξανά.",
-          thanks: "Ευχαριστούμε!", recorded: "Η αξιολόγησή σου καταγράφηκε.", shop: "Συνέχισε τις αγορές",
+          thanks: "Ευχαριστούμε!", recorded: "Η αξιολόγησή σου καταγράφηκε. Έλεγξε το email σου για τον μοναδικό κωδικό έκπτωσης 10%.", shop: "Συνέχισε τις αγορές",
         },
       };
       const $ = id => document.getElementById(id);

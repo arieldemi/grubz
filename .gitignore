@@ -68,3 +68,4 @@ BOXNOW API Keys
 
 # dataconnect generated files
 .dataconnect
+.local-emulators/

@@ -28,6 +28,10 @@
       .label{font-size:.75rem;font-weight:700;color:#52525b}
 	      .panel{border:1px solid #e4e4e7;background:#fff;border-radius:8px}
 	      .modal-backdrop{position:fixed;inset:0;background:rgba(24,24,27,.5)}
+	      #collaborationModal{padding:.5rem}
+	      #collaborationDialog{width:min(48rem,100%);max-height:calc(100vh - 1rem);max-height:calc(100dvh - 1rem);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+	      #collaborationDialogHeader{position:sticky;top:-1.25rem;z-index:2;margin:-1.25rem -1.25rem .75rem;padding:1.25rem;background:#fff;border-bottom:1px solid #e4e4e7}
+	      @media(max-width:639px){#collaborationDialog{border-radius:6px;padding:1rem}#collaborationDialogHeader{top:-1rem;margin:-1rem -1rem .75rem;padding:1rem;flex-wrap:wrap}}
       .modal-panel{position:relative;background:#fff;border-radius:8px;width:min(96vw,880px);max-height:90vh;overflow:auto}
 	      #orderModal>.modal-panel{height:90vh;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
 	      .thumb{width:72px;height:54px;object-fit:contain;border-radius:6px;border:1px solid #e4e4e7;background:#f4f4f5}
@@ -208,6 +212,7 @@
 	                <button id="selectVisibleOrdersBtn" class="btn-soft" type="button">Select visible</button>
 	                <button id="clearSelectedOrdersBtn" class="btn-soft" type="button">Clear selection</button>
 	                <button id="downloadSelectedOrdersPdfBtn" class="btn-soft" type="button" disabled>Download PDF</button>
+	                <button id="downloadSelectedBoxNowLabelsBtn" class="btn-soft" type="button" disabled>Print BOX NOW labels</button>
 	                <button id="deleteSelectedOrdersBtn" class="btn-danger" type="button" disabled>Delete selected</button>
 	                <button id="newManualOrderBtn" class="btn" type="button">New Order</button>
 	                <button id="refreshOrdersBtn" class="btn-soft" type="button">Refresh orders</button>
@@ -240,6 +245,19 @@
 	                <p class="text-sm text-zinc-500">Ratings and comments linked to customer orders.</p>
 	              </div>
 	              <button id="refreshFeedbackBtn" class="btn-soft" type="button">Refresh feedback</button>
+	            </div>
+	            <div class="panel space-y-3 border-l-4 border-l-violet-500 p-4">
+	              <div>
+	                <h3 class="font-extrabold">Feedback invitation campaign</h3>
+	                <p class="text-sm text-zinc-500">One invitation per delivered customer, sent in safe batches of up to 250. Submitted customers and customers already invited are excluded automatically.</p>
+	              </div>
+	              <div id="feedbackBulkPreview" class="rounded-md bg-zinc-50 p-3 text-sm text-zinc-600">Preview eligibility before sending.</div>
+	              <div class="flex flex-wrap gap-2">
+	                <button id="previewFeedbackBulkBtn" class="btn-soft" type="button">Preview recipients</button>
+	                <button id="testFeedbackBulkBtn" class="btn-soft" type="button">Run end-to-end test</button>
+	                <button id="sendFeedbackBulkBtn" class="btn" type="button" disabled>Send to eligible customers</button>
+	              </div>
+	              <p class="text-xs text-zinc-500">Test mode sends one invitation and the thank-you email to info@grubz.gr. Its one-use coupon works only while signed in as info@grubz.gr. In Stripe live mode, completing checkout creates a real charge.</p>
 	            </div>
 	            <div id="feedbackKpis" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5"></div>
 	            <div class="panel p-4">
@@ -338,6 +356,16 @@
 	                <h3 class="font-extrabold">Payment methods</h3>
 	                <div id="analyticsPayments" class="mt-3 space-y-2 text-sm"></div>
 	              </div>
+	            </div>
+	            <div class="panel p-4">
+	              <div class="flex flex-wrap items-center justify-between gap-3">
+	                <div>
+	                  <h3 class="font-extrabold">Customer feedback</h3>
+	                  <p id="analyticsFeedbackSummary" class="text-xs text-zinc-500">Loading feedback…</p>
+	                </div>
+	                <button id="openFeedbackDashboardBtn" class="btn-soft" type="button">View all feedback</button>
+	              </div>
+	              <div id="analyticsFeedback" class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
 	            </div>
 		            <div class="grid gap-4 xl:grid-cols-2">
 		              <div class="panel p-4">
@@ -622,7 +650,7 @@
 	                <button id="newCollaborationBtn" class="btn" type="button">New collaboration</button>
 	              </div>
 	            </div>
-	            <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+	            <div>
 	              <div class="panel overflow-hidden">
 	                <div class="grid gap-3 border-b border-zinc-200 bg-zinc-50 p-3 sm:grid-cols-[1fr_180px_160px]">
 	                  <input id="collaborationSearch" class="input" placeholder="Search collaborations, social links, coupons, notes...">
@@ -650,15 +678,37 @@
 	                <div id="collaborationSummary" class="border-b border-zinc-200 px-3 py-2 text-xs text-zinc-500"></div>
 	                <div id="collaborationList" class="divide-y"></div>
 	              </div>
-	              <aside class="panel p-4 space-y-3">
-	                <div class="flex items-center justify-between gap-3">
-	                  <h3 class="font-extrabold text-lg">Lead details</h3>
-	                  <button id="deleteCollaborationBtn" class="btn-danger" type="button">Delete</button>
+	              <div id="collaborationModal" class="fixed inset-0 z-50 hidden items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="collaborationModalTitle">
+	                <div class="modal-backdrop" data-close-modal="collaborationModal"></div>
+	              <aside id="collaborationDialog" class="panel relative z-10 p-5 space-y-3">
+	                <div id="collaborationDialogHeader" class="flex items-center justify-between gap-3">
+	                  <h3 id="collaborationModalTitle" class="font-extrabold text-lg">New collaboration</h3>
+	                  <div class="flex gap-2"><button id="deleteCollaborationBtn" class="btn-danger" type="button">Delete</button><button id="closeCollaborationModal" class="btn-soft" type="button">Close</button></div>
 	                </div>
 	                <div class="grid gap-2 sm:grid-cols-2">
+	                  <div>
+	                    <label class="label" for="collabCategory">1. Category</label>
+	                    <select id="collabCategory" class="input">
+	                      <option value="">Select category…</option>
+	                      <option value="farm">Farm</option><option value="homestead">Homestead</option><option value="chicken_owner">Chicken owner</option><option value="facebook_group_admin">Facebook group admin</option><option value="reptile_keeper">Reptile keeper</option><option value="pet_shop">Pet shop</option><option value="breeder">Breeder</option><option value="aquarium">Aquarium</option><option value="creator">Creator</option><option value="other">Other</option>
+	                    </select>
+	                  </div>
+	                  <div>
+	                    <label class="label" for="collabType">2. Collaboration type</label>
+	                    <select id="collabType" class="input">
+	                      <option value="">Select type…</option>
+	                      <option value="discount_code">Discount code</option><option value="free_product">Free product</option><option value="paid_post">Paid post</option><option value="ambassador">Ambassador</option><option value="testimonial">Testimonial</option><option value="case_study">Case study</option><option value="other">Other</option>
+	                    </select>
+	                  </div>
+	                  <div id="collabFacebookGroupField" class="hidden sm:col-span-2">
+	                    <label class="label" for="collabFacebookGroup">3. Facebook group</label>
+	                    <input id="collabFacebookGroupSearch" class="input mb-2" type="search" placeholder="Search Facebook groups…" autocomplete="off">
+	                    <select id="collabFacebookGroup" class="input"><option value="">No Facebook group selected</option></select>
+	                    <p id="collabFacebookGroupHelp" class="mt-1 text-xs text-zinc-500">Choose a category and collaboration type first. Groups are managed under Marketing → Facebook groups.</p>
+	                  </div>
 	                  <div class="sm:col-span-2">
 	                    <label class="label" for="collabName">Name / page</label>
-	                    <input id="collabName" class="input" placeholder="Agia Farm Lemnos">
+	                    <input id="collabName" class="input" placeholder="Partner, page, or collaboration name">
 	                  </div>
 	                  <div>
 	                    <label class="label" for="collabContactName">Contact name</label>
@@ -686,32 +736,6 @@
 	                      <option value="active">Active</option>
 	                      <option value="paused">Paused</option>
 	                      <option value="ended">Ended</option>
-	                    </select>
-	                  </div>
-	                  <div>
-	                    <label class="label" for="collabType">Type</label>
-	                    <select id="collabType" class="input">
-	                      <option value="discount_code">Discount code</option>
-	                      <option value="free_product">Free product</option>
-	                      <option value="paid_post">Paid post</option>
-	                      <option value="ambassador">Ambassador</option>
-	                      <option value="testimonial">Testimonial</option>
-	                      <option value="case_study">Case study</option>
-	                      <option value="other">Other</option>
-	                    </select>
-	                  </div>
-	                  <div>
-	                    <label class="label" for="collabCategory">Category</label>
-	                    <select id="collabCategory" class="input">
-	                      <option value="farm">Farm</option>
-	                      <option value="homestead">Homestead</option>
-	                      <option value="chicken_owner">Chicken owner</option>
-	                      <option value="reptile_keeper">Reptile keeper</option>
-	                      <option value="pet_shop">Pet shop</option>
-	                      <option value="breeder">Breeder</option>
-	                      <option value="aquarium">Aquarium</option>
-	                      <option value="creator">Creator</option>
-	                      <option value="other">Other</option>
 	                    </select>
 	                  </div>
 	                  <div>
@@ -761,6 +785,23 @@
 	                      </div>
 	                      <div id="collabMetrics" class="mt-2 text-sm text-zinc-600"></div>
 	                    </div>
+	                    <details class="rounded-md border border-zinc-200 bg-white p-3" open>
+	                      <summary class="cursor-pointer font-bold">Measurable sales pilot</summary>
+	                      <div class="mt-3 grid gap-2 sm:grid-cols-2">
+	                        <label class="sm:col-span-2 inline-flex items-center gap-2 text-sm font-semibold"><input id="collabPilotEnabled" type="checkbox" class="h-4 w-4"> Track as a sales pilot</label>
+	                        <div><label class="label" for="collabPilotMembers">Group members</label><input id="collabPilotMembers" class="input" type="number" min="0"></div>
+	                        <div><label class="label" for="collabPilotCommission">Commission %</label><input id="collabPilotCommission" class="input" type="number" min="0" max="100" step="0.01" placeholder="10"></div>
+	                        <div><label class="label" for="collabPilotStarts">Starts</label><input id="collabPilotStarts" class="input" type="date"></div>
+	                        <div><label class="label" for="collabPilotEnds">Ends</label><input id="collabPilotEnds" class="input" type="date"></div>
+	                        <div><label class="label" for="collabPilotProductCost">Sample cost (€)</label><input id="collabPilotProductCost" class="input" type="number" min="0" step="0.01"></div>
+	                        <div><label class="label" for="collabPilotShippingCost">Shipping cost (€)</label><input id="collabPilotShippingCost" class="input" type="number" min="0" step="0.01"></div>
+	                        <div><label class="label" for="collabPilotFixedFee">Fixed fee (€)</label><input id="collabPilotFixedFee" class="input" type="number" min="0" step="0.01"></div>
+	                        <div><label class="label" for="collabPilotVisits">Website visits</label><input id="collabPilotVisits" class="input" type="number" min="0"></div>
+	                      </div>
+	                      <div class="mt-3 overflow-x-auto">
+	                        <table class="w-full text-xs"><thead><tr><th class="p-1 text-left">Touchpoint</th><th class="p-1">Date</th><th class="p-1">Reach</th><th class="p-1">Reactions</th><th class="p-1">Comments</th></tr></thead><tbody id="collabPilotPosts"></tbody></table>
+	                      </div>
+	                    </details>
 	                  </div>
 	                </details>
 	                <div>
@@ -793,6 +834,7 @@
 	                </div>
 	                <p id="collaborationMsg" class="text-sm" role="status" aria-live="polite"></p>
 	              </aside>
+	              </div>
 	            </div>
 	          </section>
 
@@ -890,6 +932,7 @@
 	                    <p class="text-sm text-zinc-500">Bilingual soft GRUBZ promotion ideas based on actual Greek Facebook chicken and poultry group research.</p>
 	                  </div>
 	                  <div class="flex flex-wrap gap-2" role="tablist" aria-label="Weekly idea lists">
+	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-24">Week of 2026-08-24</button>
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-17">Week of 2026-08-17</button>
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-10">Week of 2026-08-10</button>
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-03">Week of 2026-08-03</button>
@@ -897,6 +940,61 @@
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-07-20">Week of 2026-07-20</button>
 	                  </div>
 	                  <div class="grid gap-2 text-sm">
+	                    <div data-idea-week-panel="2026-08-24" class="space-y-3 hidden">
+	                      <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+	                        <span class="font-semibold">Research status:</span> 39/39 listed Greek poultry-group feeds were accessed through the logged-in in-app browser. Visible activity repeatedly centred on practical flock care, eggs and hatching, breed identity, local availability, and occasional low-friction questions or short video. Ideas below use only these anonymized patterns—no member names, private text, or personal details.
+	                      </div>
+	                      <ol class="space-y-3 text-zinc-700">
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">1. Διάλεξε τη γωνιά σκιάς / Choose the shade spot</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Ποια γωνιά της αυλής θα διάλεγε πρώτη η παρέα σας σε μια ζεστή μέρα; Α ή Β; Δείχνουμε στο επόμενο slide τη δική μας μικρή στάση: σκιά, καθαρό νερό και λίγα GRUBZ ως λιχουδιά για τις ενήλικες κότες.»</div>
+	                          <div><span class="font-semibold">English:</span> “Which corner of the yard would your flock choose first on a warm day—A or B? Our next slide shows our small stop: shade, fresh water, and a few GRUBZ as a treat for adult hens.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Two-photo carousel with A/B labels; the final card shows the calm routine.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> One-letter A/B reply before the reveal.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Practical care was a common visible conversation theme; an easy prediction makes the useful tip feel playful rather than promotional.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">2. Η ράτσα και η προσωπικότητα / Breed, then personality</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Η ράτσα λέει ένα μέρος της ιστορίας—η προσωπικότητα τα υπόλοιπα. Αν δίνατε στη δική σας αγαπημένη κότα έναν τίτλο, ποιος θα ήταν; Η δική μας “ελεγκτής αυλής” εμφανίζεται πάντα όταν ακούει το σακουλάκι GRUBZ.»</div>
+	                          <div><span class="font-semibold">English:</span> “Breed tells one part of the story—personality tells the rest. If you gave your favourite hen a title, what would it be? Our ‘yard inspector’ always appears when she hears the GRUBZ bag.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Natural flock portrait with a small, honest caption.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Invite a one-line title, not a long story.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Breed-focused groups showed strong identity interest. A light personality prompt adds an emotional trigger without making claims about performance.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">3. Σεζόν εκκόλαψης, ξεκάθαρα όρια / Hatching season, clear boundaries</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Η σεζόν με γόνιμα αυγά φέρνει πολλή χαρά και πολλές ερωτήσεις. Για νεοσσούς ακολουθούμε πάντα την κατάλληλη καθοδήγηση· αυτό το μικρό βίντεο αφορά μόνο την ήρεμη ρουτίνα των ενηλίκων κοτών μας με λίγα GRUBZ ως λιχουδιά. Ποια είναι η πρώτη σας πρωινή προτεραιότητα στο κοτέτσι;»</div>
+	                          <div><span class="font-semibold">English:</span> “Hatching season brings lots of excitement and questions. For chicks, always follow appropriate guidance; this short video is only about our calm adult-hen routine with a few GRUBZ as a treat. What is your first morning coop priority?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> 10-second adult-flock routine reel, with an on-screen adult-hens note.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Ask for one first-priority routine in the comments.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Eggs and hatching were visibly active across the roster. Clear life-stage boundaries build trust, while routine-sharing gives the discussion practical value.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">4. Η ερώτηση του καθαρού χώρου / The clean-space question</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Μικρή ρουτίνα, μεγάλη διαφορά: πριν από μια λιχουδιά, κάνουμε έναν γρήγορο έλεγχο στον καθαρό, στεγνό χώρο. Εσείς προτιμάτε μπολ ή λίγο πασπάλισμα για να απασχολούνται οι ενήλικες κότες;»</div>
+	                          <div><span class="font-semibold">English:</span> “Small routine, meaningful difference: before a treat, we do a quick check that the area is clean and dry. Do you prefer a bowl or a light scatter to keep adult hens occupied?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Simple two-panel photo post: bowl versus scatter.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> A practical either/or question, plus ‘why?’ for optional detail.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Care-led posts give a trusted, helpful frame. The low-friction choice format is easy to join and produces usable peer tips.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">5. Πρώτα η απόδειξη, μετά η διαθεσιμότητα / Proof before availability</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Το απόγευμα στο κοτέτσι: νερό, γρήγορος έλεγχος, λίγη εξερεύνηση και μετά επιστροφή στη ρουτίνα. Αν θέλετε να μάθετε για τη διαθεσιμότητα των GRUBZ, στείλτε μας μήνυμα—χωρίς πίεση. Ποιο είναι το δικό σας απογευματινό check;»</div>
+	                          <div><span class="font-semibold">English:</span> “Afternoon at the coop: water, a quick check, a little exploration, then back to routine. If you would like GRUBZ availability details, message us—no pressure. What is your own afternoon check?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> 12-second routine reel; product appears naturally in the last third.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Invite one routine item; availability is a quiet optional CTA.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Local availability remains a visible marketplace need. Leading with a real routine supplies visual proof and keeps the commercial step secondary.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">6. Βάλτε ήχο: αναγνωρίζει το σήμα; / Sound on: do they know the cue?</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Βάλτε ήχο: πριν καν ανοίξει η πόρτα, η παρέα έχει ήδη καταλάβει ότι έρχεται η ώρα για εξερεύνηση. Ποιο μικρό σήμα αναγνωρίζουν αμέσως οι κότες σας;»</div>
+	                          <div><span class="font-semibold">English:</span> “Sound on: before the door even opens, the flock already knows exploration time is coming. What small cue do your hens recognise straight away?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> 6–8 second vertical, sound-on reaction clip with no added music.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Ask for a short sound-or-routine anecdote.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Short video and reaction content appeared in the visible activity. Familiar flock behaviour is instantly understandable and creates a warm comment hook.</div>
+	                        </li>
+	                      </ol>
+	                    </div>
 	                    <div data-idea-week-panel="2026-08-17" class="space-y-3 hidden">
 	                      <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
 	                        <span class="font-semibold">Research status:</span> the 39 listed Greek poultry groups were available as a roster, but no logged-in in-app browser session was available for Facebook navigation (0/39 group feeds inspected). These planning ideas use only the supplied group themes and the existing anonymized pattern library; they do not claim fresh post-level research. No member names, private post text, or personal details are included.
@@ -1362,25 +1460,52 @@
                 <div class="rounded-md border border-violet-200 bg-violet-50 p-3 space-y-3">
                   <div>
                     <h3 class="font-extrabold">Delivery status webhook</h3>
-                    <p class="text-sm text-zinc-600">BOX NOW registers this URL for you and provides a separate secret for each environment. A verified delivered event marks the order Delivered and records its delivery date; feedback email sending remains manual.</p>
-                    <p id="boxNowWebhookUrl" class="mt-1 break-all font-mono text-xs text-violet-800">https://grubz.gr/api/boxnow/webhook</p>
+                    <p class="text-sm text-zinc-600">Staging and production use fixed, separate URLs and secrets, so both can receive events at the same time. A verified delivered event marks the order Delivered and records its delivery date.</p>
+                    <p class="mt-2 text-xs font-bold text-violet-950">Staging</p>
+                    <p class="break-all font-mono text-xs text-violet-800">https://grubz.gr/api/boxnow/webhook/stage</p>
+                    <p class="mt-2 text-xs font-bold text-violet-950">Production</p>
+                    <p class="break-all font-mono text-xs text-violet-800">https://grubz.gr/api/boxnow/webhook/production</p>
                   </div>
 	              <div class="max-w-xs">
 	                <div>
-	                  <label class="label" for="boxNowWebhookEnvironment">Webhook environment</label>
+	                  <label class="label" for="boxNowWebhookEnvironment">Status environment</label>
 	                  <select id="boxNowWebhookEnvironment" class="input">
 	                    <option value="stage">Staging</option>
 	                    <option value="production">Production</option>
 	                  </select>
-	                  <p class="mt-1 text-xs text-zinc-500">The single webhook URL validates requests with the saved secret for this environment.</p>
+	                  <p class="mt-1 text-xs text-zinc-500">Choose which endpoint's status and attempt history to inspect.</p>
 	                </div>
 	              </div>
                   <div class="flex flex-wrap gap-2">
-                    <button id="copyBoxNowWebhookUrlBtn" class="btn-soft" type="button">Copy webhook URL</button>
+                    <button id="copyBoxNowWebhookUrlBtn" class="btn-soft" type="button">Copy selected URL</button>
                     <button id="refreshBoxNowWebhookStatusBtn" class="btn" type="button">Refresh status</button>
                   </div>
                   <div id="boxNowWebhookStatus" class="rounded-md border border-violet-200 bg-white p-3 text-sm text-zinc-700">
                     Select an environment and refresh to check local configuration and the latest verified event.
+                  </div>
+                  <div class="overflow-hidden rounded-md border border-violet-200 bg-white">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-violet-100 px-3 py-2">
+                      <div>
+                        <h4 class="font-extrabold text-sm">Webhook attempt history</h4>
+                        <p class="text-xs text-zinc-500">Future calls are retained here whether accepted or rejected. Older verified events are included when available.</p>
+                      </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full text-left text-xs">
+                        <thead class="bg-zinc-50 text-zinc-500">
+                          <tr>
+                            <th class="px-3 py-2 font-bold">Received</th>
+                            <th class="px-3 py-2 font-bold">Result</th>
+                            <th class="px-3 py-2 font-bold">Event</th>
+                            <th class="px-3 py-2 font-bold">Order / parcel</th>
+                            <th class="px-3 py-2 font-bold">Client</th>
+                          </tr>
+                        </thead>
+                        <tbody id="boxNowWebhookAttempts" class="divide-y divide-zinc-100">
+                          <tr><td colspan="5" class="px-3 py-4 text-zinc-500">Refresh to load webhook attempts.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                   <p id="boxNowWebhookMsg" class="text-sm" role="status" aria-live="polite"></p>
                 </div>
@@ -1930,8 +2055,11 @@
 	              <input id="couponEndsAt" class="input" type="datetime-local">
 	            </div>
 	            <div class="sm:col-span-2">
-	              <label class="label" for="couponProductIds">Allowed product IDs</label>
-	              <input id="couponProductIds" class="input" placeholder="Leave blank for all products, or use comma-separated product IDs">
+	              <fieldset>
+	                <legend class="label">Allowed products by inventory pool</legend>
+	                <div id="couponProductPicker" class="max-h-72 space-y-2 overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50 p-3"></div>
+	                <p class="mt-1 text-xs text-zinc-500">Leave every product unchecked to allow all products. Selecting a pool selects all products currently assigned to it.</p>
+	              </fieldset>
 	            </div>
 	            <div class="sm:col-span-2">
 	              <label class="label" for="couponDescription">Internal description</label>
@@ -2140,11 +2268,13 @@
 	                <p id="orderBoxNowShipmentSummary" class="text-xs text-zinc-500"></p>
 	              </div>
 	              <div class="flex flex-wrap gap-2">
-	                <button id="downloadBoxNowParcelLabelBtn" class="btn-soft" type="button">Parcel label</button>
-	                <button id="downloadBoxNowOrderLabelBtn" class="btn-soft" type="button">Order label</button>
+	                <button id="downloadBoxNowParcelLabelBtn" class="btn-soft" type="button">Download branded parcel label</button>
+	                <button id="downloadBoxNowOrderLabelBtn" class="btn-soft" type="button">Download branded order label</button>
 	                <button id="createBoxNowShipmentBtn" class="btn-soft" type="button">Create BOX NOW delivery</button>
 	              </div>
 	            </div>
+	            <div id="orderBoxNowTimeline" class="rounded-md border border-violet-200 bg-violet-50 p-3"></div>
+	            <div id="orderBoxNowNotificationReview" class="hidden rounded-md border border-amber-300 bg-amber-50 p-3"></div>
 		            <div class="grid sm:grid-cols-3 gap-2">
 	              <div>
 	                <label class="label" for="boxNowPaymentMode">BOX NOW shipping type</label>
@@ -2749,11 +2879,11 @@
 	        fulfillmentStatus:"feedback_request",
 	        status:"feedback_request",
 	        subject:"How was your GRUBZ order {orderNumber}?",
-	        body:"{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nWe would love to hear your feedback. Rate your experience here:\n{feedback_url}\n\nYour feedback helps us improve.\n\nGRUBZ",
+	        body:"{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nShare your feedback using your personal link below. After you submit the form, we will email you a unique 10% discount code for your next order.\n\n{feedback_url}\n\nThe link can be used once and expires after 30 days.\n\nGRUBZ",
 	        translations:{
 	          el:{
 	            subject:"Πώς σου φάνηκε η παραγγελία GRUBZ {orderNumber};",
-	            body:"{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΘα χαρούμε πολύ να ακούσουμε τη γνώμη σου. Αξιολόγησε την εμπειρία σου εδώ:\n{feedback_url}\n\nΗ γνώμη σου μας βοηθά να γινόμαστε καλύτεροι.\n\nGRUBZ",
+	            body:"{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΜοιράσου τη γνώμη σου μέσω του προσωπικού συνδέσμου παρακάτω. Μετά την υποβολή, θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.\n\n{feedback_url}\n\nΟ σύνδεσμος χρησιμοποιείται μία φορά και λήγει σε 30 ημέρες.\n\nGRUBZ",
 	          },
 	        },
 	      };
@@ -2766,6 +2896,16 @@
 	        subject:"Your GRUBZ parcel is waiting at the BOX NOW locker",
 	        body:"{greeting}\n\nYour GRUBZ order {orderNumber} is waiting for collection at the BOX NOW locker:\n\n{boxNowLocker}\n\nPlease collect it soon to avoid it being returned.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
 	        translations:{ el:{ subject:"Το δέμα GRUBZ σε περιμένει στη θυρίδα BOX NOW", body:"{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} σε περιμένει για παραλαβή στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΠαρακαλούμε παρέλαβέ τη σύντομα, ώστε να μην επιστραφεί.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ" } },
+	      };
+	      const defaultLockerArrivalTemplate = {
+	        enabled:true,
+	        templateContext:"order",
+	        context:"order",
+	        fulfillmentStatus:"locker_arrival",
+	        status:"locker_arrival",
+	        subject:"Your GRUBZ parcel is ready for pickup",
+	        body:"{greeting}\n\nYour GRUBZ order {orderNumber} has arrived at the BOX NOW locker:\n\n{boxNowLocker}\n\nYou can collect it now using the PIN sent by BOX NOW.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
+	        translations:{ el:{ subject:"Το δέμα GRUBZ είναι έτοιμο για παραλαβή", body:"{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} έφτασε στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΜπορείς να την παραλάβεις τώρα χρησιμοποιώντας το PIN που έστειλε η BOX NOW.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ" } },
 	      };
 	      let orderEmailSettings = { placeholders:defaultEmailPlaceholders, templates:[] };
 		      let boxNowSettings = { activeEnvironment:"stage", webhookEnvironment:"stage", environments:{} };
@@ -3096,6 +3236,83 @@
           `).join("")}
         </dl>
       `;
+      function boxNowEventLabel(value = ""){
+        return String(value || "unknown")
+          .replace(/[_-]+/g, " ")
+          .replace(/\b\w/g, letter => letter.toUpperCase());
+      }
+      function boxNowEventLocationLabel(location){
+        if (!location) return "";
+        if (typeof location === "string") return location;
+        return [location.name, location.address, location.locationId || location.id, location.city]
+          .map(value => String(value || "").trim()).filter(Boolean).join(" · ");
+      }
+      function boxNowShipmentEvents(order = {}){
+        const shipment = order.boxNowShipment || {};
+        const history = Array.isArray(shipment.eventHistory) && shipment.eventHistory.length
+          ? shipment.eventHistory
+          : Object.values(shipment.parcelEvents || {});
+        return history
+          .filter(item => item && (item.event || item.parcelState))
+          .sort((a, b) => dateMs(b.eventTime) - dateMs(a.eventTime));
+      }
+      function renderBoxNowTimeline(order = {}){
+        const container = $("orderBoxNowTimeline");
+        if (!container) return;
+        const events = boxNowShipmentEvents(order);
+        if (!events.length) {
+          container.innerHTML = `
+            <div class="font-extrabold text-violet-950">Shipment timeline</div>
+            <div class="mt-1 text-xs text-violet-800">No BOX NOW webhook events have been received for this order yet.</div>`;
+          return;
+        }
+        container.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="font-extrabold text-violet-950">Shipment timeline</div>
+            <div class="text-xs font-semibold text-violet-700">${events.length} event${events.length === 1 ? "" : "s"}</div>
+          </div>
+          <ol class="mt-3 space-y-0">
+            ${events.map((item, index) => {
+              const location = boxNowEventLocationLabel(item.eventLocation);
+              return `<li class="relative grid grid-cols-[18px_minmax(0,1fr)] gap-2 pb-3 last:pb-0">
+                ${index < events.length - 1 ? `<span class="absolute left-[7px] top-4 h-[calc(100%-8px)] w-px bg-violet-200"></span>` : ""}
+                <span class="relative mt-1 h-4 w-4 rounded-full border-2 ${index === 0 ? "border-violet-700 bg-violet-200" : "border-violet-300 bg-white"}"></span>
+                <div>
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span class="font-bold text-zinc-900">${esc(boxNowEventLabel(item.event || item.parcelState))}</span>
+                    ${item.parcelState && item.parcelState !== item.event ? `<span class="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-violet-800">${esc(boxNowEventLabel(item.parcelState))}</span>` : ""}
+                  </div>
+                  <div class="mt-0.5 text-xs text-zinc-600">${esc(ts(item.eventTime) || "Time unavailable")} · Parcel ${esc(item.parcelId || "-")}</div>
+                  ${location ? `<div class="mt-0.5 text-xs text-zinc-500">${esc(location)}</div>` : ""}
+                </div>
+              </li>`;
+            }).join("")}
+          </ol>`;
+      }
+      function renderBoxNowNotificationReview(order = {}){
+        const container = $("orderBoxNowNotificationReview");
+        if (!container) return;
+        const review = order.boxNowNotificationReview || {};
+        if (!review.status) {
+          container.classList.add("hidden");
+          container.innerHTML = "";
+          return;
+        }
+        const pending = review.status === "pending";
+        container.classList.remove("hidden");
+        container.className = `${pending ? "" : "opacity-80 "}rounded-md border ${pending ? "border-amber-300 bg-amber-50" : "border-zinc-200 bg-zinc-50"} p-3`;
+        container.innerHTML = `
+          <div class="font-extrabold ${pending ? "text-amber-950" : "text-zinc-800"}">Customer notification review</div>
+          <div class="mt-1 text-sm ${pending ? "text-amber-900" : "text-zinc-600"}">
+            ${pending
+              ? `Parcel ${esc(review.parcelId || "-")} is waiting at the locker. Approval sends the arrival email now and schedules a reminder for ${esc(ts(review.proposedReminderAt) || "18 hours after arrival")}.`
+              : `Recommendation ${esc(boxNowEventLabel(review.status))}${review.cancelReason ? ` · ${esc(boxNowEventLabel(review.cancelReason))}` : ""}.`}
+          </div>
+          ${pending ? `<div class="mt-3 flex flex-wrap gap-2">
+            <button id="approveBoxNowNotificationsBtn" class="btn" type="button">Approve email + reminder</button>
+            <button id="dismissBoxNowNotificationsBtn" class="btn-soft" type="button">Dismiss</button>
+          </div>` : ""}`;
+      }
       function announce(msg){ $("live").textContent = ""; setTimeout(() => $("live").textContent = msg, 10); }
       function setMsg(id, msg, ok = true){ const el = $(id); el.className = `text-sm ${ok ? "text-green-700" : "text-red-700"}`; el.textContent = msg; announce(msg); }
 	      function setProductWritesEnabled(enabled){
@@ -3126,6 +3343,7 @@
 	          !$("templateModal").classList.contains("flex") &&
 	          !$("fulfillmentEmailPreviewModal").classList.contains("flex") &&
 	          !$("bulkEmailModal").classList.contains("flex")
+	          && !$("collaborationModal").classList.contains("flex")
 	        ) {
 	          document.body.style.overflow = "";
 	        }
@@ -3340,6 +3558,7 @@
 	      $("refreshBoxNowBtn").addEventListener("click", () => loadSettings().catch(() => {}));
 	      $("closeProductModal").addEventListener("click", () => closeModal("productModal"));
 	      $("closeCouponModal").addEventListener("click", () => closeModal("couponModal"));
+	      $("closeCollaborationModal").addEventListener("click", () => closeModal("collaborationModal"));
 		      $("closeOrderModal").addEventListener("click", () => closeModal("orderModal"));
 		      $("closeCustomerModal").addEventListener("click", () => closeModal("customerModal"));
 		      $("closeCustomerEmailHistoryModal").addEventListener("click", () => closeModal("customerEmailHistoryModal"));
@@ -3367,7 +3586,8 @@
 			        closeModal("templateModal");
 			        closeModal("fulfillmentEmailPreviewModal");
 			        closeModal("bulkEmailModal");
-			        closeModal("newsletterComposeModal");
+	        closeModal("newsletterComposeModal");
+	        closeModal("collaborationModal");
 	      });
 	      const consoleSections = ["analytics", "uxAnalytics", "products", "coupons", "orders", "feedback", "customers", "newsletter", "emailHistory", "messages", "collaborations", "social", "settings"];
 	      const consoleTabStorageKey = "grubz_console_tab";
@@ -3471,7 +3691,7 @@
 	        button.addEventListener("click", () => showMarketingTab(button.dataset.marketingTab));
 	      });
 	      showMarketingTab("settings");
-	      function showIdeaWeekTab(tab = "2026-08-17"){
+	      function showIdeaWeekTab(tab = "2026-08-24"){
 	        const tabs = Array.from(document.querySelectorAll("[data-idea-week-tab]")).map(button => button.dataset.ideaWeekTab);
 	        const active = tabs.includes(tab) ? tab : (tabs[0] || "");
 	        document.querySelectorAll("[data-idea-week-panel]").forEach(panel => {
@@ -3487,7 +3707,7 @@
 	      document.querySelectorAll("[data-idea-week-tab]").forEach(button => {
 	        button.addEventListener("click", () => showIdeaWeekTab(button.dataset.ideaWeekTab));
 	      });
-	      showIdeaWeekTab("2026-08-17");
+	      showIdeaWeekTab("2026-08-24");
 	      function showSettingsTab(tab = "stripe"){
 	        const active = ["stripe", "shipping", "emails", "chatbot"].includes(tab) ? tab : "stripe";
 	        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
@@ -3622,6 +3842,12 @@
 		          setProductWritesEnabled(true);
 		          renderProducts();
 		          renderInventoryPools();
+		          if (selectedCoupon || !$("couponModal").classList.contains("hidden")) {
+		            const selection = !$("couponModal").classList.contains("hidden")
+		              ? selectedCouponProductIds()
+		              : selectedCoupon?.allowedProductIds || [];
+		            renderCouponProductPicker(selection);
+		          }
 		          renderAnalytics();
 		          setMsg("productMsg", products.length ? `${products.length} products loaded` : "No products found");
         } catch (err) {
@@ -4026,6 +4252,61 @@
         return rules.join(" | ") || "All products";
       }
 
+	      function couponProductGroups(){
+	        const groups = inventoryPools.map(pool => ({
+	          id: pool.id,
+	          name: pool.name || pool.id,
+	          active: pool.active !== false,
+	          products: products.filter(product => String(product.inventoryPoolId || "") === pool.id),
+	        }));
+	        const independent = products.filter(product => !String(product.inventoryPoolId || "").trim());
+	        if (independent.length) groups.push({ id: "__independent__", name: "Independent product stock", active: true, products: independent });
+	        return groups.filter(group => group.products.length);
+	      }
+
+	      function renderCouponProductPicker(selectedIds = []){
+	        const picker = $("couponProductPicker");
+	        if (!picker) return;
+	        const selected = new Set(Array.isArray(selectedIds) ? selectedIds.map(String) : []);
+	        const knownIds = new Set(products.map(product => String(product.id)));
+	        const groups = couponProductGroups();
+	        const groupHtml = groups.map(group => {
+	          const selectedCount = group.products.filter(product => selected.has(String(product.id))).length;
+	          const checked = selectedCount === group.products.length;
+	          const indeterminate = selectedCount > 0 && !checked;
+	          return `<section class="rounded-md border border-zinc-200 bg-white p-2" data-coupon-pool-section="${esc(group.id)}">
+	            <label class="flex items-center gap-2 font-bold"><input type="checkbox" data-coupon-pool="${esc(group.id)}"${checked ? " checked" : ""} data-indeterminate="${indeterminate ? "true" : "false"}> <span>${esc(group.name)}${group.active ? "" : " (inactive)"}</span><span class="ml-auto text-xs font-normal text-zinc-500">${group.products.length} product${group.products.length === 1 ? "" : "s"}</span></label>
+	            <div class="mt-2 grid gap-1 sm:grid-cols-2">${group.products.map(product => `<label class="flex items-start gap-2 text-sm"><input type="checkbox" data-coupon-product value="${esc(product.id)}"${selected.has(String(product.id)) ? " checked" : ""}> <span>${esc(product.name || product.id)}<span class="block text-xs text-zinc-500">${esc(product.id)}${product.active === false ? " · inactive" : ""}</span></span></label>`).join("")}</div>
+	          </section>`;
+	        }).join("");
+	        const unknownIds = [...selected].filter(id => !knownIds.has(id));
+	        const unknownHtml = unknownIds.length ? `<section class="rounded-md border border-amber-200 bg-amber-50 p-2"><div class="font-bold text-amber-900">Unavailable product records</div><div class="mt-2 grid gap-1 sm:grid-cols-2">${unknownIds.map(id => `<label class="flex gap-2 text-sm"><input type="checkbox" data-coupon-product value="${esc(id)}" checked> <span>${esc(id)}</span></label>`).join("")}</div></section>` : "";
+	        picker.innerHTML = groupHtml || unknownHtml ? `${groupHtml}${unknownHtml}` : `<p class="text-sm text-zinc-500">Load products to choose allowed inventory pools.</p>`;
+	        picker.querySelectorAll("[data-indeterminate=true]").forEach(input => { input.indeterminate = true; });
+	      }
+
+	      function selectedCouponProductIds(){
+	        return [...$("couponProductPicker").querySelectorAll("[data-coupon-product]:checked")].map(input => input.value);
+	      }
+
+	      $("couponProductPicker").addEventListener("change", event => {
+	        const poolToggle = event.target.closest("[data-coupon-pool]");
+	        if (poolToggle) {
+	          const section = poolToggle.closest("[data-coupon-pool-section]");
+	          section?.querySelectorAll("[data-coupon-product]").forEach(input => { input.checked = poolToggle.checked; });
+	          poolToggle.indeterminate = false;
+	          return;
+	        }
+	        if (!event.target.matches("[data-coupon-product]")) return;
+	        const section = event.target.closest("[data-coupon-pool-section]");
+	        if (!section) return;
+	        const children = [...section.querySelectorAll("[data-coupon-product]")];
+	        const pool = section.querySelector("[data-coupon-pool]");
+	        const checkedCount = children.filter(input => input.checked).length;
+	        pool.checked = checkedCount === children.length;
+	        pool.indeterminate = checkedCount > 0 && checkedCount < children.length;
+	      });
+
       function renderCoupons(){
         if (!coupons.length) {
           $("couponsTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No coupons to display.</td></tr>`;
@@ -4062,7 +4343,7 @@
         $("couponMaxPerCustomer").value = coupon.maxRedemptionsPerCustomer || "";
         $("couponStartsAt").value = couponTimestampToInput(coupon.startsAt);
         $("couponEndsAt").value = couponTimestampToInput(coupon.endsAt);
-        $("couponProductIds").value = Array.isArray(coupon.allowedProductIds) ? coupon.allowedProductIds.join(", ") : "";
+	        renderCouponProductPicker(Array.isArray(coupon.allowedProductIds) ? coupon.allowedProductIds : []);
         $("couponDescription").value = coupon.description || "";
         $("couponModalMsg").textContent = "";
         openModal("couponModal");
@@ -4084,7 +4365,7 @@
           maxRedemptionsPerCustomer: Number($("couponMaxPerCustomer").value || 0),
           startsAt: $("couponStartsAt").value || "",
           endsAt: $("couponEndsAt").value || "",
-          allowedProductIds: $("couponProductIds").value.split(",").map(id => id.trim()).filter(Boolean),
+	          allowedProductIds: selectedCouponProductIds(),
           description: $("couponDescription").value.trim(),
           currency: "eur",
         };
@@ -4210,6 +4491,7 @@
 	          order_fulfillment:"Fulfillment update",
 	          order_feedback_request:"Feedback request",
 	          order_locker_reminder:"Locker reminder",
+	          order_boxnow_locker_arrival:"BOX NOW locker arrival",
 	          customer_email:"Customer email",
 	          newsletter:"Newsletter",
 	          fulfillment:"Scheduled fulfillment",
@@ -4711,6 +4993,7 @@
 	          socialAgentSettings = data.settings || socialAgentSettings;
 	          socialOpportunities = data.opportunities || [];
 	          socialGroups = data.groups || [];
+	          renderCollaborationFacebookGroupOptions(currentCollaboration()?.facebookGroupId || $("collabFacebookGroup")?.value || "");
 	          socialPosts = data.posts || [];
 	          renderSocialAgent();
 	          renderSocialGroups();
@@ -5180,10 +5463,19 @@
 	            <div><div class="text-xs text-zinc-500">Orders</div><div class="font-extrabold">${Number(metrics.orderCount || 0)}</div></div>
 	            <div><div class="text-xs text-zinc-500">Coupon orders</div><div class="font-extrabold">${Number(metrics.couponOrderCount || 0)}</div></div>
 	            <div><div class="text-xs text-zinc-500">Referral orders</div><div class="font-extrabold">${Number(metrics.referralOrderCount || 0)}</div></div>
+	            <div><div class="text-xs text-zinc-500">New customers</div><div class="font-extrabold">${Number(metrics.newCustomerCount || 0)}</div></div>
 	            <div><div class="text-xs text-zinc-500">Revenue</div><div class="font-extrabold">${money(metrics.revenueCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Discount</div><div class="font-extrabold">${money(metrics.discountCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Subtotal</div><div class="font-extrabold">${money(metrics.subtotalCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Last order</div><div class="font-extrabold">${esc(ts(metrics.lastOrderAt) || "-")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Average order</div><div class="font-extrabold">${money(metrics.averageOrderValueCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Commission owed</div><div class="font-extrabold">${money(metrics.commissionCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Acquisition cost</div><div class="font-extrabold">${money(metrics.acquisitionCostCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">CAC / new customer</div><div class="font-extrabold">${metrics.newCustomerCount ? money(metrics.customerAcquisitionCostCents || 0, metrics.currency || "eur") : "-"}</div></div>
+	            <div><div class="text-xs text-zinc-500">Net revenue</div><div class="font-extrabold">${money(metrics.netRevenueCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Visit conversion</div><div class="font-extrabold">${metrics.websiteVisits ? `${(Number(metrics.visitConversionRate || 0) * 100).toFixed(1)}%` : "-"}</div></div>
+	            <div><div class="text-xs text-zinc-500">Engagement rate</div><div class="font-extrabold">${metrics.totalReach ? `${(Number(metrics.engagementRate || 0) * 100).toFixed(1)}%` : "-"}</div></div>
+	            <div><div class="text-xs text-zinc-500">Pilot result</div><div class="font-extrabold capitalize">${esc(metrics.result || "-")}</div></div>
 	          </div>
 	          <div class="mt-3 space-y-2">
 	            ${orders.length ? orders.map(order => `
@@ -5222,18 +5514,55 @@
 	        return collaborations.find(item => item.id === selectedCollaborationId) || null;
 	      }
 
+	      function renderCollaborationFacebookGroupOptions(selected = ""){
+	        const select = $("collabFacebookGroup");
+	        if (!select) return;
+	        const isFacebookAdmin = $("collabCategory").value === "facebook_group_admin";
+	        $("collabFacebookGroupField").classList.toggle("hidden", !isFacebookAdmin);
+	        const terms = $("collabFacebookGroupSearch").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+	        const groups = [...socialGroups].filter(group => {
+	          if (!terms.length || group.id === selected) return true;
+	          const text = [group.name, group.audience, group.notes, group.url, ...(group.products || [])].filter(Boolean).join(" ").toLowerCase();
+	          return terms.every(term => text.includes(term));
+	        }).sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+	        select.innerHTML = `<option value="">${terms.length ? `${groups.length} matching group${groups.length === 1 ? "" : "s"}` : "No Facebook group selected"}</option>${groups.map(group => `<option value="${esc(group.id)}"${group.id === selected ? " selected" : ""}>${esc(group.name || group.id)}${group.active === false ? " (inactive)" : ""}</option>`).join("")}`;
+	        if (selected && !groups.some(group => group.id === selected)) {
+	          select.insertAdjacentHTML("beforeend", `<option value="${esc(selected)}" selected>Unavailable group (${esc(selected)})</option>`);
+	        }
+	        select.disabled = !isFacebookAdmin;
+	        $("collabFacebookGroupSearch").disabled = !isFacebookAdmin;
+	        $("collabFacebookGroupHelp").textContent = "Select a group from Marketing → Facebook groups, or leave it unselected.";
+	      }
+
+	      function updateCollaborationFlow(){
+	        const selectedGroup = $("collabFacebookGroup").value;
+	        renderCollaborationFacebookGroupOptions(selectedGroup);
+	        if ($("collabCategory").value !== "facebook_group_admin") $("collabFacebookGroup").value = "";
+	      }
+
+	      function applySelectedFacebookGroup(){
+	        const group = socialGroups.find(item => item.id === $("collabFacebookGroup").value);
+	        if (!group) return;
+	        if (!$("collabName").value.trim()) $("collabName").value = group.name || "";
+	        if (!$("collabFacebook").value.trim()) $("collabFacebook").value = group.url || "";
+	        if (!$("collabAudienceNotes").value.trim()) $("collabAudienceNotes").value = group.audience || group.notes || "";
+	      }
+
 	      function setCollaborationForm(item = null){
 	        const c = item || {};
 	        const links = c.socialLinks || {};
 	        const offer = c.offer || {};
+	        $("collaborationModalTitle").textContent = c.id ? `Edit ${c.name || "collaboration"}` : "New collaboration";
+	        $("collabFacebookGroupSearch").value = "";
 	        $("collabName").value = c.name || "";
 	        $("collabContactName").value = c.contactName || "";
 	        $("collabEmail").value = c.email || "";
 	        $("collabPhone").value = c.phone || "";
 	        $("collabScore").value = Number(c.score || 0);
 	        $("collabStatus").value = c.status || "lead";
-	        $("collabType").value = c.type || "discount_code";
-	        $("collabCategory").value = c.category || "creator";
+	        $("collabType").value = c.id ? c.type || "discount_code" : "";
+	        $("collabCategory").value = c.id ? c.category || "creator" : "";
+	        renderCollaborationFacebookGroupOptions(c.facebookGroupId || "");
 	        $("collabNextFollowUp").value = c.nextFollowUp || "";
 	        $("collabInstagram").value = links.instagram || "";
 	        $("collabFacebook").value = links.facebook || "";
@@ -5246,6 +5575,22 @@
 	        $("collabReferralCode").value = normalizeReferralCode(c.referralCode || "");
 	        refreshCollaborationReferralUrl();
 	        $("collabCommission").value = offer.commission || "";
+	        const pilot = c.pilot || {};
+	        $("collabPilotEnabled").checked = pilot.enabled === true;
+	        $("collabPilotMembers").value = pilot.memberCount || "";
+	        $("collabPilotCommission").value = pilot.commissionPercent || "";
+	        $("collabPilotStarts").value = pilot.startsAt || "";
+	        $("collabPilotEnds").value = pilot.endsAt || "";
+	        $("collabPilotProductCost").value = pilot.productCostCents ? centsToEuro(pilot.productCostCents) : "";
+	        $("collabPilotShippingCost").value = pilot.shippingCostCents ? centsToEuro(pilot.shippingCostCents) : "";
+	        $("collabPilotFixedFee").value = pilot.fixedFeeCents ? centsToEuro(pilot.fixedFeeCents) : "";
+	        $("collabPilotVisits").value = pilot.websiteVisits || "";
+	        const posts = Array.isArray(pilot.posts) ? pilot.posts : [];
+	        const labels = ["Introduction / test", "Experience + offer", "Final reminder"];
+	        $("collabPilotPosts").innerHTML = labels.map((label, index) => {
+	          const post = posts[index] || {};
+	          return `<tr data-pilot-post="${index}"><td class="p-1 font-semibold">${esc(label)}</td><td class="p-1"><input class="input min-w-[130px]" data-post-field="publishedAt" type="date" value="${esc(post.publishedAt || "")}"></td><td class="p-1"><input class="input w-24" data-post-field="reach" type="number" min="0" value="${Number(post.reach || 0) || ""}"></td><td class="p-1"><input class="input w-24" data-post-field="reactions" type="number" min="0" value="${Number(post.reactions || 0) || ""}"></td><td class="p-1"><input class="input w-24" data-post-field="comments" type="number" min="0" value="${Number(post.comments || 0) || ""}"></td></tr>`;
+	        }).join("");
 	        $("collabShippingCovered").checked = offer.shippingCovered === true;
 	        $("collabOfferDetails").value = offer.details || "";
 	        $("collabCommitments").value = Array.isArray(c.commitments) ? c.commitments.join("\n") : "";
@@ -5266,7 +5611,14 @@
 
 	      function collaborationPayload(){
 	        const name = $("collabName").value.trim();
+	        if (!$("collabCategory").value) throw new Error("Select a collaboration category.");
+	        if (!$("collabType").value) throw new Error("Select a collaboration type.");
 	        if (!name) throw new Error("Enter a collaboration name.");
+	        const postLabels = ["Introduction / test", "Experience + offer", "Final reminder"];
+	        const pilotPosts = [...$("collabPilotPosts").querySelectorAll("[data-pilot-post]")].map((row, index) => {
+	          const value = field => row.querySelector(`[data-post-field="${field}"]`)?.value || "";
+	          return { label: postLabels[index], publishedAt: value("publishedAt"), reach: Number(value("reach") || 0), reactions: Number(value("reactions") || 0), comments: Number(value("comments") || 0) };
+	        });
 	        return {
 	          id: selectedCollaborationId || "",
 	          name,
@@ -5275,6 +5627,7 @@
 	          phone: $("collabPhone").value.trim(),
 	          customerKey: $("collabCustomerKey").value.trim(),
 	          orderId: $("collabOrderId").value.trim(),
+	          facebookGroupId: $("collabCategory").value === "facebook_group_admin" ? $("collabFacebookGroup").value : "",
 	          referralCode: normalizeReferralCode($("collabReferralCode").value),
 	          score: Number($("collabScore").value || 0),
 	          status: $("collabStatus").value,
@@ -5300,6 +5653,18 @@
 	          audienceNotes: $("collabAudienceNotes").value.trim(),
 	          contentLinks: $("collabContentLinks").value.split(/\r?\n/).map(item => item.trim()).filter(Boolean),
 	          notes: $("collabNotes").value.trim(),
+	          pilot: {
+	            enabled: $("collabPilotEnabled").checked,
+	            memberCount: Number($("collabPilotMembers").value || 0),
+	            commissionPercent: Number($("collabPilotCommission").value || 0),
+	            startsAt: $("collabPilotStarts").value,
+	            endsAt: $("collabPilotEnds").value,
+	            productCostCents: Math.round(Number($("collabPilotProductCost").value || 0) * 100),
+	            shippingCostCents: Math.round(Number($("collabPilotShippingCost").value || 0) * 100),
+	            fixedFeeCents: Math.round(Number($("collabPilotFixedFee").value || 0) * 100),
+	            websiteVisits: Number($("collabPilotVisits").value || 0),
+	            posts: pilotPosts,
+	          },
 	        };
 	      }
 
@@ -5335,6 +5700,7 @@
 	          selectedCollaborationId = saved.id;
 	          renderCollaborations();
 	          setMsg("collaborationMsg", "Collaboration saved");
+	          closeModal("collaborationModal");
 	        } catch (err) {
 	          setMsg("collaborationMsg", err.message || "Collaboration save failed", false);
 	        }
@@ -5349,7 +5715,7 @@
 	          collaborations = collaborations.filter(item => item.id !== selectedCollaborationId);
 	          selectedCollaborationId = collaborations[0]?.id || "";
 	          renderCollaborations();
-	          setMsg("collaborationMsg", "Collaboration deleted");
+	          closeModal("collaborationModal");
 	        } catch (err) {
 	          setMsg("collaborationMsg", err.message || "Collaboration delete failed", false);
 	        }
@@ -5383,7 +5749,8 @@
 	        selectedCollaborationId = "";
 	        setCollaborationForm(null);
 	        setMsg("collaborationMsg", "New collaboration");
-	        $("collabName").focus();
+	        openModal("collaborationModal");
+	        setTimeout(() => $("collabCategory").focus(), 0);
 	      });
 	      $("saveCollaborationBtn").addEventListener("click", saveCollaboration);
 	      $("deleteCollaborationBtn").addEventListener("click", deleteCollaboration);
@@ -5392,6 +5759,10 @@
 	      $("generateCollabReferralBtn").addEventListener("click", generateCollaborationReferralCode);
 	      $("collabReferralCode").addEventListener("input", refreshCollaborationReferralUrl);
 	      $("collabReferralCode").addEventListener("blur", refreshCollaborationReferralUrl);
+	      $("collabFacebookGroup").addEventListener("change", applySelectedFacebookGroup);
+	      $("collabFacebookGroupSearch").addEventListener("input", () => renderCollaborationFacebookGroupOptions($("collabFacebookGroup").value));
+	      $("collabCategory").addEventListener("change", updateCollaborationFlow);
+	      $("collabType").addEventListener("change", updateCollaborationFlow);
 	      $("copyCollabReferralBtn").addEventListener("click", async () => {
 	        refreshCollaborationReferralUrl();
 	        const url = $("collabReferralUrl").value;
@@ -5411,6 +5782,7 @@
 	        if (!button) return;
 	        selectedCollaborationId = button.dataset.collaborationId || "";
 	        renderCollaborations();
+	        openModal("collaborationModal");
 	      });
 	      $("analyticsRange").addEventListener("change", () => {
 	        renderAnalytics();
@@ -5425,6 +5797,29 @@
 	        selectedOrder = orders.find(order => order.id === button.dataset.analyticsOrderId) || null;
 	        if (selectedOrder) openOrder(selectedOrder);
 	      });
+	      $("openFeedbackDashboardBtn").addEventListener("click", () => showSection("feedback"));
+
+	      function renderDashboardFeedback(){
+	        if (!$("analyticsFeedback") || !$("analyticsFeedbackSummary")) return;
+	        const summary = feedbackSummary || {};
+	        $("analyticsFeedbackSummary").textContent = `${Number(summary.responses || 0)} response(s) · ${summary.responses ? `${Number(summary.averageRating || 0).toFixed(2)} / 5 average` : "No ratings yet"} · ${Number(summary.awaitingReview || 0)} need review`;
+	        const submitted = feedbackRows
+	          .filter(row => row.status === "submitted" && Number(row.rating || 0) > 0 && row.testOnly !== true)
+	          .sort((a, b) => (dateFromValue(b.submittedAt || b.createdAt)?.getTime() || 0) - (dateFromValue(a.submittedAt || a.createdAt)?.getTime() || 0))
+	          .slice(0, 6);
+	        $("analyticsFeedback").innerHTML = submitted.length ? submitted.map(row => `
+	          <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+	            <div class="flex items-start justify-between gap-2">
+	              <div class="min-w-0">
+	                <div class="truncate font-bold">${esc(row.customerName || row.customerEmail || "Customer")}</div>
+	                <div class="text-xs text-zinc-500">${esc(row.orderNumber || "Unknown order")} · ${esc(ts(row.submittedAt || row.createdAt))}</div>
+	              </div>
+	              <span class="shrink-0 font-bold text-amber-500" aria-label="${Number(row.rating)} out of 5 stars">${"★".repeat(Number(row.rating))}</span>
+	            </div>
+	            <p class="mt-2 line-clamp-3 text-sm text-zinc-700">${esc(row.comment || "No written comment.")}</p>
+	            ${row.reviewed ? "" : `<span class="mt-2 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700">Needs review</span>`}
+	          </article>`).join("") : `<div class="text-sm text-zinc-500 md:col-span-2 xl:col-span-3">No submitted customer feedback yet.</div>`;
+	      }
 
 	      function renderFeedback(){
 	        const summary = feedbackSummary || {};
@@ -5465,12 +5860,12 @@
 	          return `<article class="panel p-4 space-y-3" data-feedback-id="${esc(row.id)}">
 	            <div class="flex flex-wrap items-start justify-between gap-3">
 	              <div>
-	                <button class="font-extrabold text-left hover:underline" type="button" data-feedback-order="${esc(row.orderId)}">${esc(row.orderNumber || "Unknown order")}</button>
+	                <button class="font-extrabold text-left hover:underline" type="button" data-feedback-order="${esc(row.orderId)}">${esc(row.orderNumber || "Unknown order")}</button>${row.testOnly ? ` <span class="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700">TEST</span>` : ""}
 	                <div class="text-sm text-zinc-500">${esc(row.customerName || "Customer")} · ${esc(row.customerEmail || "-")} · ${esc(ts(row.submittedAt || row.createdAt) || "")}</div>
 	              </div>
 	              <div class="text-xl text-amber-500" aria-label="${Number(row.rating || 0)} out of 5 stars">${submitted ? `${"★".repeat(Number(row.rating))}${"☆".repeat(5 - Number(row.rating))}` : "Awaiting response"}</div>
 	            </div>
-	            ${submitted ? `<blockquote class="rounded-md bg-zinc-50 p-3 text-sm text-zinc-700">${esc(row.comment || "No written comment.")}</blockquote>` : `<p class="text-sm text-zinc-500">Feedback request sent; no response received yet.</p>`}
+	            ${submitted ? `<blockquote class="rounded-md bg-zinc-50 p-3 text-sm text-zinc-700">${esc(row.comment || "No written comment.")}</blockquote><p class="text-xs text-zinc-500">Reward: ${esc(row.couponCode || "not generated")} · Thank-you email: ${esc(row.thankYouEmailStatus || "pending")}</p>` : `<p class="text-sm text-zinc-500">Feedback request sent; no response received yet.</p>`}
 	            <div>
 	              <label class="label">Internal note</label>
 	              <textarea class="input" rows="2" data-feedback-note>${esc(row.internalNote || "")}</textarea>
@@ -5478,12 +5873,14 @@
 	            <div class="flex flex-wrap items-center justify-between gap-2">
 	              <label class="inline-flex items-center gap-2 text-sm font-semibold"><input type="checkbox" data-feedback-reviewed ${row.reviewed ? "checked" : ""}> Reviewed</label>
 	              <div class="flex flex-wrap gap-2">
+	                ${submitted && ["failed", "skipped"].includes(row.thankYouEmailStatus) ? `<button class="btn-soft" type="button" data-retry-feedback-email>Retry reward email</button>` : ""}
 	                <button class="btn-danger" type="button" data-delete-feedback>Delete</button>
 	                <button class="btn-soft" type="button" data-save-feedback>Save review</button>
 	              </div>
 	            </div>
 	          </article>`;
 	        }).join("") : `<div class="panel p-6 text-center text-zinc-500">No feedback matches these filters.</div>`;
+	        renderDashboardFeedback();
 	      }
 
 	      async function loadFeedback(){
@@ -5499,11 +5896,77 @@
 
 	      ["feedbackSearch", "feedbackRatingFilter", "feedbackReviewFilter"].forEach(id => $(id).addEventListener(id === "feedbackSearch" ? "input" : "change", renderFeedback));
 	      $("refreshFeedbackBtn").addEventListener("click", () => loadFeedback().catch(err => setMsg("feedbackMsg", err.message || "Feedback could not load", false)));
+	      async function previewFeedbackBulk(){
+	        const button = $("previewFeedbackBulkBtn");
+	        button.disabled = true;
+	        $("feedbackBulkPreview").textContent = "Checking delivered orders and existing invitations...";
+	        try {
+	          const data = await api("/adminFeedback", {
+	            method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
+	            body:JSON.stringify({ action:"previewBulk" }),
+	          });
+	          const c = data.counts || {};
+	          $("feedbackBulkPreview").innerHTML = `<strong>${Number(c.eligible || 0)} eligible customer(s)</strong> from ${Number(c.deliveredOrders || 0)} delivered order(s). ` +
+	            `${Number(c.alreadySubmitted || 0)} submitted, ${Number(c.alreadyInvited || 0)} already invited, ${Number(c.duplicateCustomers || 0)} duplicate order(s), ${Number(c.missingEmail || 0)} missing email.`;
+	          $("sendFeedbackBulkBtn").disabled = !Number(c.eligible || 0);
+	          $("sendFeedbackBulkBtn").dataset.eligible = String(Number(c.eligible || 0));
+	        } catch (err) {
+	          $("feedbackBulkPreview").textContent = err.message || "Eligibility preview failed.";
+	          $("sendFeedbackBulkBtn").disabled = true;
+	        } finally { button.disabled = false; }
+	      }
+	      $("previewFeedbackBulkBtn").addEventListener("click", previewFeedbackBulk);
+	      $("testFeedbackBulkBtn").addEventListener("click", async () => {
+	        const button = $("testFeedbackBulkBtn");
+	        try {
+	          button.disabled = true;
+	          button.textContent = "Sending test...";
+	          const data = await api("/adminFeedback", {
+	            method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
+	            body:JSON.stringify({ action:"sendBulkTest" }),
+	          });
+	          const testUrl = data.results?.[0]?.feedbackUrl || "";
+	          setMsg("feedbackMsg", data.sent
+	            ? "Test invitation sent to info@grubz.gr. Open its link and submit it to test the thank-you email and inactive coupon."
+	            : "Test invitation created, but SMTP delivery is not configured. Use the test link below to continue locally.", Boolean(data.sent));
+	          if (testUrl) $("feedbackBulkPreview").innerHTML = `<strong>End-to-end test ready.</strong> <a class="font-bold underline" href="${esc(testUrl)}" target="_blank" rel="noopener">Open the personal test form</a>. This test can be repeated.`;
+	          await loadFeedback();
+	        } catch (err) { setMsg("feedbackMsg", err.message || "End-to-end test could not start.", false); }
+	        finally { button.disabled = false; button.textContent = "Run end-to-end test"; }
+	      });
+	      $("sendFeedbackBulkBtn").addEventListener("click", async () => {
+	        const button = $("sendFeedbackBulkBtn");
+	        const eligible = Number(button.dataset.eligible || 0);
+	        if (!eligible || !window.confirm(`Send personal feedback invitations to ${eligible} eligible customer(s)?\n\nEach customer can submit once and will receive a unique 10% coupon after submitting.`)) return;
+	        try {
+	          button.disabled = true;
+	          button.textContent = "Sending...";
+	          const data = await api("/adminFeedback", {
+	            method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
+	            body:JSON.stringify({ action:"sendBulk" }),
+	          });
+	          setMsg("feedbackMsg", `Campaign batch finished: ${Number(data.sent || 0)} sent, ${Number(data.skipped || 0)} skipped, ${Number(data.failed || 0)} failed${Number(data.remainingEligible || 0) ? `, ${Number(data.remainingEligible)} still eligible—run the next batch to continue` : ""}.`, !Number(data.failed || 0));
+	          await Promise.all([loadFeedback(), loadOrders(), previewFeedbackBulk()]);
+	        } catch (err) { setMsg("feedbackMsg", err.message || "Campaign failed.", false); }
+	        finally { button.textContent = "Send to eligible customers"; }
+	      });
 	      $("feedbackList").addEventListener("click", async event => {
 	        const orderButton = event.target.closest("[data-feedback-order]");
 	        if (orderButton) {
 	          selectedOrder = orders.find(order => order.id === orderButton.dataset.feedbackOrder) || null;
 	          if (selectedOrder) openOrder(selectedOrder);
+	          return;
+	        }
+	        const retryButton = event.target.closest("[data-retry-feedback-email]");
+	        if (retryButton) {
+	          const card = retryButton.closest("[data-feedback-id]");
+	          try {
+	            retryButton.disabled = true;
+	            setMsg("feedbackMsg", "Retrying reward email...");
+	            await api("/adminFeedback", { method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE, body:JSON.stringify({ action:"retryThankYouEmail", id:card.dataset.feedbackId }) });
+	            await loadFeedback();
+	            setMsg("feedbackMsg", "Reward email sent.");
+	          } catch (err) { setMsg("feedbackMsg", err.message || "Reward email retry failed.", false); retryButton.disabled = false; }
 	          return;
 	        }
 	        const deleteButton = event.target.closest("[data-delete-feedback]");
@@ -5564,6 +6027,9 @@
 	          }
 	          if (!orderEmailSettings.templates.some(template => templateContext(template) === "order" && statusKey(template.fulfillmentStatus || template.status) === "locker_reminder")) {
 	            orderEmailSettings = { ...orderEmailSettings, templates:[...orderEmailSettings.templates, defaultLockerReminderTemplate] };
+	          }
+	          if (!orderEmailSettings.templates.some(template => templateContext(template) === "order" && statusKey(template.fulfillmentStatus || template.status) === "locker_arrival")) {
+	            orderEmailSettings = { ...orderEmailSettings, templates:[...orderEmailSettings.templates, defaultLockerArrivalTemplate] };
 	          }
 	          boxNowSettings = data.boxNow || boxNowSettings;
 	          marketingSettings = data.marketing || marketingSettings;
@@ -6468,7 +6934,6 @@
 	            method: "POST",
 	            body: JSON.stringify({ action:"webhookStatus", environment }),
 	          });
-	          $("boxNowWebhookUrl").textContent = data.webhookUrl;
 	          const last = data.lastVerifiedEvent;
 	          $("boxNowWebhookStatus").innerHTML = `
 	            <div class="flex flex-wrap gap-2 mb-2">
@@ -6484,6 +6949,24 @@
 	              </div>
 	            ` : `<div>No verified ${esc(environment)} webhook event has been received yet.</div>`}
 	          `;
+	          const attempts = Array.isArray(data.webhookAttempts) ? data.webhookAttempts : [];
+	          $("boxNowWebhookAttempts").innerHTML = attempts.length ? attempts.map(item => {
+	            const status = Number(item.httpStatus || 0);
+	            const ok = status >= 200 && status < 300;
+	            const resultLabel = `${status || "-"} ${String(item.outcome || "unknown").replaceAll("_", " ")}`;
+	            const client = [item.userAgent, item.sourceIp].filter(Boolean).join(" · ");
+	            return `
+	              <tr>
+	                <td class="whitespace-nowrap px-3 py-2 text-zinc-600">${esc(ts(item.receivedAt) || "-")}</td>
+	                <td class="px-3 py-2">
+	                  <span class="inline-flex rounded-full px-2 py-1 font-bold ${ok ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}">${esc(resultLabel)}</span>
+	                  ${item.verificationReason && item.verificationReason !== "verified" ? `<div class="mt-1 text-zinc-500">${esc(item.verificationReason)}</div>` : ""}
+	                </td>
+	                <td class="px-3 py-2">${esc(item.event || "-")}</td>
+	                <td class="px-3 py-2 text-zinc-600">${esc(item.orderNumber || "-")}<br>${esc(item.parcelId || "-")}</td>
+	                <td class="max-w-xs px-3 py-2 text-zinc-500">${esc(client || (item.historical ? "Stored verified event" : "-"))}</td>
+	              </tr>`;
+	          }).join("") : `<tr><td colspan="5" class="px-3 py-4 text-zinc-500">No retained ${esc(environment)} webhook attempts yet. New calls will appear here after deployment.</td></tr>`;
 	          setMsg("boxNowWebhookMsg", data.webhookSecretConfigured
 	            ? "Receiver configuration is ready. Registration itself is managed by BOX NOW."
 	            : `Add the ${environment} webhook secret supplied by BOX NOW, then save settings.`, data.webhookSecretConfigured);
@@ -6500,8 +6983,9 @@
 	      });
 	      $("copyBoxNowWebhookUrlBtn").addEventListener("click", async () => {
 	        try {
-	          await navigator.clipboard.writeText($("boxNowWebhookUrl").textContent.trim());
-	          setMsg("boxNowWebhookMsg", "Webhook URL copied.");
+	          const environment = $("boxNowWebhookEnvironment").value === "production" ? "production" : "stage";
+	          await navigator.clipboard.writeText(`https://grubz.gr/api/boxnow/webhook/${environment}`);
+	          setMsg("boxNowWebhookMsg", `${environment} webhook URL copied.`);
 	        } catch (err) {
 	          setMsg("boxNowWebhookMsg", "Could not copy automatically. Select and copy the URL above.", false);
 	        }
@@ -6561,6 +7045,15 @@
 	              : API_BASE,
 	            body: JSON.stringify(playgroundPayload(action)),
 	          });
+	          if (action === "createStagingTestDelivery") {
+	            console.log("BOX NOW staging voucher creation payload:", {
+	              ...result,
+	              voucher: result.voucher ? {
+	                ...result.voucher,
+	                base64: result.voucher.base64 ? `[PDF data: ${result.voucher.size || "unknown"} bytes]` : "",
+	              } : null,
+	            });
+	          }
 	          $("boxNowResult").textContent = prettyJson(result);
 	          if (action === "createStagingTestDelivery") {
 	            $("boxNowResult").textContent = prettyJson({
@@ -6575,7 +7068,7 @@
 	            if (result.voucher?.base64) {
 	              downloadBase64File(
 	                result.voucher.base64,
-	                `boxnow-staging-voucher-${result.parcelId || result.order?.orderNumber || "test"}.pdf`,
+	                `boxnow-staging-voucher-${result.parcelId || result.order?.orderNumber || "test"}-GRUBZ.pdf`,
 	                result.voucher.contentType || "application/pdf"
 	              );
 	            }
@@ -6591,7 +7084,7 @@
 	            const labelType = action === "fetchParcelLabel" ? "parcel" : "order";
 	            downloadBase64File(
 	              result.result.base64,
-	              `boxnow-${labelType}-label-${id || "download"}.pdf`,
+	              `boxnow-${labelType}-label-${id || "download"}-GRUBZ.pdf`,
 	              result.result.contentType || "application/pdf"
 	            );
 	          }
@@ -7852,8 +8345,14 @@
 	          o.trackingUrl,
 	          shipment.trackingNumber,
 	          shipment.trackingUrl,
+	          shipment.deliveryRequestId,
+	          ...(Array.isArray(shipment.deliveryRequestIds) ? shipment.deliveryRequestIds : []),
+	          ...(Array.isArray(shipment.parcelIds) ? shipment.parcelIds : []),
 	          shipment.parcelId,
 	          shipment.orderId,
+	          shipment.environment,
+	          shipment.lastEvent,
+	          shipment.status,
 	          customer.name,
 	          customer.email,
 	          customerEmailForOrderPreview(o),
@@ -7867,6 +8366,16 @@
 	          boxNow.addressLine1,
 	          boxNow.addressLine2,
 	          boxNow.postalCode,
+	          o.attribution?.source,
+	          o.attribution?.medium,
+	          o.attribution?.campaign,
+	          o.attribution?.content,
+	          o.attribution?.term,
+	          o.attribution?.landingPage,
+	          o.attribution?.referrer,
+	          o.boxNowNotificationReview?.status,
+	          o.boxNowNotificationReview?.parcelId,
+	          o.boxNowNotificationReview?.status === "pending" ? "box now review pending" : "",
 	          ...items.flatMap(item => [
 	            item.id,
 	            item.name,
@@ -8351,6 +8860,32 @@
 	          : "";
 	      }
 
+	      function orderBoxNowReviewBadge(order = {}){
+	        const review = order.boxNowNotificationReview || {};
+	        if (review.status !== "pending") return "";
+	        const parcel = String(review.parcelId || "").trim();
+	        return `<span class="inline-flex items-center rounded-full border border-amber-400 bg-amber-100 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-amber-900" title="${esc(parcel ? `Parcel ${parcel} is waiting for notification approval` : "BOX NOW customer notification requires approval")}">BOX NOW review pending${parcel ? ` · ${esc(parcel)}` : ""}</span>`;
+	      }
+
+	      function orderBoxNowShipmentBadge(order = {}){
+	        const shipment = order.boxNowShipment || {};
+	        const requestId = String(shipment.deliveryRequestId || "").trim();
+	        const parcelIds = Array.isArray(shipment.parcelIds) ? shipment.parcelIds.map(id => String(id || "").trim()).filter(Boolean) : [];
+	        if (!requestId && !parcelIds.length) return "";
+	        const events = boxNowShipmentEvents(order);
+	        const status = String(events[0]?.event || events[0]?.parcelState || shipment.lastEvent || shipment.status || "").trim();
+	        const details = [
+	          requestId ? `Request ${requestId}` : "",
+	          parcelIds.length ? `Parcel${parcelIds.length === 1 ? "" : "s"} ${parcelIds.join(", ")}` : "",
+	          events.length && status ? boxNowEventLabel(status) : "No webhook events received yet",
+	        ].filter(Boolean).join(" · ");
+	        const label = events.length && status ? `BOX NOW · ${boxNowEventLabel(status)}` : "Awaiting BOX NOW update";
+	        const style = events.length
+	          ? "border-violet-300 bg-violet-50 text-violet-800"
+	          : "border-zinc-300 bg-zinc-50 text-zinc-600";
+	        return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${style}" title="${esc(details)}">${esc(label)}</span>`;
+	      }
+
 	      function orderPdfLines(order){
 	        const pricing = orderDisplayPricing(order);
 	        const finalTotal = Math.max(0, Number(pricing.total || 0));
@@ -8474,6 +9009,36 @@
 
 	      $("downloadSelectedOrdersPdfBtn").addEventListener("click", downloadSelectedOrdersPdf);
 
+	      async function downloadSelectedBoxNowLabels(){
+	        const selected = orders.filter(order => selectedOrderIds.has(order.id));
+	        if (!selected.length) return setMsg("orderMsg", "Select at least one order.", false);
+	        const missingShipment = selected.filter(order => !order.boxNowShipment?.deliveryRequestId && !order.boxNowShipment?.parcelIds?.length);
+	        if (missingShipment.length) {
+	          return setMsg("orderMsg", `${missingShipment.map(orderNumber).join(", ")} must have a BOX NOW delivery before printing.`, false);
+	        }
+	        const button = $("downloadSelectedBoxNowLabelsBtn");
+	        try {
+	          button.disabled = true;
+	          setMsg("orderMsg", `Preparing ${selected.length} BOX NOW label${selected.length === 1 ? "" : "s"} for A4 printing...`);
+	          const response = await api("/adminBoxNow", {
+	            method: "POST",
+	            body: JSON.stringify({ action: "fetchBulkOrderLabels", orderIds: selected.map(order => order.id) }),
+	          });
+	          const result = response?.result || {};
+	          if (!result.ok || !result.base64) throw new Error("Combined BOX NOW label PDF was not returned");
+	          const stamp = new Date().toISOString().slice(0, 10);
+	          downloadBase64File(result.base64, `boxnow-labels-A4-${stamp}-GRUBZ.pdf`, result.contentType || "application/pdf");
+	          const layout = response.layout || {};
+	          setMsg("orderMsg", `Downloaded ${layout.labelCount || selected.length} labels on ${layout.pageCount || "A4"} ${layout.orientation || ""} page(s), exactly ${layout.labelWidthCm || 9} cm wide.`);
+	        } catch (err) {
+	          setMsg("orderMsg", err.message || "BOX NOW labels could not be prepared", false);
+	        } finally {
+	          updateOrderSelectionActions();
+	        }
+	      }
+
+	      $("downloadSelectedBoxNowLabelsBtn").addEventListener("click", downloadSelectedBoxNowLabels);
+
 	      function fulfillmentStatusBadge(value = ""){
 	        const key = statusKey(value || "new");
 	        const styles = {
@@ -8562,18 +9127,24 @@
 	          renderAnalytics();
 	          return;
 	        }
-	        $("orderSearchMsg").textContent = visibleOrders.length === orders.length
+	        const pendingReviewCount = visibleOrders.filter(order => order.boxNowNotificationReview?.status === "pending").length;
+	        $("orderSearchMsg").textContent = `${visibleOrders.length === orders.length
 	          ? `${orders.length} orders shown`
-	          : `${visibleOrders.length} of ${orders.length} orders shown`;
+	          : `${visibleOrders.length} of ${orders.length} orders shown`}${pendingReviewCount
+	            ? ` · ${pendingReviewCount} BOX NOW review${pendingReviewCount === 1 ? "" : "s"} pending`
+	            : ""}`;
         $("ordersTable").innerHTML = visibleOrders.map(o => `
-          <tr class="hover:bg-zinc-50">
+          <tr class="${o.boxNowNotificationReview?.status === "pending" ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-zinc-50"}">
             <td class="p-3"><input type="checkbox" class="h-4 w-4" data-order-select="${esc(o.id)}" ${selectedOrderIds.has(o.id) ? "checked" : ""} aria-label="Select order ${esc(orderNumber(o))}"></td>
             <td class="p-3">
               <div class="flex flex-wrap items-center gap-2">
                 <button class="font-bold text-left hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>
                 ${orderHandlingBadge(o)}
                 ${orderCreatorKitBadge(o)}
+	                ${orderBoxNowShipmentBadge(o)}
+	                ${orderBoxNowReviewBadge(o)}
               </div>
+              <div class="mt-1 text-xs text-zinc-500">Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}</div>
             </td>
 	            <td class="p-3 whitespace-nowrap" data-sort-value="${orderCreatedMs(o)}">${esc(ts(o.createdAt) || "-")}</td>
 	            <td class="p-3">${esc(o.customer?.name || o.shipping?.name || "")}<div class="text-xs text-zinc-500">${esc(customerEmailForOrderPreview(o))}</div></td>
@@ -8595,6 +9166,8 @@
 	        const count = selectedOrderIds.size;
 	        $("downloadSelectedOrdersPdfBtn").disabled = count === 0;
 	        $("downloadSelectedOrdersPdfBtn").textContent = count ? `Download PDF (${count})` : "Download PDF";
+	        $("downloadSelectedBoxNowLabelsBtn").disabled = count === 0;
+	        $("downloadSelectedBoxNowLabelsBtn").textContent = count ? `Print BOX NOW labels (${count})` : "Print BOX NOW labels";
 	        $("deleteSelectedOrdersBtn").disabled = count === 0;
 	        $("deleteSelectedOrdersBtn").textContent = count ? `Delete selected (${count})` : "Delete selected";
 	      }
@@ -9040,12 +9613,22 @@
 	              <div class="mt-1 font-bold">${o.invoiceReceiptIssued === true ? "Invoice/receipt issued" : "Not issued"}</div>
 	              <div class="break-all text-xs text-zinc-500">${esc(o.aadeInvoiceReceiptId || "No AADE ID")}</div>
 	            </div>
+	            <div class="rounded-md border border-orange-200 bg-orange-50 p-3 sm:col-span-2">
+	              <div class="text-xs font-bold uppercase tracking-wide text-orange-700">Customer source</div>
+	              <div class="mt-1 text-lg font-extrabold text-orange-950">${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}</div>
+	              <div class="mt-1 text-sm text-orange-900">${[
+	                o.attribution?.medium || o.metadata?.attributionMedium ? `Medium: ${esc(o.attribution?.medium || o.metadata?.attributionMedium)}` : "",
+	                o.attribution?.campaign || o.metadata?.attributionCampaign ? `Campaign: ${esc(o.attribution?.campaign || o.metadata?.attributionCampaign)}` : "",
+	                o.referralCode || o.metadata?.referralCode ? `Referral: ${esc(o.referralCode || o.metadata?.referralCode)}` : "",
+	              ].filter(Boolean).join(" · ") || "No additional campaign information"}</div>
+	              <div class="mt-1 break-all text-xs text-orange-800">Landing page: ${esc(o.attribution?.landingPage || o.metadata?.attributionLandingPage || "-")}</div>
+	            </div>
 	          </div>
 	          <details class="mt-3 rounded-md border border-zinc-200 bg-zinc-50 p-3">
 	            <summary class="cursor-pointer font-bold">Technical and historical details</summary>
 	            <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
 	              <div><strong>Shipping address:</strong><br>${shippingAddress || "<span class=\"text-zinc-500\">No shipping address saved.</span>"}</div>
-	              <div><strong>Attribution:</strong><br>Coupon: ${esc(o.couponCode || o.metadata?.couponCode || "-")}<br>Referral: ${esc(o.referralCode || o.metadata?.referralCode || "-")}</div>
+	              <div><strong>Attribution:</strong><br>Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}<br>Medium: ${esc(o.attribution?.medium || o.metadata?.attributionMedium || "-")}<br>Campaign: ${esc(o.attribution?.campaign || o.metadata?.attributionCampaign || "-")}<br>Landing page: ${esc(o.attribution?.landingPage || o.metadata?.attributionLandingPage || "-")}<br>Referrer: ${esc(o.attribution?.referrer || o.metadata?.attributionReferrer || "-")}<br>Coupon: ${esc(o.couponCode || o.metadata?.couponCode || "-")}<br>Referral: ${esc(o.referralCode || o.metadata?.referralCode || "-")}</div>
 	              <div><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
 	              <div><strong>Customer feedback:</strong><br>${o.customerFeedback?.rating ? `${"★".repeat(Number(o.customerFeedback.rating))}${"☆".repeat(5 - Number(o.customerFeedback.rating))} (${Number(o.customerFeedback.rating)}/5)` : "Not received"}${o.customerFeedback?.comment ? `<br>${esc(o.customerFeedback.comment)}` : ""}</div>
 	              <div class="sm:col-span-2"><strong>Items:</strong><ul class="ml-5 list-disc">${(o.items || []).map(i => `<li>${esc(i.quantity)} x ${esc(i.name)} - ${money(i.totalAmount, i.currency)}${i.backorder ? ` <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">Backorder: ${esc(i.backorderQuantity || i.quantity)}</span>` : ""}</li>`).join("")}</ul><div class="mt-2 text-xs font-semibold text-zinc-600">Bulk inventory: ${esc(o.inventoryState || "Not reserved")}${o.inventoryRequirementsGrams ? ` · ${Object.entries(o.inventoryRequirementsGrams).map(([pool, grams]) => `${pool}: ${kgValue(grams)}`).join(" · ")}` : ""}</div></div>
@@ -9143,6 +9726,8 @@
 	        $("orderBoxNowShipmentSummary").textContent = shipment.deliveryRequestId
 	          ? `Created in ${shipment.environment || "BOX NOW"}: ${shipment.deliveryRequestId}`
 	          : "No BOX NOW delivery request has been created for this order yet.";
+	        renderBoxNowTimeline(o);
+	        renderBoxNowNotificationReview(o);
 	        pendingBoxNowCreate = null;
 	        $("createBoxNowShipmentBtn").disabled = Boolean(shipment.deliveryRequestId);
 	        $("createBoxNowShipmentBtn").textContent = "Create BOX NOW delivery";
@@ -9249,7 +9834,7 @@
         if (isParcel && !parcelId) return setMsg("orderMsg", "No BOX NOW parcel ID found for this order.", false);
         const env = shipment.environment || (boxNowSettings.activeEnvironment === "production" ? "production" : "stage");
         const action = isParcel ? "fetchParcelLabel" : "fetchOrderLabel";
-        const filename = `${orderNumber(selectedOrder)}-${isParcel ? "parcel" : "order"}-label.pdf`;
+        const filename = `${orderNumber(selectedOrder)}-${isParcel ? "parcel" : "order"}-label-GRUBZ.pdf`;
         try {
           setMsg("orderMsg", `Downloading BOX NOW ${isParcel ? "parcel" : "order"} label...`);
           const result = await api("/adminBoxNow", {
@@ -9448,6 +10033,33 @@
 		        closeModal("fulfillmentEmailPreviewModal");
 		        pendingOrderSave = null;
 		        await saveOrderWithPayload(payload);
+	      });
+
+	      $("orderBoxNowNotificationReview").addEventListener("click", async event => {
+	        if (!selectedOrder) return;
+	        const approve = event.target.closest("#approveBoxNowNotificationsBtn");
+	        const dismiss = event.target.closest("#dismissBoxNowNotificationsBtn");
+	        if (!approve && !dismiss) return;
+	        if (approve && !window.confirm("Send the BOX NOW locker-arrival email now and schedule the collection reminder?")) return;
+	        const button = approve || dismiss;
+	        try {
+	          button.disabled = true;
+	          setMsg("orderModalMsg", approve ? "Sending arrival email and scheduling reminder..." : "Dismissing recommendation...");
+	          await orderAdminApi("/adminOrders", {
+	            method:"POST",
+	            body:JSON.stringify({
+	              id:selectedOrder.id,
+	              action:approve ? "approveBoxNowLockerNotifications" : "dismissBoxNowLockerNotifications",
+	            }),
+	          });
+	          await loadOrders();
+	          selectedOrder = orders.find(order => order.id === selectedOrder.id) || selectedOrder;
+	          fillOrder(selectedOrder);
+	          setMsg("orderModalMsg", approve ? "Arrival email sent and reminder scheduled." : "Notification recommendation dismissed.");
+	        } catch (err) {
+	          setMsg("orderModalMsg", err.message || "BOX NOW notification review failed", false);
+	          button.disabled = false;
+	        }
 	      });
 
 	      $("scheduleFulfillmentEmailBtn").addEventListener("click", async () => {

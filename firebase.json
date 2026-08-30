@@ -73,6 +73,8 @@
       { "source": "/api/adminAnalytics", "function": { "functionId": "adminAnalytics", "region": "europe-west1" } },
       { "source": "/api/social-agent/webhook", "function": { "functionId": "socialAgentWebhook", "region": "europe-west1" } },
       { "source": "/api/stripe/webhook", "function": { "functionId": "stripeWebhook", "region": "europe-west1" } },
+      { "source": "/api/boxnow/webhook/stage", "function": { "functionId": "boxNowWebhookStage", "region": "europe-west1" } },
+      { "source": "/api/boxnow/webhook/production", "function": { "functionId": "boxNowWebhookProduction", "region": "europe-west1" } },
       { "source": "/api/boxnow/webhook", "function": { "functionId": "boxNowWebhook", "region": "europe-west1" } },
       { "source": "**", "destination": "/index.html" }
     ],
