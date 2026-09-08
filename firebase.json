@@ -33,6 +33,7 @@
     ]
   },
   "hosting": {
+    "site": "grubz-99b84",
     "public": "public",
     "predeploy": [
       "npm run build:css"

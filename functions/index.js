@@ -19,6 +19,8 @@ const { brandBoxNowLabelPdf, composeA4BoxNowLabels, prepareA4BoxNowLabelPdf } = 
 const { verifyBoxNowWebhookPayload } = require("./boxNowWebhookSignature");
 const { boxNowFulfillmentForEvent } = require("./boxNowFulfillment");
 const { normalizeOrderLanguage, resolveOrderLanguage } = require("./orderLanguage");
+const { isVisibleOrderEmailHistoryRecord } = require("./emailHistory");
+const { emailMarkdownToPlainText, emailMarkdownToHtml } = require("./emailFormatting");
 
 // ----- Secrets -----
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
@@ -42,6 +44,8 @@ const SMTP_USER = defineSecret("SMTP_USER");
 const SMTP_PASS = defineSecret("SMTP_PASS");
 const ORDER_NOTIFICATION_EMAIL = defineSecret("ORDER_NOTIFICATION_EMAIL");
 const ORDER_NOTIFICATION_FROM = defineSecret("ORDER_NOTIFICATION_FROM");
+const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
+const TELEGRAM_CHAT_ID = defineSecret("TELEGRAM_CHAT_ID");
 const SOCIAL_AGENT_WEBHOOK_SECRET = defineSecret("SOCIAL_AGENT_WEBHOOK_SECRET");
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 const BOXNOW_API_BASE_URL = "https://api-production.boxnow.gr";
@@ -98,10 +102,17 @@ const SCHEDULED_ORDER_EMAILS_COLLECTION = "scheduledOrderEmails";
 const FEEDBACK_LINK_LIFETIME_DAYS = 30;
 const FEEDBACK_COUPON_LIFETIME_DAYS = 90;
 const GRUBZ_SIGNATURE_IMAGE_URL = "https://grubz.gr/images/grubz-email-signature.png";
+const GRUBZ_SOCIAL_LINKS = {
+  instagram: "https://www.instagram.com/grubz.gr/",
+  facebook: "https://www.facebook.com/profile.php?id=61592265444268",
+  tiktok: "https://www.tiktok.com/@grubz.gr",
+};
 const GRUBZ_INFO_EMAIL = "info@grubz.gr";
 const GRUBZ_URL = "https://grubz.gr";
 const BULK_CUSTOMER_EMAIL_TEST_MODE = false;
-const GRUBZ_EMAIL_SIGNATURE_HTML = `
+function grubzEmailSignatureHtml(language = "en") {
+  const teamName = normalizeOrderLanguage(language) === "el" ? "Ομάδα GRUBZ" : "GRUBZ Team";
+  return `
 <div>
   <table cellpadding="0" width="600" style="border-collapse:collapse;font-size:11.8px;">
     <tr>
@@ -112,7 +123,7 @@ const GRUBZ_EMAIL_SIGNATURE_HTML = `
               <table cellpadding="0" style="border-collapse:collapse;">
                 <tr>
                   <td style="font:15.2px/18.1px Arial, Helvetica, sans-serif; color:#6a3d23; font-weight: bold;">
-                    <span>GRUBZ Team</span>
+                    <span>${teamName}</span>
                   </td>
                 </tr>
               </table>
@@ -126,6 +137,13 @@ const GRUBZ_EMAIL_SIGNATURE_HTML = `
           </tr>
         </table>
       </td>
+    </tr>
+  </table>
+  <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:10px;">
+    <tr>
+      <td style="padding-right:8px;"><a href="${GRUBZ_SOCIAL_LINKS.instagram}" target="_blank" title="Instagram"><img src="${GRUBZ_URL}/images/social-instagram.png" width="24" height="24" alt="Instagram" style="display:block;border:0;width:24px;height:24px;"></a></td>
+      <td style="padding-right:8px;"><a href="${GRUBZ_SOCIAL_LINKS.facebook}" target="_blank" title="Facebook"><img src="${GRUBZ_URL}/images/social-facebook.png" width="24" height="24" alt="Facebook" style="display:block;border:0;width:24px;height:24px;"></a></td>
+      <td><a href="${GRUBZ_SOCIAL_LINKS.tiktok}" target="_blank" title="TikTok"><img src="${GRUBZ_URL}/images/social-tiktok.png" width="24" height="24" alt="TikTok" style="display:block;border:0;width:24px;height:24px;"></a></td>
     </tr>
   </table>
   <div>
@@ -150,17 +168,22 @@ const GRUBZ_EMAIL_SIGNATURE_HTML = `
     </tr>
   </table>
 </div>`;
-const GRUBZ_EMAIL_SIGNATURE_TEXT = "GRUBZ Team\nhttps://grubz.gr";
+}
+
+function grubzEmailSignatureText(language = "en") {
+  const teamName = normalizeOrderLanguage(language) === "el" ? "Ομάδα GRUBZ" : "GRUBZ Team";
+  return `${teamName}\n${GRUBZ_URL}\nInstagram: ${GRUBZ_SOCIAL_LINKS.instagram}\nFacebook: ${GRUBZ_SOCIAL_LINKS.facebook}\nTikTok: ${GRUBZ_SOCIAL_LINKS.tiktok}`;
+}
 const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
   {
     enabled: true,
     fulfillmentStatus: "new",
     subject: "We received your GRUBZ order {orderNumber}",
-    body: "{greeting}\n\nWe received your GRUBZ order {orderNumber} and it is now in our queue.\n\nTotal: {total}\n\nGRUBZ",
+    body: "{greeting}\n\nWe received your GRUBZ order {orderNumber} and it is now in our queue.\n\nTotal: {total}",
     translations: {
       el: {
         subject: "Λάβαμε την παραγγελία GRUBZ {orderNumber}",
-        body: "{greeting}\n\nΛάβαμε την παραγγελία σου {orderNumber} και είναι πλέον στη σειρά μας.\n\nΣύνολο: {total}\n\nGRUBZ",
+        body: "{greeting}\n\nΛάβαμε την παραγγελία σου {orderNumber} και είναι πλέον στη σειρά μας.\n\nΣύνολο: {total}",
       },
     },
   },
@@ -168,11 +191,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "processing",
     subject: "Your GRUBZ order {orderNumber} is being prepared",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} is now being prepared.\n\nWe will update you again when it is packed.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} is now being prepared.\n\nWe will update you again when it is packed.",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} ετοιμάζεται",
-        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ετοιμάζεται.\n\nΘα σε ενημερώσουμε ξανά όταν συσκευαστεί.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ετοιμάζεται.\n\nΘα σε ενημερώσουμε ξανά όταν συσκευαστεί.",
       },
     },
   },
@@ -180,11 +203,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "packed",
     subject: "Your GRUBZ order {orderNumber} is packed",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been packed and is almost ready to ship.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been packed and is almost ready to ship.",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} συσκευάστηκε",
-        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} έχει συσκευαστεί και είναι σχεδόν έτοιμη για αποστολή.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} έχει συσκευαστεί και είναι σχεδόν έτοιμη για αποστολή.",
       },
     },
   },
@@ -192,11 +215,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "shipped",
     subject: "Your GRUBZ order {orderNumber} has shipped",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has shipped.\n\nTracking number: {trackingNumber}\nTracking link: {trackingUrl}\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has shipped.\n\nTracking number: {trackingNumber}\nTracking link: {trackingUrl}",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} στάλθηκε",
-        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} έχει σταλεί.\n\nΑριθμός αποστολής: {trackingNumber}\nΣύνδεσμος παρακολούθησης: {trackingUrl}\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} έχει σταλεί.\n\nΑριθμός αποστολής: {trackingNumber}\nΣύνδεσμος παρακολούθησης: {trackingUrl}",
       },
     },
   },
@@ -204,11 +227,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "delivered",
     subject: "Your GRUBZ order {orderNumber} was delivered",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been delivered.\n\nThank you for choosing GRUBZ.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been delivered.\n\nThank you for choosing GRUBZ.",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} παραδόθηκε",
-        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} παραδόθηκε.\n\nΣε ευχαριστούμε που επέλεξες GRUBZ.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} παραδόθηκε.\n\nΣε ευχαριστούμε που επέλεξες GRUBZ.",
       },
     },
   },
@@ -216,11 +239,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "cancelled",
     subject: "Your GRUBZ order {orderNumber} was cancelled",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been cancelled.\n\nIf you have any questions, reply to this email.\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has been cancelled.\n\nIf you have any questions, reply to this email.",
     translations: {
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} ακυρώθηκε",
-        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ακυρώθηκε.\n\nΑν έχεις ερωτήσεις, απάντησε σε αυτό το email.\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ακυρώθηκε.\n\nΑν έχεις ερωτήσεις, απάντησε σε αυτό το email.",
       },
     },
   },
@@ -229,11 +252,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     templateContext: "feedback",
     fulfillmentStatus: "feedback_request",
     subject: "How was your GRUBZ order {orderNumber}?",
-    body: "{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nShare your feedback using your personal link below. After you submit the form, we will email you a unique 10% discount code for your next order.\n\n{feedback_url}\n\nThe link can be used once and expires after 30 days.\n\nGRUBZ",
+    body: "{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nShare your feedback using your personal link below. After you submit the form, we will email you a unique 10% discount code for your next order.\n\n{feedback_url}\n\nThe link can be used once and expires after 30 days.",
     translations: {
       el: {
         subject: "Πώς σου φάνηκε η παραγγελία GRUBZ {orderNumber};",
-        body: "{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΜοιράσου τη γνώμη σου μέσω του προσωπικού συνδέσμου παρακάτω. Μετά την υποβολή, θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.\n\n{feedback_url}\n\nΟ σύνδεσμος χρησιμοποιείται μία φορά και λήγει σε 30 ημέρες.\n\nGRUBZ",
+        body: "{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΜοιράσου τη γνώμη σου μέσω του προσωπικού συνδέσμου παρακάτω. Μετά την υποβολή, θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.\n\n{feedback_url}\n\nΟ σύνδεσμος χρησιμοποιείται μία φορά και λήγει σε 30 ημέρες.",
       },
     },
   },
@@ -242,11 +265,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     templateContext: "order",
     fulfillmentStatus: "locker_arrival",
     subject: "Your GRUBZ parcel is ready for pickup",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has arrived at the BOX NOW locker:\n\n{boxNowLocker}\n\nYou can collect it now using the PIN sent by BOX NOW.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} has arrived at the BOX NOW locker:\n\n{boxNowLocker}\n\nYou can collect it now using the PIN sent by BOX NOW.\n\nTrack your parcel: {trackingUrl}",
     translations: {
       el: {
         subject: "Το δέμα GRUBZ είναι έτοιμο για παραλαβή",
-        body: "{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} έφτασε στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΜπορείς να την παραλάβεις τώρα χρησιμοποιώντας το PIN που έστειλε η BOX NOW.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} έφτασε στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΜπορείς να την παραλάβεις τώρα χρησιμοποιώντας το PIN που έστειλε η BOX NOW.\n\nΠαρακολούθηση δέματος: {trackingUrl}",
       },
     },
   },
@@ -255,11 +278,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     templateContext: "order",
     fulfillmentStatus: "locker_reminder",
     subject: "Your GRUBZ parcel is waiting at the BOX NOW locker",
-    body: "{greeting}\n\nYour GRUBZ order {orderNumber} is waiting for collection at the BOX NOW locker:\n\n{boxNowLocker}\n\nPlease collect it soon to avoid it being returned.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
+    body: "{greeting}\n\nYour GRUBZ order {orderNumber} is waiting for collection at the BOX NOW locker:\n\n{boxNowLocker}\n\nPlease collect it soon to avoid it being returned.\n\nTrack your parcel: {trackingUrl}",
     translations: {
       el: {
         subject: "Το δέμα GRUBZ σε περιμένει στη θυρίδα BOX NOW",
-        body: "{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} σε περιμένει για παραλαβή στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΠαρακαλούμε παρέλαβέ τη σύντομα, ώστε να μην επιστραφεί.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ",
+        body: "{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} σε περιμένει για παραλαβή στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΠαρακαλούμε παρέλαβέ τη σύντομα, ώστε να μην επιστραφεί.\n\nΠαρακολούθηση δέματος: {trackingUrl}",
       },
     },
   },
@@ -267,11 +290,11 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
     enabled: true,
     fulfillmentStatus: "abandoned_signup",
     subject: "Still thinking about GRUBZ?",
-    body: "{greeting}\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout: {grubz_url}\n\nGRUBZ",
+    body: "{greeting}\n\nThanks for signing up for GRUBZ. It looks like you did not complete your order yet.\n\nIf you are ready, you can use coupon code {coupon} at checkout: {grubz_url}",
     translations: {
       el: {
         subject: "Σκέφτεσαι ακόμα το GRUBZ;",
-        body: "{greeting}\n\nΣε ευχαριστούμε που γράφτηκες στο GRUBZ. Φαίνεται ότι δεν ολοκλήρωσες ακόμα την παραγγελία σου.\n\nΑν είσαι έτοιμος/η, μπορείς να χρησιμοποιήσεις τον κωδικό έκπτωσης {coupon} στο checkout: {grubz_url}\n\nGRUBZ",
+        body: "{greeting}\n\nΣε ευχαριστούμε που γράφτηκες στο GRUBZ. Φαίνεται ότι δεν ολοκλήρωσες ακόμα την παραγγελία σου.\n\nΑν είσαι έτοιμος/η, μπορείς να χρησιμοποιήσεις τον κωδικό έκπτωσης {coupon} στο checkout: {grubz_url}",
       },
     },
   },
@@ -375,7 +398,11 @@ function productDocToRuntime(id, data = {}) {
     descriptionEl: data.descriptionEl || data.description || "",
     detail: data.detail || data.description || "",
     detailEl: data.detailEl || data.detail || data.descriptionEl || "",
+    bestFor: sanitizeProductStorefrontTags(data.bestFor),
+    bestForEl: sanitizeProductStorefrontTags(data.bestForEl),
     image: publicImageUrl(data.image),
+    imageEn: publicImageUrl(data.imageEn),
+    imageEl: publicImageUrl(data.imageEl || data.image),
     imageBg: data.imageBg || "#f8f1eb",
     active: data.active !== false,
     allowBackorder: data.allowBackorder === true,
@@ -398,7 +425,11 @@ function productToPublic(id, product) {
     descriptionEl: product.descriptionEl || product.description || "",
     detail: product.detail || product.description || "",
     detailEl: product.detailEl || product.detail || product.descriptionEl || "",
+    bestFor: sanitizeProductStorefrontTags(product.bestFor),
+    bestForEl: sanitizeProductStorefrontTags(product.bestForEl),
     image: publicImageUrl(product.image),
+    imageEn: publicImageUrl(product.imageEn),
+    imageEl: publicImageUrl(product.imageEl || product.image),
     imageBg: product.imageBg || "#f8f1eb",
     amount: Math.max(0, Number(product.amount || 0)),
     currency: product.currency || "eur",
@@ -421,19 +452,17 @@ function stripeRefsForProduct(product = {}, mode = "test") {
   };
 }
 
-let legacyInventoryPoolsMigrated = false;
-async function getProductsMap({ includeInactive = false } = {}) {
-  if (!legacyInventoryPoolsMigrated) {
-    await migrateLegacyProductInventoryPools();
-    legacyInventoryPoolsMigrated = true;
-  }
-  const snap = await db.collection("products").get();
+async function getProductsMap({ includeInactive = false, poolsPromise = null } = {}) {
+  const [snap, inventoryPools] = await Promise.all([
+    db.collection("products").get(),
+    poolsPromise || getInventoryPools(),
+  ]);
   const map = {};
   snap.forEach((doc) => {
     const product = productDocToRuntime(doc.id, doc.data());
     if (includeInactive || product.active !== false) map[doc.id] = product;
   });
-  const pools = Object.fromEntries((await getInventoryPools()).map(pool => [pool.id, pool]));
+  const pools = Object.fromEntries(inventoryPools.map(pool => [pool.id, pool]));
   for (const [id, product] of Object.entries(map)) {
     const pool = pools[String(product.inventoryPoolId || "").trim()];
     const weightGrams = Math.max(0, Number(product.weightGrams || 0));
@@ -468,7 +497,11 @@ function sanitizeProductPayload(input = {}) {
     descriptionEl: String(input.descriptionEl || input.description || "").trim(),
     detail: String(input.detail || input.description || "").trim(),
     detailEl: String(input.detailEl || input.detail || input.descriptionEl || "").trim(),
+    bestFor: sanitizeProductStorefrontTags(input.bestFor),
+    bestForEl: sanitizeProductStorefrontTags(input.bestForEl),
     image: String(input.image || "").trim(),
+    imageEn: String(input.imageEn || "").trim(),
+    imageEl: String(input.imageEl || "").trim(),
     imageBg: String(input.imageBg || "#f8f1eb").trim(),
     amount,
     currency: String(input.currency || "eur").trim().toLowerCase(),
@@ -500,6 +533,15 @@ function sanitizeProductPayload(input = {}) {
     }
   }
   return product;
+}
+
+function sanitizeProductStorefrontTags(value) {
+  const tags = Array.isArray(value) ? value : [];
+  return Array.from(new Set(tags
+    .map(tag => String(tag || "").trim())
+    .filter(Boolean)))
+    .slice(0, 5)
+    .map(tag => tag.slice(0, 60));
 }
 
 function productActivationMissingFields(product = {}) {
@@ -1906,6 +1948,61 @@ function publicChatMessage(id, data = {}) {
   };
 }
 
+function buildCustomerChatNotification(conversationId, messageId, customer = {}, text = "") {
+  const customerLabel = customer.name || customer.email || "Storefront visitor";
+  const subject = `[GRUBZ] New storefront message from ${customerLabel}`;
+  const consoleUrl = `${GRUBZ_URL}/console/#messages`;
+  const plainText = [
+    "New storefront chat message",
+    "",
+    `From: ${customerLabel}`,
+    customer.email ? `Email: ${customer.email}` : "",
+    "",
+    text,
+    "",
+    `Open Messages: ${consoleUrl}`,
+  ].filter(line => line !== "").join("\n");
+  const html = `
+    <h2>New storefront chat message</h2>
+    <p><strong>From:</strong> ${escapeHtml(customerLabel)}${customer.email ? `<br><strong>Email:</strong> ${escapeHtml(customer.email)}` : ""}</p>
+    <blockquote style="margin:16px 0;padding:12px 16px;border-left:4px solid #aa2315;background:#fafafa;white-space:pre-wrap;">${escapeHtml(text)}</blockquote>
+    <p><a href="${escapeHtml(consoleUrl)}" style="color:#aa2315;font-weight:700;">Open Messages</a></p>
+  `;
+  return { subject, text: plainText, html, conversationId, messageId };
+}
+
+async function sendCustomerChatNotificationOnce(conversationId, messageId, customer = {}, text = "") {
+  const notificationRef = db.collection("chatNotifications").doc(`customer_${messageId}`);
+  const notificationSnap = await notificationRef.get();
+  if (notificationSnap.exists && notificationSnap.data()?.status === "sent") {
+    return { skipped: true, reason: "already_sent" };
+  }
+  await notificationRef.set({
+    type: "customer_chat_message",
+    conversationId,
+    messageId,
+    status: "sending",
+    createdAt: notificationSnap.exists ? notificationSnap.data()?.createdAt || now() : now(),
+    lastAttemptAt: now(),
+  }, { merge: true });
+  try {
+    const to = secretValue(ORDER_NOTIFICATION_EMAIL, DEFAULT_NOTIFICATION_EMAIL);
+    const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
+    const message = buildCustomerChatNotification(conversationId, messageId, customer, text);
+    const result = await sendEmail({ to, from, subject: message.subject, text: message.text, html: message.html });
+    await notificationRef.set({
+      status: result.skipped ? "skipped" : "sent",
+      result,
+      updatedAt: now(),
+      sentAt: result.skipped ? null : now(),
+    }, { merge: true });
+    return result;
+  } catch (err) {
+    await notificationRef.set({ status: "failed", error: err.message || "Chat notification failed", updatedAt: now() }, { merge: true });
+    throw err;
+  }
+}
+
 function marketingSessionId(value = "") {
   return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 120);
 }
@@ -2512,11 +2609,294 @@ async function createCourierQuoteOrder({ uid, email, items, shipping, couponCode
   return order;
 }
 
+function courierQuotePaymentMode(value = "") {
+  const mode = String(value || "").trim().toLowerCase();
+  if (!['prepaid', 'pay_on_delivery'].includes(mode)) {
+    throw Object.assign(new Error('Choose whether shipping is prepaid or paid on delivery.'), { status: 400 });
+  }
+  return mode;
+}
+
+async function sendCourierQuoteEmail(order, checkoutUrl) {
+  const customerEmail = String(order.customer?.email || "").trim();
+  if (!customerEmail) throw Object.assign(new Error('This order has no customer email address.'), { status: 400 });
+  const quote = order.shippingQuote || {};
+  const language = order.language === 'el' ? 'el' : 'en';
+  const productTotal = Math.max(0, Number(order.amountSubtotal || 0) - Number(order.amountDiscount || 0));
+  const shippingAmount = Math.max(0, Number(order.amountShipping || 0));
+  const onlineAmount = Math.max(0, Number(order.amountDueOnline || productTotal));
+  const dueOnDelivery = Math.max(0, Number(order.amountDueOnDelivery || 0));
+  const money = amount => formatMoney(amount, order.currency || 'eur');
+  const paymentExplanation = quote.paymentMode === 'pay_on_delivery'
+    ? (language === 'el'
+      ? `Θα πληρώσεις τώρα ${money(onlineAmount)} για τα προϊόντα. Τα μεταφορικά ${money(dueOnDelivery)} θα πληρωθούν στην courier κατά την παράδοση.`
+      : `Pay ${money(onlineAmount)} now for the products. The ${money(dueOnDelivery)} shipping charge is payable to the courier on delivery.`)
+    : (language === 'el'
+      ? `Θα πληρώσεις τώρα ${money(onlineAmount)} για τα προϊόντα και τα μεταφορικά. Δεν οφείλεται ποσό κατά την παράδοση.`
+      : `Pay ${money(onlineAmount)} now for the products and shipping. Nothing is due on delivery.`);
+  const subject = language === 'el'
+    ? `Η προσφορά μεταφορικών για την παραγγελία ${publicOrderId(order)} είναι έτοιμη`
+    : `Your shipping quote for order ${publicOrderId(order)} is ready`;
+  const lines = language === 'el'
+    ? [
+      `Γεια σου ${order.customer?.name || ''},`,
+      '',
+      `Η προσφορά μεταφορικών για την παραγγελία ${publicOrderId(order)} είναι έτοιμη.`,
+      `Courier: ${quote.courier}`,
+      quote.estimatedDelivery ? `Εκτιμώμενη παράδοση: ${quote.estimatedDelivery}` : '',
+      `Προϊόντα: ${money(productTotal)}`,
+      `Μεταφορικά: ${money(shippingAmount)}`,
+      paymentExplanation,
+      '',
+      `Έγκριση και ασφαλής πληρωμή: ${checkoutUrl}`,
+      '',
+      'Η παραγγελία θα προχωρήσει μόνο αφού ολοκληρωθεί η ηλεκτρονική πληρωμή των προϊόντων.',
+    ]
+    : [
+      `Hello ${order.customer?.name || ''},`,
+      '',
+      `The shipping quote for order ${publicOrderId(order)} is ready.`,
+      `Courier: ${quote.courier}`,
+      quote.estimatedDelivery ? `Estimated delivery: ${quote.estimatedDelivery}` : '',
+      `Products: ${money(productTotal)}`,
+      `Shipping: ${money(shippingAmount)}`,
+      paymentExplanation,
+      '',
+      `Approve and pay securely: ${checkoutUrl}`,
+      '',
+      'The order will proceed only after the online product payment is completed.',
+    ];
+  const text = lines.filter(line => line !== '').join('\n');
+  const html = lines.map(line => {
+    if (line.includes(checkoutUrl)) {
+      const label = language === 'el' ? `Έγκριση & πληρωμή ${money(onlineAmount)}` : `Approve & pay ${money(onlineAmount)}`;
+      return `<p><a href="${escapeHtml(checkoutUrl)}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#d04211;color:#fff;text-decoration:none;font-weight:700">${escapeHtml(label)}</a></p>`;
+    }
+    return line ? `<p>${escapeHtml(line)}</p>` : '<br>';
+  }).join('');
+  return sendEmail({
+    to: customerEmail,
+    bcc: GRUBZ_INFO_EMAIL,
+    from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+    subject,
+    text,
+    html,
+    language,
+  });
+}
+
+async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = null) {
+  if (order.shipping?.deliveryMethod !== 'courier_quote') {
+    throw Object.assign(new Error('Only courier quote orders can be finalized here.'), { status: 400 });
+  }
+  if (String(order.paymentStatus || '').toLowerCase() === 'paid') {
+    throw Object.assign(new Error('This order has already been paid.'), { status: 409 });
+  }
+  const courier = String(input.courier || '').trim();
+  if (!['ACS Courier', 'Γενική Ταχυδρομική'].includes(courier)) {
+    throw Object.assign(new Error('Choose ACS Courier or Γενική Ταχυδρομική.'), { status: 400 });
+  }
+  const shippingAmount = Math.max(0, Math.round(Number(input.shippingAmountCents || 0)));
+  if (!Number.isFinite(shippingAmount)) throw Object.assign(new Error('Enter a valid shipping cost.'), { status: 400 });
+  const paymentMode = courierQuotePaymentMode(input.shippingPaymentMode);
+  const productTotal = Math.max(0, Number(order.amountSubtotal || 0) - Number(order.amountDiscount || 0));
+  if (productTotal <= 0) throw Object.assign(new Error('The product total must be greater than zero.'), { status: 400 });
+  const onlineAmount = productTotal + (paymentMode === 'prepaid' ? shippingAmount : 0);
+  const dueOnDelivery = paymentMode === 'pay_on_delivery' ? shippingAmount : 0;
+  const stripeConfig = await activeStripeConfig(req);
+  if (!stripeConfig.localEnvironmentForced && order.stripeMode && order.stripeMode !== stripeConfig.mode) {
+    throw Object.assign(new Error(`This order was created in Stripe ${order.stripeMode} mode, but the console is using ${stripeConfig.mode} mode.`), { status: 409 });
+  }
+  const productsMap = await getProductsMap({ includeInactive: true });
+  const cart = (order.items || []).map(item => ({ id: item.id, qty: item.quantity || item.qty || 1 }));
+  const checkoutItems = orderItemsFromCart(cart, productsMap, stripeConfig.mode, { allowInactive: true });
+  const lineItems = checkoutItems.map(item => {
+    if (item.stripePriceId) return { price: item.stripePriceId, quantity: item.quantity };
+    if (stripeConfig.mode === 'live') {
+      throw Object.assign(new Error(`Missing live Stripe price for ${item.name || item.id}.`), { status: 400 });
+    }
+    return {
+      quantity: item.quantity,
+      price_data: {
+        currency: item.currency || order.currency || 'eur',
+        unit_amount: item.unitAmount,
+        product_data: { name: item.name || item.id },
+      },
+    };
+  });
+  if (paymentMode === 'prepaid' && shippingAmount > 0) {
+    lineItems.push({
+      quantity: 1,
+      price_data: {
+        currency: order.currency || 'eur',
+        unit_amount: shippingAmount,
+        product_data: { name: `${courier} delivery` },
+      },
+    });
+  }
+  let promotionCodeId = null;
+  if (Number(order.amountDiscount || 0) > 0) {
+    const couponId = String(order.couponId || '').trim() || couponDocId(order.couponCode || '');
+    const couponSnap = couponId ? await db.collection(COUPONS_COLLECTION).doc(couponId).get() : null;
+    if (!couponSnap?.exists) {
+      throw Object.assign(new Error('The order discount exists, but its Stripe coupon could not be found.'), { status: 409 });
+    }
+    const coupon = { id: couponSnap.id, ...couponSnap.data() };
+    promotionCodeId = await ensureStripePromotionCodeForCoupon(coupon, stripeConfig.mode, checkoutItems, stripeConfig);
+  }
+  const previousCheckoutSessionId = String(order.shippingQuote?.checkoutSessionId || '').trim();
+  if (previousCheckoutSessionId && order.shippingQuote?.status === 'sent') {
+    try {
+      await stripeConfig.stripe.checkout.sessions.expire(previousCheckoutSessionId);
+    } catch (err) {
+      logger.info('Previous courier quote checkout could not be expired', {
+        orderId: order.id,
+        checkoutSessionId: previousCheckoutSessionId,
+        message: err.message || 'Expire failed',
+      });
+    }
+  }
+  const metadata = {
+    orderNumber: publicOrderId(order),
+    courierQuoteOrderId: order.id,
+    // The emailed checkout link is the approval credential; do not require the
+    // customer to still be signed in when returning from Stripe.
+    uid: 'guest',
+    stripeMode: stripeConfig.mode,
+    paymentMethod: paymentMode === 'prepaid' ? 'card' : 'online_product_shipping_cod',
+    deliveryMethod: 'courier_quote',
+    shippingPaymentMode: paymentMode,
+    courier,
+    shippingAmount: String(shippingAmount),
+    amountDueOnDelivery: String(dueOnDelivery),
+    cart: JSON.stringify((order.items || []).map(item => ({ id: item.id, qty: item.quantity || item.qty || 1 }))).slice(0, 5000),
+    language: order.language === 'el' ? 'el' : 'en',
+  };
+  const requestOrigin = String(req?.headers?.origin || '').trim();
+  const returnBase = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)
+    ? requestOrigin
+    : HOSTING_BASE;
+  const checkoutParams = {
+    mode: 'payment',
+    locale: order.language === 'el' ? 'el' : 'en',
+    client_reference_id: publicOrderId(order),
+    customer_email: String(order.customer?.email || '').trim() || undefined,
+    line_items: lineItems,
+    success_url: `${returnBase}/checkout/success?sid={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${returnBase}/checkout/cancelled`,
+    metadata,
+    payment_intent_data: { metadata },
+  };
+  if (promotionCodeId) checkoutParams.discounts = [{ promotion_code: promotionCodeId }];
+  const session = await stripeConfig.stripe.checkout.sessions.create(checkoutParams);
+  const checkoutOnlineAmount = Math.max(0, Number(session.amount_total ?? onlineAmount));
+  const quote = {
+    status: 'sent',
+    courier,
+    estimatedDelivery: String(input.estimatedDelivery || '').trim().slice(0, 240),
+    paymentMode,
+    shippingAmount,
+    productAmount: productTotal,
+    onlineAmount: checkoutOnlineAmount,
+    amountDueOnDelivery: dueOnDelivery,
+    checkoutSessionId: session.id,
+    checkoutUrl: session.url,
+    sentAt: now(),
+    sentBy: adminUser.uid || '',
+  };
+  const updatedOrder = {
+    ...order,
+    status: 'active',
+    paymentStatus: 'pending_payment',
+    paymentMethod: metadata.paymentMethod,
+    stripeMode: stripeConfig.mode,
+    stripeSessionId: session.id,
+    stripePaymentLink: session.url,
+    paymentLink: session.url,
+    shippingQuotePending: false,
+    shippingQuote: quote,
+    amountShipping: shippingAmount,
+    amountTotal: productTotal + shippingAmount,
+    amountDue: checkoutOnlineAmount,
+    amountDueOnline: checkoutOnlineAmount,
+    amountDueOnDelivery: dueOnDelivery,
+    shipping: {
+      ...(order.shipping || {}),
+      courier,
+      cashOnDelivery: paymentMode === 'pay_on_delivery',
+      shippingPaymentMode: paymentMode,
+    },
+    updatedAt: now(),
+    updatedBy: adminUser.uid || '',
+  };
+  await db.collection('orders').doc(order.id).set(updatedOrder, { merge: true });
+  try {
+    const email = await sendCourierQuoteEmail(updatedOrder, session.url);
+    await db.collection('orders').doc(order.id).set({ shippingQuote: { ...quote, email }, updatedAt: now() }, { merge: true });
+    return { order: updatedOrder, email };
+  } catch (err) {
+    await db.collection('orders').doc(order.id).set({
+      shippingQuote: { ...quote, email: { failed: true, error: String(err.message || 'Email failed').slice(0, 500) } },
+      updatedAt: now(),
+    }, { merge: true });
+    throw err;
+  }
+}
+
 async function upsertOrderFromSession(session) {
   const productsMap = await getProductsMap({ includeInactive: true });
   const id = session.id;
   const items = parseSessionCart(session, productsMap);
   const metadata = session.metadata || {};
+  const courierQuoteOrderId = String(metadata.courierQuoteOrderId || '').trim();
+  if (courierQuoteOrderId) {
+    const orderRef = db.collection('orders').doc(courierQuoteOrderId);
+    const snap = await orderRef.get();
+    if (!snap.exists) throw new Error(`Courier quote order ${courierQuoteOrderId} was not found`);
+    const existing = { id: snap.id, ...snap.data() };
+    const paid = session.payment_status === 'paid';
+    const shippingAmount = Math.max(0, Number(existing.amountShipping || metadata.shippingAmount || 0));
+    const dueOnDelivery = Math.max(0, Number(existing.amountDueOnDelivery || metadata.amountDueOnDelivery || 0));
+    const update = {
+      stripeSessionId: session.id,
+      stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : '',
+      paymentMethod: metadata.paymentMethod || existing.paymentMethod || 'card',
+      status: paid ? 'active' : (session.status || 'active'),
+      paymentStatus: paid ? 'paid' : (session.payment_status || 'pending_payment'),
+      productPaymentStatus: paid ? 'paid' : (session.payment_status || 'pending_payment'),
+      amountPaidOnline: paid ? Number(session.amount_total || 0) : 0,
+      amountDueOnline: Number(session.amount_total || existing.amountDueOnline || 0),
+      amountDue: paid ? dueOnDelivery : Number(session.amount_total || existing.amountDueOnline || 0),
+      amountDueOnDelivery: dueOnDelivery,
+      amountShipping: shippingAmount,
+      fulfillmentStatus: paid ? 'processing' : (existing.fulfillmentStatus || 'new'),
+      shipping: {
+        ...(existing.shipping || {}),
+        courier: metadata.courier || existing.shipping?.courier || '',
+        cashOnDelivery: metadata.shippingPaymentMode === 'pay_on_delivery',
+        shippingPaymentMode: metadata.shippingPaymentMode || existing.shipping?.shippingPaymentMode || 'prepaid',
+      },
+      shippingQuote: {
+        ...(existing.shippingQuote || {}),
+        status: paid ? 'accepted' : (existing.shippingQuote?.status || 'sent'),
+        acceptedAt: paid ? now() : (existing.shippingQuote?.acceptedAt || null),
+      },
+      updatedAt: now(),
+    };
+    await orderRef.set(update, { merge: true });
+    const order = { ...existing, ...update, id: courierQuoteOrderId };
+    if (paid) {
+      await transitionOrderInventory(courierQuoteOrderId, 'reserved', 'stripe_payment');
+      if (order.couponCode && Number(order.amountDiscount || 0) > 0 && !existing.couponRedeemedAt) {
+        const couponSnap = await db.collection(COUPONS_COLLECTION).doc(couponDocId(order.couponCode)).get();
+        if (couponSnap.exists) {
+          await recordCouponRedemption({ coupon: { id: couponSnap.id, ...couponSnap.data() }, order, discountCents: order.amountDiscount });
+          await orderRef.set({ couponRedeemedAt: now() }, { merge: true });
+        }
+      }
+    }
+    return order;
+  }
   const orderNumber = publicOrderId(metadata) || generateOrderNumber();
   const metadataShippingAmount = Number(metadata.boxnowFeeAmount || 0);
   const stripeShippingAmount = Number(session.total_details?.amount_shipping || 0);
@@ -3088,6 +3468,7 @@ async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, cou
         to,
         from,
         bcc,
+        language: emailLanguage,
         subject: testModeSubject,
         text: personalizedText,
         html: personalizedHtml,
@@ -3215,9 +3596,10 @@ async function newsletterImageAttachment(rawImageUrl = "") {
   return { content, contentType: contentType === "image/jpg" ? "image/jpeg" : contentType };
 }
 
-async function sendNewsletter({ adminUser, subject, body, language = "en", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
+async function sendNewsletter({ adminUser, subject, body, coupon = "", language = "en", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
   const cleanSubject = String(subject || "").trim().slice(0, 180);
   const cleanBody = String(body || "").trim().slice(0, 12000);
+  const couponCode = normalizeCouponCode(coupon || "").slice(0, 80);
   const emailLanguage = String(language || "en").toLowerCase() === "el" ? "el" : "en";
   const rawImageUrl = String(image.url || "").trim();
   const hasRemoteImage = /^https:\/\//i.test(rawImageUrl);
@@ -3231,8 +3613,11 @@ async function sendNewsletter({ adminUser, subject, body, language = "en", testO
   if (containsOrderOnlyPlaceholder(`${cleanSubject}\n${cleanBody}`)) {
     throw Object.assign(new Error("Newsletter templates cannot use order placeholders."), { status: 400 });
   }
+  if (containsCouponPlaceholder(`${cleanSubject}\n${cleanBody}`) && !couponCode) {
+    throw Object.assign(new Error("Select a coupon or remove the {coupon} placeholder before sending."), { status: 400 });
+  }
   const contentHash = createHash("sha256")
-    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, language: emailLanguage, imageUrl, imageAlt, imageLink }))
+    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, coupon: couponCode, language: emailLanguage, imageUrl, imageAlt, imageLink }))
     .digest("hex");
 
   let recipients = [];
@@ -3305,6 +3690,7 @@ async function sendNewsletter({ adminUser, subject, body, language = "en", testO
     subject: cleanSubject,
     contentHash,
     language: emailLanguage,
+    coupon: couponCode,
     recipientCount: recipients.length,
     testOnly,
     status: "sending",
@@ -3328,6 +3714,7 @@ async function sendNewsletter({ adminUser, subject, body, language = "en", testO
         : newsletterUnsubscribeUrl(recipient.unsubscribeToken, publicBaseUrl);
       const context = {
         language: emailLanguage,
+        coupon: couponCode,
         placeholders: emailSettings.placeholders,
         unsubscribeUrl,
       };
@@ -3349,6 +3736,7 @@ async function sendNewsletter({ adminUser, subject, body, language = "en", testO
         to: recipient.email,
         from,
         bcc: !testOnly && !archiveBccSent ? GRUBZ_INFO_EMAIL : "",
+        language: emailLanguage,
         subject: testOnly ? `[NEWSLETTER TEST] ${personalizedSubject}` : personalizedSubject,
         text: personalizedText,
         html: personalizedHtml,
@@ -3523,11 +3911,26 @@ function buildCustomerSuccessNotification(order) {
   const orderNumber = publicOrderId(order);
   const subject = `GRUBZ order confirmed: ${orderNumber}`;
   const greeting = customer.name ? `Hi ${customer.name},` : "Hi,";
-  const isCod = order.paymentMethod === "cash_on_delivery" || order.shipping?.cashOnDelivery === true;
-  const intro = isCod
+  const isShippingOnlyCod = order.paymentMethod === 'online_product_shipping_cod' || order.shipping?.shippingPaymentMode === 'pay_on_delivery';
+  const isCod = !isShippingOnlyCod && (order.paymentMethod === "cash_on_delivery" || order.shipping?.cashOnDelivery === true);
+  const intro = isShippingOnlyCod
+    ? "Thanks for your order. Your product payment was successful and we are preparing your GRUBZ delivery."
+    : isCod
     ? "Thanks for your order. We received it as cash on delivery and are preparing your GRUBZ delivery."
     : "Thanks for your order. Your payment was successful and we are preparing your GRUBZ delivery.";
-  const amountLine = isCod ? `Amount due on delivery: ${total}` : `Total: ${total}`;
+  const amountLine = isShippingOnlyCod
+    ? `Paid online: ${formatMoney(order.amountPaidOnline, order.currency)}\nShipping due to courier: ${formatMoney(order.amountDueOnDelivery, order.currency)}`
+    : isCod ? `Amount due on delivery: ${total}` : `Total: ${total}`;
+  const deliveryTitle = order.shipping?.deliveryMethod === 'courier_quote' ? 'Courier delivery' : 'BOX NOW locker';
+  const courierDeliveryLines = [
+    order.shipping?.courier ? `Courier: ${order.shipping.courier}` : '',
+    [order.shipping?.addressLine1 || order.shipping?.line1, order.shipping?.addressLine2 || order.shipping?.line2].filter(Boolean).join(', '),
+    [order.shipping?.postalCode || order.shipping?.postal, order.shipping?.city, order.shipping?.country].filter(Boolean).join(', '),
+  ].filter(Boolean);
+  const deliveryLines = deliveryTitle === 'Courier delivery' ? courierDeliveryLines : boxNowLines(order);
+  const deliveryHtml = deliveryTitle === 'Courier delivery'
+    ? courierDeliveryLines.map(line => escapeHtml(line)).join('<br>')
+    : boxNowHtml(order);
   const text = [
     greeting,
     "",
@@ -3536,28 +3939,29 @@ function buildCustomerSuccessNotification(order) {
     `Order: ${orderNumber}`,
     amountLine,
     "",
-    "BOX NOW locker",
-    ...boxNowLines(order),
+    deliveryTitle,
+    ...deliveryLines,
     "",
     "Items",
     ...itemLines,
     "",
     "We will contact you if anything else is needed.",
-    "GRUBZ",
   ].join("\n");
   const htmlItems = itemLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
   const html = `
     <p>${escapeHtml(greeting)}</p>
     <p>${escapeHtml(intro)}</p>
     <p><strong>Order:</strong> ${escapeHtml(orderNumber)}<br>
-    <strong>${isCod ? "Amount due on delivery" : "Total"}:</strong> ${escapeHtml(total)}</p>
-    <h3>BOX NOW locker</h3>
-    <p>${boxNowHtml(order)}</p>
+    ${isShippingOnlyCod
+      ? `<strong>Paid online:</strong> ${escapeHtml(formatMoney(order.amountPaidOnline, order.currency))}<br><strong>Shipping due to courier:</strong> ${escapeHtml(formatMoney(order.amountDueOnDelivery, order.currency))}`
+      : `<strong>${isCod ? "Amount due on delivery" : "Total"}:</strong> ${escapeHtml(total)}`}</p>
+    <h3>${escapeHtml(deliveryTitle)}</h3>
+    <p>${deliveryHtml}</p>
     <h3>Items</h3>
     <ul>${htmlItems}</ul>
-    <p>We will contact you if anything else is needed.<br>GRUBZ</p>
+    <p>We will contact you if anything else is needed.</p>
   `;
-  return { subject, text, html };
+  return { subject, text, html, language: resolveOrderLanguage(order) };
 }
 
 function buildUserSignupNotification(user = {}) {
@@ -3738,6 +4142,10 @@ function renderOrderTemplate(value, vars) {
   });
 }
 
+function removeTrailingGrubzSignoff(value) {
+  return String(value || "").replace(/(?:\r?\n\s*){1,2}GRUBZ\s*$/i, "").trimEnd();
+}
+
 function plainTextToHtml(text) {
   return escapeHtml(text).replace(/\n/g, "<br>\n");
 }
@@ -3765,10 +4173,12 @@ function templateContentForLanguage(template = {}, language = "en") {
 
 function buildOrderStatusEmail(template, order, previousStatus, previousFulfillmentStatus = previousStatus, settings = {}) {
   const vars = orderStatusTemplateVars(order, previousStatus, previousFulfillmentStatus, settings.placeholders);
-	const content = templateContentForLanguage(template, resolveOrderLanguage(order));
+	const language = resolveOrderLanguage(order);
+	const content = templateContentForLanguage(template, language);
   const subject = renderOrderTemplate(content.subject, vars);
-  const text = renderOrderTemplate(content.body, vars);
-  return { subject, text, html: renderOrderTemplateHtml(content.body, vars) };
+  const body = removeTrailingGrubzSignoff(content.body);
+  const text = renderOrderTemplate(body, vars);
+  return { subject, text, html: renderOrderTemplateHtml(body, vars), language };
 }
 
 function sampleOrderForStatusTemplate(fulfillmentStatus, language = "en") {
@@ -3882,19 +4292,19 @@ function isInfoGrubzSender(from) {
   return emailAddressFromHeader(from) === GRUBZ_INFO_EMAIL;
 }
 
-function appendGrubzSignatureToHtml(html) {
+function appendGrubzSignatureToHtml(html, language = "en") {
   const body = String(html || "");
   if (!body.trim() || body.includes(GRUBZ_SIGNATURE_IMAGE_URL)) return body;
-  return `${body}\n${GRUBZ_EMAIL_SIGNATURE_HTML}`;
+  return `${body}\n${grubzEmailSignatureHtml(language)}`;
 }
 
-function appendGrubzSignatureToText(text) {
+function appendGrubzSignatureToText(text, language = "en") {
   const body = String(text || "");
-  if (!body.trim() || body.includes(GRUBZ_EMAIL_SIGNATURE_TEXT)) return body;
-  return `${body}\n\n${GRUBZ_EMAIL_SIGNATURE_TEXT}`;
+  if (!body.trim() || /(?:^|\n)(?:GRUBZ Team|Ομάδα GRUBZ)(?:\n|$)/.test(body)) return body;
+  return `${body}\n\n${grubzEmailSignatureText(language)}`;
 }
 
-async function sendEmail({ to, from, bcc, subject, text, html, attachments }) {
+async function sendEmail({ to, from, bcc, subject, text, html, attachments, language = "en" }) {
   const user = secretValue(SMTP_USER);
   const pass = secretValue(SMTP_PASS);
   if (!user || !pass) {
@@ -3912,20 +4322,23 @@ async function sendEmail({ to, from, bcc, subject, text, html, attachments }) {
   }
 
   const shouldAppendGrubzSignature = isInfoGrubzSender(from) || emailAddressFromHeader(user) === GRUBZ_INFO_EMAIL;
-  const signedHtml = shouldAppendGrubzSignature ? appendGrubzSignatureToHtml(html) : html;
-  const signedText = shouldAppendGrubzSignature ? appendGrubzSignatureToText(text) : text;
+  const formattedHtml = emailMarkdownToHtml(html);
+  const formattedText = emailMarkdownToPlainText(text);
+  const formattedSubject = emailMarkdownToPlainText(subject);
+  const signedHtml = shouldAppendGrubzSignature ? appendGrubzSignatureToHtml(formattedHtml, language) : formattedHtml;
+  const signedText = shouldAppendGrubzSignature ? appendGrubzSignatureToText(formattedText, language) : formattedText;
 
   logger.info("Sending email", {
     to,
     bcc: bcc || "",
     from,
-    subject,
+    subject: formattedSubject,
   });
   const info = await smtpTransporter.sendMail({
     from,
     to,
     bcc,
-    subject,
+    subject: formattedSubject,
     text: signedText,
     html: signedHtml,
     attachments,
@@ -3984,6 +4397,115 @@ async function sendOrderNotificationOnce(type, order, event, recipientOverride =
       updatedAt: now(),
     }, { merge: true });
     throw err;
+  }
+}
+
+function telegramOrderMessage(order = {}) {
+  const pricing = orderPricing(order);
+  const currency = String(order.currency || "eur").toUpperCase();
+  const total = (Math.max(0, Number(pricing.total || order.amountTotal || 0)) / 100).toLocaleString("en-IE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const paymentMethod = order.paymentMethod === "cash_on_delivery" ? "Cash on delivery" : "Paid online";
+  const customer = String(order.customer?.name || order.customer?.email || "Customer").trim();
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+  const items = orderItems
+    .slice(0, 6)
+    .map(item => `${Math.max(1, Number(item.qty || item.quantity || 1))}× ${String(item.name || item.id || "Item").trim()}`)
+    .join("\n");
+  const extraItems = Math.max(0, orderItems.length - 6);
+
+  return [
+    "💰 New GRUBZ order",
+    `${publicOrderId(order)} · ${currency} ${total}`,
+    paymentMethod,
+    customer,
+    items,
+    extraItems ? `+ ${extraItems} more item${extraItems === 1 ? "" : "s"}` : "",
+    `${HOSTING_BASE}/console/`,
+  ].filter(Boolean).join("\n");
+}
+
+async function sendTelegramMessage(text) {
+  const token = secretValue(TELEGRAM_BOT_TOKEN);
+  const chatId = secretValue(TELEGRAM_CHAT_ID);
+  if (!token || !chatId) {
+    logger.warn("Telegram notification skipped: credentials are not configured");
+    return { skipped: true, reason: "missing_telegram_credentials" };
+  }
+
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      disable_web_page_preview: true,
+    }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok !== true) {
+    throw new Error(`Telegram send failed (${response.status}): ${result.description || "Unknown error"}`);
+  }
+  return { sent: true, messageId: result.result?.message_id || null };
+}
+
+async function sendTelegramOrderNotificationOnce(order = {}, event = {}) {
+  if (!secretValue(TELEGRAM_BOT_TOKEN) || !secretValue(TELEGRAM_CHAT_ID)) {
+    logger.warn("Telegram order notification skipped: credentials are not configured");
+    return { skipped: true, reason: "missing_telegram_credentials" };
+  }
+
+  const orderId = order.id || order.stripeSessionId || event.id;
+  const dedupeId = order.stripeSessionId || orderId;
+  const notificationRef = db.collection("orderNotifications").doc(`telegram_order_${orderStatusDocKey(dedupeId)}`);
+  const notificationSnap = await notificationRef.get();
+  if (notificationSnap.exists && ["sending", "sent"].includes(notificationSnap.data()?.status)) {
+    logger.info("Telegram order notification already handled", { orderId });
+    return { skipped: true, reason: "already_handled" };
+  }
+
+  await notificationRef.set({
+    type: "telegram_order_complete",
+    orderId,
+    orderNumber: publicOrderId(order),
+    eventId: event.id || "",
+    eventType: event.type || "",
+    status: "sending",
+    createdAt: notificationSnap.exists ? notificationSnap.data()?.createdAt || now() : now(),
+    lastAttemptAt: now(),
+  }, { merge: true });
+
+  try {
+    const result = await sendTelegramMessage(telegramOrderMessage(order));
+    await notificationRef.set({
+      status: "sent",
+      telegramMessageId: result.messageId || null,
+      sentAt: now(),
+      updatedAt: now(),
+    }, { merge: true });
+    return result;
+  } catch (err) {
+    await notificationRef.set({
+      status: "failed",
+      error: String(err.message || "Telegram send failed").slice(0, 500),
+      updatedAt: now(),
+    }, { merge: true });
+    throw err;
+  }
+}
+
+async function notifyTelegramOrderSafely(order, event) {
+  try {
+    return await sendTelegramOrderNotificationOnce(order, event);
+  } catch (err) {
+    logger.error("Telegram order notification failed", {
+      orderId: order?.id || "",
+      eventId: event?.id || "",
+      message: err.message || "Telegram send failed",
+    });
+    return { failed: true, error: err.message || "Telegram send failed" };
   }
 }
 
@@ -4207,7 +4729,7 @@ function feedbackThankYouMessage(feedback = {}, couponCode = "") {
   const html = textToBasicHtml(text)
     .replace(escapeHtml(couponCode), `<strong style="font-size:18px;letter-spacing:0.04em;">${escapeHtml(couponCode)}</strong>`)
     .replace(escapeHtml(shopUrl), `<a href="${escapeHtml(shopUrl)}" style="font-weight:700;color:#c2410c;">${greek ? "Αγόρασε προϊόντα GRUBZ" : "Shop GRUBZ products"}</a>`);
-  return { subject, text, html };
+  return { subject, text, html, language: greek ? "el" : "en" };
 }
 
 function ensureFeedbackIncentiveMessage(message = {}, language = "en") {
@@ -6316,6 +6838,8 @@ exports.createCheckoutSession = onRequest(
       SMTP_PASS,
       ORDER_NOTIFICATION_EMAIL,
       ORDER_NOTIFICATION_FROM,
+      TELEGRAM_BOT_TOKEN,
+      TELEGRAM_CHAT_ID,
     ],
     cors: ALLOWED_ORIGIN_LIST,
   },
@@ -6389,6 +6913,7 @@ exports.createCheckoutSession = onRequest(
           language,
           boxNowConfig,
         });
+        await notifyTelegramOrderSafely(order, { id: order.id, type: "cash_on_delivery" });
         await sendOrderNotificationOnce("cash_on_delivery_order", order, { id: order.id, type: "cash_on_delivery" });
         await sendCustomerSuccessEmailOnce(order, { id: order.id, type: "cash_on_delivery" });
         return res.status(200).json({
@@ -6477,16 +7002,16 @@ exports.createCheckoutSession = onRequest(
         boxnowLockerAddressLine2: String(boxNow?.addressLine2 || "").slice(0, 500),
         boxnowLockerLat: String(boxNow?.lat || "").slice(0, 500),
         boxnowLockerLng: String(boxNow?.lng || "").slice(0, 500),
-        boxnowFeeAmount: String(boxNowFee.amount || 0).slice(0, 500),
-        boxnowFeeCurrency: String(boxNowFee.currency || "eur").slice(0, 500),
-        boxnowFeeSource: String(boxNowFee.source || "").slice(0, 500),
-        boxnowWeightGrams: String(boxNowFee.weightGrams || 0).slice(0, 500),
-        boxnowParcelSize: String(boxNowFee.parcel?.code || "").slice(0, 500),
-        boxnowParcelLabel: String(boxNowFee.parcel?.label || "").slice(0, 500),
-        boxnowParcelCount: String(boxNowFee.parcel?.count || 0).slice(0, 500),
-        boxnowRequiredHeightCm: String(boxNowFee.parcel?.requiredHeightCm || 0).slice(0, 500),
-        boxnowEnvironment: String(boxNowFee.environment || boxNowConfig.environment || "").slice(0, 500),
-        boxnowApiBaseUrl: String(boxNowFee.apiBaseUrl || boxNowConfig.apiBaseUrl || "").slice(0, 500),
+        boxnowFeeAmount: String(boxNowFee?.amount || 0).slice(0, 500),
+        boxnowFeeCurrency: String(boxNowFee?.currency || "eur").slice(0, 500),
+        boxnowFeeSource: String(boxNowFee?.source || "").slice(0, 500),
+        boxnowWeightGrams: String(boxNowFee?.weightGrams || 0).slice(0, 500),
+        boxnowParcelSize: String(boxNowFee?.parcel?.code || "").slice(0, 500),
+        boxnowParcelLabel: String(boxNowFee?.parcel?.label || "").slice(0, 500),
+        boxnowParcelCount: String(boxNowFee?.parcel?.count || 0).slice(0, 500),
+        boxnowRequiredHeightCm: String(boxNowFee?.parcel?.requiredHeightCm || 0).slice(0, 500),
+        boxnowEnvironment: String(boxNowFee?.environment || boxNowConfig.environment || "").slice(0, 500),
+        boxnowApiBaseUrl: String(boxNowFee?.apiBaseUrl || boxNowConfig.apiBaseUrl || "").slice(0, 500),
         couponCode: couponResult?.coupon?.code || "",
         couponId: couponResult?.coupon?.id || "",
         couponDiscountCents: String(couponResult?.discountCents || 0).slice(0, 500),
@@ -6543,6 +7068,8 @@ exports.stripeWebhook = onRequest(
       SMTP_PASS,
       ORDER_NOTIFICATION_EMAIL,
       ORDER_NOTIFICATION_FROM,
+      TELEGRAM_BOT_TOKEN,
+      TELEGRAM_CHAT_ID,
     ],
   },
   async (req, res) => {
@@ -6576,6 +7103,7 @@ exports.stripeWebhook = onRequest(
         case "checkout.session.completed": {
           const session = event.data.object;
           const order = await upsertOrderFromSession(session);
+          if (session.payment_status === "paid") await notifyTelegramOrderSafely(order, event);
           await sendOrderNotificationOnce("purchase_complete", order, event);
           await sendCustomerSuccessEmailOnce(order, event);
           break;
@@ -6583,6 +7111,7 @@ exports.stripeWebhook = onRequest(
         case "checkout.session.async_payment_succeeded": {
           const session = event.data.object;
           const order = await upsertOrderFromSession(session);
+          await notifyTelegramOrderSafely(order, event);
           await sendOrderNotificationOnce("purchase_complete", order, event);
           await sendCustomerSuccessEmailOnce(order, event);
           break;
@@ -6632,6 +7161,7 @@ exports.getProducts = onRequest(
       const products = Object.entries(productsMap)
         .map(([id, product]) => productToPublic(id, product))
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || a.name.localeCompare(b.name));
+      res.set("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=300");
       return res.json({ products });
     } catch (e) {
       logger.error("getProducts failed", e);
@@ -6654,12 +7184,16 @@ exports.adminProducts = onRequest(
       const adminUser = await requireAdmin(req);
 
       if (req.method === "GET") {
-        const productsMap = await getProductsMap({ includeInactive: true });
+        const poolsPromise = getInventoryPools();
+        const historyPromise = db.collection("inventoryTransactions").orderBy("createdAt", "desc").limit(50).get();
+        const [productsMap, inventoryPools, inventoryHistorySnap] = await Promise.all([
+          getProductsMap({ includeInactive: true, poolsPromise }),
+          poolsPromise,
+          historyPromise,
+        ]);
         const products = Object.entries(productsMap)
           .map(([id, product]) => productToPublic(id, product))
           .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || a.name.localeCompare(b.name));
-        const inventoryPools = await getInventoryPools();
-        const inventoryHistorySnap = await db.collection("inventoryTransactions").orderBy("createdAt", "desc").limit(50).get();
         const inventoryHistory = inventoryHistorySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         return res.json({ products, inventoryPools, inventoryHistory });
       }
@@ -6769,19 +7303,22 @@ exports.adminProductImage = onRequest(
       const adminUser = await requireAdmin(req);
       step = "parse_body";
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const imageLanguage = String(body.imageLanguage || "").trim().toLowerCase() === "el" ? "el" : "en";
       step = "parse_image";
       const { id, contentType, buffer, ext } = parseImageUpload(body);
 
       step = "storage_upload";
       const upload = await saveProductImageToStorage({ id, contentType, buffer, ext });
       step = "firestore_update";
+      const imageField = imageLanguage === "el" ? "imageEl" : "imageEn";
       await db.collection("products").doc(id).set({
-        image: upload.image,
+        [imageField]: upload.image,
+        ...(imageLanguage === "el" ? { image: upload.image } : {}),
         updatedAt: now(),
         updatedBy: adminUser.uid,
       }, { merge: true });
 
-      return res.json({ ok: true, image: upload.image, path: upload.path, bucket: upload.bucketName });
+      return res.json({ ok: true, image: upload.image, imageLanguage, path: upload.path, bucket: upload.bucketName });
     } catch (err) {
       logger.error("adminProductImage failed", {
         step,
@@ -6883,6 +7420,7 @@ exports.adminOrders = onRequest(
     region: "europe-west1",
     invoker: "public",
     secrets: [
+      ...STRIPE_SECRETS,
       SMTP_USER,
       SMTP_PASS,
       ORDER_NOTIFICATION_FROM,
@@ -6915,6 +7453,10 @@ exports.adminOrders = onRequest(
         const existingSnap = await orderRef.get();
         if (!existingSnap.exists) return jsonError(res, 404, "Order not found");
         const existingOrder = existingSnap.exists ? { id, ...existingSnap.data() } : { id };
+        if (String(body.action || "").trim() === "finalizeCourierQuote") {
+          const result = await finalizeCourierQuote(existingOrder, body, adminUser, req);
+          return res.json({ ok: true, checkoutUrl: result.order.paymentLink, order: result.order, email: result.email });
+        }
         if (String(body.action || "").trim() === "sendFeedbackRequest") {
           const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser);
           return res.json({ ok: true, feedbackEmail });
@@ -7394,6 +7936,7 @@ exports.adminNewsletter = onRequest(
             adminUser,
             subject: body.subject,
             body: body.body,
+            coupon: body.coupon,
             language: body.language,
             testOnly: body.action === "test",
             confirmDuplicate: body.confirmDuplicate === true,
@@ -7577,6 +8120,9 @@ exports.adminEmailHistory = onRequest(
       const rows = [];
       for (const doc of orderSnap.docs) {
         const item = doc.data() || {};
+        // BOX NOW's idempotency claim is an internal audit record. The actual
+        // order_fulfillment notification below is the single customer email.
+        if (!isVisibleOrderEmailHistoryRecord(item)) continue;
         const recipient = normalizedEmail(item.recipientEmail || item.customerEmail || item.result?.accepted?.[0] || "");
         if (!recipient) continue;
         rows.push({
@@ -7982,6 +8528,7 @@ exports.chat = onRequest(
     region: "europe-west1",
     invoker: "public",
     cors: ALLOWED_ORIGIN_LIST,
+    secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_EMAIL, ORDER_NOTIFICATION_FROM],
   },
   async (req, res) => {
     try {
@@ -8037,6 +8584,9 @@ exports.chat = onRequest(
           text,
           createdAt: now(),
           createdBy: customer.uid || customer.guestId,
+        });
+        await sendCustomerChatNotificationOnce(ref.id, messageRef.id, mergedCustomer, text).catch(err => {
+          logger.error("Customer chat email notification failed", { conversationId: ref.id, messageId: messageRef.id, error: err.message || "Email failed" });
         });
         const updatedSnap = await ref.get();
         const messages = await chatMessagesForConversation(ref.id);
@@ -8544,6 +9094,8 @@ exports.adminSettings = onRequest(
       SMTP_USER,
       SMTP_PASS,
       ORDER_NOTIFICATION_FROM,
+      TELEGRAM_BOT_TOKEN,
+      TELEGRAM_CHAT_ID,
     ],
     cors: ALLOWED_ORIGIN_LIST,
   },
@@ -8566,6 +9118,15 @@ exports.adminSettings = onRequest(
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
         if (body.action === "sendOrderStatusTestEmail") {
           const result = await sendOrderStatusTestEmail(body.template || {}, adminUser, body.language || "", body.placeholders || body.orderEmails?.placeholders || null);
+          return res.json({ ok: true, result });
+        }
+        if (body.action === "sendTelegramOrderTest") {
+          const result = await sendTelegramMessage([
+            "🔔 GRUBZ order sound test",
+            "Your Telegram order alerts are working.",
+            `Sent by ${adminUser.email || adminUser.uid}`,
+          ].join("\n"));
+          if (result.skipped) return jsonError(res, 503, "Telegram credentials are not configured");
           return res.json({ ok: true, result });
         }
 
@@ -9810,15 +10371,9 @@ exports.getStock = onRequest(
     try {
       const result = {};
       const productsMap = await getProductsMap();
-      const pools = Object.fromEntries((await getInventoryPools()).map(pool => [pool.id, pool]));
 
       for (const [clientId, product] of Object.entries(productsMap)) {
-        const poolId = String(product.inventoryPoolId || "").trim();
-        const pool = pools[poolId];
-        const weightGrams = Math.max(0, Number(product.weightGrams || 0));
-        result[clientId] = pool && weightGrams > 0 && pool.updatedAt
-          ? Math.max(0, Math.floor(pool.availableGrams / weightGrams))
-          : Math.max(0, Number(product.stock || 0));
+        result[clientId] = Math.max(0, Number(product.stock || 0));
       }
 
       res.status(200).json(result);

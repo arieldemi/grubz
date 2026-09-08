@@ -23,6 +23,8 @@
     <string>1</string>
     <key>FIREBASE_CLI_DISABLE_UPDATE_CHECK</key>
     <string>1</string>
+    <key>FUNCTIONS_DISCOVERY_TIMEOUT</key>
+    <string>120</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>

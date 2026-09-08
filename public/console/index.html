@@ -12,8 +12,11 @@
     <style>
       :root{--grubz:#d04211;--positive:#2f7d52;--positive-hover:#256643;--ink:#18181b}
       body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-      button,a,[role="button"]{cursor:pointer}
-      button:disabled{cursor:not-allowed;opacity:.55}
+      a,a *,button,button *,summary,summary *,select,select *,label,label *,
+      [role="button"],[role="button"] *,[onclick],[onclick] *,
+      .cursor-pointer,.cursor-pointer *{cursor:pointer!important}
+      button:disabled,button:disabled *{cursor:not-allowed!important}
+      button:disabled{opacity:.55}
       .btn{background:var(--positive);color:#fff;border-radius:8px;padding:.65rem .9rem;font-weight:700;box-shadow:0 1px 2px rgba(37,102,67,.2)}
       .btn:hover{background:var(--positive-hover)}
       .btn-soft{border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:650}
@@ -33,6 +36,7 @@
 	      #collaborationDialogHeader{position:sticky;top:-1.25rem;z-index:2;margin:-1.25rem -1.25rem .75rem;padding:1.25rem;background:#fff;border-bottom:1px solid #e4e4e7}
 	      @media(max-width:639px){#collaborationDialog{border-radius:6px;padding:1rem}#collaborationDialogHeader{top:-1rem;margin:-1rem -1rem .75rem;padding:1rem;flex-wrap:wrap}}
       .modal-panel{position:relative;background:#fff;border-radius:8px;width:min(96vw,880px);max-height:90vh;overflow:auto}
+	    #productModal>.modal-panel{width:min(96vw,1080px)}
 	      #orderModal>.modal-panel{height:90vh;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
 	      .thumb{width:72px;height:54px;object-fit:contain;border-radius:6px;border:1px solid #e4e4e7;background:#f4f4f5}
 	      .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -932,6 +936,8 @@
 	                    <p class="text-sm text-zinc-500">Bilingual soft GRUBZ promotion ideas based on actual Greek Facebook chicken and poultry group research.</p>
 	                  </div>
 	                  <div class="flex flex-wrap gap-2" role="tablist" aria-label="Weekly idea lists">
+	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-09-07">Week of 2026-09-07</button>
+	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-31">Week of 2026-08-31</button>
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-24">Week of 2026-08-24</button>
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-17">Week of 2026-08-17</button>
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-08-10">Week of 2026-08-10</button>
@@ -940,6 +946,116 @@
 	                    <button class="btn-soft" type="button" data-idea-week-tab="2026-07-20">Week of 2026-07-20</button>
 	                  </div>
 	                  <div class="grid gap-2 text-sm">
+	                    <div data-idea-week-panel="2026-09-07" class="space-y-3 hidden">
+	                      <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+	                        <span class="font-semibold">Research status:</span> The logged-in in-app browser blocked Facebook navigation on the first listed group, so no feeds were accessible this run (0/39). No alternate source was used. The ideas below draw only on the group roster themes and the existing anonymized pattern library from prior accessible research—no member names, post text, or personal details.
+	                      </div>
+	                      <ol class="space-y-3 text-zinc-700">
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">1. Η αλλαγή της εβδομάδας στο κοτέτσι / This week’s coop change</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Κάθε εβδομάδα κάτι μικρό αλλάζει στο κοτέτσι: η σκιά, το νερό, το στεγνό σημείο ή η ώρα της ρουτίνας. Ποια μικρή αλλαγή κάνατε αυτή την εβδομάδα; Στη δική μας ήρεμη ρουτίνα, λίγα GRUBZ μπαίνουν στο τέλος ως λιχουδιά για τις ενήλικες κότες.»</div>
+	                          <div><span class="font-semibold">English:</span> “Every week, something small changes in the coop: shade, water, a dry spot, or the routine timing. What small change did you make this week? In our calm routine, a few GRUBZ come at the end as a treat for adult hens.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Four-photo carousel: one practical change per card; GRUBZ appears on the final card.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Invite one short “this week I…” comment.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> The existing pattern library shows practical care prompts repeatedly create helpful comment threads. The open, low-effort question makes the product a supporting part of a responsible routine.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">2. Το καλάθι πριν από τη φωτογραφία / The basket before the photo</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Πριν τραβήξουμε φωτογραφία το καλάθι με τα αυγά, κάνουμε πάντα έναν ήρεμο έλεγχο στον χώρο. Ποια είναι η δική σας “πριν από το καλάθι” ρουτίνα; Μετά το check, οι ενήλικες κότες μας έχουν λίγο χρόνο για αναζήτηση με GRUBZ.»</div>
+	                          <div><span class="font-semibold">English:</span> “Before we photograph the egg basket, we always do a calm check around the space. What is your own ‘before the basket’ routine? After the check, our adult hens get a little time to forage with GRUBZ.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Two-image post: the simple check first, egg basket second.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Ask members to finish: “Before collecting, I always…”</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Egg-related conversation is a durable high-interest theme in the prior research. A familiar ritual adds practical value and turns an attractive visual into an easy comment prompt.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">3. Η λεπτομέρεια που ξεχωρίζει / The detail that stands out</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Οι ράτσες έχουν τόσες όμορφες λεπτομέρειες—αλλά ποια παρατηρείτε πρώτη στη δική σας κότα; Χρώμα, φτέρωμα, περπάτημα ή χαρακτήρα; Η δική μας αγαπά να ψάχνει λίγα GRUBZ στο γνώριμο σημείο της αυλής.»</div>
+	                          <div><span class="font-semibold">English:</span> “Breeds have so many beautiful details—but which do you notice first in one of your hens: colour, feathers, walk, or personality? Ours loves to search for a few GRUBZ in her familiar corner of the yard.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Natural close-up portrait with four on-image answer options.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> A four-choice comment or story poll.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Breed identity and flock personality were recurring engagement patterns in the accessible historical sample. A choice-based prompt encourages pride and participation without claiming anything about performance.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">4. Το μικρό τεστ αναζήτησης / The tiny forage test</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Μικρό τεστ για ενήλικες κότες: μια μέρα σε μπολ, μια άλλη μέρα με λίγο πασπάλισμα σε καθαρό, κατάλληλο σημείο. Ποιον τρόπο προτιμά η δική σας παρέα; Δείξτε μας “μπολ” ή “αναζήτηση” στα σχόλια.»</div>
+	                          <div><span class="font-semibold">English:</span> “A tiny adult-hen test: one day in a bowl, another day lightly scattered in a clean, suitable spot. Which approach does your flock prefer? Tell us ‘bowl’ or ‘forage’ in the comments.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Six-second split-screen reel with a clear Bowl / Forage end card.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> One-word answer; invite an optional reason.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> The prior pattern library combines feeding-care questions with low-friction either/or formats. The visual demonstration gives practical context while the answer takes only seconds.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">5. Ρωτήστε μας πού θα το βρείτε / Ask where to find it</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Μας ρωτάτε συχνά πού θα βρείτε GRUBZ. Πείτε μας μόνο την περιοχή σας σε μήνυμα και θα προσπαθήσουμε να βοηθήσουμε με τη διαθεσιμότητα. Στο μεταξύ: ποια είναι η μία λιχουδιά που κρατάτε πάντα για μια ξεχωριστή στιγμή με τις ενήλικες κότες σας;»</div>
+	                          <div><span class="font-semibold">English:</span> “You often ask where to find GRUBZ. Send us just your area in a message and we will try to help with availability. Meanwhile: what is the one treat you save for a special moment with your adult hens?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Warm product-and-flock photo; availability CTA only in the final line.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> A public care question with availability handled privately.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Local availability is a recurring marketplace need in the historical pattern library. Keeping the practical request private and leading publicly with a shared ritual makes the post useful rather than sales-heavy.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">6. Το σήμα της λιχουδιάς / The treat-time cue</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Με ήχο: το απλό σήμα που σημαίνει “ώρα για λίγη εξερεύνηση”. Χωρίς μουσική και χωρίς σενάριο—μόνο η καθημερινή αντίδραση των ενηλίκων κοτών μας όταν έρχονται λίγα GRUBZ. Ποιο σήμα αναγνωρίζει αμέσως η δική σας παρέα;»</div>
+	                          <div><span class="font-semibold">English:</span> “Sound on: the simple cue that means ‘a little exploration time.’ No music and no script—just our adult hens’ everyday reaction when a few GRUBZ arrive. What cue does your flock recognise straight away?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Five-to-seven-second sound-on vertical video at flock level.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Invite a short sound, word, or routine answer.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Short reaction videos and familiar flock behaviour were strong visual patterns in the historical sample. Real-time proof creates an emotional moment without relying on a hard sell.</div>
+	                        </li>
+	                      </ol>
+	                    </div>
+	                    <div data-idea-week-panel="2026-08-31" class="space-y-3 hidden">
+	                      <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+	                        <span class="font-semibold">Research status:</span> 36/39 listed Greek poultry-group pages opened through the logged-in in-app browser, with visible post cards on 33 feeds. The most visibly active/relevant items repeatedly involved eggs and hatching, practical flock care, local availability, breed identity, short visual proof, and low-friction questions. Ideas below use only these anonymized patterns—no member names, private text, or personal details.
+	                      </div>
+	                      <ol class="space-y-3 text-zinc-700">
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">1. Το ένα πράγμα πριν το κέρασμα / One thing before a treat</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Πριν από τη μικρή λιχουδιά μας, κάνουμε πάντα ένα γρήγορο check: καθαρό νερό, σκιά και στεγνό σημείο. Ποιο είναι το ένα πράγμα που ελέγχετε πρώτο στο κοτέτσι σας; Μετά, λίγα GRUBZ κάνουν τη ρουτίνα ακόμη πιο ευχάριστη για τις ενήλικες κότες.»</div>
+	                          <div><span class="font-semibold">English:</span> “Before our small treat moment, we always do a quick check: clean water, shade, and a dry spot. What is the one thing you check first in your coop? Then a few GRUBZ make the routine a little more enjoyable for adult hens.”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Three-card carousel: water, shade, dry footing; GRUBZ appears only on the final card.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Ask for one routine item, so replying takes seconds.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Practical-care signals were widespread in the visible feeds. A useful checklist earns attention first, while the product stays a natural part of a responsible routine.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">2. Κυριακάτικη συγκομιδή αυγών / Sunday egg-collecting ritual</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Η συλλογή αυγών έχει τη δική της μικρή ιεροτελεστία. Δείχνουμε μόνο τη ρουτίνα των ενηλίκων κοτών μας: ήρεμος έλεγχος, καθαρό καλάθι και λίγη εξερεύνηση με GRUBZ μετά. Πρωί ή απόγευμα είναι η δική σας αγαπημένη ώρα για συλλογή;»</div>
+	                          <div><span class="font-semibold">English:</span> “Egg collecting has its own small ritual. We are only showing our adult-hen routine: a calm check, a clean basket, and a little GRUBZ exploration afterwards. Is morning or afternoon your favourite collection time?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Calm 8–10 second vertical video with on-screen note: “adult hens only.”</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Morning-versus-afternoon choice in the comments.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Egg and hatching conversations were among the most visible patterns. The post joins that seasonal interest while keeping a clear, trust-building boundary around adult-hen use.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">3. Ράτσα, αλλά και χαρακτήρας / Breed—and personality too</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Από τις ράτσες μαθαίνουμε πολλά· από τον χαρακτήρα τους ακόμη περισσότερα. Η δική μας “επιθεωρήτρια αυλής” εμφανίζεται πρώτη όταν ακούει το σακουλάκι GRUBZ. Ποιο παρατσούκλι θα δίνατε στη δική σας κότα;»</div>
+	                          <div><span class="font-semibold">English:</span> “Breeds teach us a lot; personalities teach us even more. Our ‘yard inspector’ is first to appear when she hears the GRUBZ bag. What nickname would you give one of your hens?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> One natural portrait with a small illustrated name tag.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Invite a one-line nickname, not a long story.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Breed identity remained visible across active feeds. A light personality prompt creates warmth and breed pride without making performance claims.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">4. Μπολ ή αναζήτηση; / Bowl or forage?</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Μικρό δίλημμα ρουτίνας: προτιμάτε να δίνετε τη λιχουδιά σε μπολ ή να την απλώνετε λίγο ώστε οι ενήλικες κότες να την αναζητούν; Εμείς αλλάζουμε τρόπο ανάλογα με τον χώρο και την ημέρα. Εσείς τι διαλέγετε;»</div>
+	                          <div><span class="font-semibold">English:</span> “A small routine question: do you prefer a bowl, or a light scatter so adult hens can forage for their treat? We change it depending on the space and the day. Which do you choose?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Split-screen photo or 6-second A/B reel.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> A simple “Bowl” or “Forage” comment.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Care-led questions and short visual content were both visible. This makes practical value instantly understandable and gives members a very low-friction way to participate.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">5. Πρώτα η ρουτίνα, μετά η διαθεσιμότητα / Routine first, availability second</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Το απογευματινό μας check δεν είναι εντυπωσιακό—νερό, μια ματιά στον χώρο, λίγη ήρεμη απασχόληση. Αν θέλετε να μάθετε πού υπάρχουν GRUBZ, στείλτε μας μήνυμα και θα βοηθήσουμε. Ποιο είναι το δικό σας μικρό απογευματινό τελετουργικό;»</div>
+	                          <div><span class="font-semibold">English:</span> “Our afternoon check is not flashy—water, a look around the space, and a little calm enrichment. If you would like to know where GRUBZ are available, send us a message and we will help. What is your own small afternoon ritual?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> Unpolished 10-second routine reel; availability appears as a quiet final caption.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Ask for one ritual; keep the availability CTA optional.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Local availability was a recurring need in visibly active marketplace-style feeds. Visual proof and useful routine context make the commercial detail feel relevant rather than pushy.</div>
+	                        </li>
+	                        <li class="rounded-md border border-zinc-200 p-3 space-y-1">
+	                          <div class="font-bold">6. Το σήμα που ξέρουν / The cue they know</div>
+	                          <div><span class="font-semibold">Ελληνικά:</span> «Βάλτε ήχο: ένα απλό σήμα και η παρέα καταλαβαίνει ότι έρχεται ώρα για εξερεύνηση. Χωρίς μουσική, χωρίς σενάριο—μόνο η καθημερινή αντίδραση των ενηλίκων κοτών μας. Ποιο μικρό σήμα αναγνωρίζουν αμέσως οι δικές σας;»</div>
+	                          <div><span class="font-semibold">English:</span> “Sound on: one simple cue and the flock knows exploration time is coming. No music, no script—just the everyday reaction of our adult hens. What small cue do your hens recognise straight away?”</div>
+	                          <div><span class="font-semibold">Suggested format:</span> 5–7 second sound-on reaction clip, filmed at flock level.</div>
+	                          <div><span class="font-semibold">Engagement hook:</span> Invite a brief sound or routine anecdote.</div>
+	                          <div class="text-zinc-500"><span class="font-semibold">Why it works:</span> Short visual/video signals appeared in several of the most visibly active feeds. Familiar flock behaviour provides emotional proof and a natural reason to comment.</div>
+	                        </li>
+	                      </ol>
+	                    </div>
 	                    <div data-idea-week-panel="2026-08-24" class="space-y-3 hidden">
 	                      <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
 	                        <span class="font-semibold">Research status:</span> 39/39 listed Greek poultry-group feeds were accessed through the logged-in in-app browser. Visible activity repeatedly centred on practical flock care, eggs and hatching, breed identity, local availability, and occasional low-friction questions or short video. Ideas below use only these anonymized patterns—no member names, private text, or personal details.
@@ -1721,6 +1837,7 @@
               <button id="settingsTabStripe" class="btn-soft" type="button" data-settings-tab="stripe">Stripe</button>
               <button id="settingsTabShipping" class="btn-soft" type="button" data-settings-tab="shipping">BOX NOW Integration</button>
               <button id="settingsTabEmails" class="btn-soft" type="button" data-settings-tab="emails">Emails</button>
+              <button id="settingsTabNotifications" class="btn-soft" type="button" data-settings-tab="notifications">Notifications</button>
               <button id="settingsTabChatbot" class="btn-soft" type="button" data-settings-tab="chatbot">Chatbot</button>
             </div>
             <div class="panel p-4 space-y-4">
@@ -1762,6 +1879,22 @@
                   </div>
                 </div>
                 <div id="templateList" class="space-y-4"></div>
+              </div>
+              <div id="settingsPanelNotifications" class="space-y-4 hidden" data-settings-panel="notifications">
+                <div>
+                  <h3 class="font-extrabold text-lg">Order notifications</h3>
+                  <p class="text-sm text-zinc-500">Send a Telegram test alert to confirm that the GRUBZ order sound works on your phone. This does not create an order.</p>
+                </div>
+                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div class="font-bold">Telegram order sound</div>
+                      <p class="text-xs text-zinc-500">Uses the notification sound assigned to the GRUBZ Orders bot conversation.</p>
+                    </div>
+                    <button id="testTelegramOrderSoundBtn" class="btn" type="button">Test order sound</button>
+                  </div>
+                  <p id="telegramOrderSoundMsg" class="mt-3 text-sm" role="status" aria-live="polite"></p>
+                </div>
               </div>
               <div id="settingsPanelChatbot" class="space-y-4 hidden" data-settings-panel="chatbot">
                 <div>
@@ -1871,16 +2004,30 @@
 	            <button class="btn-soft whitespace-nowrap" type="button" role="tab" data-product-editor-tab="inventory" aria-selected="false">Inventory &amp; Packing</button>
 	            <button class="btn-soft whitespace-nowrap" type="button" role="tab" data-product-editor-tab="stripe" aria-selected="false">Stripe</button>
 	          </div>
-	          <div id="productEditorBody" class="grid min-h-[500px] content-start gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-	            <div id="productEditorImagePanel" class="space-y-3" data-product-editor-group="general">
-	              <div id="productImagePreviewWrap" class="panel grid place-items-center p-3 min-h-[170px]"></div>
-	              <div>
-	                <label class="label" for="p_upload">Upload product image</label>
-	                <input id="p_upload" class="input" type="file" accept="image/*">
+	          <div id="productEditorBody" class="grid min-h-[500px] grid-cols-1 content-start gap-4">
+	            <div id="productEditorImagePanel" class="space-y-4" data-product-editor-group="general">
+	              <div class="grid gap-4 sm:grid-cols-2">
+	                <div class="space-y-2 rounded-lg border border-zinc-200 p-3">
+	                  <div class="font-extrabold">English image</div>
+	                  <div id="productImagePreviewEn" class="panel grid min-h-[170px] place-items-center p-3"></div>
+	                  <label class="label" for="p_uploadEn">Upload English product image</label>
+	                  <input id="p_uploadEn" class="input" type="file" accept="image/*">
+	                  <button class="btn-soft w-full" type="button" data-upload-product-image="en">Upload English image</button>
+	                </div>
+	                <div class="space-y-2 rounded-lg border border-zinc-200 p-3">
+	                  <div class="font-extrabold">Greek image</div>
+	                  <div id="productImagePreviewEl" class="panel grid min-h-[170px] place-items-center p-3"></div>
+	                  <label class="label" for="p_uploadEl">Upload Greek product image</label>
+	                  <input id="p_uploadEl" class="input" type="file" accept="image/*">
+	                  <button class="btn-soft w-full" type="button" data-upload-product-image="el">Upload Greek image</button>
+	                </div>
 	              </div>
-	              <button id="uploadProductImageBtn" class="btn-soft w-full" type="button">Upload image</button>
 	            </div>
-	            <div id="productEditorFields" class="grid content-start gap-3 sm:grid-cols-2">
+	            <div id="productEditorFields" class="grid w-full content-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 sm:grid-cols-2">
+	              <div class="sm:col-span-2" data-product-editor-group="general">
+	                <h3 class="font-extrabold">Product details</h3>
+	                <p class="mt-1 text-xs text-zinc-500">Storefront content, pricing, and display settings.</p>
+	              </div>
 	              <div data-product-editor-group="general">
 	                <label class="label" for="p_id">ID</label>
 	                <input id="p_id" class="input" placeholder="happy-chicken-1kg">
@@ -1912,6 +2059,16 @@
 	              <div class="sm:col-span-2" data-product-editor-group="general">
 	                <label class="label" for="p_detailEl">Details EL</label>
 	                <textarea id="p_detailEl" class="input" rows="3"></textarea>
+	              </div>
+	              <div data-product-editor-group="general">
+	                <label class="label" for="p_bestFor">Storefront tags</label>
+	                <input id="p_bestFor" class="input" placeholder="Chickens, Birds">
+	                <p class="mt-1 text-xs text-zinc-500">Comma-separated; up to 5. Product cards show the first 3.</p>
+	              </div>
+	              <div data-product-editor-group="general">
+	                <label class="label" for="p_bestForEl">Storefront tags EL</label>
+	                <input id="p_bestForEl" class="input" placeholder="Κότες, Πτηνά">
+	                <p class="mt-1 text-xs text-zinc-500">Leave empty to use the English tags.</p>
 	              </div>
 	              <div data-product-editor-group="general">
 	                <label class="label" for="p_amount">Price cents</label>
@@ -2314,6 +2471,38 @@
 		                <input id="o_boxNowLng" class="input" placeholder="Longitude">
 		              </div>
 		            </div>
+	          </div>
+	          <div id="courierQuoteFinalizePanel" class="hidden rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+	            <div>
+	              <h4 class="font-extrabold text-blue-950">Finalize shipping quote</h4>
+	              <p class="text-xs text-blue-800">The products are always paid online. Choose whether shipping is included online or collected by the courier.</p>
+	            </div>
+	            <div class="grid gap-3 sm:grid-cols-2">
+	              <div>
+	                <label class="label" for="o_quoteCourier">Courier</label>
+	                <select id="o_quoteCourier" class="input">
+	                  <option value="ACS Courier">ACS Courier</option>
+	                  <option value="Γενική Ταχυδρομική">Γενική Ταχυδρομική</option>
+	                </select>
+	              </div>
+	              <div>
+	                <label class="label" for="o_quoteShippingCost">Shipping cost (€)</label>
+	                <input id="o_quoteShippingCost" class="input" type="number" min="0" step="0.01" inputmode="decimal">
+	              </div>
+	              <div>
+	                <label class="label" for="o_quotePaymentMode">Shipping payment</label>
+	                <select id="o_quotePaymentMode" class="input">
+	                  <option value="prepaid">Prepaid online with products</option>
+	                  <option value="pay_on_delivery">Paid to courier on delivery</option>
+	                </select>
+	              </div>
+	              <div>
+	                <label class="label" for="o_quoteEstimate">Estimated delivery</label>
+	                <input id="o_quoteEstimate" class="input" placeholder="e.g. 2–3 business days">
+	              </div>
+	            </div>
+	            <div id="courierQuotePaymentSummary" class="rounded-md border border-blue-200 bg-white p-3 text-sm"></div>
+	            <button id="finalizeCourierQuoteBtn" class="btn w-full" type="button">Create checkout &amp; email customer</button>
 	          </div>
 		          <div class="grid sm:grid-cols-2 gap-3">
 	            <div>
@@ -2774,6 +2963,11 @@
 	            <p id="newsletterRecipientSummary" class="mt-1 text-xs text-zinc-500"></p>
 	          </div>
 	          <div>
+	            <label class="label" for="newsletterCoupon">Coupon</label>
+	            <select id="newsletterCoupon" class="input"><option value="">No coupon</option></select>
+	            <p class="mt-1 text-xs text-zinc-500">Choose a coupon, then use {coupon} in the subject or message.</p>
+	          </div>
+	          <div>
 	            <label class="label" for="newsletterSubject">Subject</label>
 	            <input id="newsletterSubject" class="input" maxlength="180" placeholder="News from GRUBZ">
 	          </div>
@@ -2795,7 +2989,7 @@
 	            <div id="newsletterImagePreview" class="hidden overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-3"></div>
 	            <p id="newsletterImageMsg" class="text-xs" role="status" aria-live="polite"></p>
 	          </div>
-	          <p class="text-xs text-zinc-500">Available fields: {greeting} {customerName} {customerEmail} {grubz_url} {unsubscribe_url}. An unsubscribe footer is always added automatically.</p>
+	          <p class="text-xs text-zinc-500">Available fields: {greeting} {customerName} {customerEmail} {coupon} {grubz_url} {unsubscribe_url}. An unsubscribe footer is always added automatically.</p>
 	          <p id="newsletterComposeMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          <div class="flex flex-wrap justify-end gap-2">
 	            <button id="testNewsletterBtn" class="btn-soft" type="button">Send test</button>
@@ -2807,7 +3001,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
-    <script src="/__/firebase/init.js"></script>
+    <script src="/__/firebase/init.js?useEmulator=true"></script>
     <script src="/vendor/jspdf.umd.min.js"></script>
     <script>
       if (!firebase.apps.length && window.GRUBZ_FIREBASE_CONFIG) {
@@ -2822,6 +3016,7 @@
         : (location.protocol === "file:" ? FUNCTION_API_BASE : "/api");
       const ADMIN_CHAT_API_BASE = API_BASE;
 	      const auth = firebase.auth();
+	      let currentAdminUser = null;
 	      if (LOCAL_HOSTS.has(location.hostname)) {
 	        document.getElementById("productionDataNotice")?.classList.remove("hidden");
 	      }
@@ -2859,7 +3054,7 @@
 	      let collaborations = [];
 	      let selectedCollaborationId = "";
 	      let productApiReady = false;
-	      let currentProductImage = "";
+	      let currentProductImages = { en:"", el:"" };
 	      let shippingSettings = {
 	        boxnowFeeOverrideEnabled:false,
 	        boxnowFeeOverrideCents:0,
@@ -2879,11 +3074,11 @@
 	        fulfillmentStatus:"feedback_request",
 	        status:"feedback_request",
 	        subject:"How was your GRUBZ order {orderNumber}?",
-	        body:"{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nShare your feedback using your personal link below. After you submit the form, we will email you a unique 10% discount code for your next order.\n\n{feedback_url}\n\nThe link can be used once and expires after 30 days.\n\nGRUBZ",
+	        body:"{greeting}\n\nWe hope you are enjoying your GRUBZ order {orderNumber}.\n\nShare your feedback using your personal link below. After you submit the form, we will email you a unique 10% discount code for your next order.\n\n{feedback_url}\n\nThe link can be used once and expires after 30 days.",
 	        translations:{
 	          el:{
 	            subject:"Πώς σου φάνηκε η παραγγελία GRUBZ {orderNumber};",
-	            body:"{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΜοιράσου τη γνώμη σου μέσω του προσωπικού συνδέσμου παρακάτω. Μετά την υποβολή, θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.\n\n{feedback_url}\n\nΟ σύνδεσμος χρησιμοποιείται μία φορά και λήγει σε 30 ημέρες.\n\nGRUBZ",
+	            body:"{greeting}\n\nΕλπίζουμε να απολαμβάνεις την παραγγελία σου GRUBZ {orderNumber}.\n\nΜοιράσου τη γνώμη σου μέσω του προσωπικού συνδέσμου παρακάτω. Μετά την υποβολή, θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.\n\n{feedback_url}\n\nΟ σύνδεσμος χρησιμοποιείται μία φορά και λήγει σε 30 ημέρες.",
 	          },
 	        },
 	      };
@@ -2894,8 +3089,8 @@
 	        fulfillmentStatus:"locker_reminder",
 	        status:"locker_reminder",
 	        subject:"Your GRUBZ parcel is waiting at the BOX NOW locker",
-	        body:"{greeting}\n\nYour GRUBZ order {orderNumber} is waiting for collection at the BOX NOW locker:\n\n{boxNowLocker}\n\nPlease collect it soon to avoid it being returned.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
-	        translations:{ el:{ subject:"Το δέμα GRUBZ σε περιμένει στη θυρίδα BOX NOW", body:"{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} σε περιμένει για παραλαβή στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΠαρακαλούμε παρέλαβέ τη σύντομα, ώστε να μην επιστραφεί.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ" } },
+	        body:"{greeting}\n\nYour GRUBZ order {orderNumber} is waiting for collection at the BOX NOW locker:\n\n{boxNowLocker}\n\nPlease collect it soon to avoid it being returned.\n\nTrack your parcel: {trackingUrl}",
+	        translations:{ el:{ subject:"Το δέμα GRUBZ σε περιμένει στη θυρίδα BOX NOW", body:"{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} σε περιμένει για παραλαβή στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΠαρακαλούμε παρέλαβέ τη σύντομα, ώστε να μην επιστραφεί.\n\nΠαρακολούθηση δέματος: {trackingUrl}" } },
 	      };
 	      const defaultLockerArrivalTemplate = {
 	        enabled:true,
@@ -2904,8 +3099,8 @@
 	        fulfillmentStatus:"locker_arrival",
 	        status:"locker_arrival",
 	        subject:"Your GRUBZ parcel is ready for pickup",
-	        body:"{greeting}\n\nYour GRUBZ order {orderNumber} has arrived at the BOX NOW locker:\n\n{boxNowLocker}\n\nYou can collect it now using the PIN sent by BOX NOW.\n\nTrack your parcel: {trackingUrl}\n\nGRUBZ",
-	        translations:{ el:{ subject:"Το δέμα GRUBZ είναι έτοιμο για παραλαβή", body:"{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} έφτασε στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΜπορείς να την παραλάβεις τώρα χρησιμοποιώντας το PIN που έστειλε η BOX NOW.\n\nΠαρακολούθηση δέματος: {trackingUrl}\n\nGRUBZ" } },
+	        body:"{greeting}\n\nYour GRUBZ order {orderNumber} has arrived at the BOX NOW locker:\n\n{boxNowLocker}\n\nYou can collect it now using the PIN sent by BOX NOW.\n\nTrack your parcel: {trackingUrl}",
+	        translations:{ el:{ subject:"Το δέμα GRUBZ είναι έτοιμο για παραλαβή", body:"{greeting}\n\nΗ παραγγελία σου GRUBZ {orderNumber} έφτασε στη θυρίδα BOX NOW:\n\n{boxNowLocker}\n\nΜπορείς να την παραλάβεις τώρα χρησιμοποιώντας το PIN που έστειλε η BOX NOW.\n\nΠαρακολούθηση δέματος: {trackingUrl}" } },
 	      };
 	      let orderEmailSettings = { placeholders:defaultEmailPlaceholders, templates:[] };
 		      let boxNowSettings = { activeEnvironment:"stage", webhookEnvironment:"stage", environments:{} };
@@ -3136,6 +3331,19 @@
 	        const discount = Math.max(0, subtotal + shipping - total);
 	        return { subtotal, shipping, discount, total };
 	      };
+	      function renderCourierQuotePaymentSummary(){
+	        if (!selectedOrder || !$('courierQuotePaymentSummary')) return;
+	        const pricing = orderPricing(selectedOrder);
+	        const products = Math.max(0, pricing.subtotal - Number(selectedOrder.amountDiscount || pricing.discount || 0));
+	        const shipping = Math.max(0, Math.round(Number($('o_quoteShippingCost').value || 0) * 100));
+	        const payOnDelivery = $('o_quotePaymentMode').value === 'pay_on_delivery';
+	        const online = products + (payOnDelivery ? 0 : shipping);
+	        $('courierQuotePaymentSummary').innerHTML = `
+	          <div class="flex justify-between gap-3"><span>Products paid online</span><strong>${money(products, selectedOrder.currency)}</strong></div>
+	          <div class="flex justify-between gap-3"><span>Shipping</span><strong>${money(shipping, selectedOrder.currency)}</strong></div>
+	          <div class="mt-2 flex justify-between gap-3 border-t border-blue-100 pt-2"><span>Customer pays online now</span><strong>${money(online, selectedOrder.currency)}</strong></div>
+	          <div class="flex justify-between gap-3"><span>Paid to courier on delivery</span><strong>${money(payOnDelivery ? shipping : 0, selectedOrder.currency)}</strong></div>`;
+	      }
 	      const isNoPaymentRequiredOrder = order => ["creator_kit_free", "no_payment_required"].includes(statusKey(order?.paymentStatus));
 	      const orderRevenueCents = order => isNoPaymentRequiredOrder(order)
 	        ? 0
@@ -3320,7 +3528,7 @@
 	        $("newProductBtn").disabled = !enabled;
 	        $("saveProductBtn").disabled = !enabled;
 	        $("deleteProductBtn").disabled = !enabled;
-	        $("uploadProductImageBtn").disabled = !enabled;
+	        document.querySelectorAll("[data-upload-product-image]").forEach(button => { button.disabled = !enabled; });
 	      }
 	      function openModal(id){
 	        const el = $(id);
@@ -3443,12 +3651,22 @@
       const dayKey = date => date ? date.toISOString().slice(0, 10) : "";
       const percent = (part, total) => total > 0 ? `${Math.round((part / total) * 100)}%` : "0%";
       const avgCents = (sum, count) => count > 0 ? Math.round(sum / count) : 0;
-      async function token(){ return (await auth.currentUser.getIdToken(true)); }
+      // Firebase caches valid ID tokens and refreshes them automatically near expiry.
+      // Forcing a refresh here made every console API call perform extra network I/O.
+      async function token(user = currentAdminUser || auth.currentUser){
+        if (!user) throw new Error("Please sign in again.");
+        return user.getIdToken(false);
+      }
       async function api(path, options = {}){
-        if (!auth.currentUser) throw new Error("Please sign in again.");
-        const { baseUrl = API_BASE, ...fetchOptions } = options;
+        const user = currentAdminUser || auth.currentUser;
+        if (!user) throw new Error("Please sign in again.");
+        const { baseUrl: requestedBaseUrl = API_BASE, ...fetchOptions } = options;
+        // Keep reads and writes on the backend selected by each console area.
+        // In local development this is the Functions emulator, which includes
+        // backend changes that may not have been deployed yet.
+        const baseUrl = requestedBaseUrl;
         const headers = { "Content-Type":"application/json", ...(fetchOptions.headers || {}) };
-        headers.Authorization = `Bearer ${await token()}`;
+        headers.Authorization = `Bearer ${await token(user)}`;
         let resp;
         try {
           resp = await fetch(`${baseUrl}${path}`, { ...fetchOptions, headers, mode:"cors" });
@@ -3474,9 +3692,10 @@
 	      }
 
       async function chatAdminApi(path, options = {}){
-        if (!auth.currentUser) throw new Error("Please sign in again.");
+        const user = currentAdminUser || auth.currentUser;
+        if (!user) throw new Error("Please sign in again.");
         const headers = { "Content-Type":"application/json", ...(options.headers || {}) };
-        headers.Authorization = `Bearer ${await token()}`;
+        headers.Authorization = `Bearer ${await token(user)}`;
         let resp;
         try {
           resp = await fetch(`${ADMIN_CHAT_API_BASE}${path}`, { ...options, headers, mode:"cors" });
@@ -3534,13 +3753,16 @@
 
       auth.onAuthStateChanged(async user => {
         if (!user) {
+          currentAdminUser = null;
           showLogin();
           return;
         }
         try {
           await requireAdminUser(user);
+          currentAdminUser = user;
           showApp(user);
         } catch (err) {
+          currentAdminUser = null;
           await auth.signOut();
           showLogin(err.message || "Admin access denied");
           return;
@@ -3626,9 +3848,12 @@
 	        if (active === "emailHistory") loadEmailHistory().catch(() => {});
 	        clearInterval(chatPollTimer);
 	        if (active === "messages") {
-	          markMessagesRead().catch(() => {});
-	          chatPollTimer = setInterval(() => loadChatConversations(selectedChatConversation?.id || "").catch(() => {}), 15000);
+	          loadChatConversations(selectedChatConversation?.id || "").then(() => markMessagesRead()).catch(() => {});
 	        }
+	        chatPollTimer = setInterval(() => {
+	          const selectedId = currentConsoleSection === "messages" ? selectedChatConversation?.id || "" : "";
+	          loadChatConversations(selectedId).catch(() => {});
+	        }, 15000);
 	      }
 	      function mountBoxNowSettings(){
 	        const mount = $("boxNowSettingsMount");
@@ -3691,7 +3916,7 @@
 	        button.addEventListener("click", () => showMarketingTab(button.dataset.marketingTab));
 	      });
 	      showMarketingTab("settings");
-	      function showIdeaWeekTab(tab = "2026-08-24"){
+	      function showIdeaWeekTab(tab = "2026-09-07"){
 	        const tabs = Array.from(document.querySelectorAll("[data-idea-week-tab]")).map(button => button.dataset.ideaWeekTab);
 	        const active = tabs.includes(tab) ? tab : (tabs[0] || "");
 	        document.querySelectorAll("[data-idea-week-panel]").forEach(panel => {
@@ -3707,9 +3932,9 @@
 	      document.querySelectorAll("[data-idea-week-tab]").forEach(button => {
 	        button.addEventListener("click", () => showIdeaWeekTab(button.dataset.ideaWeekTab));
 	      });
-	      showIdeaWeekTab("2026-08-24");
+	      showIdeaWeekTab("2026-09-07");
 	      function showSettingsTab(tab = "stripe"){
-	        const active = ["stripe", "shipping", "emails", "chatbot"].includes(tab) ? tab : "stripe";
+	        const active = ["stripe", "shipping", "emails", "notifications", "chatbot"].includes(tab) ? tab : "stripe";
 	        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
 	          panel.classList.toggle("hidden", panel.dataset.settingsPanel !== active);
 	        });
@@ -3728,6 +3953,24 @@
 		        openModal("placeholdersModal");
 		      });
 		      $("savePlaceholdersBtn").addEventListener("click", saveEmailPlaceholders);
+	      $("testTelegramOrderSoundBtn").addEventListener("click", async () => {
+	        const button = $("testTelegramOrderSoundBtn");
+	        try {
+	          button.disabled = true;
+	          button.textContent = "Sending…";
+	          setMsg("telegramOrderSoundMsg", "Sending Telegram test…");
+	          await api("/adminSettings", {
+	            method:"POST",
+	            body: JSON.stringify({ action:"sendTelegramOrderTest" }),
+	          });
+	          setMsg("telegramOrderSoundMsg", "Test sent. Check your phone.");
+	        } catch (err) {
+	          setMsg("telegramOrderSoundMsg", err.message || "Telegram test failed", false);
+	        } finally {
+	          button.disabled = false;
+	          button.textContent = "Test order sound";
+	        }
+	      });
 	      showSettingsTab("stripe");
 	      document.querySelectorAll("[data-section-tab]").forEach(button => {
 	        button.addEventListener("click", () => showSection(button.dataset.sectionTab));
@@ -4031,10 +4274,13 @@
 	      });
 
 	      function renderProductImagePreview(){
-	        const src = imageSrc(currentProductImage);
-	        $("productImagePreviewWrap").innerHTML = src
-	          ? `<img src="${esc(src)}" alt="" class="max-w-full max-h-[190px] object-contain">`
-	          : `<div class="text-sm text-zinc-500">No product image</div>`;
+	        ["en", "el"].forEach(language => {
+	          const src = imageSrc(currentProductImages[language]);
+	          const label = language === "el" ? "Greek" : "English";
+	          $(`productImagePreview${language === "el" ? "El" : "En"}`).innerHTML = src
+	            ? `<img src="${esc(src)}" alt="${label} product artwork" class="max-h-[190px] max-w-full object-contain">`
+	            : `<div class="text-sm text-zinc-500">No ${label} product image</div>`;
+	        });
 	      }
 
 	      function openProduct(p = {}){
@@ -4055,9 +4301,6 @@
 	          button.classList.toggle("btn-soft", !isActive);
 	          button.setAttribute("aria-selected", isActive ? "true" : "false");
 	        });
-	        const general = active === "general";
-	        $("productEditorBody")?.classList.toggle("md:grid-cols-[220px_minmax(0,1fr)]", general);
-	        $("productEditorBody")?.classList.toggle("md:grid-cols-1", !general);
 	        if (active === "inventory") updateProductInventoryFieldState();
 	      }
 	      document.querySelectorAll("[data-product-editor-tab]").forEach(button => {
@@ -4073,6 +4316,8 @@
         $("p_descEl").value = p.descriptionEl || "";
         $("p_detail").value = p.detail || "";
         $("p_detailEl").value = p.detailEl || "";
+        $("p_bestFor").value = (Array.isArray(p.bestFor) ? p.bestFor : []).join(", ");
+        $("p_bestForEl").value = (Array.isArray(p.bestForEl) ? p.bestForEl : []).join(", ");
 	        $("p_amount").value = p.amount ?? 0;
 	        $("p_weight").value = p.weightGrams ?? 0;
 	        renderProductInventoryPoolSelect(p.inventoryPoolId || "");
@@ -4082,37 +4327,49 @@
 	        $("p_stock").value = p.stock ?? "";
 	        $("p_allowBackorder").checked = p.allowBackorder === true;
 	        $("p_currency").value = p.currency || "eur";
-	        currentProductImage = p.image || "";
+	        currentProductImages = {
+	          en: p.imageEn || "",
+	          el: p.imageEl || p.image || "",
+	        };
 	        $("p_bg").value = p.imageBg || "#f8f1eb";
 	        $("p_active").checked = p.active !== false;
 	        $("p_stripeTestProduct").value = p.stripe?.test?.productId || p.stripeProductId || "";
 	        $("p_stripeTestPrice").value = p.stripe?.test?.priceId || p.stripePriceId || "";
 	        $("p_stripeLiveProduct").value = p.stripe?.live?.productId || "";
 	        $("p_stripeLivePrice").value = p.stripe?.live?.priceId || "";
-	        $("p_upload").value = "";
+	        $("p_uploadEn").value = "";
+	        $("p_uploadEl").value = "";
 	        renderProductImagePreview();
 	        if (productApiReady) $("productMsg").textContent = "";
 	      }
 
 	      $("newProductBtn").addEventListener("click", () => openProduct({ active:false, currency:"eur", imageBg:"#f8f1eb" }));
-	      $("uploadProductImageBtn").addEventListener("click", async () => {
+	      $("productEditorImagePanel").addEventListener("click", async event => {
+	        const uploadButton = event.target.closest("[data-upload-product-image]");
+	        if (!uploadButton) return;
 	        if (!productApiReady) return setMsg("productMsg", "Product API is unavailable, so product images cannot be uploaded right now.", false);
 	        const id = $("p_id").value.trim();
-	        const file = $("p_upload").files && $("p_upload").files[0];
+	        const imageLanguage = uploadButton.dataset.uploadProductImage === "el" ? "el" : "en";
+	        const fileInput = imageLanguage === "el" ? $("p_uploadEl") : $("p_uploadEn");
+	        const file = fileInput.files && fileInput.files[0];
 	        if (!id) return setMsg("productMsg", "Save or enter a product ID before uploading an image.", false);
-	        if (!file) return setMsg("productMsg", "Choose an image first.", false);
+	        if (!file) return setMsg("productMsg", `Choose a${imageLanguage === "el" ? " Greek" : "n English"} image first.`, false);
 	        try {
+	          uploadButton.disabled = true;
 	          setMsg("productMsg", "Preparing image...");
 	          const imageDataUrl = await productImageDataUrl(file);
 	          const preparedBytes = Math.ceil((imageDataUrl.split(",")[1] || "").length * 3 / 4);
 	          setMsg("productMsg", `Uploading optimized image (${Math.ceil(preparedBytes / 1024)} KB)...`);
-	          const data = await productAdminApi("/adminProductImage", { method:"POST", body: JSON.stringify({ productId:id, imageDataUrl }) });
-	          currentProductImage = data.image || "";
+	          const data = await productAdminApi("/adminProductImage", { method:"POST", body: JSON.stringify({ productId:id, imageDataUrl, imageLanguage }) });
+	          currentProductImages[imageLanguage] = data.image || "";
+	          fileInput.value = "";
 	          renderProductImagePreview();
-	          setMsg("productMsg", `Optimized image uploaded (${Math.ceil(preparedBytes / 1024)} KB)`);
+	          setMsg("productMsg", `${imageLanguage === "el" ? "Greek" : "English"} image uploaded (${Math.ceil(preparedBytes / 1024)} KB)`);
 	          await loadProducts();
 	        } catch (err) {
 	          setMsg("productMsg", err.message || "Image upload failed", false);
+	        } finally {
+	          uploadButton.disabled = false;
 	        }
 	      });
 	      $("saveProductBtn").addEventListener("click", async () => {
@@ -4127,6 +4384,8 @@
             descriptionEl: $("p_descEl").value.trim(),
             detail: $("p_detail").value.trim(),
             detailEl: $("p_detailEl").value.trim(),
+            bestFor: $("p_bestFor").value.split(",").map(tag => tag.trim()).filter(Boolean),
+            bestForEl: $("p_bestForEl").value.split(",").map(tag => tag.trim()).filter(Boolean),
             amount: Number($("p_amount").value || 0),
             weightGrams: Number($("p_weight").value || 0),
             inventoryPoolId: $("p_inventoryPool").value,
@@ -4138,7 +4397,9 @@
             stock: $("p_stock").value === "" ? null : Number($("p_stock").value),
             allowBackorder: $("p_allowBackorder").checked,
             currency: $("p_currency").value.trim() || "eur",
-	            image: currentProductImage,
+	            image: currentProductImages.el || currentProductImages.en,
+	            imageEn: currentProductImages.en,
+	            imageEl: currentProductImages.el,
             imageBg: $("p_bg").value.trim() || "#f8f1eb",
             active: $("p_active").checked,
             stripeProductId: $("p_stripeTestProduct").value.trim(),
@@ -4189,6 +4450,7 @@
           renderCollaborationCouponOptions(currentCollaboration()?.offer?.couponCode || "");
           renderFirstOrderOfferCouponOptions(marketingSettings.firstOrderOffer?.couponCode || "");
           renderBulkEmailCouponOptions();
+          renderNewsletterCouponOptions();
           setMsg("couponAdminMsg", coupons.length ? `${coupons.length} coupons loaded` : "No coupons found");
         } catch (err) {
           coupons = [];
@@ -4196,6 +4458,7 @@
           renderCollaborationCouponOptions(currentCollaboration()?.offer?.couponCode || "");
           renderFirstOrderOfferCouponOptions(marketingSettings.firstOrderOffer?.couponCode || "");
           renderBulkEmailCouponOptions();
+          renderNewsletterCouponOptions();
           setMsg("couponAdminMsg", err.message || apiUnavailableMessage("Coupons"), false);
           throw err;
         }
@@ -4680,7 +4943,7 @@
 	            selectedChatConversation = chatConversations.find(conversation => conversation.id === conversationId) || selectedChatConversation;
 	            if (selectedChatConversation) selectedChatConversation = { ...selectedChatConversation, unreadAdmin: 0 };
 	            chatMessages = data.messages || [];
-	          } else if (!selectedChatConversation && chatConversations.length) {
+	          } else if (currentConsoleSection === "messages" && !selectedChatConversation && chatConversations.length) {
 	            selectedChatConversation = chatConversations[0];
 	            await loadChatConversations(selectedChatConversation.id);
 	            return;
@@ -6007,8 +6270,11 @@
 	      });
 
 	      async function refreshConsoleData(){
-	        const results = await Promise.allSettled([loadProducts(), loadCoupons(), loadOrders(), loadFeedback(), loadCustomers(), loadNewsletter(), loadEmailHistory(), loadChatConversations(), loadCollaborations(), loadSocialAgent(), loadAbandonedCarts(), loadSettings()]);
-	        const failures = results.filter(result => result.status === "rejected");
+	        // Products power several console controls and should not compete with a
+	        // dozen production-backed emulator requests during local cold starts.
+	        const productResult = await Promise.allSettled([loadProducts()]);
+	        const results = await Promise.allSettled([loadCoupons(), loadOrders(), loadFeedback(), loadCustomers(), loadNewsletter(), loadEmailHistory(), loadChatConversations(), loadCollaborations(), loadSocialAgent(), loadAbandonedCarts(), loadSettings()]);
+	        const failures = [...productResult, ...results].filter(result => result.status === "rejected");
 	        if (failures.length) {
 	          announce("Some console data could not load.");
 	        }
@@ -7362,11 +7628,13 @@
 	      function openNewsletterComposer(){
 	        renderNewsletterTemplateOptions();
 	        renderNewsletterImageProducts();
+	        renderNewsletterCouponOptions();
 	        $("newsletterTemplate").value = "";
 	        const counts = newsletterRecipientCounts();
 	        $("newsletterLanguage").value = counts.en > 0 || counts.el === 0 ? "en" : "el";
 	        $("newsletterSubject").value = "";
 	        $("newsletterBody").value = "{greeting}\n\n";
+	        $("newsletterCoupon").value = "";
 	        clearNewsletterImage();
 	        setMsg("newsletterComposeMsg", "");
 	        updateNewsletterRecipientSummary();
@@ -7378,7 +7646,9 @@
 	        const subject = $("newsletterSubject").value.trim();
 	        const body = $("newsletterBody").value.trim();
 	        const language = $("newsletterLanguage").value;
+	        const coupon = normalizeCouponCode($("newsletterCoupon").value);
 	        if (!subject || !body) return setMsg("newsletterComposeMsg", "Enter a subject and message.", false);
+	        if (containsCouponPlaceholder(`${subject}\n${body}`) && !coupon) return setMsg("newsletterComposeMsg", "Select a coupon or remove the {coupon} field.", false);
 	        const activeCount = newsletterRecipientCounts()[language] || 0;
 	        if (action === "send" && activeCount === 0) return setMsg("newsletterComposeMsg", `There are no active ${language === "el" ? "Greek" : "English"} subscribers. Choose the other language.`, false);
 	        if (action === "send" && !window.confirm(`Send this newsletter to ${activeCount} active ${language === "el" ? "Greek" : "English"} subscriber${activeCount === 1 ? "" : "s"}?`)) return;
@@ -7390,7 +7660,7 @@
 	            method:"POST",
 	            baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
 	            body:JSON.stringify({
-	              action, subject, body, language, confirmDuplicate,
+	              action, subject, body, language, coupon, confirmDuplicate,
 	              image:{
 	                url:$("newsletterImageUrl").value.trim(),
 	                alt:$("newsletterImageAlt").value.trim(),
@@ -7536,6 +7806,18 @@
 	          `<option value="">No coupon</option>`,
 	          ...availableCoupons.map(coupon => `<option value="${esc(coupon.code || "")}">${esc(couponSelectLabel(coupon))}</option>`),
 	        ].join("");
+	      }
+
+	      function renderNewsletterCouponOptions(selectedCode = ""){
+	        const select = $("newsletterCoupon");
+	        if (!select) return;
+	        const normalizedSelected = normalizeCouponCode(selectedCode || select.value || "");
+	        const availableCoupons = (Array.isArray(coupons) ? coupons : []).filter(coupon => coupon.active !== false);
+	        select.innerHTML = [
+	          `<option value="">No coupon</option>`,
+	          ...availableCoupons.map(coupon => `<option value="${esc(normalizeCouponCode(coupon.code || ""))}">${esc(couponSelectLabel(coupon))}</option>`),
+	        ].join("");
+	        select.value = availableCoupons.some(coupon => normalizeCouponCode(coupon.code) === normalizedSelected) ? normalizedSelected : "";
 	      }
 
 	      function customerBulkTemplateText(value = ""){
@@ -9147,7 +9429,12 @@
               <div class="mt-1 text-xs text-zinc-500">Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}</div>
             </td>
 	            <td class="p-3 whitespace-nowrap" data-sort-value="${orderCreatedMs(o)}">${esc(ts(o.createdAt) || "-")}</td>
-	            <td class="p-3">${esc(o.customer?.name || o.shipping?.name || "")}<div class="text-xs text-zinc-500">${esc(customerEmailForOrderPreview(o))}</div></td>
+	            <td class="p-3">
+	              ${customerRecordForOrderPreview(o)
+	                ? `<button class="font-semibold text-left hover:underline" type="button" data-order-customer-id="${esc(o.id)}" title="Open customer details">${esc(o.customer?.name || o.shipping?.name || customerEmailForOrderPreview(o) || "Customer")}</button>`
+	                : esc(o.customer?.name || o.shipping?.name || "")}
+	              <div class="text-xs text-zinc-500">${esc(customerEmailForOrderPreview(o))}</div>
+	            </td>
             <td class="p-3">${money(o.amountTotal, o.currency)}</td>
 	            <td class="p-3"><div class="flex w-40 flex-col items-stretch gap-1 [&>span]:w-full [&>span]:justify-center">${orderStatusBadge(o.status)}${paymentStatusBadge(o.paymentStatus || o.status || "pending_payment")}${fulfillmentStatusBadge(o.fulfillmentStatus || "new")}</div></td>
 	            <td class="p-3">
@@ -9361,6 +9648,15 @@
 	          renderOrders();
 	          return;
 	        }
+	        const customerBtn = e.target.closest("[data-order-customer-id]");
+	        if (customerBtn) {
+	          const order = orders.find(item => item.id === customerBtn.dataset.orderCustomerId);
+	          const customer = customerRecordForOrderPreview(order);
+	          if (!customer) return;
+	          selectedCustomer = customer;
+	          openCustomer(customer);
+	          return;
+	        }
 	        const btn = e.target.closest("[data-order-doc-id]");
 	        if (!btn) return;
 	        selectedOrder = orders.find(o => o.id === btn.dataset.orderDocId);
@@ -9533,11 +9829,13 @@
 	        const productsPanel = $("orderItemsEditor")?.closest(".panel");
 	        const shippingPanel = $("o_shipName")?.closest(".panel");
 	        const boxNowPanel = $("orderBoxNowShipmentSummary")?.closest(".panel");
+	        const courierQuotePanel = $("courierQuoteFinalizePanel");
 	        const statusGrid = $("o_status")?.closest(".grid");
 	        const aadePanel = $("o_invoiceReceiptIssued")?.closest(".panel");
 	        const lockerReminderPanel = $("lockerReminderEmailStatus")?.closest(".panel");
 	        const feedbackPanel = $("feedbackEmailStatus")?.closest(".panel");
 	        if ($("orderDetails")) overview.append($("orderDetails"));
+	        if (courierQuotePanel) overview.append(courierQuotePanel);
 	        if (statusGrid) overview.append(statusGrid);
 	        if (productsPanel) $("orderTabProducts").append(productsPanel);
 	        if (shippingPanel) $("orderTabDelivery").append(shippingPanel);
@@ -9688,6 +9986,20 @@
 	        $("o_postalCode").value = o.shipping?.postalCode || o.shipping?.postal || o.shipping?.zip || "";
 	        $("o_city").value = o.shipping?.city || "";
 	        $("o_country").value = o.shipping?.country || "";
+	        const isCourierQuoteOrder = o.shipping?.deliveryMethod === 'courier_quote';
+	        $('courierQuoteFinalizePanel').classList.toggle('hidden', !isCourierQuoteOrder || statusKey(o.paymentStatus) === 'paid');
+	        const rawSavedCourier = o.shippingQuote?.courier || o.shipping?.courier || 'ACS Courier';
+	        const savedCourier = rawSavedCourier === 'Geniki taxydromiki'
+	          ? 'Γενική Ταχυδρομική'
+	          : rawSavedCourier === 'ACS' ? 'ACS Courier' : rawSavedCourier;
+	        $('o_quoteCourier').value = ['ACS Courier', 'Γενική Ταχυδρομική'].includes(savedCourier) ? savedCourier : 'ACS Courier';
+	        $('o_quoteShippingCost').value = (Math.max(0, Number(o.shippingQuote?.shippingAmount ?? o.amountShipping ?? 0)) / 100).toFixed(2);
+	        $('o_quotePaymentMode').value = o.shippingQuote?.paymentMode || o.shipping?.shippingPaymentMode || 'prepaid';
+	        $('o_quoteEstimate').value = o.shippingQuote?.estimatedDelivery || '';
+	        $('finalizeCourierQuoteBtn').textContent = o.shippingQuote?.status === 'sent'
+	          ? 'Replace checkout & resend quote'
+	          : 'Create checkout & email customer';
+	        renderCourierQuotePaymentSummary();
 	        setBoxNowLockerFields("order", o.shipping?.boxNow || {});
 	        $("o_stripePaymentLink").value = o.stripePaymentLink || o.paymentLink || "";
         $("o_notes").value = o.notes || "";
@@ -9945,7 +10257,57 @@
 	        }
 	      });
 
-      $("deleteOrderBtn").addEventListener("click", async () => {
+	      ['o_quoteShippingCost', 'o_quotePaymentMode'].forEach(id => $(id).addEventListener('input', renderCourierQuotePaymentSummary));
+
+	      $('finalizeCourierQuoteBtn').addEventListener('click', async () => {
+	        if (!selectedOrder) return setMsg('orderModalMsg', 'Select an order first.', false);
+	        const courier = $('o_quoteCourier').value.trim();
+	        const shippingValue = Number($('o_quoteShippingCost').value);
+	        if (!courier) return setMsg('orderModalMsg', 'Enter the courier name.', false);
+	        if (!Number.isFinite(shippingValue) || shippingValue < 0) return setMsg('orderModalMsg', 'Enter a valid shipping cost.', false);
+	        const mode = $('o_quotePaymentMode').value;
+	        const pricing = orderPricing(selectedOrder);
+	        const products = Math.max(0, pricing.subtotal - Number(selectedOrder.amountDiscount || pricing.discount || 0));
+	        const shipping = Math.round(shippingValue * 100);
+	        const online = products + (mode === 'prepaid' ? shipping : 0);
+	        const due = mode === 'pay_on_delivery' ? shipping : 0;
+	        const confirmed = window.confirm(
+	          `Send this quote to ${selectedOrder.customer?.email || 'the customer'}?\n\n` +
+	          `Courier: ${courier}\nProducts paid online: ${money(products, selectedOrder.currency)}\n` +
+	          `Shipping: ${money(shipping, selectedOrder.currency)}\nOnline checkout: ${money(online, selectedOrder.currency)}\n` +
+	          `Due to courier: ${money(due, selectedOrder.currency)}`
+	        );
+	        if (!confirmed) return;
+	        const button = $('finalizeCourierQuoteBtn');
+	        try {
+	          button.disabled = true;
+	          button.textContent = 'Creating checkout & sending...';
+	          setMsg('orderModalMsg', 'Creating the Stripe checkout and emailing the customer...');
+	          const result = await orderAdminApi('/adminOrders', {
+	            method: 'POST',
+	            body: JSON.stringify({
+	              action: 'finalizeCourierQuote',
+	              id: selectedOrder.id,
+	              courier,
+	              shippingAmountCents: shipping,
+	              shippingPaymentMode: mode,
+	              estimatedDelivery: $('o_quoteEstimate').value.trim(),
+	            }),
+	          });
+	          await loadOrders();
+	          selectedOrder = orders.find(order => order.id === selectedOrder.id) || result.order || selectedOrder;
+	          fillOrder(selectedOrder);
+	          setMsg('orderModalMsg', 'Shipping quote sent. The order is awaiting online product payment.');
+	          setMsg('orderMsg', `Shipping quote sent for ${orderNumber(selectedOrder)}.`);
+	        } catch (err) {
+	          setMsg('orderModalMsg', err.message || 'Could not finalize the shipping quote.', false);
+	        } finally {
+	          button.disabled = false;
+	          if (selectedOrder) fillOrder(selectedOrder);
+	        }
+	      });
+
+	      $("deleteOrderBtn").addEventListener("click", async () => {
         if (!selectedOrder) return setMsg("orderMsg", "Select an order first", false);
         const label = orderNumber(selectedOrder);
         const customer = selectedOrder.customer?.email || selectedOrder.customer?.name || "this customer";

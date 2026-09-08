@@ -43,21 +43,27 @@
       .text-shadow{ text-shadow:0 2px 8px rgba(0,0,0,.25) }
       .chip{ background: rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25) }
       .card{ border-radius:1rem; box-shadow: 0 10px 30px rgba(0,0,0,.08) }
-      button:not(:disabled),
-      a[href],
-      [role="button"],
-      [data-product],
-      [data-product-details],
-      [data-suggest-product],
-      [data-suggest-add],
-      [data-suggest-details],
-      .cursor-pointer{ cursor:pointer !important; }
+      a, a *,
+      button, button *,
+      summary, summary *,
+      select, select *,
+      label, label *,
+      [role="button"], [role="button"] *,
+      [onclick], [onclick] *,
+      [data-product], [data-product] *,
+      [data-product-details], [data-product-details] *,
+      [data-suggest-product], [data-suggest-product] *,
+      [data-suggest-add], [data-suggest-add] *,
+      [data-suggest-details], [data-suggest-details] *,
+      .cursor-pointer, .cursor-pointer *{ cursor:pointer !important; }
+      button,
+      a[href]{ transition-property:color, background-color, border-color, opacity, box-shadow !important; }
       .btn{
         background: var(--positive); color:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700;
-        transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+        transition:box-shadow .12s ease, background .12s ease;
         box-shadow: 0 8px 20px rgba(208,66,17,.3);
       }
-      .btn:hover{ transform: translateY(-1px); background:var(--positive-hover); box-shadow:0 10px 24px rgba(37,102,67,.28) }
+      .btn:hover{ background:var(--positive-hover); box-shadow:0 10px 24px rgba(37,102,67,.28) }
       .btn-outline{ border:2px solid var(--grubz-1); color:var(--grubz-1); background:#fff; border-radius:.75rem; padding:.8rem 1.1rem; font-weight:700; }
       .btn-outline:hover{ background:var(--grubz-1); color:#fff }
       .btn-soft{ border:1px solid #e5e5e5; background:#fff; color:#0a0a0a; border-radius:.75rem; padding:.7rem 1rem; font-weight:600; }
@@ -74,6 +80,7 @@
       .btn:disabled,
       .btn[disabled],
       [aria-disabled="true"]{ opacity:.5; cursor:not-allowed !important; transform:none; box-shadow:none; }
+      button:disabled *{ cursor:not-allowed !important; }
       .fade-slider { position: relative; border-radius: 1rem; overflow: hidden; }
       .fade-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; }
       .fade-slide.active { opacity: 1; }
@@ -115,6 +122,11 @@
       .badge-oos{ position:absolute; top:.75rem; left:.75rem; background:#111; color:#fff; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .badge-low{ position:absolute; top:.75rem; right:.75rem; background:#eab308; color:#111; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .boxnow-frame{ width:100%; height:min(76vh,720px); border:0; }
+      .viewport-modal-panel{
+        max-height:calc(100vh - 1rem);
+        max-height:calc(100dvh - 1rem);
+      }
+      .modal-safe-actions{ padding-bottom:max(1rem, env(safe-area-inset-bottom)); }
       .product-detail-media{ background:#f8f1eb; }
       .product-detail-image{ aspect-ratio:3/2; background-size:cover; background-repeat:no-repeat; }
       .product-info-pill{display:inline-flex;align-items:center;border:1px solid #eadfd6;background:#fff7f2;color:#71391d;border-radius:999px;padding:.28rem .55rem;font-size:.74rem;font-weight:800}
@@ -131,7 +143,7 @@
       <div class="bg-grubz text-white">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-2 text-sm flex items-center justify-between">
           <div class="inline-flex items-center gap-2">
-            <img src="images/greece-flag-40.png" class="h-3.5" alt="GR flag" />
+            <img src="/images/greece-flag-40.png" class="h-3.5" alt="GR flag" />
             <span data-i18n="madeInGr">Made in Greece</span>
           </div>
           <div class="flex items-center gap-2">
@@ -154,7 +166,7 @@
 
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img src="./images/grubz-icon-80.png" alt="GRUBZ icon" class="h-14 w-14"/>
+          <img src="/images/grubz-icon-80.png" alt="GRUBZ icon" class="h-14 w-14"/>
           <span class="text-2xl font-extrabold tracking-tight" style="color:var(--grubz-4)">GRUBZ</span>
         </div>
         <nav class="hidden sm:flex items-center gap-6 text-sm">
@@ -198,20 +210,6 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <section class="bg-white px-4 sm:px-6 py-7" aria-labelledby="gamePromoTitle">
-        <a id="gamePromo" href="/happy-chicken-run/" class="group relative mx-auto grid max-w-6xl grid-cols-[1fr_112px] items-center overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-sky-100 px-5 py-6 shadow-lg transition hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-400 sm:grid-cols-[180px_1fr_auto] sm:gap-7 sm:px-8 sm:py-5">
-          <div class="order-2 flex h-28 items-end justify-center self-end sm:order-1 sm:h-40">
-            <img src="/images/chicken-cartoon-happy.png" alt="Happy Chicken Run character" class="h-36 w-36 max-w-none object-contain drop-shadow-xl transition duration-300 group-hover:rotate-3 group-hover:scale-110 sm:h-52 sm:w-52" loading="lazy">
-          </div>
-          <div class="order-1 min-w-0 sm:order-2">
-            <span class="inline-flex rounded-full bg-orange-600 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white" data-i18n="gamePromoBadge">Free browser game · No download</span>
-            <h2 id="gamePromoTitle" class="mt-3 text-2xl font-extrabold leading-tight text-[#71391d] sm:text-3xl" data-i18n="gamePromoTitle">Think your chicken can beat the high score?</h2>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-700 sm:text-base" data-i18n="gamePromoText">Jump obstacles, collect GRUBZ treats and challenge your flock.</p>
-          </div>
-          <span class="order-3 col-span-2 mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#d04211] px-6 py-3 font-extrabold text-white shadow-md transition group-hover:bg-[#b9360d] sm:col-span-1 sm:mt-0" data-i18n="gamePromoCta">Play Happy Chicken Run →</span>
-        </a>
       </section>
 
       <!-- Products -->
@@ -358,6 +356,20 @@
       </div>
     </section>
 
+    <section class="bg-white px-4 sm:px-6 py-7" aria-labelledby="gamePromoTitle">
+      <a id="gamePromo" href="/happy-chicken-run/" class="group relative mx-auto grid max-w-6xl grid-cols-[1fr_112px] items-center overflow-hidden rounded-3xl border border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-sky-100 px-5 py-6 shadow-lg transition hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-400 sm:grid-cols-[180px_1fr_auto] sm:gap-7 sm:px-8 sm:py-5">
+        <div class="order-2 flex h-28 items-end justify-center self-end sm:order-1 sm:h-40">
+          <img src="/images/chicken-cartoon-happy.png" alt="Happy Chicken Run character" class="h-36 w-36 max-w-none object-contain drop-shadow-xl transition duration-300 group-hover:rotate-3 group-hover:scale-110 sm:h-52 sm:w-52" loading="lazy">
+        </div>
+        <div class="order-1 min-w-0 sm:order-2">
+          <span class="inline-flex rounded-full bg-orange-600 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white" data-i18n="gamePromoBadge">Free browser game · No download</span>
+          <h2 id="gamePromoTitle" class="mt-3 text-2xl font-extrabold leading-tight text-[#71391d] sm:text-3xl" data-i18n="gamePromoTitle">Think your chicken can beat the high score?</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-700 sm:text-base" data-i18n="gamePromoText">Jump obstacles, collect GRUBZ treats and challenge your flock.</p>
+        </div>
+        <span class="order-3 col-span-2 mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#d04211] px-6 py-3 font-extrabold text-white shadow-md transition group-hover:bg-[#b9360d] sm:col-span-1 sm:mt-0" data-i18n="gamePromoCta">Play Happy Chicken Run →</span>
+      </a>
+    </section>
+
     <footer class="bg-zinc-900 text-zinc-100">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         <div>
@@ -442,7 +454,7 @@
 
     <div id="newsletterStatusModal" class="fixed inset-0 z-[95] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="newsletterStatusTitle" aria-describedby="newsletterStatusText">
       <div id="newsletterStatusBackdrop" class="absolute inset-0 bg-black/50"></div>
-      <section class="relative w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
+      <section class="viewport-modal-panel relative w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 text-center shadow-2xl">
         <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-orange-50 text-2xl text-[#d04211]" aria-hidden="true">✓</div>
         <h2 id="newsletterStatusTitle" class="mt-4 text-xl font-extrabold text-zinc-900">Newsletter preferences updated</h2>
         <p id="newsletterStatusText" class="mt-2 text-sm text-zinc-600"></p>
@@ -467,7 +479,7 @@
     <!-- FIRST ORDER OFFER POPUP -->
     <div id="firstOrderOfferModal" class="fixed inset-0 z-[75] hidden" role="dialog" aria-modal="true" aria-labelledby="firstOrderOfferTitle" aria-describedby="offerText">
       <div id="firstOrderOfferBackdrop" class="absolute inset-0 bg-black/40"></div>
-      <div id="firstOrderOfferPanel" class="absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div id="firstOrderOfferPanel" class="viewport-modal-panel absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl overflow-y-auto">
         <div class="sales-panel rounded-none border-0 p-5 sm:p-6">
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -546,11 +558,11 @@
     <!-- AUTH MODAL -->
     <div id="authModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-describedby="authErr">
       <div class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
-        <div class="p-5 border-b">
+      <div class="viewport-modal-panel absolute left-1/2 top-1/2 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden bg-white rounded-2xl shadow-2xl">
+        <div class="p-5 border-b flex-none">
           <h3 id="authTitle" class="text-lg font-extrabold"><span data-i18n="signIn">Sign in</span> / <span data-i18n="createAccount">Create account</span></h3>
         </div>
-        <form id="authForm" class="p-5 space-y-3" method="post" action="/" autocomplete="on">
+        <form id="authForm" class="min-h-0 flex-1 overflow-y-auto p-5 space-y-3" method="post" action="/" autocomplete="on">
           <div>
             <label class="label" for="authEmail" data-i18n="email">Email</label>
             <input id="authEmail" name="username" type="email" class="input" autocomplete="username" required aria-describedby="authErr" />
@@ -565,7 +577,7 @@
           </div>
           <p id="authErr" class="text-sm text-red-600" role="alert"></p>
         </form>
-        <div class="p-4 border-t bg-zinc-50 text-right">
+        <div class="modal-safe-actions p-4 border-t bg-zinc-50 text-right flex-none">
           <button id="authClose" class="btn-soft" data-i18n="cancel">Cancel</button>
         </div>
       </div>
@@ -574,11 +586,11 @@
     <!-- ADDRESS MODAL -->
     <div id="addrModal" class="fixed inset-0 z-[92] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle" aria-describedby="addrErr">
       <div class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl">
-        <div class="p-5 border-b">
+      <div class="viewport-modal-panel absolute left-1/2 top-1/2 flex w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden bg-white rounded-2xl shadow-2xl">
+        <div class="p-5 border-b flex-none">
           <h3 id="addrTitle" class="text-lg font-extrabold" data-i18n="contactDetails">Contact details</h3>
         </div>
-        <div class="p-5 grid sm:grid-cols-2 gap-3">
+        <div class="min-h-0 flex-1 overflow-y-auto p-5 grid sm:grid-cols-2 gap-3">
           <div class="sm:col-span-1">
             <label class="label" for="a_name" data-i18n="fullName">Full name</label>
             <input id="a_name" class="input" autocomplete="name" required aria-describedby="addrErr"></div>
@@ -605,7 +617,7 @@
             <input id="a_country" class="input" autocomplete="country" value="Greece" required aria-describedby="addrErr"></div>
           <p id="addrErr" class="sm:col-span-2 text-sm text-red-600" role="alert"></p>
         </div>
-        <div class="p-4 border-t bg-zinc-50 flex items-center justify-end gap-2">
+        <div class="modal-safe-actions p-4 border-t bg-zinc-50 flex flex-none items-center justify-end gap-2">
           <button id="addrCancel" class="btn-soft" data-i18n="cancel">Cancel</button>
           <button id="addrSave" class="btn" data-i18n="saveDetails">Save details</button>
         </div>
@@ -619,7 +631,7 @@
       <div id="reviewPanel"
            class="absolute left-1/2 top-1/2 w-[min(96vw,800px)] -translate-x-1/2 -translate-y-1/2
                   bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition
-                  flex flex-col max-h-[94vh] overflow-hidden">
+                  viewport-modal-panel flex flex-col overflow-hidden">
 
         <div class="p-4 border-b flex items-center justify-between flex-none">
           <h3 id="reviewTitle" class="text-lg font-extrabold" data-i18n="reviewTitle">Review & confirm</h3>
@@ -676,7 +688,7 @@
 
           <section id="courierQuoteSection" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
             <h4 class="font-bold" data-i18n="courierQuoteTitle">Shipping quote required</h4>
-            <p class="mt-1" data-i18n="courierQuoteText">Place this order without payment. We will email you the courier price and estimated delivery time. The order is not binding until you approve and pay the final total.</p>
+            <p class="mt-1" data-i18n="courierQuoteText">Request the quote without payment. We will email the courier price, delivery estimate, and a secure checkout. Products are always prepaid online; shipping may be prepaid or paid to the courier on delivery.</p>
           </section>
 
           <section id="boxnowReviewSection" class="border rounded-xl p-4">
@@ -703,8 +715,8 @@
 
             <div id="reviewDeliveryRow" class="hidden mt-3 flex items-center justify-between">
               <span class="flex items-center gap-2 text-sm text-zinc-600">
-                <img src="/images/boxnow-logo.png" alt="" class="h-5 w-auto object-contain" aria-hidden="true">
-                <span data-i18n="boxnowFeeLabel">BOX NOW delivery</span>
+                <img id="reviewDeliveryLogo" src="/images/boxnow-logo.png" alt="" class="h-5 w-auto object-contain" aria-hidden="true">
+                <span id="reviewDeliveryLabel" data-i18n="boxnowFeeLabel">BOX NOW delivery</span>
               </span>
               <strong id="reviewDeliveryValue" class="text-lg">€0.00</strong>
             </div>
@@ -724,7 +736,7 @@
 
         </div>
 
-        <div class="p-4 border-t bg-zinc-50 rounded-b-2xl flex items-center justify-end gap-2 flex-none">
+        <div class="modal-safe-actions p-4 border-t bg-zinc-50 rounded-b-2xl flex items-center justify-end gap-2 flex-none">
           <button id="reviewCancel" class="btn-soft" data-i18n="reviewCancel">Back</button>
           <button id="reviewConfirm" class="btn" data-i18n="reviewConfirmPay">Confirm & Pay</button>
         </div>
@@ -734,12 +746,12 @@
     <!-- BOX NOW MODAL -->
     <div id="boxnowModal" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true" aria-labelledby="boxnowModalTitle">
       <div id="boxnowBackdrop" class="absolute inset-0 bg-black/40"></div>
-      <div class="absolute left-1/2 top-1/2 w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div class="p-4 border-b flex items-center justify-between">
+      <div class="viewport-modal-panel absolute left-1/2 top-1/2 flex w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-4 border-b flex flex-none items-center justify-between">
           <h3 id="boxnowModalTitle" class="text-lg font-extrabold" data-i18n="boxnowModalTitle">Choose BOX NOW locker</h3>
           <button id="boxnowClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close BOX NOW">✕</button>
         </div>
-        <iframe id="boxnowFrame" class="boxnow-frame" title="BOX NOW locker map" loading="lazy"></iframe>
+        <iframe id="boxnowFrame" class="boxnow-frame min-h-0 flex-1" title="BOX NOW locker map" loading="lazy"></iframe>
       </div>
     </div>
 
@@ -747,13 +759,13 @@
     <div id="productModal" class="fixed inset-0 z-[88] hidden" role="dialog" aria-modal="true" aria-labelledby="productModalTitle" aria-describedby="productDetailText">
       <div id="productBackdrop" class="absolute inset-0 bg-black/40"></div>
       <div id="productPanel"
-           class="absolute left-1/2 top-1/2 w-[min(94vw,860px)] max-h-[90vh] -translate-x-1/2 -translate-y-1/2
+           class="viewport-modal-panel absolute left-1/2 top-1/2 w-[min(94vw,860px)] -translate-x-1/2 -translate-y-1/2
                   bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div class="p-4 border-b flex items-center justify-between flex-none">
           <h3 id="productModalTitle" class="text-lg font-extrabold">Product details</h3>
           <button id="productClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close product details">✕</button>
         </div>
-        <div class="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-0 overflow-y-auto">
+        <div class="grid min-h-0 flex-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-0 overflow-y-auto">
           <div id="productImageWrap" class="product-detail-media flex items-start">
             <div id="productImage" class="product-detail-image w-full bg-top"></div>
           </div>
@@ -838,7 +850,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics-compat.js"></script>
-    <script src="/__/firebase/init.js"></script>
+    <script src="/__/firebase/init.js?useEmulator=true"></script>
 
     <!-- Define critical globals ONCE to avoid TDZ/duplicate errors -->
     <script>
@@ -862,9 +874,14 @@
 const FUNCTION_API_BASE = "https://europe-west1-grubz-99b84.cloudfunctions.net";
 const LOCAL_FUNCTION_API_BASE = "http://127.0.0.1:5101/grubz-99b84/europe-west1";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+      // Local Functions use production services but can hang while obtaining
+      // credentials. Use the deployed API consistently during local UI work.
       const API_BASE = (location.protocol === "file:" || LOCAL_HOSTS.has(location.hostname))
-        ? (location.port === "5100" ? "/api" : FUNCTION_API_BASE)
+        ? FUNCTION_API_BASE
         : "/api";
+      // Session cookies must stay on the page origin. Cross-origin credentialed
+      // requests are intentionally rejected by the deployed Functions CORS layer.
+      const SESSION_API_BASE = LOCAL_HOSTS.has(location.hostname) ? "/api" : API_BASE;
       const CHAT_API_BASE = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
 const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
 const REFERRAL_STORAGE_KEY = "grubz_referral_code";
@@ -909,13 +926,23 @@ async function authedFetch(path, options = {}) {
       headers.Authorization = "Bearer " + tok;
     } catch (e) { /* ignore */ }
   }
-  const baseUrl = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
-  return fetch(`${baseUrl}${path}`, {
-    ...options,
-    headers,
-    mode: "cors",
-    cache: options.cache || (method === "GET" ? "no-store" : "default"),
-  });
+  const controller = new AbortController();
+  const timeoutMs = Math.max(1000, Number(options.timeoutMs || 15000));
+  const baseUrl = options.baseUrl || API_BASE;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(`${baseUrl}${path}`, {
+      ...options,
+      timeoutMs: undefined,
+      baseUrl: undefined,
+      headers,
+      signal: options.signal || controller.signal,
+      mode: "cors",
+      cache: options.cache || (method === "GET" ? "no-store" : "default"),
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function chatFetch(path, options = {}) {
@@ -1148,9 +1175,12 @@ async function chatFetch(path, options = {}) {
 	        }
 	      }
 	      function trackEvent(event, props = {}){
+	        // Local page views are development traffic and should not depend on
+	        // the Functions emulator (or be written to production analytics).
+	        if (LOCAL_HOSTS.has(location.hostname)) return;
 	        const consent = getConsent();
 	        if (!consent?.analytics) return;
-	        const analyticsBase = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
+	        const analyticsBase = API_BASE;
 	        const payload = {
 	          event,
 	          sessionId: analyticsSessionId(),
@@ -1382,7 +1412,7 @@ async function chatFetch(path, options = {}) {
           deliveryCourierQuote:"Courier — quote required",
           deliveryCourierQuoteHelp:"We will confirm the shipping cost and delivery time by email before you pay.",
           courierQuoteTitle:"Shipping quote required",
-          courierQuoteText:"Place this order without payment. We will email you the courier price and estimated delivery time. The order is not binding until you approve and pay the final total.",
+          courierQuoteText:"Request the quote without payment. We will email the courier price, delivery estimate, and a secure checkout. Products are always prepaid online; shipping may be prepaid or paid to the courier on delivery.",
           courierAddressRequired:"Please enter your street address and city for courier delivery.",
           reviewConfirmQuote:"Request shipping quote",
           inclVATRate: "incl. VAT 24%",
@@ -1565,7 +1595,7 @@ async function chatFetch(path, options = {}) {
           deliveryCourierQuote:"Courier — απαιτείται προσφορά",
           deliveryCourierQuoteHelp:"Θα επιβεβαιώσουμε το κόστος και τον χρόνο παράδοσης μέσω email πριν πληρώσετε.",
           courierQuoteTitle:"Απαιτείται προσφορά μεταφορικών",
-          courierQuoteText:"Καταχωρίστε την παραγγελία χωρίς πληρωμή. Θα σας στείλουμε με email το κόστος courier και τον εκτιμώμενο χρόνο παράδοσης. Η παραγγελία δεν είναι δεσμευτική μέχρι να εγκρίνετε και να πληρώσετε το τελικό ποσό.",
+          courierQuoteText:"Ζητήστε την προσφορά χωρίς πληρωμή. Θα σας στείλουμε με email το κόστος courier, τον εκτιμώμενο χρόνο παράδοσης και ασφαλές checkout. Τα προϊόντα προπληρώνονται πάντα online· τα μεταφορικά μπορούν να προπληρωθούν ή να πληρωθούν στην courier κατά την παράδοση.",
           courierAddressRequired:"Παρακαλώ συμπληρώστε οδό και πόλη για την παράδοση με courier.",
           reviewConfirmQuote:"Αίτημα προσφοράς μεταφορικών",
           inclVATRate: "με ΦΠΑ 24%",
@@ -1709,7 +1739,6 @@ async function chatFetch(path, options = {}) {
           if (!b) return;
           b.disabled = !enabled;
           b.setAttribute("aria-disabled", String(!enabled));
-          b.classList.toggle("pointer-events-none", !enabled);
         });
       }
       function updateCartInfo(){
@@ -1740,6 +1769,27 @@ async function chatFetch(path, options = {}) {
       const CATALOG = {};
       let __productsLoaded = false;
       let __productsLoadError = "";
+      const PRODUCT_CACHE_KEY = "grubz_public_products_v2";
+      const ENGLISH_PRODUCT_IMAGES = {
+        "happy-chicken-1kg": "/images/happy-chicken-1kg.png",
+        "happy-chicken-2kg": "/images/happy-chicken-2kg.png",
+        "happy-chicken-3kg": "/images/happy-chicken-3kg.png",
+      };
+
+	      function storefrontImageUrl(value = ""){
+	        const image = String(value || "").trim();
+	        if (!image) return "";
+	        if (/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(image)) return "";
+	        if (/^(?:https?:|data:|blob:|\/)/i.test(image)) return image;
+	        return `/${image.replace(/^\.\//, "").replace(/^\/+/, "")}`;
+	      }
+
+      function productImageForLanguage(id){
+        const product = CATALOG[id] || {};
+        return storefrontImageUrl(lang() === "el"
+          ? (product.imgEl || product.img || product.imgEn || "")
+          : (product.imgEn || product.img || product.imgEl || ""));
+      }
 
       function catalogText(id, field, keyField, dict = i18n[lang()] || i18n.en){
         const p = CATALOG[id] || {};
@@ -1989,7 +2039,9 @@ async function chatFetch(path, options = {}) {
             price: Number(p.amount || 0) / 100,
             amount: Number(p.amount || 0),
             currency: p.currency || "eur",
-            img: /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)/i.test(storefrontImage) ? "" : storefrontImage,
+            img: storefrontImageUrl(storefrontImage),
+            imgEn: storefrontImageUrl(p.imageEn || ENGLISH_PRODUCT_IMAGES[p.id] || storefrontImage),
+            imgEl: storefrontImageUrl(p.imageEl || storefrontImage || p.imageEn),
             bg: p.imageBg || "#f8f1eb",
             name: p.name || p.id,
             nameEl: p.nameEl || p.name || p.id,
@@ -2034,7 +2086,7 @@ async function chatFetch(path, options = {}) {
         }
         grid.innerHTML = products.map(([id, p]) => `
           <article class="card border p-5 h-full flex flex-col product-card" data-id="${escapeHtml(id)}">
-            <img src="${escapeHtml(p.img || "")}" alt="${escapeHtml(productName(id, dict))}" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy" decoding="async">
+            <img src="${escapeHtml(productImageForLanguage(id))}" alt="${escapeHtml(productName(id, dict))}" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy" decoding="async">
             <h3 class="font-bold">${escapeHtml(productName(id, dict))}</h3>
             <p class="text-sm opacity-80 mt-1">${escapeHtml(productDescription(id, dict))}</p>
             <div class="mt-3 flex flex-wrap gap-1.5">${productAudienceTags(id, dict).slice(0, 3).map(label => `<span class="product-info-pill">${escapeHtml(label)}</span>`).join("")}</div>
@@ -2051,6 +2103,7 @@ async function chatFetch(path, options = {}) {
         `).join("");
         wireProductCards();
         applyStockStatus();
+        syncProductRoute();
       }
 
 	      const __calculatorPlans = {};
@@ -2169,11 +2222,16 @@ async function chatFetch(path, options = {}) {
 
       async function loadProducts(){
         try {
-          const resp = await fetch(`${API_BASE}/getProducts`, { method: "GET", mode: "cors" });
+          // Local product schema changes must be read from the Functions emulator;
+          // the deployed endpoint may still be running an older schema.
+          const productsApiBase = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
+          const resp = await fetch(`${productsApiBase}/getProducts`, { method: "GET", mode: "cors" });
           if (!resp.ok) throw new Error(`Products fetch failed (${resp.status})`);
           const data = await resp.json();
           if (!Array.isArray(data.products)) throw new Error("Products response is invalid");
           setCatalogProducts(data.products);
+	          try { localStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify(data.products)); } catch {}
+	          __stockReady = true;
 	          renderUsageCalculators();
           __productsLoaded = true;
           __productsLoadError = data.products.length ? "" : "empty";
@@ -2308,7 +2366,17 @@ async function chatFetch(path, options = {}) {
       setCardPrices();
       applyStockStatus();      // will show optimistic buttons
       loadPublicShippingSettings();
-      loadProducts().then(() => loadStockFromStripe());   // later flips __stockReady and re-renders
+	  try {
+	    const cachedProducts = JSON.parse(localStorage.getItem(PRODUCT_CACHE_KEY) || "null");
+	    if (Array.isArray(cachedProducts) && cachedProducts.length) {
+	      setCatalogProducts(cachedProducts);
+	      __productsLoaded = true;
+	      __stockReady = true;
+	      renderUsageCalculators();
+	      renderProducts();
+	    }
+	  } catch {}
+      loadProducts();
       const _initialLang = lang();
       applyLang(_initialLang);
       setLangButtons(_initialLang);
@@ -2396,7 +2464,7 @@ async function chatFetch(path, options = {}) {
         productImage.setAttribute("role", "img");
         productImage.setAttribute("aria-label", productName(id, dict));
         productImage.style.backgroundColor = p.bg || "#f8f1eb";
-        productImage.style.backgroundImage = `url('${p.img}')`;
+        productImage.style.backgroundImage = `url('${productImageForLanguage(id)}')`;
 
         addBtn.dataset.productDetailAdd = id;
         const backorder = p.allowBackorder === true;
@@ -2412,15 +2480,56 @@ async function chatFetch(path, options = {}) {
         }
       }
 
-	      function openProductModal(id, openerEl){
-	        __currentProductId = id;
-	        trackEvent("product_view", { productId: id, productName: productName(id, i18n[lang()] || i18n.en) });
-	        renderProductModal(id);
-        openDialog("productModal", "productPanel", openerEl);
+      const __defaultPageTitle = document.title;
+
+      function productIdFromPath(pathname = location.pathname){
+        const match = String(pathname || "").match(/^\/products\/([^/]+)\/?$/);
+        if (!match) return "";
+        try { return decodeURIComponent(match[1]); } catch { return ""; }
       }
 
-      function closeProductModal(){
+      function productUrl(id){
+        return `/products/${encodeURIComponent(id)}${location.search || ""}`;
+      }
+
+	    function openProductModal(id, openerEl, { updateHistory = true } = {}){
+        if (!CATALOG[id] || CATALOG[id].active === false) return false;
+        const wasCurrentProduct = __currentProductId === id && !document.getElementById("productModal").classList.contains("hidden");
+	      __currentProductId = id;
+        if (updateHistory && productIdFromPath() !== id) {
+          history.pushState({ productId:id }, "", productUrl(id));
+        }
+        document.title = `${productName(id, i18n[lang()] || i18n.en)} | GRUBZ`;
+        if (!wasCurrentProduct) {
+	        trackEvent("product_view", { productId: id, productName: productName(id, i18n[lang()] || i18n.en) });
+        }
+	      renderProductModal(id);
+        openDialog("productModal", "productPanel", openerEl);
+        document.getElementById("productModal")._close = closeProductModal;
+        return true;
+      }
+
+      function closeProductModal({ updateHistory = true } = {}){
+        const productWasInUrl = Boolean(productIdFromPath());
         closeDialog("productModal", "productPanel");
+        __currentProductId = null;
+        document.title = __defaultPageTitle;
+        if (!updateHistory || !productWasInUrl) return;
+        if (history.state?.productId) {
+          history.back();
+        } else {
+          history.replaceState(null, "", `/${location.search || ""}#products`);
+          scrollToPageHash("#products");
+        }
+      }
+
+      function syncProductRoute(){
+        const id = productIdFromPath();
+        if (id) {
+          if (CATALOG[id]?.active !== false && CATALOG[id]) openProductModal(id, null, { updateHistory:false });
+          return;
+        }
+        if (__currentProductId) closeProductModal({ updateHistory:false });
       }
 
       function wireProductCards(){
@@ -2435,8 +2544,7 @@ async function chatFetch(path, options = {}) {
           let detailsBtn = card.querySelector("[data-product-details]");
           if (!detailsBtn && addBtn) {
             addBtn.parentElement.classList.add("gap-2", "flex-wrap");
-            detailsBtn = document.createElement("button");
-            detailsBtn.type = "button";
+            detailsBtn = document.createElement("a");
             detailsBtn.className = "details-btn text-sm";
             detailsBtn.dataset.productDetails = id;
             addBtn.parentElement.insertBefore(detailsBtn, addBtn);
@@ -2444,6 +2552,7 @@ async function chatFetch(path, options = {}) {
           if (detailsBtn) {
             const name = productName(id, dict);
             detailsBtn.textContent = dict.productDetailsButton || "Details";
+            detailsBtn.href = productUrl(id);
             detailsBtn.setAttribute("aria-label", `${dict.productDetailsButton || "Details"}: ${name}`);
           }
 
@@ -2461,9 +2570,13 @@ async function chatFetch(path, options = {}) {
       document.addEventListener("click", (e)=>{
         const btn = e.target.closest("[data-product-details]");
         if (!btn) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
         e.stopPropagation();
         openProductModal(btn.dataset.productDetails, btn);
       });
+
+      window.addEventListener("popstate", syncProductRoute);
 
       document.getElementById("productBackdrop").addEventListener("click", closeProductModal);
       document.getElementById("productClose").addEventListener("click", closeProductModal);
@@ -2588,7 +2701,7 @@ async function chatFetch(path, options = {}) {
               item.dataset.suggestProduct = id;
               item.className = "w-full min-w-0 rounded-lg border border-zinc-200 p-3 grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-3 hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer";
               item.innerHTML = `
-              <img src="${escapeHtml(p.img)}" alt="" class="w-14 h-14 rounded-md object-cover bg-zinc-100 flex-none">
+              <img src="${escapeHtml(productImageForLanguage(id))}" alt="" class="w-14 h-14 rounded-md object-cover bg-zinc-100 flex-none">
                 <span class="min-w-0 flex-1">
                   <span class="block font-semibold truncate">${escapeHtml(productName(id, dict))}</span>
                   <span class="block text-sm font-bold mt-0.5" style="color:var(--grubz-1)">${nf(gross(p.price))}</span>
@@ -2620,7 +2733,7 @@ async function chatFetch(path, options = {}) {
             li.className = "py-4 flex gap-3";
             li.dataset.id = id;
             li.innerHTML = `
-              <img src="${escapeHtml(p.img)}" alt="" class="w-16 h-16 rounded-lg object-cover bg-zinc-100">
+              <img src="${escapeHtml(productImageForLanguage(id))}" alt="" class="w-16 h-16 rounded-lg object-cover bg-zinc-100">
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2">
                   <div>
@@ -2732,13 +2845,16 @@ async function chatFetch(path, options = {}) {
 
       async function establishCustomerSession(user, attempts = 3){
         if (!user) return false;
+        // The durable cookie is scoped to grubz.gr and cannot be stored by a
+        // localhost browser. Firebase Auth persistence is sufficient locally.
+        if (LOCAL_HOSTS.has(location.hostname)) return true;
         let lastFailure = "";
         for (let attempt = 0; attempt < attempts; attempt += 1) {
           try {
             // Force-refresh after a failed attempt in case the first token was
             // close to expiry or had just been rotated by Firebase.
             const token = await user.getIdToken(attempt > 0);
-            const resp = await fetch(`${API_BASE}/customerSession`, {
+            const resp = await fetch(`${SESSION_API_BASE}/customerSession`, {
               method: "POST",
               headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
               credentials: "include",
@@ -2773,8 +2889,9 @@ async function chatFetch(path, options = {}) {
       }
 
       async function restoreCustomerSession(){
+        if (LOCAL_HOSTS.has(location.hostname)) return null;
         try {
-          const resp = await fetch(`${API_BASE}/customerSession`, {
+          const resp = await fetch(`${SESSION_API_BASE}/customerSession`, {
             method: "GET",
             credentials: "include",
             cache: "no-store"
@@ -2791,8 +2908,9 @@ async function chatFetch(path, options = {}) {
       }
 
       async function clearCustomerSession(){
+        if (LOCAL_HOSTS.has(location.hostname)) return;
         try {
-          await fetch(`${API_BASE}/customerSession`, {
+          await fetch(`${SESSION_API_BASE}/customerSession`, {
             method: "DELETE",
             credentials: "include",
             headers: { "Content-Type": "application/json" }
@@ -3638,7 +3756,6 @@ async function chatFetch(path, options = {}) {
         const disabled = !canConfirmReview();
         b.disabled = disabled;
         b.classList.toggle("opacity-60", disabled);
-        b.classList.toggle("pointer-events-none", disabled);
         b.removeAttribute("aria-describedby");
         b.title = "";
         if (__reviewSubmitting) {
@@ -3818,7 +3935,7 @@ async function chatFetch(path, options = {}) {
 
       function reviewConfirmLabel(){
         const d = i18n[lang()]||i18n.en;
-        if (__deliveryMethod === "courier_quote") return d.reviewConfirmQuote || "Request shipping quote";
+	        if (__deliveryMethod === "courier_quote") return d.reviewConfirmQuote || "Request shipping quote";
         return document.getElementById("boxnowCod")?.checked === true
           ? (d.reviewConfirmOrder || "Confirm order")
           : d.reviewConfirmPay;
@@ -3962,7 +4079,6 @@ async function chatFetch(path, options = {}) {
           if (!b) return;
           b.disabled = on;
           b.classList.toggle("opacity-60", on);
-          b.classList.toggle("pointer-events-none", on);
           b.textContent = on ? "Processing…" : label;
         });
       }
@@ -4319,7 +4435,7 @@ async function chatFetch(path, options = {}) {
           }).catch(() => {});
         }
 
-        if (shipping?.deliveryMethod !== "courier_quote" && !hasBoxNowLocker(shipping?.boxNow)) {
+        if (shipping?.deliveryMethod === "boxnow" && !hasBoxNowLocker(shipping?.boxNow)) {
           const msg = (i18n[lang()] || i18n.en).boxnowRequired || "Please choose a BOX NOW locker.";
           document.getElementById("boxnowErr").textContent = msg;
           announce(msg);
@@ -4343,7 +4459,7 @@ async function chatFetch(path, options = {}) {
         try {
           const resp = await authedFetch(
             "/createCheckoutSession",
-            { method: "POST", body: JSON.stringify({
+            { method: "POST", baseUrl: LOCAL_HOSTS.has(location.hostname) ? "/api" : API_BASE, body: JSON.stringify({
               items,
               couponCode,
               referralCode: __referralCode || "",
