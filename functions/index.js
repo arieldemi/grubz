@@ -6,7 +6,7 @@ const { beforeUserCreated, HttpsError } = require("firebase-functions/v2/identit
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, Timestamp, FieldValue } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp, FieldValue, FieldPath } = require("firebase-admin/firestore");
 const { getAuth: getAdminAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
 const { randomUUID, createHash, timingSafeEqual } = require("crypto");
@@ -2617,8 +2617,8 @@ function courierQuotePaymentMode(value = "") {
   return mode;
 }
 
-async function sendCourierQuoteEmail(order, checkoutUrl) {
-  const customerEmail = String(order.customer?.email || "").trim();
+async function sendCourierQuoteEmail(order, checkoutUrl, options = {}) {
+  const customerEmail = String(options.recipientOverride || order.customer?.email || "").trim();
   if (!customerEmail) throw Object.assign(new Error('This order has no customer email address.'), { status: 400 });
   const quote = order.shippingQuote || {};
   const language = order.language === 'el' ? 'el' : 'en';
@@ -2634,9 +2634,10 @@ async function sendCourierQuoteEmail(order, checkoutUrl) {
     : (language === 'el'
       ? `Θα πληρώσεις τώρα ${money(onlineAmount)} για τα προϊόντα και τα μεταφορικά. Δεν οφείλεται ποσό κατά την παράδοση.`
       : `Pay ${money(onlineAmount)} now for the products and shipping. Nothing is due on delivery.`);
-  const subject = language === 'el'
+  const baseSubject = language === 'el'
     ? `Η προσφορά μεταφορικών για την παραγγελία ${publicOrderId(order)} είναι έτοιμη`
     : `Your shipping quote for order ${publicOrderId(order)} is ready`;
+  const subject = options.testOnly ? `[TEST] ${baseSubject}` : baseSubject;
   const lines = language === 'el'
     ? [
       `Γεια σου ${order.customer?.name || ''},`,
@@ -2676,12 +2677,60 @@ async function sendCourierQuoteEmail(order, checkoutUrl) {
   }).join('');
   return sendEmail({
     to: customerEmail,
-    bcc: GRUBZ_INFO_EMAIL,
+    bcc: options.testOnly ? '' : GRUBZ_INFO_EMAIL,
     from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
     subject,
     text,
     html,
     language,
+  });
+}
+
+async function sendCourierQuoteTestEmail(order, input = {}) {
+  if (order.shipping?.deliveryMethod !== 'courier_quote') {
+    throw Object.assign(new Error('Only courier quote orders can be tested here.'), { status: 400 });
+  }
+  const courier = String(input.courier || '').trim();
+  if (!['ACS Courier', 'Γενική Ταχυδρομική'].includes(courier)) {
+    throw Object.assign(new Error('Choose ACS Courier or Γενική Ταχυδρομική.'), { status: 400 });
+  }
+  const shippingAmount = Math.max(0, Math.round(Number(input.shippingAmountCents || 0)));
+  if (!Number.isFinite(shippingAmount)) throw Object.assign(new Error('Enter a valid shipping cost.'), { status: 400 });
+  const paymentMode = courierQuotePaymentMode(input.shippingPaymentMode);
+  const productTotal = Math.max(0, Number(order.amountSubtotal || 0) - Number(order.amountDiscount || 0));
+  const onlineAmount = productTotal + (paymentMode === 'prepaid' ? shippingAmount : 0);
+  const dueOnDelivery = paymentMode === 'pay_on_delivery' ? shippingAmount : 0;
+  const previewOrder = {
+    ...order,
+    amountShipping: shippingAmount,
+    amountDueOnline: onlineAmount,
+    amountDueOnDelivery: dueOnDelivery,
+    shippingQuote: {
+      ...(order.shippingQuote || {}),
+      courier,
+      estimatedDelivery: String(input.estimatedDelivery || '').trim().slice(0, 240),
+      paymentMode,
+      shippingAmount,
+      productAmount: productTotal,
+      onlineAmount,
+      amountDueOnDelivery: dueOnDelivery,
+    },
+    shipping: {
+      ...(order.shipping || {}),
+      courier,
+      shippingPaymentMode: paymentMode,
+      cashOnDelivery: paymentMode === 'pay_on_delivery',
+    },
+  };
+  const activeCheckoutUrl = sanitizeStripePaymentLink(
+    order.shippingQuote?.checkoutUrl || order.stripePaymentLink || order.paymentLink || ''
+  );
+  if (!activeCheckoutUrl) {
+    throw Object.assign(new Error('Create the customer checkout first, then send a test of its active payment link.'), { status: 409 });
+  }
+  return sendCourierQuoteEmail(previewOrder, activeCheckoutUrl, {
+    recipientOverride: GRUBZ_INFO_EMAIL,
+    testOnly: true,
   });
 }
 
@@ -2703,8 +2752,18 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
   if (productTotal <= 0) throw Object.assign(new Error('The product total must be greater than zero.'), { status: 400 });
   const onlineAmount = productTotal + (paymentMode === 'prepaid' ? shippingAmount : 0);
   const dueOnDelivery = paymentMode === 'pay_on_delivery' ? shippingAmount : 0;
-  const stripeConfig = await activeStripeConfig(req);
-  if (!stripeConfig.localEnvironmentForced && order.stripeMode && order.stripeMode !== stripeConfig.mode) {
+  // Courier quotes can be opened from the local admin console while operating
+  // on production Firestore data. Always honor the saved store mode here so a
+  // real customer can never receive a Stripe test-session link by accident.
+  const stripeConfig = await activeStripeConfig(req, { forceLocalEnvironment: false });
+  const previousCheckoutSessionId = String(order.shippingQuote?.checkoutSessionId || '').trim();
+  const replacingUnpaidTestQuoteWithLive = (
+    stripeConfig.mode === 'live' &&
+    order.stripeMode === 'test' &&
+    previousCheckoutSessionId.startsWith('cs_test_') &&
+    String(order.paymentStatus || '').toLowerCase() !== 'paid'
+  );
+  if (order.stripeMode && order.stripeMode !== stripeConfig.mode && !replacingUnpaidTestQuoteWithLive) {
     throw Object.assign(new Error(`This order was created in Stripe ${order.stripeMode} mode, but the console is using ${stripeConfig.mode} mode.`), { status: 409 });
   }
   const productsMap = await getProductsMap({ includeInactive: true });
@@ -2744,7 +2803,6 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
     const coupon = { id: couponSnap.id, ...couponSnap.data() };
     promotionCodeId = await ensureStripePromotionCodeForCoupon(coupon, stripeConfig.mode, checkoutItems, stripeConfig);
   }
-  const previousCheckoutSessionId = String(order.shippingQuote?.checkoutSessionId || '').trim();
   if (previousCheckoutSessionId && order.shippingQuote?.status === 'sent') {
     try {
       await stripeConfig.stripe.checkout.sessions.expire(previousCheckoutSessionId);
@@ -2789,6 +2847,13 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
   };
   if (promotionCodeId) checkoutParams.discounts = [{ promotion_code: promotionCodeId }];
   const session = await stripeConfig.stripe.checkout.sessions.create(checkoutParams);
+  const expectedLiveSession = stripeConfig.mode === 'live';
+  const sessionPrefixMatchesMode = expectedLiveSession
+    ? String(session.id || '').startsWith('cs_live_')
+    : String(session.id || '').startsWith('cs_test_');
+  if (session.livemode !== expectedLiveSession || !sessionPrefixMatchesMode) {
+    throw Object.assign(new Error(`Stripe returned an unexpected ${session.livemode ? 'live' : 'test'} checkout. No email was sent.`), { status: 502 });
+  }
   const checkoutOnlineAmount = Math.max(0, Number(session.amount_total ?? onlineAmount));
   const quote = {
     status: 'sent',
@@ -7433,10 +7498,25 @@ exports.adminOrders = onRequest(
       const adminUser = await requireAdmin(req);
 
       if (req.method === "GET") {
-        const limit = Math.min(500, Math.max(1, Number(req.query.limit || 50)));
-        const snap = await db.collection("orders").orderBy("createdAt", "desc").limit(limit).get();
-        const orders = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        return res.json({ orders });
+        const limit = Math.min(200, Math.max(1, Number(req.query.limit || 50)));
+        let query = db.collection("orders")
+          .orderBy("createdAt", "desc")
+          .orderBy(FieldPath.documentId(), "desc");
+        const cursorMs = Number(req.query.cursorMs || 0);
+        const cursorId = String(req.query.cursorId || "").trim();
+        if (cursorMs > 0 && cursorId) {
+          query = query.startAfter(Timestamp.fromMillis(cursorMs), cursorId);
+        }
+        const snap = await query.limit(limit + 1).get();
+        const pageDocs = snap.docs.slice(0, limit);
+        const hasMore = snap.docs.length > limit;
+        const lastDoc = pageDocs[pageDocs.length - 1];
+        const lastCreatedAt = lastDoc?.get("createdAt");
+        const nextCursor = hasMore && lastDoc && typeof lastCreatedAt?.toMillis === "function"
+          ? { ms: lastCreatedAt.toMillis(), id: lastDoc.id }
+          : null;
+        const orders = pageDocs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        return res.json({ orders, nextCursor });
       }
 
       if (req.method === "PATCH" || req.method === "POST") {
@@ -7453,6 +7533,10 @@ exports.adminOrders = onRequest(
         const existingSnap = await orderRef.get();
         if (!existingSnap.exists) return jsonError(res, 404, "Order not found");
         const existingOrder = existingSnap.exists ? { id, ...existingSnap.data() } : { id };
+        if (String(body.action || "").trim() === "sendCourierQuoteTestEmail") {
+          const email = await sendCourierQuoteTestEmail(existingOrder, body);
+          return res.json({ ok: true, email, recipient: GRUBZ_INFO_EMAIL });
+        }
         if (String(body.action || "").trim() === "finalizeCourierQuote") {
           const result = await finalizeCourierQuote(existingOrder, body, adminUser, req);
           return res.json({ ok: true, checkoutUrl: result.order.paymentLink, order: result.order, email: result.email });

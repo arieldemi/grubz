@@ -23,6 +23,23 @@
       [data-section-tab].btn-soft:hover{background:#f7f2ed;border-color:#d8c5b7;color:#71391d}
       [data-section-tab].btn{box-shadow:0 1px 2px rgba(37,102,67,.2)}
       .btn-danger{border:1px solid #dc2626;color:#dc2626;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:700}
+      .order-icon-button{position:relative;display:inline-flex;width:2.75rem;height:2.75rem;flex:0 0 auto;align-items:center;justify-content:center;padding:.42rem;background:#fff}
+      .order-icon-button.btn,.order-icon-button.btn:hover{border:2px solid var(--positive);padding:.35rem;background:#fff}
+      .order-icon-button.btn-danger{padding:.42rem}
+      .order-action-icon{display:block;width:1.75rem;height:1.75rem;background-image:url('/images/console/order-action-icons.png');background-repeat:no-repeat;background-size:800% 100%;background-position:var(--order-icon-position) center}
+      .order-action-count{position:absolute;right:-.35rem;top:-.4rem;display:flex;min-width:1.15rem;height:1.15rem;align-items:center;justify-content:center;border-radius:999px;background:#18181b;color:#fff;font-size:.65rem;font-weight:800;padding:0 .25rem}
+      .order-action-count:empty{display:none}
+      #ordersListTable td{overflow-wrap:anywhere}
+      @media(max-width:1279px){
+        #ordersListTable{display:block}
+        #ordersListTable thead{display:none}
+        #ordersListTable tbody{display:grid;gap:.75rem;padding:.75rem}
+        #ordersListTable tr{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;padding:1rem 1rem 1rem 3rem;border:1px solid #e4e4e7;border-radius:.75rem;background:#fff}
+        #ordersListTable td{display:block;min-width:0;padding:0;overflow-wrap:anywhere}
+        #ordersListTable .order-select-cell{position:absolute;left:1rem;top:1rem}
+        #ordersListTable td:not(:first-child)::before{content:attr(data-label);display:block;margin-bottom:.2rem;color:#71717a;font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+      }
+      @media(max-width:639px){#ordersListTable tr{grid-template-columns:minmax(0,1fr)}}
       .nav-label{display:inline-flex;align-items:center;gap:.5rem;min-width:0}
       .nav-icon{width:1rem;height:1rem;flex:0 0 auto}
       .tab-badge{display:inline-flex;min-width:1.25rem;height:1.25rem;align-items:center;justify-content:center;border-radius:999px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:800;line-height:1;padding:0 .35rem}
@@ -200,7 +217,7 @@
 	            <p id="couponAdminMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
 
-	          <section id="ordersSection" class="hidden lg:col-span-2 space-y-4">
+	          <section id="ordersSection" class="hidden min-w-0 space-y-4 lg:col-span-2">
 	            <div class="flex flex-wrap items-end justify-between gap-3">
 	              <div>
 	                <h2 class="text-xl font-extrabold">Orders Manager</h2>
@@ -208,29 +225,36 @@
 	                <p id="productionDataNotice" class="mt-1 hidden text-xs font-bold text-amber-700">Local console connected to production data. Changes here affect the live shop.</p>
 	              </div>
 	              <div class="flex flex-wrap items-end gap-2">
-	                <div>
+	                <div class="w-full sm:w-auto">
 	                  <label class="label" for="orderSearch">Search</label>
-	                  <input id="orderSearch" class="input min-w-[260px]" placeholder="Order, customer, product, status">
+	                  <input id="orderSearch" class="input w-full min-w-0 sm:min-w-[260px]" placeholder="Order, customer, product, status">
 	                </div>
-	                <button id="clearOrderSearchBtn" class="btn-soft" type="button">Clear</button>
-	                <button id="selectVisibleOrdersBtn" class="btn-soft" type="button">Select visible</button>
-	                <button id="clearSelectedOrdersBtn" class="btn-soft" type="button">Clear selection</button>
-	                <button id="downloadSelectedOrdersPdfBtn" class="btn-soft" type="button" disabled>Download PDF</button>
-	                <button id="downloadSelectedBoxNowLabelsBtn" class="btn-soft" type="button" disabled>Print BOX NOW labels</button>
-	                <button id="deleteSelectedOrdersBtn" class="btn-danger" type="button" disabled>Delete selected</button>
-	                <button id="newManualOrderBtn" class="btn" type="button">New Order</button>
-	                <button id="refreshOrdersBtn" class="btn-soft" type="button">Refresh orders</button>
+	                <button id="clearOrderSearchBtn" class="btn-soft order-icon-button" type="button" aria-label="Clear search" title="Clear search"><span class="order-action-icon" style="--order-icon-position:0%" aria-hidden="true"></span></button>
+	                <button id="selectVisibleOrdersBtn" class="btn-soft order-icon-button" type="button" aria-label="Select visible orders" title="Select visible orders"><span class="order-action-icon" style="--order-icon-position:14.2857%" aria-hidden="true"></span></button>
+	                <button id="clearSelectedOrdersBtn" class="btn-soft order-icon-button" type="button" aria-label="Clear order selection" title="Clear order selection"><span class="order-action-icon" style="--order-icon-position:28.5714%" aria-hidden="true"></span></button>
+	                <button id="downloadSelectedOrdersPdfBtn" class="btn-soft order-icon-button" type="button" aria-label="Download selected orders as PDF" title="Download selected orders as PDF" disabled><span class="order-action-icon" style="--order-icon-position:42.8571%" aria-hidden="true"></span><span id="downloadSelectedOrdersPdfCount" class="order-action-count"></span></button>
+	                <button id="downloadSelectedBoxNowLabelsBtn" class="btn-soft order-icon-button" type="button" aria-label="Print selected BOX NOW labels" title="Print selected BOX NOW labels" disabled><span class="order-action-icon" style="--order-icon-position:57.1429%" aria-hidden="true"></span><span id="downloadSelectedBoxNowLabelsCount" class="order-action-count"></span></button>
+	                <button id="deleteSelectedOrdersBtn" class="btn-danger order-icon-button" type="button" aria-label="Delete selected orders" title="Delete selected orders" disabled><span class="order-action-icon" style="--order-icon-position:71.4286%" aria-hidden="true"></span><span id="deleteSelectedOrdersCount" class="order-action-count"></span></button>
+	                <button id="newManualOrderBtn" class="btn order-icon-button" type="button" aria-label="New order" title="New order"><span class="order-action-icon" style="--order-icon-position:85.7143%" aria-hidden="true"></span></button>
+	                <button id="refreshOrdersBtn" class="btn-soft order-icon-button" type="button" aria-label="Refresh orders" title="Refresh orders"><span class="order-action-icon" style="--order-icon-position:100%" aria-hidden="true"></span></button>
 	              </div>
 	            </div>
-	            <div class="panel overflow-hidden">
-	              <table class="w-full text-sm">
+	            <div class="panel max-w-full overflow-hidden">
+	              <table id="ordersListTable" class="w-full table-fixed text-sm">
+	                <colgroup>
+	                  <col class="w-12">
+	                  <col class="w-[30%]">
+	                  <col class="w-[15%]">
+	                  <col class="w-[23%]">
+	                  <col class="w-[18%]">
+	                  <col class="w-[14%]">
+	                </colgroup>
 	                <thead class="bg-zinc-50 text-left">
 	                  <tr>
 	                    <th class="p-3"><span class="sr-only">Select</span></th>
 	                    <th class="p-3">Order</th>
 	                    <th class="p-3">Created</th>
 	                    <th class="p-3">Customer</th>
-	                    <th class="p-3">Total</th>
 	                    <th class="p-3">Status</th>
 	                    <th class="p-3">Invoice/Receipt</th>
 	                  </tr>
@@ -238,6 +262,7 @@
 	                <tbody id="ordersTable" class="divide-y"></tbody>
 	              </table>
 	            </div>
+	            <button id="loadOlderOrdersBtn" class="btn-soft hidden" type="button">Load older orders</button>
 	            <p id="orderSearchMsg" class="text-xs text-zinc-500" role="status" aria-live="polite"></p>
 	            <p id="orderMsg" class="text-sm" role="status" aria-live="polite"></p>
 	          </section>
@@ -2502,7 +2527,10 @@
 	              </div>
 	            </div>
 	            <div id="courierQuotePaymentSummary" class="rounded-md border border-blue-200 bg-white p-3 text-sm"></div>
-	            <button id="finalizeCourierQuoteBtn" class="btn w-full" type="button">Create checkout &amp; email customer</button>
+	            <div class="flex flex-col gap-2 sm:flex-row">
+	              <button id="finalizeCourierQuoteBtn" class="btn flex-1" type="button">Create checkout &amp; email customer</button>
+	              <button id="testCourierQuoteEmailBtn" class="btn-soft flex-1" type="button">Send test to info@grubz.gr</button>
+	            </div>
 	          </div>
 		          <div class="grid sm:grid-cols-2 gap-3">
 	            <div>
@@ -3024,7 +3052,8 @@
 	      let inventoryPools = [];
 	      let inventoryHistory = [];
 	      let coupons = [];
-		      let orders = [];
+	      let orders = [];
+	      let ordersNextCursor = null;
 		      let feedbackRows = [];
 		      let feedbackSummary = {};
 		      let uxAnalytics = null;
@@ -3772,6 +3801,7 @@
 
 	      $("signOutBtn").addEventListener("click", () => auth.signOut().then(() => showLogin()));
 	      $("refreshOrdersBtn").addEventListener("click", () => loadOrders().catch(() => {}));
+	      $("loadOlderOrdersBtn").addEventListener("click", () => loadOrders({ append:true }).catch(() => {}));
 	      $("refreshAnalyticsBtn").addEventListener("click", () => loadOrders().catch(() => {}));
 	      $("refreshCustomersBtn").addEventListener("click", () => loadCustomers().catch(() => {}));
 	      $("refreshMessagesBtn").addEventListener("click", () => loadChatConversations(selectedChatConversation?.id || "").catch(() => {}));
@@ -4671,21 +4701,48 @@
         }
       });
 
-      async function loadOrders(){
+      async function loadOrders({ append = false } = {}){
         try {
-          setMsg("orderMsg", "Loading orders...");
-          const data = await orderAdminApi("/adminOrders?limit=500");
-          orders = data.orders || [];
+          const button = $("loadOlderOrdersBtn");
+          if (append && !ordersNextCursor) return;
+          if (append) {
+            button.disabled = true;
+            button.textContent = "Loading...";
+            setMsg("orderMsg", "Loading older orders...");
+          } else {
+            setMsg("orderMsg", "Loading orders...");
+          }
+          const cursor = append ? `&cursorMs=${encodeURIComponent(ordersNextCursor.ms)}&cursorId=${encodeURIComponent(ordersNextCursor.id)}` : "";
+          const data = await orderAdminApi(`/adminOrders?limit=100${cursor}`);
+          const page = data.orders || [];
+          if (append) {
+            const byId = new Map(orders.map(order => [order.id, order]));
+            page.forEach(order => byId.set(order.id, order));
+            orders = [...byId.values()];
+          } else {
+            orders = page;
+          }
+          ordersNextCursor = data.nextCursor || null;
+          button.classList.toggle("hidden", !ordersNextCursor);
+          button.disabled = false;
+          button.textContent = "Load older orders";
           if (currentConsoleSection === "orders") markTabSeen("orders");
           renderOrders();
-          renderAnalytics();
           loadUxAnalytics().catch(() => {});
           updateTabBadges();
-          setMsg("orderMsg", orders.length ? `${orders.length} orders loaded` : "No orders found");
+          setMsg("orderMsg", orders.length
+            ? `${orders.length} orders loaded${ordersNextCursor ? " · Older orders available" : ""}`
+            : "No orders found");
         } catch (err) {
-          orders = [];
+          if (!append) {
+            orders = [];
+            ordersNextCursor = null;
+          }
+          const button = $("loadOlderOrdersBtn");
+          button.classList.toggle("hidden", !ordersNextCursor);
+          button.disabled = false;
+          button.textContent = "Load older orders";
           renderOrders();
-          renderAnalytics();
           renderUxAnalytics();
           updateTabBadges();
           setMsg("orderMsg", err.message || apiUnavailableMessage("Orders"), false);
@@ -9398,13 +9455,13 @@
 	        selectedOrderIds = new Set([...selectedOrderIds].filter(id => orders.some(order => order.id === id)));
 	        updateOrderSelectionActions();
 	        if (!orders.length) {
-	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="7">No orders to display.</td></tr>`;
+	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="6">No orders to display.</td></tr>`;
 	          $("orderSearchMsg").textContent = "";
 	          renderAnalytics();
 	          return;
 	        }
 	        if (!visibleOrders.length) {
-	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="7">No orders match your search.</td></tr>`;
+	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="6">No orders match your search.</td></tr>`;
 	          $("orderSearchMsg").textContent = `0 of ${orders.length} orders shown`;
 	          renderAnalytics();
 	          return;
@@ -9417,8 +9474,8 @@
 	            : ""}`;
         $("ordersTable").innerHTML = visibleOrders.map(o => `
           <tr class="${o.boxNowNotificationReview?.status === "pending" ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-zinc-50"}">
-            <td class="p-3"><input type="checkbox" class="h-4 w-4" data-order-select="${esc(o.id)}" ${selectedOrderIds.has(o.id) ? "checked" : ""} aria-label="Select order ${esc(orderNumber(o))}"></td>
-            <td class="p-3">
+            <td class="order-select-cell p-3"><input type="checkbox" class="h-4 w-4" data-order-select="${esc(o.id)}" ${selectedOrderIds.has(o.id) ? "checked" : ""} aria-label="Select order ${esc(orderNumber(o))}"></td>
+            <td class="p-3" data-label="Order">
               <div class="flex flex-wrap items-center gap-2">
                 <button class="font-bold text-left hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>
                 ${orderHandlingBadge(o)}
@@ -9426,18 +9483,18 @@
 	                ${orderBoxNowShipmentBadge(o)}
 	                ${orderBoxNowReviewBadge(o)}
               </div>
+              <div class="mt-1 font-bold">${money(o.amountTotal, o.currency)}</div>
               <div class="mt-1 text-xs text-zinc-500">Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}</div>
             </td>
-	            <td class="p-3 whitespace-nowrap" data-sort-value="${orderCreatedMs(o)}">${esc(ts(o.createdAt) || "-")}</td>
-	            <td class="p-3">
+	            <td class="p-3" data-label="Created" data-sort-value="${orderCreatedMs(o)}">${esc(ts(o.createdAt) || "-")}</td>
+	            <td class="p-3" data-label="Customer">
 	              ${customerRecordForOrderPreview(o)
 	                ? `<button class="font-semibold text-left hover:underline" type="button" data-order-customer-id="${esc(o.id)}" title="Open customer details">${esc(o.customer?.name || o.shipping?.name || customerEmailForOrderPreview(o) || "Customer")}</button>`
 	                : esc(o.customer?.name || o.shipping?.name || "")}
 	              <div class="text-xs text-zinc-500">${esc(customerEmailForOrderPreview(o))}</div>
 	            </td>
-            <td class="p-3">${money(o.amountTotal, o.currency)}</td>
-	            <td class="p-3"><div class="flex w-40 flex-col items-stretch gap-1 [&>span]:w-full [&>span]:justify-center">${orderStatusBadge(o.status)}${paymentStatusBadge(o.paymentStatus || o.status || "pending_payment")}${fulfillmentStatusBadge(o.fulfillmentStatus || "new")}</div></td>
-	            <td class="p-3">
+	            <td class="p-3" data-label="Status"><div class="flex min-w-0 flex-col items-stretch gap-1 [&>span]:w-full [&>span]:justify-center">${orderStatusBadge(o.status)}${paymentStatusBadge(o.paymentStatus || o.status || "pending_payment")}${fulfillmentStatusBadge(o.fulfillmentStatus || "new")}</div></td>
+	            <td class="p-3" data-label="Invoice / Receipt">
 	              <label class="inline-flex items-center gap-2 text-xs font-semibold">
 	                <input type="checkbox" class="h-4 w-4" data-order-invoice-issued="${esc(o.id)}" ${o.invoiceReceiptIssued === true ? "checked" : ""} aria-label="Invoice or receipt issued for ${esc(orderNumber(o))}">
 	                <span>${o.invoiceReceiptIssued === true ? "Issued" : "Not issued"}</span>
@@ -9452,11 +9509,14 @@
 	      function updateOrderSelectionActions(){
 	        const count = selectedOrderIds.size;
 	        $("downloadSelectedOrdersPdfBtn").disabled = count === 0;
-	        $("downloadSelectedOrdersPdfBtn").textContent = count ? `Download PDF (${count})` : "Download PDF";
+	        $("downloadSelectedOrdersPdfBtn").setAttribute("aria-label", count ? `Download ${count} selected orders as PDF` : "Download selected orders as PDF");
+	        $("downloadSelectedOrdersPdfCount").textContent = count || "";
 	        $("downloadSelectedBoxNowLabelsBtn").disabled = count === 0;
-	        $("downloadSelectedBoxNowLabelsBtn").textContent = count ? `Print BOX NOW labels (${count})` : "Print BOX NOW labels";
+	        $("downloadSelectedBoxNowLabelsBtn").setAttribute("aria-label", count ? `Print BOX NOW labels for ${count} selected orders` : "Print selected BOX NOW labels");
+	        $("downloadSelectedBoxNowLabelsCount").textContent = count || "";
 	        $("deleteSelectedOrdersBtn").disabled = count === 0;
-	        $("deleteSelectedOrdersBtn").textContent = count ? `Delete selected (${count})` : "Delete selected";
+	        $("deleteSelectedOrdersBtn").setAttribute("aria-label", count ? `Delete ${count} selected orders` : "Delete selected orders");
+	        $("deleteSelectedOrdersCount").textContent = count || "";
 	      }
 
 	      async function deleteSelectedOrders(){
@@ -9473,7 +9533,9 @@
 	        const button = $("deleteSelectedOrdersBtn");
 	        try {
 	          button.disabled = true;
-	          button.textContent = "Deleting...";
+	          button.setAttribute("aria-label", `Deleting ${selected.length} selected orders`);
+	          button.title = "Deleting selected orders…";
+	          button.classList.add("animate-pulse");
 	          setMsg("orderMsg", `Deleting ${selected.length} order${selected.length === 1 ? "" : "s"}...`);
 	          const result = await orderAdminApi("/adminOrders", {
 	            method: "DELETE",
@@ -9491,6 +9553,9 @@
 	        } catch (err) {
 	          setMsg("orderMsg", err.message || "Selected orders could not be deleted", false);
 	          updateOrderSelectionActions();
+	        } finally {
+	          button.classList.remove("animate-pulse");
+	          button.title = "Delete selected orders";
 	        }
 	      }
 
@@ -10258,6 +10323,40 @@
 	      });
 
 	      ['o_quoteShippingCost', 'o_quotePaymentMode'].forEach(id => $(id).addEventListener('input', renderCourierQuotePaymentSummary));
+	      function courierQuoteFormPayload(action){
+	        return {
+	          action,
+	          id: selectedOrder?.id || '',
+	          courier: $('o_quoteCourier').value.trim(),
+	          shippingAmountCents: Math.max(0, Math.round(Number($('o_quoteShippingCost').value || 0) * 100)),
+	          shippingPaymentMode: $('o_quotePaymentMode').value,
+	          estimatedDelivery: $('o_quoteEstimate').value.trim(),
+	        };
+	      }
+
+	      $('testCourierQuoteEmailBtn').addEventListener('click', async () => {
+	        if (!selectedOrder) return setMsg('orderModalMsg', 'Select an order first.', false);
+	        const courier = $('o_quoteCourier').value.trim();
+	        const shippingValue = Number($('o_quoteShippingCost').value);
+	        if (!courier) return setMsg('orderModalMsg', 'Choose a courier.', false);
+	        if (!Number.isFinite(shippingValue) || shippingValue < 0) return setMsg('orderModalMsg', 'Enter a valid shipping cost.', false);
+	        const button = $('testCourierQuoteEmailBtn');
+	        try {
+	          button.disabled = true;
+	          button.textContent = 'Sending test...';
+	          setMsg('orderModalMsg', 'Sending the quote preview only to info@grubz.gr...');
+	          await orderAdminApi('/adminOrders', {
+	            method: 'POST',
+	            body: JSON.stringify(courierQuoteFormPayload('sendCourierQuoteTestEmail')),
+	          });
+	          setMsg('orderModalMsg', 'Test quote email sent only to info@grubz.gr with the active Stripe checkout link. The customer checkout was not changed.');
+	        } catch (err) {
+	          setMsg('orderModalMsg', err.message || 'Could not send the test quote email.', false);
+	        } finally {
+	          button.disabled = false;
+	          button.textContent = 'Send test to info@grubz.gr';
+	        }
+	      });
 
 	      $('finalizeCourierQuoteBtn').addEventListener('click', async () => {
 	        if (!selectedOrder) return setMsg('orderModalMsg', 'Select an order first.', false);
@@ -10285,14 +10384,7 @@
 	          setMsg('orderModalMsg', 'Creating the Stripe checkout and emailing the customer...');
 	          const result = await orderAdminApi('/adminOrders', {
 	            method: 'POST',
-	            body: JSON.stringify({
-	              action: 'finalizeCourierQuote',
-	              id: selectedOrder.id,
-	              courier,
-	              shippingAmountCents: shipping,
-	              shippingPaymentMode: mode,
-	              estimatedDelivery: $('o_quoteEstimate').value.trim(),
-	            }),
+	            body: JSON.stringify(courierQuoteFormPayload('finalizeCourierQuote')),
 	          });
 	          await loadOrders();
 	          selectedOrder = orders.find(order => order.id === selectedOrder.id) || result.order || selectedOrder;
