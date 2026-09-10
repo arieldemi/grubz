@@ -9189,7 +9189,7 @@
 
 	      function orderHandlingBadge(order = {}){
 	        return orderNeedsHandling(order)
-	          ? `<span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-blue-700">Needs handling</span>`
+	          ? `<span class="inline-flex items-center rounded-full border-2 border-amber-500 bg-yellow-300 px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-zinc-950 shadow-sm">Needs handling</span>`
 	          : "";
 	      }
 
@@ -9478,10 +9478,6 @@
             <td class="p-3" data-label="Order">
               <div class="flex flex-wrap items-center gap-2">
                 <button class="font-bold text-left hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>
-                ${orderHandlingBadge(o)}
-                ${orderCreatorKitBadge(o)}
-	                ${orderBoxNowShipmentBadge(o)}
-	                ${orderBoxNowReviewBadge(o)}
               </div>
               <div class="mt-1 font-bold">${money(o.amountTotal, o.currency)}</div>
               <div class="mt-1 text-xs text-zinc-500">Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}</div>
@@ -9493,7 +9489,7 @@
 	                : esc(o.customer?.name || o.shipping?.name || "")}
 	              <div class="text-xs text-zinc-500">${esc(customerEmailForOrderPreview(o))}</div>
 	            </td>
-	            <td class="p-3" data-label="Status"><div class="flex min-w-0 flex-col items-stretch gap-1 [&>span]:w-full [&>span]:justify-center">${orderStatusBadge(o.status)}${paymentStatusBadge(o.paymentStatus || o.status || "pending_payment")}${fulfillmentStatusBadge(o.fulfillmentStatus || "new")}</div></td>
+	            <td class="p-3" data-label="Status"><div class="flex min-w-0 flex-col items-stretch gap-1 [&>span]:w-full [&>span]:justify-center">${orderStatusBadge(o.status)}${paymentStatusBadge(o.paymentStatus || o.status || "pending_payment")}${fulfillmentStatusBadge(o.fulfillmentStatus || "new")}${orderHandlingBadge(o)}${orderCreatorKitBadge(o)}${orderBoxNowShipmentBadge(o)}${orderBoxNowReviewBadge(o)}</div></td>
 	            <td class="p-3" data-label="Invoice / Receipt">
 	              <label class="inline-flex items-center gap-2 text-xs font-semibold">
 	                <input type="checkbox" class="h-4 w-4" data-order-invoice-issued="${esc(o.id)}" ${o.invoiceReceiptIssued === true ? "checked" : ""} aria-label="Invoice or receipt issued for ${esc(orderNumber(o))}">

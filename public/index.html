@@ -3704,7 +3704,7 @@ async function chatFetch(path, options = {}) {
         const msg = document.getElementById("reviewDeliveryMsg");
         if (!row || !value || !msg) return;
 
-        if (!hasBoxNowLocker()) {
+        if (__deliveryMethod !== "boxnow" || !hasBoxNowLocker()) {
           row.classList.add("hidden");
           msg.textContent = "";
           return;
