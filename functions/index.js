@@ -21,6 +21,9 @@ const { boxNowFulfillmentForEvent } = require("./boxNowFulfillment");
 const { normalizeOrderLanguage, resolveOrderLanguage } = require("./orderLanguage");
 const { isVisibleOrderEmailHistoryRecord } = require("./emailHistory");
 const { emailMarkdownToPlainText, emailMarkdownToHtml } = require("./emailFormatting");
+const { createAcsClient, acsOutput, acsValueRows, acsTableRows, extractPdf } = require("./acsClient");
+const { validateShipping } = require("./shippingValidation");
+const { manualOrderDiscount } = require("./manualOrderPricing");
 
 // ----- Secrets -----
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
@@ -48,6 +51,16 @@ const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = defineSecret("TELEGRAM_CHAT_ID");
 const SOCIAL_AGENT_WEBHOOK_SECRET = defineSecret("SOCIAL_AGENT_WEBHOOK_SECRET");
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
+const ACS_COMPANY_ID = defineSecret("ACS_COMPANY_ID");
+const ACS_COMPANY_PASSWORD = defineSecret("ACS_COMPANY_PASSWORD");
+const ACS_USER_ID = defineSecret("ACS_USER_ID");
+const ACS_USER_PASSWORD = defineSecret("ACS_USER_PASSWORD");
+const ACS_BILLING_CODE = defineSecret("ACS_BILLING_CODE");
+const ACS_API_KEY = defineSecret("ACS_API_KEY");
+const GOOGLE_MAPS_API_KEY = defineSecret("GOOGLE_MAPS_API_KEY");
+const ACS_SECRETS = [ACS_COMPANY_ID, ACS_COMPANY_PASSWORD, ACS_USER_ID, ACS_USER_PASSWORD, ACS_BILLING_CODE, ACS_API_KEY];
+const ACS_ORIGIN_POSTAL_CODE = "57500";
+const { acsBillableWeightKg, acsPriceCents } = require("./acsPricing");
 const BOXNOW_API_BASE_URL = "https://api-production.boxnow.gr";
 const BOXNOW_ENVIRONMENTS = {
   stage: {
@@ -72,6 +85,11 @@ const BOXNOW_PARCEL_SIZES = [
 const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
 const BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT = 10;
 const BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM = 17;
+const {
+  BOXNOW_MEDIUM_CAPACITY_KG,
+  boxNowBaseFeeCents,
+  boxNowParcelWeightsGrams,
+} = require("./boxNowPacking");
 const HAPPY_CHICKEN_PACKED_PARCELS = {
   "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
@@ -81,6 +99,7 @@ const SHIPPING_SETTINGS_DOC = "settings/shipping";
 const STRIPE_SETTINGS_DOC = "settings/stripe";
 const ORDER_EMAIL_SETTINGS_DOC = "settings/orderEmails";
 const BOXNOW_SETTINGS_DOC = "settings/boxnow";
+const ACS_SETTINGS_DOC = "settings/acs";
 const SOCIAL_AGENT_SETTINGS_DOC = "settings/socialAgent";
 const CHATBOT_SETTINGS_DOC = "settings/chatbot";
 const MARKETING_SETTINGS_DOC = "settings/marketing";
@@ -875,14 +894,14 @@ function sanitizeStripePaymentLink(value = "") {
 }
 
 async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
-  const productsMap = await getProductsMap();
+  const productsMap = await getProductsMap({ includeInactive: true });
   const itemsInput = Array.isArray(input.items) ? input.items : [];
-  const items = orderItemsFromCart(itemsInput, productsMap, sanitizeStripeMode(input.stripeMode || "test"));
+  const items = orderItemsFromCart(itemsInput, productsMap, sanitizeStripeMode(input.stripeMode || "test"), { allowInactive: true });
   if (!items.length) throw new Error("Add at least one product");
 
   const amountSubtotal = orderItemsSubtotal({ items });
   const amountShipping = Math.max(0, Math.round(Number(input.amountShipping || input.shippingCents || 0)));
-  const baseDiscount = Math.max(0, Math.round(Number(input.amountDiscount || input.discountCents || 0)));
+  const { discountPercent, amountDiscount: baseDiscount } = manualOrderDiscount(input, amountSubtotal, amountShipping);
   const baseTotal = Math.max(0, amountSubtotal + amountShipping - baseDiscount);
   const hasTotalOverride = input.amountTotalOverride != null || input.totalOverrideCents != null || input.overrideTotalCents != null;
   const overrideTotal = Math.max(0, Math.round(Number(input.amountTotalOverride ?? input.totalOverrideCents ?? input.overrideTotalCents ?? 0)));
@@ -893,6 +912,9 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
   const id = `manual_${orderNumber.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${Date.now()}`;
   const customer = input.customer && typeof input.customer === "object" ? input.customer : {};
   const shipping = input.shipping && typeof input.shipping === "object" ? input.shipping : {};
+  const deliveryMethod = ["boxnow", "acs", "acs_point", "courier_quote"].includes(String(shipping.deliveryMethod || input.deliveryMethod || "").trim())
+    ? String(shipping.deliveryMethod || input.deliveryMethod).trim()
+    : "boxnow";
 
   const order = {
     id,
@@ -912,6 +934,7 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
     amountSubtotal,
     amountShipping,
     amountDiscount,
+    discountPercent,
     amountDue: amountTotal,
     manualPricingOverride: hasTotalOverride,
     currency: String(input.currency || "eur").trim().toLowerCase() || "eur",
@@ -922,7 +945,7 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
       phone: String(customer.phone || input.customerPhone || "").trim(),
     },
     shipping: {
-      deliveryMethod: String(shipping.deliveryMethod || input.deliveryMethod || "boxnow").trim() || "boxnow",
+      deliveryMethod,
       name: String(shipping.name || customer.name || input.customerName || "").trim(),
       phone: String(shipping.phone || customer.phone || input.customerPhone || "").trim(),
       addressLine1: String(shipping.addressLine1 || shipping.line1 || shipping.address || input.addressLine1 || input.line1 || "").trim(),
@@ -962,6 +985,100 @@ async function createManualOrderFromAdmin(input = {}, adminUser = {}) {
 
   await db.collection("orders").doc(id).set(order, { merge: true });
   return order;
+}
+
+async function createManualOrderCheckout(order, adminUser = {}, req = null, requestedMode = "live") {
+  if (!order?.manual || !order?.id) throw Object.assign(new Error("Only manual orders can use this checkout action."), { status:400 });
+  if (String(order.paymentStatus || "").toLowerCase() === "paid") throw Object.assign(new Error("This order has already been paid."), { status:409 });
+  const amount = Math.max(0, Math.round(Number(order.amountTotal || 0)));
+  if (!(amount > 0)) throw Object.assign(new Error("The final order total must be greater than zero."), { status:400 });
+  const customerEmail = String(order.customer?.email || "").trim();
+  if (!customerEmail) throw Object.assign(new Error("Add the customer's email before creating a payment link."), { status:400 });
+  const stripeConfig = await activeStripeConfig(req, { mode:sanitizeStripeMode(requestedMode), forceLocalEnvironment:false });
+  const currency = String(order.currency || "eur").toLowerCase();
+  const lineItems = (order.items || []).map(item => ({
+    quantity:Math.max(1, Math.round(Number(item.quantity || item.qty || 1))),
+    price_data:{
+      currency,
+      unit_amount:Math.max(0, Math.round(Number(item.unitAmount || 0))),
+      product_data:{ name:String(item.name || item.id || "GRUBZ product").slice(0, 240) },
+    },
+  })).filter(item => item.price_data.unit_amount > 0);
+  const productAmount = lineItems.reduce((sum, item) => sum + item.price_data.unit_amount * item.quantity, 0);
+  const shippingAmount = Math.max(0, Math.round(Number(order.amountShipping || 0)));
+  if (shippingAmount > 0) {
+    const deliveryLabels = { boxnow:"BOX NOW delivery", acs:"ACS Courier delivery", acs_point:"ACS Point delivery", courier_quote:"Courier delivery" };
+    lineItems.push({
+      quantity:1,
+      price_data:{
+        currency,
+        unit_amount:shippingAmount,
+        product_data:{ name:deliveryLabels[order.shipping?.deliveryMethod] || "Shipping" },
+      },
+    });
+  }
+  const displayedBaseAmount = productAmount + shippingAmount;
+  if (displayedBaseAmount < amount) {
+    lineItems.push({
+      quantity:1,
+      price_data:{ currency, unit_amount:amount - displayedBaseAmount, product_data:{ name:"Order adjustment" } },
+    });
+  }
+  if (!lineItems.length) throw Object.assign(new Error("The order has no payable line items."), { status:400 });
+  const checkoutBaseAmount = Math.max(displayedBaseAmount, amount);
+  const checkoutDiscount = Math.max(0, checkoutBaseAmount - amount);
+  const metadata = {
+    manualOrderId: order.id,
+    orderNumber: publicOrderId(order),
+    uid: String(order.uid || "manual"),
+    stripeMode: stripeConfig.mode,
+    paymentMethod: "card",
+    deliveryMethod: String(order.shipping?.deliveryMethod || "boxnow"),
+    shippingAmount:String(shippingAmount),
+    discountAmount:String(checkoutDiscount),
+    cart: JSON.stringify((order.items || []).map(item => ({ id:item.id, qty:item.quantity || item.qty || 1 }))).slice(0, 5000),
+    language: order.language === "el" ? "el" : "en",
+  };
+  const requestOrigin = String(req?.headers?.origin || "").trim();
+  const returnBase = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin) ? requestOrigin : HOSTING_BASE;
+  const params = {
+    mode:"payment",
+    locale:order.language === "el" ? "el" : "en",
+    client_reference_id:publicOrderId(order),
+    customer_email:customerEmail,
+    line_items:lineItems,
+    success_url:`${returnBase}/checkout/success/?sid={CHECKOUT_SESSION_ID}`,
+    cancel_url:`${returnBase}/checkout/cancelled`,
+    metadata,
+    payment_intent_data:{ metadata },
+  };
+  if (checkoutDiscount > 0) {
+    const coupon = await stripeConfig.stripe.coupons.create({
+      amount_off:checkoutDiscount,
+      currency,
+      duration:"once",
+      name:`Order discount · ${publicOrderId(order)}`,
+      metadata:{ manualOrderId:order.id, orderNumber:publicOrderId(order) },
+    });
+    params.discounts = [{ coupon:coupon.id }];
+  }
+  if (stripeConfig.localEnvironmentForced) params.payment_method_types = ["card"];
+  const session = await stripeConfig.stripe.checkout.sessions.create(params);
+  const update = {
+    stripeMode:stripeConfig.mode,
+    stripeSessionId:session.id,
+    stripePaymentLink:session.url,
+    paymentLink:session.url,
+    paymentStatus:"pending_payment",
+    status:"active",
+    amountDue:amount,
+    amountDueOnline:amount,
+    paymentLinkCreatedAt:now(),
+    paymentLinkCreatedBy:adminUser.uid || "",
+    updatedAt:now(),
+  };
+  await db.collection("orders").doc(order.id).set(update, { merge:true });
+  return { ...order, ...update };
 }
 
 function normalizeCouponCode(value) {
@@ -1401,7 +1518,7 @@ function shippingSummaryForChatbot(shipping = {}, boxNow = {}) {
     override,
     discount,
     `BOX NOW compartments: ${sizes}`,
-    "Packing rule currently used by GRUBZ: flexible 1kg bags can be flattened; up to 10kg can fit in one medium BOX NOW compartment for any product.",
+    "Packing rule currently used by GRUBZ: every BOX NOW order uses Medium parcels carrying no more than 7kg each.",
   ].join("\n");
 }
 
@@ -2617,6 +2734,15 @@ function courierQuotePaymentMode(value = "") {
   return mode;
 }
 
+function isCourierQuoteOrder(order = {}) {
+  return (
+    order.shipping?.deliveryMethod === 'courier_quote' ||
+    order.source === 'storefront_courier_quote' ||
+    order.shippingQuotePending === true ||
+    Boolean(order.shippingQuote?.checkoutUrl || order.shippingQuote?.courier || order.shippingQuote?.status)
+  );
+}
+
 async function sendCourierQuoteEmail(order, checkoutUrl, options = {}) {
   const customerEmail = String(options.recipientOverride || order.customer?.email || "").trim();
   if (!customerEmail) throw Object.assign(new Error('This order has no customer email address.'), { status: 400 });
@@ -2626,6 +2752,21 @@ async function sendCourierQuoteEmail(order, checkoutUrl, options = {}) {
   const shippingAmount = Math.max(0, Number(order.amountShipping || 0));
   const onlineAmount = Math.max(0, Number(order.amountDueOnline || productTotal));
   const dueOnDelivery = Math.max(0, Number(order.amountDueOnDelivery || 0));
+  const boxNowCheckoutUrl = quote.boxNowAvailableInArea ? String(quote.boxNowCheckoutUrl || '').trim() : '';
+  let boxNowShippingAmount = Math.max(0, Number(quote.boxNowEstimatedShippingAmount || 0));
+  if (boxNowCheckoutUrl && !Object.prototype.hasOwnProperty.call(quote, 'boxNowEstimatedShippingAmount')) {
+    try {
+      const productsMap = await getProductsMap({ includeInactive: true });
+      const items = (order.items || []).map(item => ({ id: item.id, qty: item.quantity || item.qty || 1 }));
+      const fee = await calculateBoxNowFee(items, order.shipping || {}, productsMap);
+      boxNowShippingAmount = Math.max(0, Number(fee.amount || 0));
+    } catch (err) {
+      logger.warn('BOX NOW quote email price could not be calculated', { orderId: order.id, message: err.message || 'Calculation failed' });
+    }
+  }
+  const boxNowOnlineAmount = productTotal + boxNowShippingAmount;
+  const additionalInformation = String(quote.additionalInformation || '').trim();
+  const additionalInformationLines = additionalInformation ? additionalInformation.split(/\r?\n/).slice(0, 40) : [];
   const money = amount => formatMoney(amount, order.currency || 'eur');
   const paymentExplanation = quote.paymentMode === 'pay_on_delivery'
     ? (language === 'el'
@@ -2640,41 +2781,88 @@ async function sendCourierQuoteEmail(order, checkoutUrl, options = {}) {
   const subject = options.testOnly ? `[TEST] ${baseSubject}` : baseSubject;
   const lines = language === 'el'
     ? [
-      `Γεια σου ${order.customer?.name || ''},`,
-      '',
+      `Γεια σου ${order.customer?.name || ''},`, '',
+      ...(additionalInformationLines.length ? [...additionalInformationLines, ''] : []),
       `Η προσφορά μεταφορικών για την παραγγελία ${publicOrderId(order)} είναι έτοιμη.`,
+      ...(boxNowCheckoutUrl ? ['Υπάρχει θυρίδα BOX NOW στην περιοχή σου.', `Προϊόντα: ${money(productTotal)}`, `Μεταφορικά BOX NOW: ${money(boxNowShippingAmount)}`, `Πληρωμή τώρα: ${money(boxNowOnlineAmount)}`, `Επίλεξε θυρίδα BOX NOW: ${boxNowCheckoutUrl}`, ''] : []),
+      ...(boxNowCheckoutUrl ? ['Εναλλακτική αποστολή με courier:'] : []),
       `Courier: ${quote.courier}`,
       quote.estimatedDelivery ? `Εκτιμώμενη παράδοση: ${quote.estimatedDelivery}` : '',
-      `Προϊόντα: ${money(productTotal)}`,
-      `Μεταφορικά: ${money(shippingAmount)}`,
-      paymentExplanation,
-      '',
-      `Έγκριση και ασφαλής πληρωμή: ${checkoutUrl}`,
-      '',
+      `Προϊόντα: ${money(productTotal)}`, `Μεταφορικά: ${money(shippingAmount)}`, paymentExplanation,
+      '', `Έγκριση και ασφαλής πληρωμή με courier: ${checkoutUrl}`, '',
       'Η παραγγελία θα προχωρήσει μόνο αφού ολοκληρωθεί η ηλεκτρονική πληρωμή των προϊόντων.',
     ]
     : [
-      `Hello ${order.customer?.name || ''},`,
-      '',
+      `Hello ${order.customer?.name || ''},`, '',
+      ...(additionalInformationLines.length ? [...additionalInformationLines, ''] : []),
       `The shipping quote for order ${publicOrderId(order)} is ready.`,
+      ...(boxNowCheckoutUrl ? ['There is a BOXNOW locker in your area.', `Products: ${money(productTotal)}`, `BOX NOW delivery: ${money(boxNowShippingAmount)}`, `Pay now: ${money(boxNowOnlineAmount)}`, `Choose a BOX NOW locker: ${boxNowCheckoutUrl}`, ''] : []),
+      ...(boxNowCheckoutUrl ? ['Alternative courier delivery:'] : []),
       `Courier: ${quote.courier}`,
       quote.estimatedDelivery ? `Estimated delivery: ${quote.estimatedDelivery}` : '',
-      `Products: ${money(productTotal)}`,
-      `Shipping: ${money(shippingAmount)}`,
-      paymentExplanation,
-      '',
-      `Approve and pay securely: ${checkoutUrl}`,
-      '',
+      `Products: ${money(productTotal)}`, `Shipping: ${money(shippingAmount)}`, paymentExplanation,
+      '', `Approve and pay securely by courier: ${checkoutUrl}`, '',
       'The order will proceed only after the online product payment is completed.',
     ];
   const text = lines.filter(line => line !== '').join('\n');
-  const html = lines.map(line => {
-    if (line.includes(checkoutUrl)) {
-      const label = language === 'el' ? `Έγκριση & πληρωμή ${money(onlineAmount)}` : `Approve & pay ${money(onlineAmount)}`;
-      return `<p><a href="${escapeHtml(checkoutUrl)}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#d04211;color:#fff;text-decoration:none;font-weight:700">${escapeHtml(label)}</a></p>`;
-    }
-    return line ? `<p>${escapeHtml(line)}</p>` : '<br>';
-  }).join('');
+  const greeting = language === 'el' ? `Γεια σου ${order.customer?.name || ''},` : `Hello ${order.customer?.name || ''},`;
+  const readyText = language === 'el'
+    ? `Η προσφορά μεταφορικών για την παραγγελία ${publicOrderId(order)} είναι έτοιμη.`
+    : `The shipping quote for order ${publicOrderId(order)} is ready.`;
+  const customNoteHtml = additionalInformationLines.length
+    ? `<div style="margin:12px 0 16px;padding:13px 15px;border-left:4px solid #d04211;background:#fff7ed;border-radius:6px;color:#3f2a20;">${additionalInformationLines.map(line => line ? `<div style="margin:0 0 5px;line-height:1.4;">${escapeHtml(line)}</div>` : '<div style="height:5px;line-height:5px;">&nbsp;</div>').join('')}</div>`
+    : '';
+  const boxNowCardHtml = boxNowCheckoutUrl ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border:1px solid #ddd0ff;border-radius:10px;background:#faf8ff;border-collapse:separate;">
+      <tr><td style="padding:15px 16px;">
+        <div style="margin:0 0 3px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6d28d9;">BOX NOW</div>
+        <div style="margin:0 0 9px;font-size:15px;font-weight:700;color:#2d174f;">${language === 'el' ? 'Υπάρχει θυρίδα στην περιοχή σου' : 'A locker is available in your area'}</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 11px;border-collapse:collapse;font-size:14px;">
+          <tr><td style="padding:4px 0;color:#5b5563;">${language === 'el' ? 'Προϊόντα' : 'Products'}</td><td align="right" style="padding:4px 0;font-weight:700;color:#2d174f;">${money(productTotal)}</td></tr>
+          <tr><td style="padding:4px 0;color:#5b5563;">${language === 'el' ? 'Μεταφορικά BOX NOW' : 'BOX NOW delivery'}</td><td align="right" style="padding:4px 0;font-weight:700;color:#2d174f;">${money(boxNowShippingAmount)}</td></tr>
+          <tr><td style="padding:7px 0 3px;border-top:1px solid #ddd0ff;font-weight:700;color:#2d174f;">${language === 'el' ? 'Πληρωμή τώρα' : 'Pay now'}</td><td align="right" style="padding:7px 0 3px;border-top:1px solid #ddd0ff;font-size:16px;font-weight:700;color:#6d28d9;">${money(boxNowOnlineAmount)}</td></tr>
+        </table>
+        <a href="${escapeHtml(boxNowCheckoutUrl)}" style="display:inline-block;padding:10px 15px;border-radius:7px;background:#6d28d9;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;line-height:1.2;">${language === 'el' ? `Επιλογή θυρίδας & πληρωμή ${money(boxNowOnlineAmount)}` : `Choose locker & pay ${money(boxNowOnlineAmount)}`}</a>
+      </td></tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border-collapse:collapse;"><tr><td style="border-top:1px solid #e4e4e7;font-size:1px;line-height:1px;">&nbsp;</td><td width="52" align="center" style="color:#71717a;font-size:12px;line-height:1;">${language === 'el' ? 'ή' : 'or'}</td><td style="border-top:1px solid #e4e4e7;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>` : '';
+  const courierTitle = language === 'el' ? 'Αποστολή με courier' : 'Courier delivery';
+  const productsLabel = language === 'el' ? 'Προϊόντα' : 'Products';
+  const shippingLabel = language === 'el' ? 'Μεταφορικά' : 'Shipping';
+  const payNowLabel = language === 'el' ? 'Πληρωμή τώρα' : 'Pay now';
+  const courierButtonLabel = language === 'el' ? `Έγκριση & πληρωμή ${money(onlineAmount)}` : `Approve & pay ${money(onlineAmount)}`;
+  const finalNote = language === 'el'
+    ? 'Η παραγγελία θα προχωρήσει αφού ολοκληρωθεί η ηλεκτρονική πληρωμή των προϊόντων.'
+    : 'The order will proceed after the online product payment is completed.';
+  const html = `
+<div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#27272a;font-size:15px;line-height:1.4;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;border-collapse:collapse;">
+    <tr><td style="padding:0 0 12px;">
+      <div style="margin:0 0 7px;font-size:16px;font-weight:700;color:#292524;">${escapeHtml(greeting)}</div>
+      ${customNoteHtml}
+      <div style="margin:0 0 3px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9a3412;">${language === 'el' ? 'Προσφορά μεταφορικών' : 'Shipping quote'}</div>
+      <div style="margin:0;font-size:15px;color:#3f3f46;">${escapeHtml(readyText)}</div>
+    </td></tr>
+    <tr><td style="padding:0;">
+      ${boxNowCardHtml}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #fed7aa;border-radius:10px;background:#ffffff;border-collapse:separate;">
+        <tr><td style="padding:15px 16px;">
+          <div style="margin:0 0 9px;font-size:15px;font-weight:700;color:#7c2d12;">${courierTitle}</div>
+          <div style="margin:0 0 3px;color:#52525b;"><strong style="color:#27272a;">Courier:</strong> ${escapeHtml(quote.courier || '')}</div>
+          ${quote.estimatedDelivery ? `<div style="margin:0 0 10px;color:#52525b;"><strong style="color:#27272a;">${language === 'el' ? 'Εκτιμώμενη παράδοση' : 'Estimated delivery'}:</strong> ${escapeHtml(quote.estimatedDelivery)}</div>` : '<div style="height:7px;line-height:7px;">&nbsp;</div>'}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 10px;border-collapse:collapse;font-size:14px;">
+            <tr><td style="padding:4px 0;color:#52525b;">${productsLabel}</td><td align="right" style="padding:4px 0;font-weight:700;">${money(productTotal)}</td></tr>
+            <tr><td style="padding:4px 0;color:#52525b;">${shippingLabel}</td><td align="right" style="padding:4px 0;font-weight:700;">${money(shippingAmount)}</td></tr>
+            <tr><td style="padding:7px 0 3px;border-top:1px solid #e4e4e7;font-weight:700;">${payNowLabel}</td><td align="right" style="padding:7px 0 3px;border-top:1px solid #e4e4e7;font-size:16px;font-weight:700;color:#c2410c;">${money(onlineAmount)}</td></tr>
+          </table>
+          <div style="margin:0 0 11px;font-size:13px;line-height:1.4;color:#52525b;">${escapeHtml(paymentExplanation)}</div>
+          <a href="${escapeHtml(checkoutUrl)}" style="display:inline-block;padding:10px 15px;border-radius:7px;background:#d04211;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;line-height:1.2;">${escapeHtml(courierButtonLabel)}</a>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="padding:11px 2px 0;font-size:12px;line-height:1.4;color:#71717a;">${finalNote}</td></tr>
+  </table>
+</div>`;
   return sendEmail({
     to: customerEmail,
     bcc: options.testOnly ? '' : GRUBZ_INFO_EMAIL,
@@ -2686,56 +2874,27 @@ async function sendCourierQuoteEmail(order, checkoutUrl, options = {}) {
   });
 }
 
-async function sendCourierQuoteTestEmail(order, input = {}) {
-  if (order.shipping?.deliveryMethod !== 'courier_quote') {
+async function sendCourierQuoteTestEmail(order) {
+  if (!isCourierQuoteOrder(order)) {
     throw Object.assign(new Error('Only courier quote orders can be tested here.'), { status: 400 });
   }
-  const courier = String(input.courier || '').trim();
-  if (!['ACS Courier', 'Γενική Ταχυδρομική'].includes(courier)) {
-    throw Object.assign(new Error('Choose ACS Courier or Γενική Ταχυδρομική.'), { status: 400 });
-  }
-  const shippingAmount = Math.max(0, Math.round(Number(input.shippingAmountCents || 0)));
-  if (!Number.isFinite(shippingAmount)) throw Object.assign(new Error('Enter a valid shipping cost.'), { status: 400 });
-  const paymentMode = courierQuotePaymentMode(input.shippingPaymentMode);
-  const productTotal = Math.max(0, Number(order.amountSubtotal || 0) - Number(order.amountDiscount || 0));
-  const onlineAmount = productTotal + (paymentMode === 'prepaid' ? shippingAmount : 0);
-  const dueOnDelivery = paymentMode === 'pay_on_delivery' ? shippingAmount : 0;
-  const previewOrder = {
-    ...order,
-    amountShipping: shippingAmount,
-    amountDueOnline: onlineAmount,
-    amountDueOnDelivery: dueOnDelivery,
-    shippingQuote: {
-      ...(order.shippingQuote || {}),
-      courier,
-      estimatedDelivery: String(input.estimatedDelivery || '').trim().slice(0, 240),
-      paymentMode,
-      shippingAmount,
-      productAmount: productTotal,
-      onlineAmount,
-      amountDueOnDelivery: dueOnDelivery,
-    },
-    shipping: {
-      ...(order.shipping || {}),
-      courier,
-      shippingPaymentMode: paymentMode,
-      cashOnDelivery: paymentMode === 'pay_on_delivery',
-    },
-  };
   const activeCheckoutUrl = sanitizeStripePaymentLink(
     order.shippingQuote?.checkoutUrl || order.stripePaymentLink || order.paymentLink || ''
   );
   if (!activeCheckoutUrl) {
     throw Object.assign(new Error('Create the customer checkout first, then send a test of its active payment link.'), { status: 409 });
   }
-  return sendCourierQuoteEmail(previewOrder, activeCheckoutUrl, {
+  if (order.stripeMode !== 'live' || !String(order.shippingQuote?.checkoutSessionId || '').startsWith('cs_live_')) {
+    throw Object.assign(new Error('The saved checkout is not a live Stripe checkout. Create a new live checkout first.'), { status: 409 });
+  }
+  return sendCourierQuoteEmail(order, activeCheckoutUrl, {
     recipientOverride: GRUBZ_INFO_EMAIL,
     testOnly: true,
   });
 }
 
-async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = null) {
-  if (order.shipping?.deliveryMethod !== 'courier_quote') {
+async function createCourierQuoteCheckout(order, input = {}, adminUser = {}, req = null) {
+  if (!isCourierQuoteOrder(order)) {
     throw Object.assign(new Error('Only courier quote orders can be finalized here.'), { status: 400 });
   }
   if (String(order.paymentStatus || '').toLowerCase() === 'paid') {
@@ -2752,11 +2911,11 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
   if (productTotal <= 0) throw Object.assign(new Error('The product total must be greater than zero.'), { status: 400 });
   const onlineAmount = productTotal + (paymentMode === 'prepaid' ? shippingAmount : 0);
   const dueOnDelivery = paymentMode === 'pay_on_delivery' ? shippingAmount : 0;
-  // Courier quotes can be opened from the local admin console while operating
-  // on production Firestore data. Always honor the saved store mode here so a
-  // real customer can never receive a Stripe test-session link by accident.
-  const stripeConfig = await activeStripeConfig(req, { forceLocalEnvironment: false });
+  // Localhost must never create a live Stripe checkout, even when the saved
+  // storefront setting is live. Deployed requests continue to honor that setting.
+  const stripeConfig = await activeStripeConfig(req);
   const previousCheckoutSessionId = String(order.shippingQuote?.checkoutSessionId || '').trim();
+  const previousBoxNowCheckoutSessionId = String(order.shippingQuote?.boxNowCheckoutSessionId || '').trim();
   const replacingUnpaidTestQuoteWithLive = (
     stripeConfig.mode === 'live' &&
     order.stripeMode === 'test' &&
@@ -2803,16 +2962,10 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
     const coupon = { id: couponSnap.id, ...couponSnap.data() };
     promotionCodeId = await ensureStripePromotionCodeForCoupon(coupon, stripeConfig.mode, checkoutItems, stripeConfig);
   }
-  if (previousCheckoutSessionId && order.shippingQuote?.status === 'sent') {
-    try {
-      await stripeConfig.stripe.checkout.sessions.expire(previousCheckoutSessionId);
-    } catch (err) {
-      logger.info('Previous courier quote checkout could not be expired', {
-        orderId: order.id,
-        checkoutSessionId: previousCheckoutSessionId,
-        message: err.message || 'Expire failed',
-      });
-    }
+  let boxNowEstimatedShippingAmount = 0;
+  if (input.boxNowAvailableInArea === true) {
+    const estimatedBoxNowFee = await calculateBoxNowFee(cart, order.shipping || {}, productsMap);
+    boxNowEstimatedShippingAmount = Math.max(0, Number(estimatedBoxNowFee.amount || 0));
   }
   const metadata = {
     orderNumber: publicOrderId(order),
@@ -2840,11 +2993,15 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
     client_reference_id: publicOrderId(order),
     customer_email: String(order.customer?.email || '').trim() || undefined,
     line_items: lineItems,
-    success_url: `${returnBase}/checkout/success?sid={CHECKOUT_SESSION_ID}`,
+    success_url: `${returnBase}/checkout/success/?sid={CHECKOUT_SESSION_ID}`,
     cancel_url: `${returnBase}/checkout/cancelled`,
     metadata,
     payment_intent_data: { metadata },
   };
+  if (stripeConfig.localEnvironmentForced) {
+    checkoutParams.payment_method_types = ['card'];
+    checkoutParams.custom_text = { submit: { message: 'Stripe test mode: use a Stripe test card. Real cards and wallets will be declined.' } };
+  }
   if (promotionCodeId) checkoutParams.discounts = [{ promotion_code: promotionCodeId }];
   const session = await stripeConfig.stripe.checkout.sessions.create(checkoutParams);
   const expectedLiveSession = stripeConfig.mode === 'live';
@@ -2855,10 +3012,21 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
     throw Object.assign(new Error(`Stripe returned an unexpected ${session.livemode ? 'live' : 'test'} checkout. No email was sent.`), { status: 502 });
   }
   const checkoutOnlineAmount = Math.max(0, Number(session.amount_total ?? onlineAmount));
+  const boxNowChoiceToken = input.boxNowAvailableInArea === true ? randomUUID() : '';
+  const boxNowChoiceTokenHash = boxNowChoiceToken ? createHash('sha256').update(boxNowChoiceToken).digest('hex') : '';
+  const boxNowCheckoutUrl = boxNowChoiceToken
+    ? `${HOSTING_BASE}/boxnow-quote.html?order=${encodeURIComponent(order.id)}&token=${encodeURIComponent(boxNowChoiceToken)}`
+    : '';
   const quote = {
-    status: 'sent',
+    status: 'checkout_created',
     courier,
     estimatedDelivery: String(input.estimatedDelivery || '').trim().slice(0, 240),
+    boxNowAvailableInArea: input.boxNowAvailableInArea === true,
+    boxNowEstimatedShippingAmount,
+    boxNowEstimatedOnlineAmount: productTotal + boxNowEstimatedShippingAmount,
+    additionalInformation: String(input.additionalInformation || '').trim().slice(0, 2000),
+    boxNowCheckoutUrl,
+    boxNowChoiceTokenHash,
     paymentMode,
     shippingAmount,
     productAmount: productTotal,
@@ -2866,8 +3034,8 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
     amountDueOnDelivery: dueOnDelivery,
     checkoutSessionId: session.id,
     checkoutUrl: session.url,
-    sentAt: now(),
-    sentBy: adminUser.uid || '',
+    checkoutCreatedAt: now(),
+    checkoutCreatedBy: adminUser.uid || '',
   };
   const updatedOrder = {
     ...order,
@@ -2895,13 +3063,185 @@ async function finalizeCourierQuote(order, input = {}, adminUser = {}, req = nul
     updatedBy: adminUser.uid || '',
   };
   await db.collection('orders').doc(order.id).set(updatedOrder, { merge: true });
+  for (const previousSessionId of new Set([previousCheckoutSessionId, previousBoxNowCheckoutSessionId].filter(Boolean))) {
+    if (previousSessionId === session.id) continue;
+    try {
+      await stripeConfig.stripe.checkout.sessions.expire(previousSessionId);
+    } catch (err) {
+      logger.info('Previous courier quote checkout could not be expired', {
+        orderId: order.id,
+        checkoutSessionId: previousSessionId,
+        message: err.message || 'Expire failed',
+      });
+    }
+  }
+  return { order: updatedOrder };
+}
+
+function validCourierQuoteBoxNowToken(order, token = '') {
+  const saved = String(order.shippingQuote?.boxNowChoiceTokenHash || '').trim();
+  const supplied = createHash('sha256').update(String(token || '')).digest('hex');
+  if (!saved || saved.length !== supplied.length) return false;
+  return timingSafeEqual(Buffer.from(saved), Buffer.from(supplied));
+}
+
+function publicCourierQuoteBoxNowData(order) {
+  return {
+    orderNumber: publicOrderId(order),
+    language: order.language === 'el' ? 'el' : 'en',
+    currency: order.currency || 'eur',
+    items: (order.items || []).map(item => ({ id: item.id, name: item.name, quantity: Number(item.quantity || item.qty || 1), totalAmount: Number(item.totalAmount || 0) })),
+    amountSubtotal: Number(order.amountSubtotal || 0),
+    amountDiscount: Number(order.amountDiscount || 0),
+    customer: { name: order.customer?.name || '', email: order.customer?.email || '' },
+    shipping: {
+      name: order.shipping?.name || order.customer?.name || '',
+      phone: order.shipping?.phone || order.customer?.phone || '',
+      addressLine1: order.shipping?.addressLine1 || order.shipping?.line1 || '',
+      addressLine2: order.shipping?.addressLine2 || order.shipping?.line2 || '',
+      city: order.shipping?.city || '',
+      region: order.shipping?.region || '',
+      postalCode: order.shipping?.postalCode || order.shipping?.postal || '',
+      country: order.shipping?.country || 'Greece',
+    },
+  };
+}
+
+async function createCourierQuoteBoxNowCheckout(order, locker, req = null) {
+  if (String(order.paymentStatus || '').toLowerCase() === 'paid') throw Object.assign(new Error('This order has already been paid.'), { status: 409 });
+  const lockerId = String(locker?.id || '').trim();
+  if (!lockerId) throw Object.assign(new Error('Choose a BOX NOW locker first.'), { status: 400 });
+  // Keep local purchase tests isolated from Stripe live mode.
+  const stripeConfig = await activeStripeConfig(req);
+  const productsMap = await getProductsMap({ includeInactive: true });
+  const items = (order.items || []).map(item => ({ id: item.id, qty: item.quantity || item.qty || 1 }));
+  const checkoutItems = orderItemsFromCart(items, productsMap, stripeConfig.mode, { allowInactive: true });
+  const lineItems = checkoutItems.map(item => {
+    if (item.stripePriceId) return { price: item.stripePriceId, quantity: item.quantity };
+    if (stripeConfig.mode === 'live') throw new Error(`Missing live Stripe price for ${item.name || item.id}.`);
+    return {
+      quantity: item.quantity,
+      price_data: {
+        currency: item.currency || order.currency || 'eur',
+        unit_amount: item.unitAmount,
+        product_data: { name: item.name || item.id },
+      },
+    };
+  });
+  const shipping = {
+    ...(order.shipping || {}), deliveryMethod: 'boxnow', cashOnDelivery: false,
+    boxNow: {
+      id: lockerId, name: String(locker?.name || '').trim(), postalCode: String(locker?.postalCode || '').trim(),
+      addressLine1: String(locker?.addressLine1 || '').trim(), addressLine2: String(locker?.addressLine2 || '').trim(),
+      lat: String(locker?.lat || '').trim(), lng: String(locker?.lng || '').trim(),
+    },
+  };
+  const boxNowSettings = await getEffectiveBoxNowSettings(req, { includeSecrets: true, forceLocalEnvironment: false });
+  const boxNowConfig = boxNowEnvConfig(boxNowSettings, boxNowSettings.activeEnvironment);
+  const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
+  if (boxNowFee.amount > 0) lineItems.push({ quantity: 1, price_data: { currency: boxNowFee.currency || order.currency || 'eur', unit_amount: boxNowFee.amount, product_data: { name: 'BOX NOW delivery' } } });
+  let promotionCodeId = null;
+  if (Number(order.amountDiscount || 0) > 0) {
+    const couponId = String(order.couponId || '').trim() || couponDocId(order.couponCode || '');
+    const couponSnap = couponId ? await db.collection(COUPONS_COLLECTION).doc(couponId).get() : null;
+    if (!couponSnap?.exists) throw Object.assign(new Error('The order discount could not be applied.'), { status: 409 });
+    promotionCodeId = await ensureStripePromotionCodeForCoupon({ id: couponSnap.id, ...couponSnap.data() }, stripeConfig.mode, checkoutItems, stripeConfig);
+  }
+  const metadata = {
+    orderNumber: publicOrderId(order), courierQuoteOrderId: order.id, uid: order.uid || 'guest', stripeMode: stripeConfig.mode, paymentMethod: 'card',
+    deliveryMethod: 'boxnow', shippingPaymentMode: 'prepaid', shippingAmount: String(boxNowFee.amount || 0), amountDueOnDelivery: '0',
+    cart: JSON.stringify(items).slice(0, 5000), language: order.language === 'el' ? 'el' : 'en',
+    shippingName: String(shipping.name || '').slice(0, 500), shippingPhone: String(shipping.phone || '').slice(0, 500),
+    shippingAddressLine1: String(shipping.addressLine1 || shipping.line1 || '').slice(0, 500), shippingAddressLine2: String(shipping.addressLine2 || shipping.line2 || '').slice(0, 500),
+    shippingCity: String(shipping.city || '').slice(0, 500), shippingRegion: String(shipping.region || '').slice(0, 500),
+    shippingPostalCode: String(shipping.postalCode || shipping.postal || '').slice(0, 500), shippingCountry: String(shipping.country || 'Greece').slice(0, 500),
+    boxnowLockerId: shipping.boxNow.id, boxnowLockerName: shipping.boxNow.name, boxnowLockerPostalCode: shipping.boxNow.postalCode,
+    boxnowLockerAddressLine1: shipping.boxNow.addressLine1, boxnowLockerAddressLine2: shipping.boxNow.addressLine2,
+    boxnowLockerLat: shipping.boxNow.lat, boxnowLockerLng: shipping.boxNow.lng, boxnowFeeAmount: String(boxNowFee.amount || 0),
+    boxnowFeeCurrency: boxNowFee.currency || 'eur', boxnowFeeSource: boxNowFee.source || '', boxnowWeightGrams: String(boxNowFee.weightGrams || 0),
+    boxnowParcelSize: String(boxNowFee.parcel?.code || ''), boxnowParcelLabel: String(boxNowFee.parcel?.label || ''),
+    boxnowParcelCount: String(boxNowFee.parcel?.count || 0), boxnowRequiredHeightCm: String(boxNowFee.parcel?.requiredHeightCm || 0),
+    boxnowEnvironment: boxNowFee.environment || boxNowConfig.environment || '', boxnowApiBaseUrl: boxNowFee.apiBaseUrl || boxNowConfig.apiBaseUrl || '',
+    couponCode: order.couponCode || '', couponId: order.couponId || '', couponDiscountCents: String(order.amountDiscount || 0), referralCode: order.referralCode || '',
+  };
+  const requestOrigin = String(req?.headers?.origin || '').trim();
+  const returnBase = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)
+    ? requestOrigin
+    : HOSTING_BASE;
+  let cancelUrl = order.shippingQuote.boxNowCheckoutUrl;
+  if (returnBase !== HOSTING_BASE) {
+    try {
+      const savedCancelUrl = new URL(cancelUrl);
+      cancelUrl = `${returnBase}${savedCancelUrl.pathname}${savedCancelUrl.search}`;
+    } catch {
+      cancelUrl = `${returnBase}/boxnow-quote.html`;
+    }
+  }
+  const params = {
+    mode: 'payment', locale: order.language === 'el' ? 'el' : 'en', client_reference_id: publicOrderId(order),
+    customer_email: String(order.customer?.email || '').trim() || undefined, line_items: lineItems,
+    success_url: `${returnBase}/checkout/success/?sid={CHECKOUT_SESSION_ID}`, cancel_url: cancelUrl,
+    metadata, payment_intent_data: { metadata },
+  };
+  if (stripeConfig.localEnvironmentForced) {
+    params.payment_method_types = ['card'];
+    params.custom_text = { submit: { message: 'Stripe test mode: use a Stripe test card. Real cards and wallets will be declined.' } };
+  }
+  if (promotionCodeId) params.discounts = [{ promotion_code: promotionCodeId }];
+  const session = await stripeConfig.stripe.checkout.sessions.create(params);
+  const expectedLiveSession = stripeConfig.mode === 'live';
+  const sessionPrefixMatchesMode = expectedLiveSession
+    ? String(session.id || '').startsWith('cs_live_')
+    : String(session.id || '').startsWith('cs_test_');
+  if (session.livemode !== expectedLiveSession || !sessionPrefixMatchesMode) {
+    throw Object.assign(new Error(`Stripe returned an unexpected ${session.livemode ? 'live' : 'test'} checkout.`), { status: 502 });
+  }
+  const previousBoxNowSessionId = String(order.shippingQuote?.boxNowCheckoutSessionId || '').trim();
+  const shippingQuote = {
+    ...(order.shippingQuote || {}),
+    boxNowCheckoutSessionId: session.id,
+    boxNowStripeUrl: session.url,
+    boxNowLocker: shipping.boxNow,
+    boxNowCheckoutCreatedAt: now(),
+  };
+  await db.collection('orders').doc(order.id).set({
+    shippingQuote,
+    updatedAt: now(),
+  }, { merge: true });
+  if (previousBoxNowSessionId && previousBoxNowSessionId !== session.id) {
+    try { await stripeConfig.stripe.checkout.sessions.expire(previousBoxNowSessionId); }
+    catch (err) { logger.info('Previous BOX NOW checkout could not be expired after replacement', { orderId: order.id, checkoutSessionId: previousBoxNowSessionId, message: err.message || 'Expire failed' }); }
+  }
+  return session.url;
+}
+
+async function sendCourierQuoteCustomerEmail(order, adminUser = {}) {
+  if (!isCourierQuoteOrder(order)) {
+    throw Object.assign(new Error('Only courier quote orders can be sent here.'), { status: 400 });
+  }
+  const checkoutUrl = sanitizeStripePaymentLink(
+    order.shippingQuote?.checkoutUrl || order.stripePaymentLink || order.paymentLink || ''
+  );
+  if (!checkoutUrl) {
+    throw Object.assign(new Error('Create the live customer checkout first.'), { status: 409 });
+  }
+  if (order.stripeMode !== 'live' || !String(order.shippingQuote?.checkoutSessionId || '').startsWith('cs_live_')) {
+    throw Object.assign(new Error('The saved checkout is not a live Stripe checkout. Create a new live checkout first.'), { status: 409 });
+  }
   try {
-    const email = await sendCourierQuoteEmail(updatedOrder, session.url);
-    await db.collection('orders').doc(order.id).set({ shippingQuote: { ...quote, email }, updatedAt: now() }, { merge: true });
-    return { order: updatedOrder, email };
+    const email = await sendCourierQuoteEmail(order, checkoutUrl);
+    const shippingQuote = {
+      ...(order.shippingQuote || {}),
+      status: 'sent',
+      sentAt: now(),
+      sentBy: adminUser.uid || '',
+      email,
+    };
+    await db.collection('orders').doc(order.id).set({ shippingQuote, updatedAt: now() }, { merge: true });
+    return { order: { ...order, shippingQuote }, email };
   } catch (err) {
     await db.collection('orders').doc(order.id).set({
-      shippingQuote: { ...quote, email: { failed: true, error: String(err.message || 'Email failed').slice(0, 500) } },
+      shippingQuote: { ...(order.shippingQuote || {}), email: { failed: true, error: String(err.message || 'Email failed').slice(0, 500) } },
       updatedAt: now(),
     }, { merge: true });
     throw err;
@@ -2913,6 +3253,31 @@ async function upsertOrderFromSession(session) {
   const id = session.id;
   const items = parseSessionCart(session, productsMap);
   const metadata = session.metadata || {};
+  const manualOrderId = String(metadata.manualOrderId || "").trim();
+  if (manualOrderId) {
+    const orderRef = db.collection("orders").doc(manualOrderId);
+    const snap = await orderRef.get();
+    if (!snap.exists) throw new Error(`Manual order ${manualOrderId} was not found`);
+    const existing = { id:snap.id, ...snap.data() };
+    const paid = session.payment_status === "paid";
+    const update = {
+      stripeSessionId:paid ? session.id : (existing.stripeSessionId || session.id),
+      stripePaymentIntentId:typeof session.payment_intent === "string" ? session.payment_intent : "",
+      paymentMethod:"card",
+      status:paid ? "active" : (existing.status || "active"),
+      paymentStatus:paid ? "paid" : (session.payment_status || "pending_payment"),
+      productPaymentStatus:paid ? "paid" : (session.payment_status || "pending_payment"),
+      amountPaidOnline:paid ? Number(session.amount_total || 0) : Number(existing.amountPaidOnline || 0),
+      amountDue:paid ? 0 : Number(existing.amountDue || existing.amountTotal || 0),
+      amountDueOnline:paid ? 0 : Number(existing.amountDueOnline || existing.amountTotal || 0),
+      fulfillmentStatus:paid ? "processing" : (existing.fulfillmentStatus || "new"),
+      updatedAt:now(),
+    };
+    await orderRef.set(update, { merge:true });
+    const order = { ...existing, ...update, id:manualOrderId };
+    if (paid) await transitionOrderInventory(manualOrderId, "reserved", "stripe_payment");
+    return order;
+  }
   const courierQuoteOrderId = String(metadata.courierQuoteOrderId || '').trim();
   if (courierQuoteOrderId) {
     const orderRef = db.collection('orders').doc(courierQuoteOrderId);
@@ -2920,35 +3285,71 @@ async function upsertOrderFromSession(session) {
     if (!snap.exists) throw new Error(`Courier quote order ${courierQuoteOrderId} was not found`);
     const existing = { id: snap.id, ...snap.data() };
     const paid = session.payment_status === 'paid';
-    const shippingAmount = Math.max(0, Number(existing.amountShipping || metadata.shippingAmount || 0));
-    const dueOnDelivery = Math.max(0, Number(existing.amountDueOnDelivery || metadata.amountDueOnDelivery || 0));
+    const selectedDeliveryMethod = metadata.deliveryMethod === 'boxnow' ? 'boxnow' : 'courier_quote';
+    const canonicalDeliveryMethod = paid ? selectedDeliveryMethod : (existing.shipping?.deliveryMethod || 'courier_quote');
+    const shippingAmount = paid ? Math.max(0, Number(metadata.shippingAmount || 0)) : Math.max(0, Number(existing.amountShipping || 0));
+    const dueOnDelivery = paid ? Math.max(0, Number(metadata.amountDueOnDelivery || 0)) : Math.max(0, Number(existing.amountDueOnDelivery || 0));
+    const selectedBoxNowLocker = paid && selectedDeliveryMethod === 'boxnow' ? {
+      id: metadata.boxnowLockerId || '',
+      name: metadata.boxnowLockerName || '',
+      postalCode: metadata.boxnowLockerPostalCode || '',
+      addressLine1: metadata.boxnowLockerAddressLine1 || '',
+      addressLine2: metadata.boxnowLockerAddressLine2 || '',
+      lat: metadata.boxnowLockerLat || '',
+      lng: metadata.boxnowLockerLng || '',
+    } : null;
     const update = {
-      stripeSessionId: session.id,
+      stripeSessionId: paid ? session.id : (existing.stripeSessionId || ''),
+      stripePaymentLink: paid ? (session.url || existing.stripePaymentLink || existing.paymentLink || '') : (existing.stripePaymentLink || existing.paymentLink || ''),
+      paymentLink: paid ? (session.url || existing.paymentLink || existing.stripePaymentLink || '') : (existing.paymentLink || existing.stripePaymentLink || ''),
       stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : '',
       paymentMethod: metadata.paymentMethod || existing.paymentMethod || 'card',
       status: paid ? 'active' : (session.status || 'active'),
       paymentStatus: paid ? 'paid' : (session.payment_status || 'pending_payment'),
       productPaymentStatus: paid ? 'paid' : (session.payment_status || 'pending_payment'),
       amountPaidOnline: paid ? Number(session.amount_total || 0) : 0,
-      amountDueOnline: Number(session.amount_total || existing.amountDueOnline || 0),
-      amountDue: paid ? dueOnDelivery : Number(session.amount_total || existing.amountDueOnline || 0),
+      amountTotal: paid ? Number(session.amount_total || 0) + dueOnDelivery : Number(existing.amountTotal || 0),
+      amountDueOnline: paid ? Number(session.amount_total || 0) : Number(existing.amountDueOnline || 0),
+      amountDue: paid ? dueOnDelivery : Number(existing.amountDue || existing.amountDueOnline || 0),
       amountDueOnDelivery: dueOnDelivery,
       amountShipping: shippingAmount,
       fulfillmentStatus: paid ? 'processing' : (existing.fulfillmentStatus || 'new'),
       shipping: {
         ...(existing.shipping || {}),
-        courier: metadata.courier || existing.shipping?.courier || '',
-        cashOnDelivery: metadata.shippingPaymentMode === 'pay_on_delivery',
-        shippingPaymentMode: metadata.shippingPaymentMode || existing.shipping?.shippingPaymentMode || 'prepaid',
+        deliveryMethod: canonicalDeliveryMethod,
+        courier: paid && selectedDeliveryMethod === 'courier_quote' ? (metadata.courier || existing.shipping?.courier || '') : (existing.shipping?.courier || ''),
+        cashOnDelivery: paid ? metadata.shippingPaymentMode === 'pay_on_delivery' : existing.shipping?.cashOnDelivery === true,
+        shippingPaymentMode: paid ? (metadata.shippingPaymentMode || 'prepaid') : (existing.shipping?.shippingPaymentMode || 'prepaid'),
+        ...(selectedBoxNowLocker ? { boxNow: selectedBoxNowLocker } : {}),
       },
       shippingQuote: {
         ...(existing.shippingQuote || {}),
         status: paid ? 'accepted' : (existing.shippingQuote?.status || 'sent'),
         acceptedAt: paid ? now() : (existing.shippingQuote?.acceptedAt || null),
+        selectedDeliveryMethod: paid ? selectedDeliveryMethod : (existing.shippingQuote?.selectedDeliveryMethod || ''),
+        ...(paid && selectedBoxNowLocker ? { boxNowLocker: selectedBoxNowLocker } : {}),
       },
+      ...(paid && selectedDeliveryMethod === 'boxnow' ? {
+        boxnowFee: {
+          amount: shippingAmount,
+          currency: metadata.boxnowFeeCurrency || existing.currency || 'eur',
+          source: metadata.boxnowFeeSource || '',
+          weightGrams: Number(metadata.boxnowWeightGrams || 0),
+          parcelSize: metadata.boxnowParcelSize || '',
+          parcelLabel: metadata.boxnowParcelLabel || '',
+          parcelCount: Number(metadata.boxnowParcelCount || 0),
+          requiredHeightCm: Number(metadata.boxnowRequiredHeightCm || 0),
+          environment: metadata.boxnowEnvironment || '',
+          apiBaseUrl: metadata.boxnowApiBaseUrl || '',
+        },
+      } : {}),
       updatedAt: now(),
     };
     await orderRef.set(update, { merge: true });
+    if (paid && selectedDeliveryMethod === 'courier_quote' && existing.shipping?.boxNow) {
+      await orderRef.update({ 'shipping.boxNow': FieldValue.delete() });
+      delete update.shipping.boxNow;
+    }
     const order = { ...existing, ...update, id: courierQuoteOrderId };
     if (paid) {
       await transitionOrderInventory(courierQuoteOrderId, 'reserved', 'stripe_payment');
@@ -2963,7 +3364,7 @@ async function upsertOrderFromSession(session) {
     return order;
   }
   const orderNumber = publicOrderId(metadata) || generateOrderNumber();
-  const metadataShippingAmount = Number(metadata.boxnowFeeAmount || 0);
+  const metadataShippingAmount = Number(["acs", "acs_point"].includes(metadata.deliveryMethod) ? metadata.acsFeeAmount : metadata.boxnowFeeAmount || 0);
   const stripeShippingAmount = Number(session.total_details?.amount_shipping || 0);
   const amountShipping = stripeShippingAmount > 0 ? stripeShippingAmount : metadataShippingAmount;
   const amountSubtotal = orderItemsSubtotal({ items }) || Math.max(0, Number(session.amount_subtotal || 0) - amountShipping);
@@ -3012,6 +3413,11 @@ async function upsertOrderFromSession(session) {
         lat: metadata.boxnowLockerLat || "",
         lng: metadata.boxnowLockerLng || "",
       },
+      acsPoint: metadata.acsPointId ? {
+        id: metadata.acsPointId, name: metadata.acsPointName || "", street: metadata.acsPointStreet || "",
+        postalCode: metadata.acsPointPostalCode || "", city: metadata.acsPointCity || "", type: metadata.acsPointType || "",
+        station: metadata.acsPointStation || "", branch: metadata.acsPointBranch || "",
+      } : null,
       trackingNumber: "",
       trackingUrl: "",
     },
@@ -3028,6 +3434,13 @@ async function upsertOrderFromSession(session) {
       environment: metadata.boxnowEnvironment || "",
       apiBaseUrl: metadata.boxnowApiBaseUrl || "",
     },
+	...(["acs", "acs_point"].includes(metadata.deliveryMethod) ? { acsFee: {
+      amount: Number(metadata.acsFeeAmount || 0), currency: metadata.acsFeeCurrency || "eur",
+      source: metadata.acsFeeSource || "acs_test_api", environment: metadata.acsEnvironment || "test", weightGrams: Number(metadata.acsWeightGrams || 0),
+      billableWeightKg: Number(metadata.acsBillableWeightKg || 0), pickupDate: metadata.acsPickupDate || "",
+      originStation: metadata.acsOriginStation || "", destinationStation: metadata.acsDestinationStation || "",
+      destinationArea: metadata.acsDestinationArea || "",
+    } } : {}),
     couponCode: metadata.couponCode || "",
     couponId: metadata.couponId || "",
     referralCode: normalizeReferralCode(metadata.referralCode || ""),
@@ -3049,6 +3462,27 @@ async function upsertOrderFromSession(session) {
   return order;
 }
 
+async function expireOtherCourierQuoteCheckouts(order, paidSession) {
+  if (!order?.shippingQuote || !paidSession?.id || paidSession.payment_status !== 'paid') return;
+  const stripe = stripeClient(stripeSecretForMode(paidSession.livemode === true ? 'live' : 'test'));
+  const alternatives = new Set([
+    String(order.shippingQuote.checkoutSessionId || '').trim(),
+    String(order.shippingQuote.boxNowCheckoutSessionId || '').trim(),
+  ].filter(id => id && id !== paidSession.id));
+  for (const sessionId of alternatives) {
+    try {
+      await stripe.checkout.sessions.expire(sessionId);
+    } catch (err) {
+      logger.info('Unused courier quote checkout could not be expired after payment', {
+        orderId: order.id,
+        paidSessionId: paidSession.id,
+        checkoutSessionId: sessionId,
+        message: err.message || 'Expire failed',
+      });
+    }
+  }
+}
+
 async function upsertOrderFromPaymentIntent(intent) {
   const productsMap = await getProductsMap({ includeInactive: true });
   const metadata = intent.metadata || {};
@@ -3056,7 +3490,7 @@ async function upsertOrderFromPaymentIntent(intent) {
   const items = parseSessionCart(sessionLike, productsMap);
   const id = metadata.stripeSessionId || intent.id;
   const orderNumber = publicOrderId(metadata) || generateOrderNumber();
-  const amountShipping = Number(metadata.boxnowFeeAmount || 0);
+	const amountShipping = Number(["acs", "acs_point"].includes(metadata.deliveryMethod) ? metadata.acsFeeAmount : metadata.boxnowFeeAmount || 0);
   const amountSubtotal = orderItemsSubtotal({ items }) || Math.max(0, Number(intent.amount || 0) - amountShipping);
   const order = {
     id,
@@ -3103,6 +3537,11 @@ async function upsertOrderFromPaymentIntent(intent) {
         lat: metadata.boxnowLockerLat || "",
         lng: metadata.boxnowLockerLng || "",
       },
+      acsPoint: metadata.acsPointId ? {
+        id: metadata.acsPointId, name: metadata.acsPointName || "", street: metadata.acsPointStreet || "",
+        postalCode: metadata.acsPointPostalCode || "", city: metadata.acsPointCity || "", type: metadata.acsPointType || "",
+        station: metadata.acsPointStation || "", branch: metadata.acsPointBranch || "",
+      } : null,
       trackingNumber: "",
       trackingUrl: "",
     },
@@ -3119,6 +3558,13 @@ async function upsertOrderFromPaymentIntent(intent) {
       environment: metadata.boxnowEnvironment || "",
       apiBaseUrl: metadata.boxnowApiBaseUrl || "",
     },
+	...(["acs", "acs_point"].includes(metadata.deliveryMethod) ? { acsFee: {
+      amount: Number(metadata.acsFeeAmount || 0), currency: metadata.acsFeeCurrency || "eur",
+      source: metadata.acsFeeSource || "acs_test_api", environment: metadata.acsEnvironment || "test", weightGrams: Number(metadata.acsWeightGrams || 0),
+      billableWeightKg: Number(metadata.acsBillableWeightKg || 0), pickupDate: metadata.acsPickupDate || "",
+      originStation: metadata.acsOriginStation || "", destinationStation: metadata.acsDestinationStation || "",
+      destinationArea: metadata.acsDestinationArea || "",
+    } } : {}),
     couponCode: metadata.couponCode || "",
     couponId: metadata.couponId || "",
     referralCode: normalizeReferralCode(metadata.referralCode || ""),
@@ -3178,7 +3624,7 @@ function orderItemsSubtotal(order = {}) {
 function orderPricing(order = {}) {
   const itemSubtotal = orderItemsSubtotal(order);
   const storedSubtotal = Number(order.amountSubtotal || 0);
-  const shipping = Number(order.amountShipping || order.boxnowFee?.amount || 0);
+  const shipping = Number(order.amountShipping || order.acsFee?.amount || order.boxnowFee?.amount || 0);
   const storedTotal = Number(order.amountTotal || 0);
   const subtotal = itemSubtotal > 0 ? itemSubtotal : (
     storedSubtotal > 0 && !(shipping > 0 && storedSubtotal === storedTotal)
@@ -4180,6 +4626,13 @@ function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfil
   const placeholders = sanitizeEmailPlaceholderSettings(placeholdersInput || {});
   const customerName = String(customer.name || "").trim();
   const greetingTemplate = customerName ? placeholders.greeting[language] : placeholders.greetingNoName[language];
+  const boxNowTracking = boxNowTrackingEntries(order.boxNowShipment?.parcelIds || shipping.trackingNumbers || []);
+  const trackingNumbers = boxNowTracking.length
+    ? boxNowTracking.map(item => item.parcelId)
+    : [shipping.trackingNumber].filter(Boolean);
+  const trackingUrls = boxNowTracking.length
+    ? boxNowTracking.map(item => item.trackingUrl)
+    : [shipping.trackingUrl].filter(Boolean);
   return {
     orderNumber: publicOrderId(order),
     greeting: greetingTemplate.replace(/\{customerName\}/g, customerName),
@@ -4190,8 +4643,8 @@ function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfil
     previousStatus,
     fulfillmentStatus: order.fulfillmentStatus || "",
     previousFulfillmentStatus,
-    trackingNumber: shipping.trackingNumber || "",
-    trackingUrl: shipping.trackingUrl || boxNowTrackingUrl(shipping.trackingNumber || order.boxNowShipment?.parcelIds?.[0] || ""),
+    trackingNumber: trackingNumbers.join(", "),
+    trackingUrl: trackingUrls.join("\n"),
     total: formatMoney(order.amountTotal, order.currency),
     coupon: order.couponCode || order.metadata?.couponCode || "",
     grubz_url: GRUBZ_URL,
@@ -4450,6 +4903,8 @@ async function sendOrderNotificationOnce(type, order, event, recipientOverride =
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
       subject: message.subject || "",
+      bodyText: message.text || "",
+      bodyHtml: message.html || "",
       result,
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
@@ -4612,6 +5067,8 @@ async function sendCustomerSuccessEmailOnce(order, event) {
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
       subject: message.subject || "",
+      bodyText: message.text || "",
+      bodyHtml: message.html || "",
       result,
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
@@ -4703,6 +5160,8 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
     await notificationRef.set({
       status: result.skipped ? "skipped" : "sent",
       subject: message.subject || "",
+      bodyText: message.text || "",
+      bodyHtml: message.html || "",
       result,
       updatedAt: now(),
       sentAt: result.skipped ? null : now(),
@@ -5622,6 +6081,7 @@ exports.verifyCheckout = onRequest(
         session?.status === "complete" && session?.payment_status === "paid";
 
       const order = paid ? await upsertOrderFromSession(session) : null;
+      if (paid && order) await expireOtherCourierQuoteCheckouts(order, session);
 
       return res.json({
         paid,
@@ -5808,10 +6268,13 @@ function stripeWebhookSecretForMode(mode) {
 
 async function activeStripeConfig(req = null, options = {}) {
   const settings = await effectiveStripeSettings(req, options);
-  const secret = stripeSecretForMode(settings.mode);
-  if (!secret) throw new Error(`Stripe ${settings.mode} secret is not configured`);
+  const mode = settings.localEnvironmentForced
+    ? "test"
+    : (options.mode ? sanitizeStripeMode(options.mode) : settings.mode);
+  const secret = stripeSecretForMode(mode);
+  if (!secret) throw new Error(`Stripe ${mode} secret is not configured`);
   return {
-    mode: settings.mode,
+    mode,
     savedMode: settings.savedMode,
     localEnvironmentForced: settings.localEnvironmentForced === true,
     secret,
@@ -6103,6 +6566,12 @@ function boxNowTrackingUrl(parcelId = "") {
   return id ? `https://track.boxnow.gr/en?track=${encodeURIComponent(id)}` : "";
 }
 
+function boxNowTrackingEntries(parcelIds = []) {
+  return [...new Set((Array.isArray(parcelIds) ? parcelIds : [])
+    .map(value => String(value || "").trim()).filter(Boolean))]
+    .map(parcelId => ({ parcelId, trackingUrl: boxNowTrackingUrl(parcelId) }));
+}
+
 function normalizeBoxNowPhone(value = "") {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -6127,7 +6596,8 @@ function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP, compartmen
   const hasCompartmentOverride = [2, 3].includes(requestedCompartmentSize);
   const subtotal = Math.max(0, Number(order.amountSubtotal || orderItemsSubtotal(order)));
   const valuePerParcel = parcelSizes.length ? subtotal / parcelSizes.length / 100 : 0;
-  const weightPerParcel = parcelSizes.length ? Math.max(1, Math.round(Number(parcel.weightGrams || order.boxnowFee?.weightGrams || 0) / parcelSizes.length)) : 0;
+  const totalWeightGrams = Number(parcel.weightGrams || order.boxnowFee?.weightGrams || 0);
+  const parcelWeights = boxNowParcelWeightsGrams(totalWeightGrams, parcelSizes.length);
   return parcelSizes.map((size, index) => {
     const calculatedCompartmentSize = Number(size.code || parcel.code || 2);
     const compartmentSize = hasCompartmentOverride ? requestedCompartmentSize : calculatedCompartmentSize;
@@ -6135,7 +6605,7 @@ function boxNowParcelItemsForOrder(order, productsMap = PRODUCTS_MAP, compartmen
       id: `${publicOrderId(order)}-${index + 1}`,
       name: `${publicOrderId(order)} parcel ${index + 1}`,
       value: valuePerParcel.toFixed(2),
-      weight: weightPerParcel,
+      weight: parcelWeights[index] || 1,
       // GRUBZ does not use Small compartments, even if stale data calculates size 1.
       compartmentSize: compartmentSize === 3 ? 3 : 2,
     };
@@ -6279,12 +6749,14 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
   ].map(value => String(value || "").trim()).filter(Boolean);
   const firstParcelId = parcelIds[0] || "";
   const trackingUrl = boxNowTrackingUrl(firstParcelId);
+  const tracking = boxNowTrackingEntries(parcelIds);
   const update = {
     boxNowShipment: {
       environment: config.environment,
       deliveryRequestId,
       deliveryRequestIds,
       parcelIds,
+      tracking,
       status: "new",
       paymentMode: payload.paymentMode,
       amountToBeCollected: payload.amountToBeCollected,
@@ -6297,6 +6769,8 @@ async function createBoxNowDeliveryForOrder(orderId, options = {}, adminUser = {
       ...(order.shipping || {}),
       trackingNumber: firstParcelId || order.shipping?.trackingNumber || "",
       trackingUrl: trackingUrl || order.shipping?.trackingUrl || "",
+      trackingNumbers: tracking.map(item => item.parcelId),
+      trackingUrls: tracking.map(item => item.trackingUrl),
     },
     updatedAt: now(),
     updatedBy: adminUser.uid || "",
@@ -6583,7 +7057,12 @@ function cheapestParcelCombination(items) {
 function calculateBoxNowParcel(items, productsMap = PRODUCTS_MAP, parcelSizes = BOXNOW_PARCEL_SIZES) {
   const weightGrams = cartWeightGrams(items, productsMap);
   const kgUnits = Math.max(1, Math.ceil(Math.max(0, weightGrams) / 1000));
-  const parcels = cheapestParcelCombinationForWeight(weightGrams, parcelSizes);
+  const mediumParcel = parcelSizes.find(parcel => String(parcel.code) === "2") || parcelSizes[1];
+  const mediumParcelCount = Math.max(1, Math.ceil(kgUnits / BOXNOW_MEDIUM_CAPACITY_KG));
+  const parcels = Array.from(
+    { length: mediumParcelCount },
+    () => ({ ...mediumParcel, capacityKg: BOXNOW_MEDIUM_CAPACITY_KG })
+  );
   const largestParcel = parcels.reduce((largest, parcel) => {
     return parcel.heightCm > largest.heightCm ? parcel : largest;
   }, parcels[0] || parcelSizes[parcelSizes.length - 1]);
@@ -6611,7 +7090,9 @@ function calculateBoxNowParcel(items, productsMap = PRODUCTS_MAP, parcelSizes = 
       widthCm: parcel.widthCm,
       lengthCm: parcel.lengthCm,
     })),
-    requiredHeightCm: Math.ceil(flattenedBagRequiredHeightCm(weightGrams) * 10) / 10,
+    requiredHeightCm: Math.ceil((
+      parcels.length * BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM
+    ) * 10) / 10,
     maxItemWidthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.widthCm,
     maxItemLengthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.lengthCm,
     oversized: capacityKg < kgUnits,
@@ -6712,9 +7193,7 @@ async function calculateBoxNowFee(items, shipping, productsMap = PRODUCTS_MAP, b
   const shippingSettings = await getShippingSettings();
   const parcelSizes = boxNowParcelSizesWithPrices(shippingSettings);
   const parcel = calculateBoxNowParcel(items, productsMap, parcelSizes);
-  const baseAmount = shippingSettings.boxnowFeeOverrideEnabled
-    ? shippingSettings.boxnowFeeOverrideCents
-    : parcel.amount;
+  const baseAmount = boxNowBaseFeeCents(parcel.amount, parcel.count, shippingSettings);
   const discountCents = shippingSettings.boxnowFeeDiscountEnabled
     ? Math.min(baseAmount, shippingSettings.boxnowFeeDiscountCents)
     : 0;
@@ -6889,6 +7368,52 @@ exports.getShippingSettings = onRequest(
   }
 );
 
+// ===== Courier quote BOX NOW alternative =====
+exports.courierQuoteBoxNowCheckout = onRequest(
+  {
+    region: 'europe-west1',
+    invoker: 'public',
+    secrets: [...STRIPE_SECRETS, BOXNOW_CLIENT_ID, BOXNOW_CLIENT_SECRET, BOXNOW_PARTNER_ID],
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === 'OPTIONS') return res.status(204).end();
+      if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Use GET or POST' });
+      const input = req.method === 'GET' ? req.query : (typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}));
+      const orderId = String(input.order || input.orderId || '').trim();
+      const token = String(input.token || '').trim();
+      if (!orderId || !token) return res.status(400).json({ error: 'This BOX NOW checkout link is incomplete.' });
+      const snap = await db.collection('orders').doc(orderId).get();
+      if (!snap.exists) return res.status(404).json({ error: 'This shipping quote was not found.' });
+      const order = { id: snap.id, ...snap.data() };
+      if (!order.shippingQuote?.boxNowAvailableInArea || !validCourierQuoteBoxNowToken(order, token)) {
+        return res.status(403).json({ error: 'This BOX NOW checkout link is invalid or has been replaced.' });
+      }
+      if (String(order.paymentStatus || '').toLowerCase() === 'paid') {
+        return res.status(409).json({ error: 'This order has already been paid.' });
+      }
+      if (req.method === 'GET') {
+        const productsMap = await getProductsMap({ includeInactive: true });
+        const items = (order.items || []).map(item => ({ id: item.id, qty: item.quantity || item.qty || 1 }));
+        const fee = await calculateBoxNowFee(items, order.shipping || {}, productsMap);
+        return res.json({
+          ok: true,
+          quote: {
+            ...publicCourierQuoteBoxNowData(order),
+            boxNow: { fee: Number(fee.amount || 0), parcelSize: String(fee.parcel?.code || '2') },
+          },
+        });
+      }
+      const url = await createCourierQuoteBoxNowCheckout(order, input.locker || {}, req);
+      return res.json({ ok: true, url });
+    } catch (err) {
+      logger.error('courierQuoteBoxNowCheckout failed', err);
+      return res.status(Number(err.status || 400)).json({ error: err.message || 'BOX NOW checkout failed.' });
+    }
+  }
+);
+
 // ===== Create Checkout Session =====
 exports.createCheckoutSession = onRequest(
   {
@@ -6905,6 +7430,7 @@ exports.createCheckoutSession = onRequest(
       ORDER_NOTIFICATION_FROM,
       TELEGRAM_BOT_TOKEN,
       TELEGRAM_CHAT_ID,
+      ...ACS_SECRETS,
     ],
     cors: ALLOWED_ORIGIN_LIST,
   },
@@ -6952,19 +7478,23 @@ exports.createCheckoutSession = onRequest(
           ok: true,
           courierQuote: true,
           orderNumber: order.orderNumber,
-          url: `/checkout/success?quote=1&order=${encodeURIComponent(order.orderNumber)}`,
+          url: `/checkout/success/?quote=1&order=${encodeURIComponent(order.orderNumber)}`,
         });
       }
-      if (!String(boxNow?.id || "").trim()) {
+      const isAcsDelivery = deliveryMethod === "acs" || deliveryMethod === "acs_point";
+      if (deliveryMethod === "acs_point" && !String(shipping?.acsPoint?.id || "").trim()) {
+        return res.status(400).json({ error: "Choose an ACS Point" });
+      }
+      if (!isAcsDelivery && !String(boxNow?.id || "").trim()) {
         return res.status(400).json({ error: "Missing BOX NOW locker" });
       }
       const productsMap = await getProductsMap();
-      const boxNowSettings = await getEffectiveBoxNowSettings(req, { includeSecrets: true, forceLocalEnvironment: false });
-      const boxNowConfig = boxNowEnvConfig(boxNowSettings, boxNowSettings.activeEnvironment);
+      const boxNowSettings = isAcsDelivery ? null : await getEffectiveBoxNowSettings(req, { includeSecrets: true, forceLocalEnvironment: false });
+      const boxNowConfig = isAcsDelivery ? null : boxNowEnvConfig(boxNowSettings, boxNowSettings.activeEnvironment);
 
       if (cashOnDelivery) {
         if (!uid) return res.status(401).json({ error: "Sign in is required for cash on delivery" });
-        const stripeConfig = await activeStripeConfig(req);
+  const stripeConfig = await activeStripeConfig(req);
         const order = await createCashOnDeliveryOrder({
           uid,
           email: authUser?.email || "",
@@ -6985,7 +7515,7 @@ exports.createCheckoutSession = onRequest(
           ok: true,
           cashOnDelivery: true,
           orderNumber: order.orderNumber,
-          url: `/checkout/success?cod=1&order=${encodeURIComponent(order.orderNumber)}`,
+          url: `/checkout/success/?cod=1&order=${encodeURIComponent(order.orderNumber)}`,
         });
       }
 
@@ -7017,14 +7547,16 @@ exports.createCheckoutSession = onRequest(
         };
       });
 
-      const boxNowFee = await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
-      if (boxNowFee.amount > 0) {
+      const deliveryFee = isAcsDelivery
+        ? await calculateAcsFee(items, shipping, productsMap)
+        : await calculateBoxNowFee(items, shipping, productsMap, boxNowConfig);
+      if (deliveryFee.amount > 0) {
         line_items.push({
           quantity: 1,
           price_data: {
-            currency: boxNowFee.currency || "eur",
-            unit_amount: boxNowFee.amount,
-            product_data: { name: "BOX NOW delivery" },
+            currency: deliveryFee.currency || "eur",
+            unit_amount: deliveryFee.amount,
+            product_data: { name: isAcsDelivery ? "ACS Courier delivery" : "BOX NOW delivery" },
           },
         });
       }
@@ -7067,16 +7599,34 @@ exports.createCheckoutSession = onRequest(
         boxnowLockerAddressLine2: String(boxNow?.addressLine2 || "").slice(0, 500),
         boxnowLockerLat: String(boxNow?.lat || "").slice(0, 500),
         boxnowLockerLng: String(boxNow?.lng || "").slice(0, 500),
-        boxnowFeeAmount: String(boxNowFee?.amount || 0).slice(0, 500),
-        boxnowFeeCurrency: String(boxNowFee?.currency || "eur").slice(0, 500),
-        boxnowFeeSource: String(boxNowFee?.source || "").slice(0, 500),
-        boxnowWeightGrams: String(boxNowFee?.weightGrams || 0).slice(0, 500),
-        boxnowParcelSize: String(boxNowFee?.parcel?.code || "").slice(0, 500),
-        boxnowParcelLabel: String(boxNowFee?.parcel?.label || "").slice(0, 500),
-        boxnowParcelCount: String(boxNowFee?.parcel?.count || 0).slice(0, 500),
-        boxnowRequiredHeightCm: String(boxNowFee?.parcel?.requiredHeightCm || 0).slice(0, 500),
-        boxnowEnvironment: String(boxNowFee?.environment || boxNowConfig.environment || "").slice(0, 500),
-        boxnowApiBaseUrl: String(boxNowFee?.apiBaseUrl || boxNowConfig.apiBaseUrl || "").slice(0, 500),
+        boxnowFeeAmount: String(isAcsDelivery ? 0 : deliveryFee.amount || 0).slice(0, 500),
+        boxnowFeeCurrency: String(isAcsDelivery ? "eur" : deliveryFee.currency || "eur").slice(0, 500),
+        boxnowFeeSource: String(isAcsDelivery ? "" : deliveryFee.source || "").slice(0, 500),
+        boxnowWeightGrams: String(isAcsDelivery ? 0 : deliveryFee.weightGrams || 0).slice(0, 500),
+        boxnowParcelSize: String(isAcsDelivery ? "" : deliveryFee.parcel?.code || "").slice(0, 500),
+        boxnowParcelLabel: String(isAcsDelivery ? "" : deliveryFee.parcel?.label || "").slice(0, 500),
+        boxnowParcelCount: String(isAcsDelivery ? 0 : deliveryFee.parcel?.count || 0).slice(0, 500),
+        boxnowRequiredHeightCm: String(isAcsDelivery ? 0 : deliveryFee.parcel?.requiredHeightCm || 0).slice(0, 500),
+        boxnowEnvironment: String(isAcsDelivery ? "" : deliveryFee.environment || boxNowConfig?.environment || "").slice(0, 500),
+        boxnowApiBaseUrl: String(isAcsDelivery ? "" : deliveryFee.apiBaseUrl || boxNowConfig?.apiBaseUrl || "").slice(0, 500),
+        acsFeeAmount: String(isAcsDelivery ? deliveryFee.amount : 0),
+        acsFeeCurrency: String(isAcsDelivery ? deliveryFee.currency : "eur"),
+        acsFeeSource: String(isAcsDelivery ? deliveryFee.source : ""),
+        acsEnvironment: String(isAcsDelivery ? deliveryFee.environment : ""),
+        acsWeightGrams: String(isAcsDelivery ? deliveryFee.weightGrams : 0),
+        acsBillableWeightKg: String(isAcsDelivery ? deliveryFee.billableWeightKg : 0),
+        acsOriginStation: String(isAcsDelivery ? deliveryFee.origin.station : ""),
+        acsDestinationStation: String(isAcsDelivery ? deliveryFee.destination.station : ""),
+        acsDestinationArea: String(isAcsDelivery ? deliveryFee.destination.area : "").slice(0, 500),
+        acsPickupDate: String(isAcsDelivery ? deliveryFee.pickupDate : ""),
+        acsPointId: String(deliveryFee.point?.id || ""),
+        acsPointName: String(deliveryFee.point?.name || "").slice(0, 500),
+        acsPointStreet: String(deliveryFee.point?.street || "").slice(0, 500),
+        acsPointPostalCode: String(deliveryFee.point?.postalCode || ""),
+        acsPointCity: String(deliveryFee.point?.city || "").slice(0, 500),
+        acsPointType: String(deliveryFee.point?.type || "").slice(0, 500),
+        acsPointStation: String(deliveryFee.point?.station || ""),
+        acsPointBranch: String(deliveryFee.point?.branch || ""),
         couponCode: couponResult?.coupon?.code || "",
         couponId: couponResult?.coupon?.id || "",
         couponDiscountCents: String(couponResult?.discountCents || 0).slice(0, 500),
@@ -7093,6 +7643,16 @@ exports.createCheckoutSession = onRequest(
         language,
       };
 
+      // Stripe permits at most 50 metadata keys. Keep only the metadata for
+      // the selected carrier; sending empty fields for both BOX NOW and ACS
+      // pushed ACS checkouts over that limit.
+      const carrierMetadataPrefixToRemove = isAcsDelivery ? "boxnow" : "acs";
+      for (const key of Object.keys(checkoutMetadata)) {
+        if (key.toLowerCase().startsWith(carrierMetadataPrefixToRemove)) {
+          delete checkoutMetadata[key];
+        }
+      }
+
       const requestOrigin = String(req.headers.origin || "").trim();
       const returnBase = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)
         ? requestOrigin
@@ -7103,11 +7663,15 @@ exports.createCheckoutSession = onRequest(
         client_reference_id: orderNumber,
         line_items,
         automatic_tax: { enabled: false },
-        success_url: `${returnBase}/checkout/success?sid={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${returnBase}/checkout/cancelled`,
+        success_url: `${returnBase}/checkout/success/?sid={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${returnBase}/?checkout=review`,
         metadata: checkoutMetadata,
         payment_intent_data: { metadata: checkoutMetadata },
       };
+      if (stripeConfig.localEnvironmentForced) {
+        params.payment_method_types = ["card"];
+        params.custom_text = { submit: { message: "Stripe test mode: use a Stripe test card. Real cards and wallets will be declined." } };
+      }
 
       if (promotionCodeId) {
         params.discounts = [{ promotion_code: promotionCodeId }];
@@ -7168,6 +7732,7 @@ exports.stripeWebhook = onRequest(
         case "checkout.session.completed": {
           const session = event.data.object;
           const order = await upsertOrderFromSession(session);
+          if (session.payment_status === "paid") await expireOtherCourierQuoteCheckouts(order, session);
           if (session.payment_status === "paid") await notifyTelegramOrderSafely(order, event);
           await sendOrderNotificationOnce("purchase_complete", order, event);
           await sendCustomerSuccessEmailOnce(order, event);
@@ -7176,6 +7741,7 @@ exports.stripeWebhook = onRequest(
         case "checkout.session.async_payment_succeeded": {
           const session = event.data.object;
           const order = await upsertOrderFromSession(session);
+          await expireOtherCourierQuoteCheckouts(order, session);
           await notifyTelegramOrderSafely(order, event);
           await sendOrderNotificationOnce("purchase_complete", order, event);
           await sendCustomerSuccessEmailOnce(order, event);
@@ -7489,6 +8055,7 @@ exports.adminOrders = onRequest(
       SMTP_USER,
       SMTP_PASS,
       ORDER_NOTIFICATION_FROM,
+      ...ACS_SECRETS,
     ],
     cors: ALLOWED_ORIGIN_LIST,
   },
@@ -7521,8 +8088,35 @@ exports.adminOrders = onRequest(
 
       if (req.method === "PATCH" || req.method === "POST") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (req.method === "POST" && String(body.action || "").trim() === "calculateManualOrderShipping") {
+          const input = body.order && typeof body.order === "object" ? body.order : body;
+          const items = Array.isArray(input.items) ? input.items : [];
+          if (!items.length) return jsonError(res, 400, "Add at least one product");
+          const shipping = input.shipping && typeof input.shipping === "object" ? input.shipping : {};
+          const deliveryMethod = String(shipping.deliveryMethod || input.deliveryMethod || "boxnow").trim();
+          const productsMap = await getProductsMap({ includeInactive: true });
+          const weightGrams = cartWeightGrams(items, productsMap);
+          if (!(weightGrams > 0)) return jsonError(res, 400, "The selected products do not have a package weight configured.");
+          if (deliveryMethod === "boxnow") {
+            const quote = await calculateBoxNowFee(items, shipping, productsMap);
+            return res.json({ ok: true, deliveryMethod, weightGrams, quote });
+          }
+          if (deliveryMethod === "acs") {
+            const quote = await calculateAcsFee(items, shipping, productsMap);
+            return res.json({ ok: true, deliveryMethod, weightGrams, quote });
+          }
+          if (deliveryMethod === "acs_point") {
+            if (!String(shipping.acsPoint?.id || "").trim()) {
+              return jsonError(res, 400, "Choose an ACS Point before calculating its shipping price.");
+            }
+            const quote = await calculateAcsFee(items, shipping, productsMap);
+            return res.json({ ok: true, deliveryMethod, weightGrams, quote });
+          }
+          return res.json({ ok: true, deliveryMethod, weightGrams, quoteRequired: true });
+        }
         if (req.method === "POST" && String(body.action || "").trim() === "createManualOrder") {
-          const order = await createManualOrderFromAdmin(body.order || body, adminUser);
+          let order = await createManualOrderFromAdmin(body.order || body, adminUser);
+          if (body.generatePaymentLink === true) order = await createManualOrderCheckout(order, adminUser, req, "live");
           return res.json({ ok: true, order });
         }
 
@@ -7533,13 +8127,21 @@ exports.adminOrders = onRequest(
         const existingSnap = await orderRef.get();
         if (!existingSnap.exists) return jsonError(res, 404, "Order not found");
         const existingOrder = existingSnap.exists ? { id, ...existingSnap.data() } : { id };
+        if (String(body.action || "").trim() === "createManualOrderCheckout") {
+          const order = await createManualOrderCheckout(existingOrder, adminUser, req, body.stripeMode || "live");
+          return res.json({ ok:true, checkoutUrl:order.paymentLink, order });
+        }
         if (String(body.action || "").trim() === "sendCourierQuoteTestEmail") {
           const email = await sendCourierQuoteTestEmail(existingOrder, body);
           return res.json({ ok: true, email, recipient: GRUBZ_INFO_EMAIL });
         }
-        if (String(body.action || "").trim() === "finalizeCourierQuote") {
-          const result = await finalizeCourierQuote(existingOrder, body, adminUser, req);
-          return res.json({ ok: true, checkoutUrl: result.order.paymentLink, order: result.order, email: result.email });
+        if (String(body.action || "").trim() === "createCourierQuoteCheckout") {
+          const result = await createCourierQuoteCheckout(existingOrder, body, adminUser, req);
+          return res.json({ ok: true, checkoutUrl: result.order.paymentLink, order: result.order });
+        }
+        if (String(body.action || "").trim() === "sendCourierQuoteCustomerEmail") {
+          const result = await sendCourierQuoteCustomerEmail(existingOrder, adminUser);
+          return res.json({ ok: true, order: result.order, email: result.email });
         }
         if (String(body.action || "").trim() === "sendFeedbackRequest") {
           const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser);
@@ -7715,7 +8317,7 @@ exports.adminOrders = onRequest(
           const nextItems = orderItemsFromCart(Array.isArray(body.items) ? body.items : [], productsMap, existingOrder.stripeMode || "test", { allowInactive: true });
           if (!nextItems.length) return jsonError(res, 400, "Add at least one product.");
           const amountSubtotal = orderItemsSubtotal({ items: nextItems });
-          const amountShipping = Math.max(0, Number(existingOrder.amountShipping || existingOrder.boxnowFee?.amount || 0));
+          const amountShipping = Math.max(0, Number(existingOrder.amountShipping || existingOrder.acsFee?.amount || existingOrder.boxnowFee?.amount || 0));
           const existingPricing = orderPricing(existingOrder);
           const amountDiscount = Math.max(0, Number(existingOrder.amountDiscount || existingPricing.discount || 0));
           const amountTotal = Math.max(0, amountSubtotal + amountShipping - amountDiscount);
@@ -8214,6 +8816,8 @@ exports.adminEmailHistory = onRequest(
           source: "order",
           type: item.type || "order_email",
           subject: item.subject || "",
+          bodyText: item.bodyText || item.text || "",
+          bodyHtml: item.bodyHtml || item.html || "",
           recipient,
           orderId: item.orderId || "",
           orderNumber: item.orderNumber || "",
@@ -8233,6 +8837,8 @@ exports.adminEmailHistory = onRequest(
               source,
               type: fallbackType,
               subject: item.subject || "",
+              bodyText: item.bodyText || item.text || item.body || "",
+              bodyHtml: item.bodyHtml || item.html || "",
               recipient: normalizedEmail(result.email || result.deliveredTo || ""),
               orderId: "",
               orderNumber: "",
@@ -8254,6 +8860,8 @@ exports.adminEmailHistory = onRequest(
           source: "scheduled",
           type: item.type || "scheduled_email",
           subject: "",
+          bodyText: item.bodyText || item.text || item.body || "",
+          bodyHtml: item.bodyHtml || item.html || "",
           recipient: "",
           orderId: item.orderId || "",
           orderNumber: item.orderNumber || "",
@@ -8263,6 +8871,20 @@ exports.adminEmailHistory = onRequest(
           scheduledAt: item.scheduledAt || null,
           sentAt: item.scheduledAt || item.createdAt || null,
         });
+      }
+      const reconstructableRows = rows.filter(row => !row.bodyText && !row.bodyHtml && row.type === "customer_purchase_complete" && row.orderId);
+      const orderCache = new Map();
+      for (const row of reconstructableRows) {
+        if (!orderCache.has(row.orderId)) {
+          const orderSnap = await db.collection("orders").doc(row.orderId).get();
+          orderCache.set(row.orderId, orderSnap.exists ? { id: orderSnap.id, ...orderSnap.data() } : null);
+        }
+        const order = orderCache.get(row.orderId);
+        if (!order) continue;
+        const message = buildCustomerSuccessNotification(order);
+        row.bodyText = message.text || "";
+        row.bodyHtml = message.html || "";
+        row.bodyReconstructed = true;
       }
       rows.sort((a, b) => emailHistoryMillis(b) - emailHistoryMillis(a));
       return res.json({ emails: rows.slice(0, limit) });
@@ -9180,6 +9802,7 @@ exports.adminSettings = onRequest(
       ORDER_NOTIFICATION_FROM,
       TELEGRAM_BOT_TOKEN,
       TELEGRAM_CHAT_ID,
+      ...ACS_SECRETS,
     ],
     cors: ALLOWED_ORIGIN_LIST,
   },
@@ -9193,9 +9816,10 @@ exports.adminSettings = onRequest(
         const stripe = await effectiveStripeSettings(req, { forceLocalEnvironment: false });
         const orderEmails = await getOrderEmailSettings();
         const boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
+        const acs = await getAcsSettings();
         const chatbot = await getChatbotSettings();
         const marketing = await getMarketingSettings();
-        return res.json({ shipping, stripe, orderEmails, boxNow, chatbot, marketing });
+        return res.json({ shipping, stripe, orderEmails, boxNow, acs, chatbot, marketing });
       }
 
       if (req.method === "PATCH" || req.method === "POST") {
@@ -9218,6 +9842,7 @@ exports.adminSettings = onRequest(
         let stripe = null;
         let orderEmails = null;
         let boxNow = null;
+        let acs = null;
         let chatbot = null;
         let marketing = null;
 
@@ -9265,6 +9890,10 @@ exports.adminSettings = onRequest(
           boxNow = await saveBoxNowSettings(body.boxNow, adminUser);
         }
 
+        if (body.acs) {
+          acs = await saveAcsSettings(body.acs, adminUser);
+        }
+
         if (body.chatbot) {
           const previous = await getChatbotSettings();
           chatbot = sanitizeChatbotSettings(body.chatbot, previous);
@@ -9293,12 +9922,416 @@ exports.adminSettings = onRequest(
         if (!stripe) stripe = await effectiveStripeSettings(req, { forceLocalEnvironment: false });
         if (!orderEmails) orderEmails = await getOrderEmailSettings();
         if (!boxNow) boxNow = await getEffectiveBoxNowSettings(req, { forceLocalEnvironment: false });
+        if (!acs) acs = await getAcsSettings();
         if (!chatbot) chatbot = await getChatbotSettings();
         if (!marketing) marketing = await getMarketingSettings();
-        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, chatbot, marketing });
+        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, acs, chatbot, marketing });
       }
 
       return jsonError(res, 405, "Use GET or PATCH");
+    } catch (err) {
+      return adminError(res, err);
+    }
+  }
+);
+
+function sanitizeAcsEnvironment(value) {
+  const environment = String(value || "test").trim().toLowerCase();
+  if (environment === "live") return "production";
+  if (!["test", "production"].includes(environment)) throw new Error("ACS environment must be test or production");
+  return environment;
+}
+
+function defaultAcsSettings() {
+  return {
+    activeEnvironment: "test",
+    test: {
+      companyId: secretValue(ACS_COMPANY_ID), companyPassword: secretValue(ACS_COMPANY_PASSWORD),
+      userId: secretValue(ACS_USER_ID), userPassword: secretValue(ACS_USER_PASSWORD),
+      billingCode: secretValue(ACS_BILLING_CODE), apiKey: secretValue(ACS_API_KEY),
+    },
+    production: { companyId: "", companyPassword: "", userId: "", userPassword: "", billingCode: "", apiKey: "" },
+  };
+}
+
+function sanitizeAcsEnvConfig(input = {}, existing = {}) {
+  const keepOrValue = (key, max = 4000) => Object.prototype.hasOwnProperty.call(input, key)
+    ? String(input[key] || "").trim().slice(0, max)
+    : String(existing[key] || "").trim().slice(0, max);
+  return {
+    companyId: keepOrValue("companyId"), companyPassword: keepOrValue("companyPassword"),
+    userId: keepOrValue("userId"), userPassword: keepOrValue("userPassword"),
+    billingCode: keepOrValue("billingCode"), apiKey: keepOrValue("apiKey"),
+  };
+}
+
+function publicAcsSettings(settings = {}) {
+  const environments = {};
+  for (const environment of ["test", "production"]) {
+    const config = settings[environment] || {};
+    environments[environment] = Object.fromEntries(
+      ["companyId", "companyPassword", "userId", "userPassword", "billingCode", "apiKey"].flatMap(key => [
+        [`${key}Set`, Boolean(config[key])], [`${key}Masked`, maskedSecret(config[key])],
+      ])
+    );
+  }
+  return { activeEnvironment: sanitizeAcsEnvironment(settings.activeEnvironment), environments };
+}
+
+async function getAcsSettings({ includeSecrets = false } = {}) {
+  const defaults = defaultAcsSettings();
+  const snapshot = await db.doc(ACS_SETTINGS_DOC).get();
+  const stored = snapshot.exists ? snapshot.data() || {} : {};
+  const settings = {
+    activeEnvironment: sanitizeAcsEnvironment(stored.activeEnvironment || defaults.activeEnvironment),
+    test: sanitizeAcsEnvConfig(stored.test || {}, defaults.test),
+    production: sanitizeAcsEnvConfig(stored.production || {}, defaults.production),
+  };
+  return includeSecrets ? settings : publicAcsSettings(settings);
+}
+
+async function saveAcsSettings(input = {}, adminUser = {}) {
+  const existing = await getAcsSettings({ includeSecrets: true });
+  const settings = {
+    activeEnvironment: sanitizeAcsEnvironment(input.activeEnvironment || existing.activeEnvironment),
+    test: sanitizeAcsEnvConfig(input.test || {}, existing.test),
+    production: sanitizeAcsEnvConfig(input.production || {}, existing.production),
+    updatedAt: now(), updatedBy: adminUser.uid || "",
+  };
+  await db.doc(ACS_SETTINGS_DOC).set(settings, { merge: true });
+  acsPointsCache.clear();
+  return publicAcsSettings(settings);
+}
+
+async function acsSecretConfig() {
+  const settings = await getAcsSettings({ includeSecrets: true });
+  const environment = sanitizeAcsEnvironment(settings.activeEnvironment);
+  return { environment, ...settings[environment] };
+}
+
+function athensDate(value = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Athens", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(value);
+}
+
+function nextAcsPickupDate(value = new Date()) {
+  let candidate = new Date(value);
+  for (let attempts = 0; attempts < 7; attempts += 1) {
+    const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Athens", weekday: "short" }).format(candidate);
+    if (weekday !== "Sun") return athensDate(candidate);
+    candidate = new Date(candidate.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return athensDate(candidate);
+}
+
+const acsStationCache = new Map();
+const acsPointsCache = new Map();
+
+function publicAcsPoint(row = {}) {
+  return {
+    id: String(row.id || ""), type: String(row.type || ""), name: String(row.name || row.title || ""),
+    lat: Number(row.lat), lng: Number(row.lon), street: String(row.street || ""), area: String(row.area || ""),
+    city: String(row.city || ""), postalCode: String(row.sa_zipcode || ""), notes: String(row.notes || "").slice(0, 1000),
+    is24h: Number(row.is_24h || 0) === 1, saturday: String(row.saturday || ""), weekdays: String(row.weekdays || ""),
+    station: String(row.Acs_Station_Destination || ""), branch: String(row.Acs_Station_Branch_Destination || ""),
+    codSupported: Number(row.Acs_Smartpoint_COD_Supported || 0) === 1, country: String(row.Country_Code || "GR"),
+  };
+}
+
+async function getAcsPoints() {
+  const config = await acsSecretConfig();
+  const cached = acsPointsCache.get(config.environment);
+  if (cached?.expiresAt > Date.now() && cached.points.length) return cached.points;
+  const response = await createAcsClient(config).getStationsForPlugin({ locale: null });
+  const rows = acsOutput(response).ACSTableOutput?.Table_Data1;
+  const points = (Array.isArray(rows) ? rows : [])
+    .filter(row => row?.type !== "branch" || String(row.Acs_Station_Branch_Destination) === "1")
+    .map(publicAcsPoint).filter(point => point.id && point.station && point.branch && Number.isFinite(point.lat) && Number.isFinite(point.lng));
+  acsPointsCache.set(config.environment, { expiresAt: Date.now() + 60 * 60 * 1000, points });
+  return points;
+}
+async function acsStationForPostalCode(client, postalCode) {
+  const zip = String(postalCode || "").replace(/\s/g, "");
+  if (!/^\d{5}$/.test(zip)) throw Object.assign(new Error("Enter a valid five-digit Greek postal code."), { status: 400 });
+  const cached = acsStationCache.get(zip);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const response = await client.findStationByZipCode({ Zip_Code: zip, language: "EN", Country: "GR" });
+  const row = acsTableRows(response)[0] || {};
+  const station = String(row["ACS Station"] || row.Station_ID || row.ACS_SHOP_STATION_ID || "").trim();
+  if (!station) throw Object.assign(new Error(`ACS does not serve postal code ${zip}.`), { status: 400 });
+  const value = {
+    postalCode: zip,
+    station,
+    branch: String(row.ACS_Branch_ID || row.Branch_ID || "").trim(),
+    area: String(row["PostalCode Description"] || row.Description || row.Area || "").trim(),
+  };
+  acsStationCache.set(zip, { value, expiresAt: Date.now() + 6 * 60 * 60 * 1000 });
+  return value;
+}
+
+async function calculateAcsPriceForWeight(weightKgInput, shipping) {
+  const country = String(shipping?.country || "Greece").trim().toUpperCase();
+  if (!["GREECE", "GR", "ΕΛΛΑΔΑ"].includes(country)) {
+    throw Object.assign(new Error("ACS online checkout currently supports delivery within Greece only."), { status: 400 });
+  }
+  const config = await acsSecretConfig();
+  const client = createAcsClient(config);
+  const selectedPointId = String(shipping?.acsPoint?.id || "").trim();
+  const [origin, postalDestination, points] = await Promise.all([
+    acsStationForPostalCode(client, ACS_ORIGIN_POSTAL_CODE),
+    selectedPointId ? Promise.resolve(null) : acsStationForPostalCode(client, shipping?.postalCode || shipping?.postal),
+    selectedPointId ? getAcsPoints() : Promise.resolve([]),
+  ]);
+  const selectedPoint = selectedPointId ? points.find(point => point.id === selectedPointId) : null;
+  if (selectedPointId && !selectedPoint) throw Object.assign(new Error("Choose a valid ACS Point."), { status: 400 });
+  const destination = selectedPoint ? { station: selectedPoint.station, branch: selectedPoint.branch, area: selectedPoint.city || selectedPoint.area } : postalDestination;
+  const weightKg = acsBillableWeightKg(weightKgInput);
+  const weightGrams = Math.round(Number(weightKgInput) * 1000);
+  const pickupDate = nextAcsPickupDate();
+  const response = await client.priceCalculation({
+    Billing_Code: config.billingCode,
+    Billing_Category: 2,
+    Acs_Station_Origin: origin.station,
+    Acs_Station_Destination: destination.station,
+    Weight: weightKg,
+    Pickup_Date: pickupDate,
+    // The destination station/branch identifies an ACS SmartPoint. ACS rejects
+    // SmartPoint destinations when an additional delivery product is supplied.
+    Acs_Delivery_Products: null,
+    Charge_Type: 2,
+    Delivery_Zone: null,
+    Insurance_Ammount: null,
+    Dimension_X_In_Cm: null,
+    Dimension_Y_In_Cm: null,
+    Dimension_Z_In_Cm: null,
+    Language: "EN",
+  });
+  const value = acsValueRows(response)[0] || {};
+  const net = Number(value.Total_Ammount);
+  const vat = Number(value.Total_Vat_Ammount);
+  return {
+    amount: acsPriceCents(net, vat),
+    currency: "eur",
+    source: `acs_${config.environment}_api`,
+    environment: config.environment,
+    netAmount: net,
+    vatAmount: vat,
+    basicAmount: Number(value.Basic_Ammount || 0),
+    extraServiceAmount: Number(value.Extra_Service_Ammount || 0),
+    weightGrams,
+    billableWeightKg: weightKg,
+    pickupDate,
+    origin,
+    destination,
+    point: selectedPoint,
+  };
+}
+
+async function calculateAcsFee(items, shipping, productsMap) {
+  const weightGrams = cartWeightGrams(items, productsMap);
+  return calculateAcsPriceForWeight(weightGrams / 1000, shipping);
+}
+
+exports.getAcsPoints = onRequest(
+  { region: "europe-west1", invoker: "public", secrets: [...ACS_SECRETS, GOOGLE_MAPS_API_KEY], cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "GET") return jsonError(res, 405, "Use GET");
+      return res.json({ ok: true, googleMapsApiKey: GOOGLE_MAPS_API_KEY.value(), points: await getAcsPoints() });
+    } catch (err) {
+      logger.warn("getAcsPoints failed", { error: err.message || "ACS points failed" });
+      return jsonError(res, Number(err.status || 502), err.message || "ACS points failed");
+    }
+  }
+);
+
+exports.getAcsQuote = onRequest(
+  { region: "europe-west1", invoker: "public", secrets: ACS_SECRETS, cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const items = Array.isArray(body.items) ? body.items : [];
+      if (!items.length) return jsonError(res, 400, "No items");
+      if (!body.shipping || typeof body.shipping !== "object") return jsonError(res, 400, "Missing shipping");
+      const postalCode = String(body.shipping.postalCode || body.shipping.postal || "").replace(/\s/g, "");
+      if (!/^\d{5}$/.test(postalCode)) return jsonError(res, 400, "Enter a valid five-digit Greek postal code.");
+      const productsMap = await getProductsMap();
+      const quote = await calculateAcsFee(items, { ...body.shipping, postal: postalCode, postalCode }, productsMap);
+      return res.json({ ok: true, quote });
+    } catch (err) {
+      logger.warn("getAcsQuote failed", { error: err.message || "ACS quote failed", status: Number(err.status || 400) });
+      return jsonError(res, Number(err.status || 400), err.message || "ACS quote failed");
+    }
+  }
+);
+
+function acsAddressParts(order = {}, overrides = {}) {
+  const shipping = order.shipping || {};
+  const raw = String(overrides.address || shipping.addressLine1 || shipping.line1 || "").trim();
+  const explicitNumber = String(overrides.addressNumber || "").trim();
+  const match = explicitNumber ? null : raw.match(/^(.*?)[,\s]+(\d+[A-Za-zΑ-Ωα-ω]?)$/u);
+  return {
+    address: String(overrides.address || (match ? match[1] : raw)).trim(),
+    number: explicitNumber || (match ? match[2] : ""),
+    zipcode: String(overrides.zipcode || shipping.postalCode || shipping.postal || "").replace(/\s/g, "").trim(),
+    region: String(overrides.region || shipping.region || shipping.city || "").trim(),
+  };
+}
+
+function acsTrackingUrl(voucherNo) {
+  const trackingNumber = String(voucherNo || "").trim();
+  return trackingNumber
+    ? `https://www.acscourier.net/en/quick-access/non-registered-users/track-and-trace/?trackingNumber=${encodeURIComponent(trackingNumber)}`
+    : "";
+}
+
+function acsVoucherParameters(order = {}, body = {}, config = {}) {
+  const shipping = order.shipping || {};
+  const point = shipping.acsPoint && typeof shipping.acsPoint === "object" ? shipping.acsPoint : null;
+  const customer = order.customer || {};
+  const address = acsAddressParts(order, body);
+  const recipientName = String(body.recipientName || shipping.name || customer.name || "").trim();
+  const phone = String(body.phone || shipping.phone || customer.phone || "").replace(/[^\d+]/g, "").trim();
+  if (!recipientName) throw Object.assign(new Error("ACS recipient name is required."), { status: 400 });
+  if (!address.address || !address.number || !address.zipcode || !address.region) {
+    throw Object.assign(new Error("ACS requires street, street number, postal code, and region. Check the order address or provide overrides."), { status: 400 });
+  }
+  if (!phone) throw Object.assign(new Error("ACS recipient phone is required."), { status: 400 });
+  const pickupDate = String(body.pickupDate || nextAcsPickupDate()).trim();
+  const weight = Math.max(0.5, Number(body.weight || order.acsFee?.billableWeightKg || order.shippingWeightKg || 0.5));
+  const codAmount = body.codAmount == null || body.codAmount === "" ? null : Math.max(0, Number(body.codAmount));
+  if (point && codAmount > 0) {
+    throw Object.assign(new Error("ACS Point vouchers cannot be combined with cash on delivery."), { status: 400 });
+  }
+  const products = codAmount > 0 ? "COD" : null;
+  return {
+    Pickup_Date: pickupDate,
+    Sender: "GRUBZ",
+    Recipient_Name: recipientName,
+    Recipient_Address: address.address,
+    Recipient_Address_Number: address.number,
+    Recipient_Zipcode: address.zipcode,
+    Recipient_Region: address.region,
+    Recipient_Phone: phone,
+    Recipient_Cell_Phone: phone,
+    Recipient_Floor: String(body.floor || shipping.floor || "").trim() || null,
+    Recipient_Company_Name: null,
+    Recipient_Country: "GR",
+	    Acs_Station_Destination: point?.station || null,
+	    Acs_Station_Branch_Destination: point?.branch ? Number(point.branch) : 1,
+    Billing_Code: config.billingCode,
+    Charge_Type: 2,
+    Cost_Center_Code: null,
+    Item_Quantity: Math.max(1, Math.min(99, Math.round(Number(body.itemQuantity || 1)))),
+    Weight: weight,
+    Dimension_X_In_Cm: null,
+    Dimension_Y_in_Cm: null,
+    Dimension_Z_in_Cm: null,
+    Cod_Ammount: codAmount,
+    Cod_Payment_Way: codAmount > 0 ? 0 : null,
+    Acs_Delivery_Products: point ? null : products,
+    Insurance_Ammount: null,
+    Delivery_Notes: String(body.deliveryNotes || `GRUBZ order ${publicOrderId(order)}`).trim().slice(0, 250) || null,
+    Appointment_Until_Time: null,
+    Recipient_Email: String(body.email || customer.email || "").trim() || null,
+    Reference_Key1: publicOrderId(order),
+    Reference_Key2: order.id || null,
+    With_Return_Voucher: 0,
+    Content_Type_ID: null,
+    Language: "EN",
+  };
+}
+
+async function adminAcsAction(body = {}, adminUser = {}) {
+  const action = String(body.action || "").trim();
+  const config = await acsSecretConfig();
+  const client = createAcsClient(config);
+  if (action === "testCredentials") {
+    const pickupDate = String(body.pickupDate || athensDate()).trim();
+    const response = await client.getPickupLists({ Language: "EN", Pickup_Date: pickupDate });
+    return { ok: true, action, environment: config.environment, pickupDate, pickupLists: acsTableRows(response) };
+  }
+  if (action === "calculatePrice") {
+    const address = body.address && typeof body.address === "object" ? body.address : {};
+    const postalCode = String(address.postalCode || address.postal || "").replace(/\s/g, "");
+    const street = String(address.street || address.addressLine1 || "").trim();
+    const city = String(address.city || "").trim();
+    if (!street || !city) throw Object.assign(new Error("Enter the destination street and city."), { status: 400 });
+    if (!/^\d{5}$/.test(postalCode)) throw Object.assign(new Error("Enter a valid five-digit Greek postal code."), { status: 400 });
+    const quote = await calculateAcsPriceForWeight(body.weightKg, {
+      ...address,
+      postal: postalCode,
+      postalCode,
+      country: address.country || "Greece",
+    });
+    return { ok: true, action, quote: { ...quote, address: { street, city, postalCode, country: address.country || "Greece" } } };
+  }
+  if (action === "createVoucher") {
+    const orderId = String(body.orderId || "").trim();
+    if (!orderId) throw Object.assign(new Error("Missing order ID"), { status: 400 });
+    const orderRef = db.collection("orders").doc(orderId);
+    const snapshot = await orderRef.get();
+    if (!snapshot.exists) throw Object.assign(new Error("Order not found"), { status: 404 });
+    const order = { id: snapshot.id, ...snapshot.data() };
+    if (order.acsShipment?.voucherNo && body.force !== true) {
+      throw Object.assign(new Error("This order already has an ACS voucher. Pass force only after verifying the existing voucher."), { status: 409 });
+    }
+    const productsMap = await getProductsMap({ includeInactive: true });
+    const calculatedWeightKg = cartWeightGrams(
+      (order.items || []).map(item => ({ id: item.id, qty: item.qty || item.quantity || 1 })),
+      productsMap
+    ) / 1000;
+    const weight = Number(order.acsFee?.billableWeightKg || order.shippingWeightKg || calculatedWeightKg || 0.5);
+    const parameters = acsVoucherParameters(order, { ...body, weight }, config);
+    const response = await client.createVoucher(parameters);
+    const value = acsValueRows(response)[0] || {};
+    const voucherNo = String(value.Voucher_No || "").trim();
+    if (!voucherNo) throw new Error("ACS created no voucher number.");
+    const acsShipment = {
+      environment: config.environment, voucherNo, returnVoucherNo: String(value.Voucher_No_Return || "").trim() || null,
+      pickupDate: parameters.Pickup_Date, weight: parameters.Weight, itemQuantity: parameters.Item_Quantity,
+      createdAt: now(), createdBy: adminUser.uid || "",
+    };
+    await orderRef.set({ acsShipment, shipping: { ...(order.shipping || {}), courier: "ACS Courier", trackingNumber: voucherNo, trackingUrl: acsTrackingUrl(voucherNo) }, updatedAt: now() }, { merge: true });
+    return { ok: true, action, environment: config.environment, acsShipment };
+  }
+  if (action === "printVoucher") {
+    const voucherNo = String(body.voucherNo || "").trim();
+    if (!voucherNo) throw Object.assign(new Error("Enter an ACS voucher number"), { status: 400 });
+    const printType = Number(body.printType || 2) === 1 ? 1 : 2;
+    const response = await client.printVoucher({ Voucher_No: voucherNo, Language: "EN", Print_Type: printType, Start_Position: Math.max(1, Math.min(3, Number(body.startPosition || 1))) });
+    return { ok: true, action, environment: config.environment, voucherNo, pdf: extractPdf(response) };
+  }
+  if (action === "issuePickupList") {
+    if (body.confirm !== true) throw Object.assign(new Error("Explicit confirmation is required because an ACS pickup list finalizes the day's printed vouchers."), { status: 400 });
+    const pickupDate = String(body.pickupDate || athensDate()).trim();
+    const response = await client.issuePickupList({ Language: "EN", Pickup_Date: pickupDate, MyData: 1 });
+    const value = acsValueRows(response)[0] || {};
+    return { ok: true, action, environment: config.environment, pickupDate, pickupListNo: String(value.PickupList_No || "").trim(), unprintedFound: Number(value.Unprinted_Found || 0), unprintedVouchers: acsTableRows(response) };
+  }
+  if (action === "printPickupList") {
+    const pickupListNo = String(body.pickupListNo || "").trim();
+    const pickupDate = String(body.pickupDate || "").trim();
+    if (!pickupListNo || !pickupDate) throw Object.assign(new Error("Pickup-list number and pickup date are required"), { status: 400 });
+    const response = await client.printPickupList({ Language: "EN", Mass_Number: pickupListNo, Pickup_Date: pickupDate });
+    return { ok: true, action, environment: config.environment, pickupListNo, pickupDate, pdf: extractPdf(response) };
+  }
+  throw Object.assign(new Error("Unknown ACS action"), { status: 400 });
+}
+
+exports.adminAcs = onRequest(
+  { region: "europe-west1", invoker: "public", secrets: ACS_SECRETS, cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "POST") return jsonError(res, 405, "Use POST");
+      const adminUser = await requireAdmin(req);
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      return res.json(await adminAcsAction(body, adminUser));
     } catch (err) {
       return adminError(res, err);
     }
@@ -9605,11 +10638,66 @@ async function adminBoxNowAction(body = {}, adminUser = {}, req = null) {
   if (action === "fetchParcelLabel" || action === "fetchOrderLabel") {
     const type = String(body.type || "pdf").trim().toLowerCase() === "zpl" ? "zpl" : "pdf";
     const parcelId = String(body.parcelId || "").trim();
+    const parcelIds = [...new Set([
+      ...(Array.isArray(body.parcelIds) ? body.parcelIds : []),
+      parcelId,
+    ].map(value => String(value || "").trim()).filter(Boolean))];
     const orderCandidates = [
       body.deliveryRequestId,
       body.orderNumber,
       ...(Array.isArray(body.deliveryRequestIds) ? body.deliveryRequestIds : []),
     ].map(value => String(value || "").trim()).filter(Boolean);
+    if (action === "fetchParcelLabel" && type === "pdf" && parcelIds.length > 1) {
+      const labelResponses = await Promise.all(parcelIds.map(id => boxNowApiRequest(
+        config,
+        `/api/v1/parcels/${encodeURIComponent(id)}/label.pdf`,
+        { raw: true, token, headers: { accept: "application/pdf" } }
+      )));
+      const failedIndex = labelResponses.findIndex(response => !response?.ok || !response.buffer);
+      if (failedIndex >= 0) {
+        const failed = labelResponses[failedIndex];
+        throw new Error(`BOX NOW label unavailable for parcel ${parcelIds[failedIndex]} (${failed?.status || "unknown"})`);
+      }
+      const brandedLabels = await Promise.all(labelResponses.map(response => brandBoxNowLabelPdf(response.buffer)));
+      const combined = await composeA4BoxNowLabels(brandedLabels, { labelWidthCm: 9 });
+      return {
+        ok: true,
+        action,
+        environment: safeEnvironment,
+        labelId: parcelIds.join(","),
+        labelIds: parcelIds,
+        source: "parcels",
+        result: compactBoxNowResult({
+          ok: true,
+          status: 200,
+          contentType: "application/pdf",
+          buffer: combined.buffer,
+          layout: combined.layout,
+        }),
+      };
+    }
+    if (action === "fetchParcelLabel" && type === "pdf" && orderCandidates.length) {
+      for (const id of orderCandidates) {
+        const completeLabel = await boxNowApiRequest(
+          config,
+          `/api/v1/delivery-requests/${encodeURIComponent(id)}/label.pdf`,
+          { raw: true, token, headers: { accept: "application/pdf" } }
+        );
+        if (!completeLabel.ok || !completeLabel.buffer) continue;
+        const prepared = await prepareA4BoxNowLabelPdf(completeLabel.buffer);
+        completeLabel.buffer = prepared.buffer;
+        completeLabel.contentType = "application/pdf";
+        completeLabel.layout = prepared.layout;
+        return {
+          ok: true,
+          action,
+          environment: safeEnvironment,
+          labelId: id,
+          source: "delivery-request",
+          result: compactBoxNowResult(completeLabel),
+        };
+      }
+    }
     const ids = action === "fetchOrderLabel" ? orderCandidates : [parcelId || String(body.orderNumber || "").trim()].filter(Boolean);
     if (!ids.length) throw new Error(action === "fetchOrderLabel" ? "Enter an order number" : "Enter a parcel ID");
     let response = null;
@@ -10298,6 +11386,9 @@ function boxNowWebhookHandler(fixedEnvironment) {
           const expectedParcelIds = (Array.isArray(order.boxNowShipment?.parcelIds) ? order.boxNowShipment.parcelIds : [])
             .map(value => String(value || "").trim())
             .filter(Boolean);
+          const trackedParcelIds = [...new Set([...expectedParcelIds, update.parcelId]
+            .map(value => String(value || "").trim()).filter(Boolean))];
+          const tracking = boxNowTrackingEntries(trackedParcelIds);
           const deliveredParcelIds = Object.values(parcelEvents)
             .filter(item => normalizeOrderStatus(item.event).replace(/[_\s]+/g, "-") === "delivered")
             .map(item => String(item.parcelId || "").trim())
@@ -10326,13 +11417,16 @@ function boxNowWebhookHandler(fixedEnvironment) {
               lastEventAt: update.eventTime,
               lastWebhookAt: now(),
               environment: config.environment,
+              tracking,
               parcelEvents,
               eventHistory,
               deliveredParcelIds,
             },
             shipping: {
-              trackingNumber: update.parcelId,
-              trackingUrl: boxNowTrackingUrl(update.parcelId),
+              trackingNumber: tracking[0]?.parcelId || update.parcelId,
+              trackingUrl: tracking[0]?.trackingUrl || boxNowTrackingUrl(update.parcelId),
+              trackingNumbers: tracking.map(item => item.parcelId),
+              trackingUrls: tracking.map(item => item.trackingUrl),
             },
             boxNowWebhookEventIds: FieldValue.arrayUnion(eventId),
             updatedAt: now(),
@@ -10528,22 +11622,6 @@ async function uidFromAuthHeader(req) {
     logger.warn("verifyIdToken failed", e);
     return null;
   }
-}
-
-function validateShipping(s) {
-  if (!s || typeof s !== "object") return "Missing shipping";
-  const requiredValues = {
-    name: s.name,
-    phone: s.phone,
-    addressLine1: s.addressLine1 || s.line1,
-    city: s.city,
-    postal: s.postal || s.postalCode,
-    country: s.country,
-  };
-  const missing = Object.entries(requiredValues)
-    .filter(([, value]) => !String(value || "").trim())
-    .map(([key]) => key);
-  return missing.length ? `Missing: ${missing.join(", ")}` : null;
 }
 
 function normalizeCustomerShipping(input = {}, existing = {}) {

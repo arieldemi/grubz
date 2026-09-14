@@ -68,11 +68,41 @@
       .btn-outline:hover{ background:var(--grubz-1); color:#fff }
       .btn-soft{ border:1px solid #e5e5e5; background:#fff; color:#0a0a0a; border-radius:.75rem; padding:.7rem 1rem; font-weight:600; }
       .btn-soft:hover{ background:#f5f5f5 }
+      .loading-spinner{ width:1rem; height:1rem; flex:none; border:2px solid currentColor; border-right-color:transparent; border-radius:9999px; animation:loading-spin .7s linear infinite; }
+      @keyframes loading-spin{ to{ transform:rotate(360deg); } }
       .btn-danger{ border:1px solid #ef4444; color:#ef4444; background:#fff; border-radius:.75rem; padding:.7rem 1rem; font-weight:700; }
       .btn-danger:hover{ background:#fee2e2 }
       .input{ border:1px solid #e5e5e5; border-radius:.75rem; padding:.65rem .8rem; width:100%; }
       .chat-guest-input{ min-height:2.25rem; padding:.45rem .7rem; border-radius:.65rem; line-height:1.2; }
       #chatWidget{ transition: bottom .16s ease; }
+      @media (max-width: 639px){
+        body.purchase-flow-open #chatWidget{ display:none; }
+        .purchase-modal-panel{
+          inset:0 !important;
+          width:100% !important;
+          max-width:none !important;
+          height:100vh !important;
+          height:100dvh !important;
+          max-height:100vh !important;
+          max-height:100dvh !important;
+          transform:none !important;
+          border-radius:0 !important;
+          transition:none !important;
+        }
+        .purchase-modal-panel > :first-child{
+          padding-top:max(1rem, env(safe-area-inset-top));
+          background:linear-gradient(135deg,var(--grubz-1),var(--grubz-2));
+          color:#fff;
+          border-color:rgba(255,255,255,.22);
+        }
+        .purchase-modal-panel > :first-child button:hover{
+          background:rgba(255,255,255,.16);
+        }
+        body.purchase-flow-open #cartBackdrop,
+        body.purchase-flow-open #reviewBackdrop{
+          transition:none !important;
+        }
+      }
       .label{ font-size:.8rem; color:#525252 }
       .cookie-banner{ box-shadow: 0 -10px 30px rgba(0,0,0,.12) }
       button:disabled,
@@ -122,9 +152,53 @@
       .badge-oos{ position:absolute; top:.75rem; left:.75rem; background:#111; color:#fff; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .badge-low{ position:absolute; top:.75rem; right:.75rem; background:#eab308; color:#111; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .boxnow-frame{ width:100%; height:min(76vh,720px); border:0; }
+      #acsPointMap .gm-style-iw-c{
+        max-width:min(17rem, calc(100vw - 4rem)) !important;
+        padding:0 !important;
+        border-radius:.875rem !important;
+        box-shadow:0 10px 28px rgba(24,24,27,.22) !important;
+      }
+      #acsPointMap .gm-style-iw-d{ overflow:hidden !important; }
+      #acsPointMap .gm-style-iw-chr{ position:absolute; top:0; right:0; z-index:2; }
+      .acs-map-popup{ width:15rem; max-width:100%; min-width:0; color:#18181b; overflow-wrap:anywhere; }
+      .acs-map-popup__body{ padding:.9rem 2.5rem .8rem .9rem; }
+      .acs-map-popup__eyebrow{ color:var(--grubz-1); font-size:.65rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+      .acs-map-popup__title{ display:block; margin-top:.2rem; font-size:.9rem; line-height:1.25; }
+      .acs-map-popup__address{ margin-top:.55rem; color:#52525b; font-size:.75rem; line-height:1.4; }
+      .acs-map-popup__locality{ display:block; margin-top:.1rem; color:#71717a; }
+      .acs-map-popup__choose{
+        display:block;
+        width:100%;
+        padding:.7rem .8rem;
+        border:0;
+        border-radius:0;
+        background:var(--positive);
+        color:#fff;
+        font-size:.75rem;
+        font-weight:700;
+        line-height:1.2;
+        white-space:normal;
+        box-shadow:none;
+      }
+      .acs-map-popup__choose:hover{ background:var(--positive-hover); }
       .viewport-modal-panel{
         max-height:calc(100vh - 1rem);
         max-height:calc(100dvh - 1rem);
+      }
+      .review-scroll-area{
+        position:absolute;
+        inset:0;
+        scrollbar-gutter:stable;
+        scrollbar-color:#d04211 #f4f4f5;
+        scrollbar-width:auto;
+      }
+      .review-scroll-area::-webkit-scrollbar{ width:12px; }
+      .review-scroll-area::-webkit-scrollbar-track{ background:#f4f4f5; }
+      .review-scroll-area::-webkit-scrollbar-thumb{ background:#d04211; border:3px solid #f4f4f5; border-radius:999px; }
+      .review-scroll-cue{ background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 42%); }
+      .review-modal-panel{
+        height:min(720px, calc(100vh - 1rem));
+        height:min(720px, calc(100dvh - 1rem));
       }
       .modal-safe-actions{ padding-bottom:max(1rem, env(safe-area-inset-bottom)); }
       .product-detail-media{ background:#f8f1eb; }
@@ -177,9 +251,16 @@
           <a href="#contact" class="hover:opacity-80" data-i18n="navContact">Contact</a>
         </nav>
         <div class="flex items-center gap-3">
-          <a href="#products" class="btn hidden sm:inline-block" data-i18n="buyNow">Buy Now</a>
+          <a href="#products" class="btn px-3 py-2 text-sm sm:px-4" data-i18n="buyNow">Buy Now</a>
         </div>
       </div>
+      <nav class="flex gap-5 overflow-x-auto border-t border-zinc-100 px-4 py-2 text-sm sm:hidden" aria-label="Mobile navigation">
+        <a href="#products" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navProducts">Products</a>
+        <a href="#usage-calculators" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
+        <a href="#benefits" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navBenefits">Benefits</a>
+        <a href="#faq" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navFAQ">FAQ</a>
+        <a href="#contact" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navContact">Contact</a>
+      </nav>
     </header>
 
     <main id="main" tabindex="-1" role="main">
@@ -507,15 +588,15 @@
     <!-- CART POPUP -->
     <div id="cartModal" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-describedby="cartBody">
       <div id="cartBackdrop" class="absolute inset-0 bg-black/40 opacity-0 transition-opacity"></div>
-      <div id="cartPanel" class="absolute left-1/2 top-1/2 w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 -translate-y-1/2
+      <div id="cartPanel" class="purchase-modal-panel absolute left-1/2 top-1/2 w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 -translate-y-1/2
                                 bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition
-                                flex max-h-[calc(100vh-1rem)] max-h-[calc(100dvh-1rem)] flex-col overflow-hidden">
-        <div class="p-4 border-b flex items-center justify-between flex-none">
+                                max-h-[calc(100vh-1rem)] max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain" aria-describedby="cartScrollCue">
+        <div class="sticky top-0 z-20 flex items-center justify-between border-b bg-white p-4">
           <h3 id="cartTitle" class="text-lg font-extrabold" data-i18n="cartTitle">Your cart</h3>
           <button id="cartClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close cart">✕</button>
         </div>
 
-        <div id="cartBody" class="min-h-0 flex-1 overflow-y-auto p-4">
+        <div id="cartBody" class="p-4">
           <p id="cartEmpty" class="text-sm text-zinc-500" data-i18n="cartEmpty">Your cart is empty.</p>
           <ul id="cartItems" class="divide-y hidden" aria-live="polite"></ul>
           <div id="cartSuggestions" class="hidden mt-5 border-t pt-4">
@@ -524,7 +605,7 @@
           </div>
         </div>
 
-        <div class="p-4 border-t bg-zinc-50 rounded-b-2xl flex-none">
+        <div class="rounded-b-2xl border-t bg-zinc-50 p-4">
           <!-- COUPON UI -->
           <div id="couponRow" class="mb-3 flex gap-2 items-center">
             <label class="sr-only" for="couponCode" data-i18n="couponPlaceholder">Coupon code</label>
@@ -545,6 +626,39 @@
             <strong id="cartSubtotalValue" class="text-lg">€0.00</strong>
           </div>
 
+          <section id="cartDeliveryOptions" class="mb-3 rounded-xl border border-zinc-200 bg-white p-3" aria-labelledby="cartDeliveryTitle">
+            <div class="flex items-center justify-between gap-3">
+              <h4 id="cartDeliveryTitle" class="text-sm font-extrabold" data-i18n="deliveryOptionsCart">Delivery options</h4>
+              <span class="text-xs text-zinc-500" data-i18n="deliveryEstimateCart">Estimate</span>
+            </div>
+            <div class="mt-2 grid gap-2 text-sm">
+              <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2">
+                <input type="radio" name="cartDeliveryMethod" value="boxnow" checked>
+                <span class="min-w-0 flex-1 font-semibold">BOX NOW</span>
+                <strong id="cartBoxNowEstimate">—</strong>
+              </label>
+              <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2">
+                <input type="radio" name="cartDeliveryMethod" value="acs">
+                <span class="min-w-0 flex-1 font-semibold">ACS Courier</span>
+                <span class="text-right text-xs text-zinc-500" data-i18n="deliveryAfterAddress">After address</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2">
+                <input type="radio" name="cartDeliveryMethod" value="acs_point">
+                <span class="min-w-0 flex-1 font-semibold">ACS Point</span>
+                <span class="text-right text-xs text-zinc-500" data-i18n="deliveryAfterAddress">After address</span>
+              </label>
+              <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2">
+                <input type="radio" name="cartDeliveryMethod" value="courier_quote">
+                <span class="min-w-0 flex-1 font-semibold" data-i18n="deliveryOtherCourier">Other courier</span>
+                <span class="text-right text-xs text-zinc-500" data-i18n="deliveryQuoteRequired">Quote required</span>
+              </label>
+            </div>
+          </section>
+          <div id="cartEstimatedTotalRow" class="mb-3 flex items-center justify-between rounded-lg bg-orange-50 px-3 py-2">
+            <span class="text-sm font-semibold text-orange-950" data-i18n="estimatedTotalCart">Estimated total</span>
+            <strong id="cartEstimatedTotalValue" class="text-lg text-orange-950">—</strong>
+          </div>
+
           <div class="flex flex-wrap gap-2">
             <button id="cartClear" class="btn-danger" data-i18n="cartClear">Clear cart</button>
             <div class="ml-auto"></div>
@@ -553,12 +667,18 @@
           </div>
         </div>
       </div>
+      <div id="cartScrollCue" class="review-scroll-cue pointer-events-none fixed bottom-2 left-1/2 z-30 hidden w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 flex justify-center px-5 pb-3 pt-8 sm:bottom-2">
+        <span class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-xs font-bold text-white shadow-lg">
+          <span data-i18n="reviewScrollMore">Scroll to see more</span>
+          <span aria-hidden="true">↓</span>
+        </span>
+      </div>
     </div>
 
     <!-- AUTH MODAL -->
     <div id="authModal" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-describedby="authErr">
       <div class="absolute inset-0 bg-black/40"></div>
-      <div class="viewport-modal-panel absolute left-1/2 top-1/2 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden bg-white rounded-2xl shadow-2xl">
+      <div class="purchase-modal-panel viewport-modal-panel absolute left-1/2 top-1/2 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden bg-white rounded-2xl shadow-2xl">
         <div class="p-5 border-b flex-none">
           <h3 id="authTitle" class="text-lg font-extrabold"><span data-i18n="signIn">Sign in</span> / <span data-i18n="createAccount">Create account</span></h3>
         </div>
@@ -569,7 +689,8 @@
           </div>
           <div>
             <label class="label" for="authPass" data-i18n="password">Password</label>
-            <input id="authPass" name="password" type="password" class="input" autocomplete="current-password" required aria-describedby="authErr" />
+            <input id="authPass" name="password" type="password" class="input" autocomplete="current-password" minlength="6" required aria-describedby="authPassHelp authErr" />
+            <p id="authPassHelp" class="mt-1 text-xs text-zinc-500" data-i18n="passwordHelp">Use at least 6 characters when creating an account.</p>
           </div>
           <div class="flex gap-2">
             <button id="doSignIn" class="btn flex-1" type="submit" data-i18n="signIn">Sign in</button>
@@ -586,7 +707,7 @@
     <!-- ADDRESS MODAL -->
     <div id="addrModal" class="fixed inset-0 z-[92] hidden" role="dialog" aria-modal="true" aria-labelledby="addrTitle" aria-describedby="addrErr">
       <div class="absolute inset-0 bg-black/40"></div>
-      <div class="viewport-modal-panel absolute left-1/2 top-1/2 flex w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden bg-white rounded-2xl shadow-2xl">
+      <div class="purchase-modal-panel viewport-modal-panel absolute left-1/2 top-1/2 flex w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden bg-white rounded-2xl shadow-2xl">
         <div class="p-5 border-b flex-none">
           <h3 id="addrTitle" class="text-lg font-extrabold" data-i18n="contactDetails">Contact details</h3>
         </div>
@@ -608,7 +729,22 @@
             <input id="a_city" class="input" autocomplete="address-level2"></div>
           <div id="addrRegionField" class="hidden">
             <label class="label" for="a_region" data-i18n="region">Region</label>
-            <input id="a_region" class="input" autocomplete="address-level1"></div>
+            <select id="a_region" class="input" autocomplete="address-level1">
+              <option value="" data-i18n="regionSelect">Select region</option>
+              <option value="Attica">Attica / Αττική</option>
+              <option value="Central Greece">Central Greece / Στερεά Ελλάδα</option>
+              <option value="Central Macedonia">Central Macedonia / Κεντρική Μακεδονία</option>
+              <option value="Crete">Crete / Κρήτη</option>
+              <option value="Eastern Macedonia and Thrace">Eastern Macedonia and Thrace / Ανατολική Μακεδονία και Θράκη</option>
+              <option value="Epirus">Epirus / Ήπειρος</option>
+              <option value="Ionian Islands">Ionian Islands / Ιόνια Νησιά</option>
+              <option value="North Aegean">North Aegean / Βόρειο Αιγαίο</option>
+              <option value="Peloponnese">Peloponnese / Πελοπόννησος</option>
+              <option value="South Aegean">South Aegean / Νότιο Αιγαίο</option>
+              <option value="Thessaly">Thessaly / Θεσσαλία</option>
+              <option value="Western Greece">Western Greece / Δυτική Ελλάδα</option>
+              <option value="Western Macedonia">Western Macedonia / Δυτική Μακεδονία</option>
+            </select></div>
           <div>
             <label class="label" for="a_postal" data-i18n="postal">Postal code</label>
             <input id="a_postal" class="input" autocomplete="postal-code" required aria-describedby="addrErr"></div>
@@ -631,14 +767,15 @@
       <div id="reviewPanel"
            class="absolute left-1/2 top-1/2 w-[min(96vw,800px)] -translate-x-1/2 -translate-y-1/2
                   bg-white rounded-2xl shadow-2xl opacity-0 scale-95 transition
-                  viewport-modal-panel flex flex-col overflow-hidden">
+                  purchase-modal-panel review-modal-panel viewport-modal-panel flex flex-col overflow-hidden">
 
         <div class="p-4 border-b flex items-center justify-between flex-none">
           <h3 id="reviewTitle" class="text-lg font-extrabold" data-i18n="reviewTitle">Review & confirm</h3>
           <button id="reviewClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close review">✕</button>
         </div>
 
-        <div class="p-5 space-y-5 flex-1 overflow-y-auto min-h-0">
+        <div class="relative min-h-0 flex-1 overflow-hidden">
+        <div id="reviewScrollArea" class="review-scroll-area overflow-y-auto p-5 space-y-5" tabindex="0" aria-describedby="reviewScrollCue">
           <section id="secureCheckoutSection" class="overflow-hidden rounded-xl border-2 border-emerald-200 bg-emerald-50 shadow-sm" aria-label="Payment security">
             <div class="flex items-center gap-3 border-b border-emerald-200 px-4 py-3">
               <img src="/images/secure-checkout.png" alt="" class="h-16 w-16 flex-none rounded-xl object-contain" aria-hidden="true">
@@ -664,17 +801,34 @@
           </section>
 
           <section class="border rounded-xl p-4">
-            <h4 class="font-bold" data-i18n="deliveryMethodTitle">Delivery method</h4>
-            <div class="mt-3 grid gap-2 sm:grid-cols-2">
-              <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm">
-                <input id="deliveryBoxNow" name="deliveryMethod" value="boxnow" type="radio" class="mt-1 h-4 w-4" checked>
-                <img src="/images/boxnow-logo.png" alt="BOX NOW" class="h-7 w-auto flex-none rounded">
-                <span><strong data-i18n="deliveryBoxNow">BOX NOW locker</strong><span class="block text-xs text-zinc-500" data-i18n="deliveryBoxNowHelp">Choose a nearby locker and pay now.</span></span>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h4 class="font-bold" data-i18n="deliveryMethodTitle">Delivery method</h4>
+                <p id="reviewDeliveryMethodSummary" class="mt-1 text-sm text-zinc-700"></p>
+              </div>
+              <button id="reviewDeliveryMethodEdit" class="btn-soft text-sm" type="button" data-i18n="changeDeliveryMethod">Change</button>
+            </div>
+            <div id="boxnowReviewSection" class="mt-4 border-t border-zinc-200 pt-4">
+              <div class="flex items-center justify-between gap-3">
+                <h4 class="font-bold" data-i18n="boxnowTitle">BOX NOW locker</h4>
+                <button id="boxnowChoose" class="btn-soft text-sm" type="button" data-i18n="boxnowChoose">Choose locker</button>
+              </div>
+              <div id="boxnowSelected" class="mt-2 whitespace-pre-line text-sm text-zinc-700" data-i18n="boxnowNone">No locker selected.</div>
+              <label class="mt-4 flex items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm text-zinc-700">
+                <input id="boxnowCod" type="checkbox" class="mt-1 h-4 w-4 rounded border-zinc-300" />
+                <span>
+                  <span class="font-semibold text-zinc-900" data-i18n="boxnowCodLabel">Cash on delivery</span>
+                  <span class="block text-xs text-zinc-500" data-i18n="boxnowCodHelp">Mark this order as cash-on-delivery.</span>
+                </span>
               </label>
-              <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm">
-                <input id="deliveryCourierQuote" name="deliveryMethod" value="courier_quote" type="radio" class="mt-1 h-4 w-4">
-                <span><strong data-i18n="deliveryCourierQuote">Courier — quote required</strong><span class="block text-xs text-zinc-500" data-i18n="deliveryCourierQuoteHelp">We will confirm the shipping cost and delivery time by email before you pay.</span></span>
-              </label>
+              <p id="boxnowErr" class="mt-2 text-sm text-red-600" role="alert"></p>
+            </div>
+            <div id="acsPointReviewSection" class="mt-4 hidden border-t border-zinc-200 pt-4">
+              <div class="flex items-center justify-between gap-3">
+                <h4 class="font-bold">ACS Point</h4>
+                <button id="acsPointChoose" class="btn-soft text-sm" type="button">Choose point</button>
+              </div>
+              <div id="acsPointSelected" class="mt-2 whitespace-pre-line text-sm text-zinc-700">No ACS Point selected.</div>
             </div>
           </section>
 
@@ -688,25 +842,7 @@
 
           <section id="courierQuoteSection" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
             <h4 class="font-bold" data-i18n="courierQuoteTitle">Shipping quote required</h4>
-            <p class="mt-1" data-i18n="courierQuoteText">Request the quote without payment. We will email the courier price, delivery estimate, and a secure checkout. Products are always prepaid online; shipping may be prepaid or paid to the courier on delivery.</p>
-          </section>
-
-          <section id="boxnowReviewSection" class="border rounded-xl p-4">
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex min-w-0 items-center gap-2">
-                <h4 class="font-bold" data-i18n="boxnowTitle">BOX NOW locker</h4>
-              </div>
-              <button id="boxnowChoose" class="btn-soft text-sm" type="button" data-i18n="boxnowChoose">Choose locker</button>
-            </div>
-            <div id="boxnowSelected" class="mt-2 text-sm text-zinc-700 whitespace-pre-line" data-i18n="boxnowNone">No locker selected.</div>
-            <label class="mt-4 flex items-start gap-3 rounded-lg border border-zinc-200 p-3 text-sm text-zinc-700">
-              <input id="boxnowCod" type="checkbox" class="mt-1 h-4 w-4 rounded border-zinc-300" />
-              <span>
-                <span class="font-semibold text-zinc-900" data-i18n="boxnowCodLabel">Cash on delivery</span>
-                <span class="block text-xs text-zinc-500" data-i18n="boxnowCodHelp">Mark this order as cash-on-delivery.</span>
-              </span>
-            </label>
-            <p id="boxnowErr" class="mt-2 text-sm text-red-600" role="alert"></p>
+            <p class="mt-1" data-i18n="courierQuoteText">Request the quote without payment. We will email the courier price, delivery estimate, and a secure checkout.</p>
           </section>
 
           <section class="border rounded-xl p-4">
@@ -720,7 +856,7 @@
               </span>
               <strong id="reviewDeliveryValue" class="text-lg">€0.00</strong>
             </div>
-            <p id="reviewDeliveryMsg" class="mt-1 text-xs text-zinc-500"></p>
+            <p id="reviewDeliveryMsg" class="mt-1 text-xs text-zinc-500" role="status" aria-live="polite"></p>
 
             <!-- Discount line in review -->
             <div id="reviewDiscountRow" class="mt-3 hidden flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
@@ -735,6 +871,13 @@
           </section>
 
         </div>
+          <div id="reviewScrollCue" class="review-scroll-cue pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-5 pb-3 pt-8">
+            <span class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-xs font-bold text-white shadow-lg">
+              <span data-i18n="reviewScrollMore">Scroll to see more</span>
+              <span aria-hidden="true">↓</span>
+            </span>
+          </div>
+        </div>
 
         <div class="modal-safe-actions p-4 border-t bg-zinc-50 rounded-b-2xl flex items-center justify-end gap-2 flex-none">
           <button id="reviewCancel" class="btn-soft" data-i18n="reviewCancel">Back</button>
@@ -746,12 +889,30 @@
     <!-- BOX NOW MODAL -->
     <div id="boxnowModal" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true" aria-labelledby="boxnowModalTitle">
       <div id="boxnowBackdrop" class="absolute inset-0 bg-black/40"></div>
-      <div class="viewport-modal-panel absolute left-1/2 top-1/2 flex w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="purchase-modal-panel viewport-modal-panel absolute left-1/2 top-1/2 flex w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div class="p-4 border-b flex flex-none items-center justify-between">
           <h3 id="boxnowModalTitle" class="text-lg font-extrabold" data-i18n="boxnowModalTitle">Choose BOX NOW locker</h3>
           <button id="boxnowClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close BOX NOW">✕</button>
         </div>
         <iframe id="boxnowFrame" class="boxnow-frame min-h-0 flex-1" title="BOX NOW locker map" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <!-- ACS POINT MODAL -->
+    <div id="acsPointModal" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true" aria-labelledby="acsPointModalTitle">
+      <div id="acsPointBackdrop" class="absolute inset-0 bg-black/40"></div>
+      <div id="acsPointModalPanel" class="purchase-modal-panel viewport-modal-panel absolute left-1/2 top-1/2 flex h-[min(760px,calc(100dvh-1rem))] w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div class="flex flex-none items-center justify-between border-b p-4">
+          <h3 id="acsPointModalTitle" class="text-lg font-extrabold">Choose an ACS Point</h3>
+          <button id="acsPointClose" class="rounded p-2 hover:bg-zinc-100" type="button" aria-label="Close ACS Point map">✕</button>
+        </div>
+        <div class="flex-none border-b bg-white p-3">
+          <input id="acsPointSearch" class="input" placeholder="Search postal code, city, or point name">
+        </div>
+        <div class="grid min-h-0 flex-1 md:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+          <div id="acsPointMap" class="min-h-64 w-full bg-zinc-100" role="region" aria-label="ACS Point map"></div>
+          <div id="acsPointResults" class="max-h-64 space-y-2 overflow-y-auto border-t p-3 md:max-h-none md:border-l md:border-t-0"><p class="text-sm text-zinc-500">Loading ACS Points…</p></div>
+        </div>
       </div>
     </div>
 
@@ -909,6 +1070,7 @@ const BOXNOW_PARCEL_SIZES = [
 const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
 const BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT = 10;
 const BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM = 17;
+const BOXNOW_MEDIUM_CAPACITY_KG = 7;
 const HAPPY_CHICKEN_PACKED_PARCELS = {
   "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
@@ -964,8 +1126,17 @@ async function chatFetch(path, options = {}) {
     <!-- App scripts -->
     <script>
       const FOCUSABLE = 'a[href], button:not([disabled]), input:not([type="hidden"]), textarea, select, [tabindex]:not([tabindex="-1"])';
+      const PURCHASE_DIALOG_IDS = new Set(['cartModal', 'authModal', 'addrModal', 'reviewModal', 'boxnowModal', 'acsPointModal']);
       let __modalLockCount = 0;
       let __modalScrollY = 0;
+
+      function syncPurchaseFlowUi(){
+        const purchaseFlowOpen = [...PURCHASE_DIALOG_IDS].some(id => {
+          const modal = document.getElementById(id);
+          return modal && !modal.classList.contains('hidden');
+        });
+        document.body.classList.toggle('purchase-flow-open', purchaseFlowOpen);
+      }
 
       function trapFocus(modalEl, panelEl) {
         function onKey(e){
@@ -1018,6 +1189,7 @@ async function chatFetch(path, options = {}) {
         modal.dataset.openerId = openerEl?.id || '';
         if (!panel.hasAttribute('tabindex')) panel.setAttribute('tabindex', '-1');
         modal.classList.remove('hidden');
+        syncPurchaseFlowUi();
         lockPageScroll();
         trapFocus(modal, panel);
         const first = panel.querySelector(FOCUSABLE);
@@ -1044,6 +1216,7 @@ async function chatFetch(path, options = {}) {
         panel.removeEventListener('keydown', modal._trapKey || (()=>{}));
         delete modal._trapKey;
         modal.classList.add('hidden');
+        syncPurchaseFlowUi();
         unlockPageScroll();
         const openerId = modal.dataset.openerId;
         if (openerId) document.getElementById(openerId)?.focus();
@@ -1072,15 +1245,27 @@ async function chatFetch(path, options = {}) {
       };
 
       let __boxNowLocker = null;
+      let __acsPoint = null;
+      let __acsPoints = [];
+	  let __googleMapsApiKey = "";
+	  let __acsGoogleMap = null;
+	  let __acsGoogleMarkers = [];
+	  let __acsGoogleCluster = null;
+	  let __googleMapsPromise = null;
       let __boxNowFee = null;
       let __boxNowFeeKey = "";
       let __boxNowFeePromise = null;
+      let __acsQuote = null;
+      let __acsQuoteKey = "";
+      let __acsQuotePromise = null;
+      let __acsQuoteError = "";
       let __reviewSubmitting = false;
       let __currentReviewAddress = null;
       let __deliveryMethod = "boxnow";
       let __reopenReviewAfterAddr = false;
       let __resumeReviewConfirmAfterAddr = false;
       const CHECKOUT_CACHE_OWNER_KEY = "grubz_checkout_cache_owner";
+      const STRIPE_CHECKOUT_RETURN_KEY = "grubz_stripe_checkout_return";
       let __publicShippingSettings = {
         boxnowFeeOverrideEnabled: false,
         boxnowFeeOverrideCents: 0,
@@ -1344,6 +1529,11 @@ async function chatFetch(path, options = {}) {
           cartTitle:"Your cart",
           cartEmpty:"Your cart is empty.",
           cartSubtotal:"Subtotal",
+          deliveryOptionsCart:"Delivery options", deliveryEstimateCart:"Estimate", deliveryAfterAddress:"After address", deliveryOtherCourier:"Other courier", deliveryQuoteRequired:"Quote required",
+          estimatedTotalCart:"Estimated total",
+          contactDetailsRequired:"Please enter your name, phone, postal code, and country.",
+          passwordHelp:"Use at least 6 characters when creating an account.", authEmailRequired:"Enter a valid email address.", authPasswordRequired:"Enter a password.",
+          authRequiredCourierQuote:"Sign in to request a courier quote so we can email the quote to you.", authRequiredCod:"Sign in to place a cash-on-delivery order.",
           cartCheckout:"Checkout",
           cartContinue:"Continue shopping",
           cartRemove:"Remove",
@@ -1376,6 +1566,7 @@ async function chatFetch(path, options = {}) {
           line2:"Address line 2 (optional)",
           city:"City",
           region:"Region",
+          regionSelect:"Select region",
           postal:"Postal code",
           country:"Country",
           saveAddress:"Save address",
@@ -1385,6 +1576,7 @@ async function chatFetch(path, options = {}) {
           signOut:"Sign out",
           myAccount:"My account",
           reviewTitle:"Review & confirm",
+          reviewScrollMore:"Scroll to see more",
           reviewAddress:"Delivery address",
           reviewEditAddress:"Edit address",
           reviewContact:"Contact details",
@@ -1407,14 +1599,21 @@ async function chatFetch(path, options = {}) {
           boxnowCodLabel:"Cash on delivery",
           boxnowCodHelp:"Mark this order as cash-on-delivery.",
           deliveryMethodTitle:"Delivery method",
+          changeDeliveryMethod:"Change",
           deliveryBoxNow:"BOX NOW locker",
           deliveryBoxNowHelp:"Choose a nearby locker and pay now.",
-          deliveryCourierQuote:"Courier — quote required",
+          deliveryAcs:"ACS Courier",
+          deliveryCourierQuote:"Other Courier - quote required",
           deliveryCourierQuoteHelp:"We will confirm the shipping cost and delivery time by email before you pay.",
           courierQuoteTitle:"Shipping quote required",
-          courierQuoteText:"Request the quote without payment. We will email the courier price, delivery estimate, and a secure checkout. Products are always prepaid online; shipping may be prepaid or paid to the courier on delivery.",
-          courierAddressRequired:"Please enter your street address and city for courier delivery.",
-          reviewConfirmQuote:"Request shipping quote",
+          courierQuoteText:"Request the quote without payment. We will email the courier price, estimated delivery time, and a secure checkout.",
+	          courierAddressRequired:"Please enter your street address and city for courier delivery.",
+	          acsAddressRequired:"For ACS, enter the street and number in Address line 1 (for example, Solonos 12), a five-digit postal code, and the region.",
+          reviewConfirmQuote:"Confirm & Pay",
+          reviewConfirmQuoteRequest:"Request shipping quote",
+          acsFeeLabel:"ACS Courier delivery",
+          acsFeeLoading:"Calculating ACS delivery...",
+          acsFeeUnavailable:"ACS could not price this address. Check the postal code and try again.",
           inclVATRate: "incl. VAT 24%",
           totalInclVAT: "Total (incl. VAT)",
           outOfStock: "Out of stock",
@@ -1435,7 +1634,7 @@ async function chatFetch(path, options = {}) {
           productFeedingDefault:"Use as a snack or topper as part of a balanced diet. Start with a small amount and adjust to your animal’s needs.",
           productStorageDefault:"Keep sealed in a cool, dry place away from direct sun. Close the bag after each use.",
           productNutritionDefault:"Dried black soldier fly larvae: high protein, naturally rich in calcium and healthy fats.",
-          productShippingDefault:"Flexible 1kg packing logic is used for BOX NOW estimates. Up to 10kg can fit in one Medium compartment.",
+          productShippingDefault:"BOX NOW orders use Medium parcels carrying up to 7kg each. A 10kg cart ships as two parcels.",
           inStock:"In stock",
 
           // Coupons
@@ -1527,6 +1726,11 @@ async function chatFetch(path, options = {}) {
           cartTitle:"Το καλάθι σας",
           cartEmpty:"Το καλάθι είναι άδειο.",
           cartSubtotal:"Μερικό σύνολο",
+          deliveryOptionsCart:"Επιλογές αποστολής", deliveryEstimateCart:"Εκτίμηση", deliveryAfterAddress:"Μετά τη διεύθυνση", deliveryOtherCourier:"Άλλη courier", deliveryQuoteRequired:"Απαιτείται προσφορά",
+          estimatedTotalCart:"Εκτιμώμενο σύνολο",
+          contactDetailsRequired:"Συμπληρώστε όνομα, τηλέφωνο, ταχυδρομικό κώδικα και χώρα.",
+          passwordHelp:"Χρησιμοποιήστε τουλάχιστον 6 χαρακτήρες για δημιουργία λογαριασμού.", authEmailRequired:"Συμπληρώστε έγκυρη διεύθυνση email.", authPasswordRequired:"Συμπληρώστε κωδικό πρόσβασης.",
+          authRequiredCourierQuote:"Συνδεθείτε για να ζητήσετε προσφορά courier ώστε να σας τη στείλουμε με email.", authRequiredCod:"Συνδεθείτε για παραγγελία με αντικαταβολή.",
           cartCheckout:"Ολοκλήρωση αγοράς",
           cartContinue:"Συνέχεια αγορών",
           cartRemove:"Αφαίρεση",
@@ -1559,6 +1763,7 @@ async function chatFetch(path, options = {}) {
           line2:"Διεύθυνση (γραμμή 2 — προαιρετικό)",
           city:"Πόλη",
           region:"Περιοχή",
+          regionSelect:"Επιλέξτε περιφέρεια",
           postal:"T.K.",
           country:"Χώρα",
           saveAddress:"Αποθήκευση διεύθυνσης",
@@ -1568,6 +1773,7 @@ async function chatFetch(path, options = {}) {
           signOut:"Αποσύνδεση",
           myAccount:"Ο λογαριασμός μου",
           reviewTitle:"Έλεγχος & επιβεβαίωση",
+          reviewScrollMore:"Κυλήστε για να δείτε περισσότερα",
           reviewAddress:"Διεύθυνση αποστολής",
           reviewEditAddress:"Επεξεργασία διεύθυνσης",
           reviewContact:"Στοιχεία επικοινωνίας",
@@ -1590,14 +1796,21 @@ async function chatFetch(path, options = {}) {
           boxnowCodLabel:"Αντικαταβολή",
           boxnowCodHelp:"Σημειώστε την παραγγελία ως αντικαταβολή.",
           deliveryMethodTitle:"Τρόπος αποστολής",
+          changeDeliveryMethod:"Αλλαγή",
           deliveryBoxNow:"BOX NOW locker",
           deliveryBoxNowHelp:"Επιλέξτε κοντινό locker και πληρώστε τώρα.",
-          deliveryCourierQuote:"Courier — απαιτείται προσφορά",
+          deliveryAcs:"ACS Courier",
+          deliveryCourierQuote:"Άλλη Courier - απαιτείται προσφορά",
           deliveryCourierQuoteHelp:"Θα επιβεβαιώσουμε το κόστος και τον χρόνο παράδοσης μέσω email πριν πληρώσετε.",
           courierQuoteTitle:"Απαιτείται προσφορά μεταφορικών",
-          courierQuoteText:"Ζητήστε την προσφορά χωρίς πληρωμή. Θα σας στείλουμε με email το κόστος courier, τον εκτιμώμενο χρόνο παράδοσης και ασφαλές checkout. Τα προϊόντα προπληρώνονται πάντα online· τα μεταφορικά μπορούν να προπληρωθούν ή να πληρωθούν στην courier κατά την παράδοση.",
-          courierAddressRequired:"Παρακαλώ συμπληρώστε οδό και πόλη για την παράδοση με courier.",
-          reviewConfirmQuote:"Αίτημα προσφοράς μεταφορικών",
+          courierQuoteText:"Ζητήστε την προσφορά χωρίς πληρωμή. Θα σας στείλουμε με email το κόστος courier, τον εκτιμώμενο χρόνο παράδοσης και ασφαλές checkout.",
+	          courierAddressRequired:"Παρακαλώ συμπληρώστε οδό και πόλη για την παράδοση με courier.",
+	          acsAddressRequired:"Για την ACS, συμπληρώστε οδό και αριθμό στη γραμμή διεύθυνσης (π.χ. Σόλωνος 12), πενταψήφιο Τ.Κ. και περιοχή.",
+          reviewConfirmQuote:"Επιβεβαίωση & Πληρωμή",
+          reviewConfirmQuoteRequest:"Αίτημα προσφοράς μεταφορικών",
+          acsFeeLabel:"Αποστολή ACS Courier",
+          acsFeeLoading:"Υπολογισμός κόστους ACS...",
+          acsFeeUnavailable:"Η ACS δεν μπόρεσε να υπολογίσει το κόστος. Ελέγξτε τον Τ.Κ. και δοκιμάστε ξανά.",
           inclVATRate: "με ΦΠΑ 24%",
           totalInclVAT: "Σύνολο (με ΦΠΑ)",
           outOfStock: "Μη διαθέσιμο",
@@ -1616,7 +1829,7 @@ async function chatFetch(path, options = {}) {
           productFeedingDefault:"Χρησιμοποιήστε το ως σνακ ή topping μέσα σε ισορροπημένη διατροφή. Ξεκινήστε με μικρή ποσότητα και προσαρμόστε ανάλογα με τις ανάγκες του ζώου.",
           productStorageDefault:"Κρατήστε τη συσκευασία κλειστή σε δροσερό και ξηρό μέρος, μακριά από άμεσο ήλιο.",
           productNutritionDefault:"Αποξηραμένες προνύμφες black soldier fly: υψηλή πρωτεΐνη, φυσικά πλούσιες σε ασβέστιο και καλά λιπαρά.",
-          productShippingDefault:"Οι εκτιμήσεις BOX NOW χρησιμοποιούν τη λογική ευέλικτης συσκευασίας 1kg. Έως 10kg χωρούν σε ένα Medium compartment.",
+          productShippingDefault:"Οι παραγγελίες BOX NOW χρησιμοποιούν Medium δέματα έως 7kg το καθένα. Ένα καλάθι 10kg αποστέλλεται σε δύο δέματα.",
           inStock:"Διαθέσιμο",
           availableOnBackorder:"Διαθέσιμο με προπαραγγελία",
           backorder:"Προπαραγγελία",
@@ -2615,16 +2828,35 @@ async function chatFetch(path, options = {}) {
       document.getElementById("clearCart").addEventListener("click", ()=> clearCart());
 
       const modal = document.getElementById("cartModal"), panel = document.getElementById("cartPanel"), backdrop = document.getElementById("cartBackdrop");
-	      function openCart(){
+	      function updateCartScrollCue(){
+	        const cue = document.getElementById("cartScrollCue");
+	        if (!panel || !cue) return;
+	        const hasMoreBelow = panel.scrollHeight - panel.scrollTop - panel.clientHeight > 12;
+	        cue.classList.toggle("hidden", !hasMoreBelow);
+	      }
+	      panel.addEventListener("scroll", updateCartScrollCue, { passive:true });
+	      window.addEventListener("resize", updateCartScrollCue);
+	      function openCart(options = {}){
+	        const instant = options?.instant === true;
 	        trackEvent("cart_open", { cartItems: cartItemCount(), cartValue: cartTotals().grand });
 	        openDialog('cartModal', 'cartPanel', document.getElementById('cartBtn'));
 	        scrollDialogToTop('cartPanel', ['cartBody']);
         const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
-        requestAnimationFrame(()=>{
+        const showCart = ()=>{
           backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
           panel.classList.remove("opacity-0","scale-95"); panel.classList.add("opacity-100","scale-100");
-        });
+        };
+        if (instant) showCart();
+        else requestAnimationFrame(showCart);
+        requestAnimationFrame(() => requestAnimationFrame(updateCartScrollCue));
       }
+	  function closeCartImmediately(){
+	    const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
+	    backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
+	    panel.classList.add("opacity-0","scale-95"); panel.classList.remove("opacity-100","scale-100");
+	    closeDialog('cartModal', 'cartPanel');
+	    renderAuthButton();
+	  }
       function closeCart(){
         const backdrop = document.getElementById("cartBackdrop"), panel = document.getElementById("cartPanel");
         backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
@@ -2681,6 +2913,23 @@ async function chatFetch(path, options = {}) {
         }, 900);
       }
 
+      function renderCartDeliveryOptions(){
+        const section = document.getElementById("cartDeliveryOptions");
+        if (!section) return;
+        section.classList.toggle("hidden", !cart.size);
+        document.getElementById("cartEstimatedTotalRow")?.classList.toggle("hidden", !cart.size || __deliveryMethod !== "boxnow");
+        document.querySelectorAll('input[name="cartDeliveryMethod"]').forEach(input => {
+          input.checked = input.value === __deliveryMethod;
+        });
+        if (!cart.size) return;
+        const parcel = currentBoxNowParcel();
+        document.getElementById("cartBoxNowEstimate").textContent = nf((parcel.amount || 0) / 100);
+        const estimatedTotalRow = document.getElementById("cartEstimatedTotalRow");
+        const estimatedTotalValue = document.getElementById("cartEstimatedTotalValue");
+        estimatedTotalRow.classList.toggle("hidden", __deliveryMethod !== "boxnow");
+        if (__deliveryMethod === "boxnow") estimatedTotalValue.textContent = nf(cartTotals().grand + ((parcel.amount || 0) / 100));
+      }
+
       function renderCart(){
         const dict = i18n[lang()] || i18n.en;
         const itemsEl = document.getElementById("cartItems");
@@ -2730,15 +2979,14 @@ async function chatFetch(path, options = {}) {
             const p = CATALOG[id] || { price:0, img:"" };
             const name = productName(id, dict);
             const li = document.createElement("li");
-            li.className = "py-4 flex gap-3";
+            li.className = "flex gap-3 py-2.5";
             li.dataset.id = id;
             li.innerHTML = `
-              <img src="${escapeHtml(productImageForLanguage(id))}" alt="" class="w-16 h-16 rounded-lg object-cover bg-zinc-100">
+              <img src="${escapeHtml(productImageForLanguage(id))}" alt="" class="h-12 w-12 rounded-lg bg-zinc-100 object-cover">
               <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <div class="font-medium">${escapeHtml(name)}</div>
-                    <div class="text-xs text-zinc-500">${escapeHtml(dict.cartQty)}: <span class="font-semibold">${qty}</span></div>
                     ${p.allowBackorder && stockIsKnown(id) && qty > getStock(id) ? `<div class="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">${escapeHtml(dict.availableOnBackorder || "Available on backorder")}</div>` : ""}
                   </div>
                   <div class="text-right">
@@ -2746,10 +2994,10 @@ async function chatFetch(path, options = {}) {
                     <button class="text-xs text-red-600 hover:underline remove" aria-label="${escapeHtml(dict.cartRemove)}: ${escapeHtml(name)}">${escapeHtml(dict.cartRemove)}</button>
                   </div>
                 </div>
-                <div class="mt-2 inline-flex items-center gap-2">
-                  <button class="px-2 py-1 rounded border dec" aria-label="${escapeHtml(lang()==='el' ? 'Μείωση ποσότητας' : 'Decrease quantity')}: ${escapeHtml(name)}">−</button>
-                  <span class="w-6 text-center font-semibold">${qty}</span>
-                  <button class="px-2 py-1 rounded border inc" aria-label="${escapeHtml(lang()==='el' ? 'Αύξηση ποσότητας' : 'Increase quantity')}: ${escapeHtml(name)}">+</button>
+                <div class="mt-1 inline-flex items-center gap-1.5">
+                  <button class="h-8 w-8 rounded border dec" aria-label="${escapeHtml(lang()==='el' ? 'Μείωση ποσότητας' : 'Decrease quantity')}: ${escapeHtml(name)}">−</button>
+                  <span class="w-5 text-center text-sm font-semibold">${qty}</span>
+                  <button class="h-8 w-8 rounded border inc" aria-label="${escapeHtml(lang()==='el' ? 'Αύξηση ποσότητας' : 'Increase quantity')}: ${escapeHtml(name)}">+</button>
                 </div>
               </div>
             `;
@@ -2757,9 +3005,8 @@ async function chatFetch(path, options = {}) {
           }
         }
         const { total, discount, grand } = cartTotals();
-        document.querySelector("[data-i18n='cartSubtotal']").textContent =
-          (i18n[lang()]||i18n.en).totalInclVAT;
         document.getElementById("cartSubtotalValue").textContent = nf(grand);
+        renderCartDeliveryOptions();
 
         const row = document.getElementById("cartDiscountRow");
         const val = document.getElementById("cartDiscountValue");
@@ -2775,11 +3022,21 @@ async function chatFetch(path, options = {}) {
         scheduleAppliedCouponRefresh();
         initCouponFromLink();
         applyPendingCouponWhenReady();
+        requestAnimationFrame(updateCartScrollCue);
       }
 
       window.__cartReady = true;
       updateCartInfo();
       renderCart();
+
+      document.getElementById("cartDeliveryOptions").addEventListener("change", event => {
+        const input = event.target.closest('input[name="cartDeliveryMethod"]');
+        if (!input) return;
+        __deliveryMethod = ["acs", "acs_point", "courier_quote"].includes(input.value) ? input.value : "boxnow";
+        invalidateBoxNowFee();
+        invalidateAcsQuote();
+        renderCartDeliveryOptions();
+      });
 
       document.getElementById("cartItems").addEventListener("click", (e)=>{
         const row = e.target.closest("li[data-id]"); if (!row) return;
@@ -2974,6 +3231,34 @@ async function chatFetch(path, options = {}) {
           : (action === "signup" ? "We could not create your account. Please try again." : "We could not sign you in. Check your details and try again."));
       }
 
+      function validateAuthForm(){
+        const dict = i18n[lang()] || i18n.en;
+        const email = document.getElementById("authEmail");
+        const password = document.getElementById("authPass");
+        const error = document.getElementById("authErr");
+        let message = "";
+        let invalidField = null;
+        if (!email.value.trim() || !email.validity.valid) {
+          message = dict.authEmailRequired || "Enter a valid email address.";
+          invalidField = email;
+        } else if (!password.value) {
+          message = dict.authPasswordRequired || "Enter a password.";
+          invalidField = password;
+        } else if (password.value.length < 6) {
+          message = dict.passwordHelp || "Use at least 6 characters when creating an account.";
+          invalidField = password;
+        }
+        error.textContent = message;
+        email.setAttribute("aria-invalid", String(invalidField === email));
+        password.setAttribute("aria-invalid", String(invalidField === password));
+        if (invalidField) {
+          invalidField.focus();
+          announce(message);
+          return false;
+        }
+        return true;
+      }
+
       document.getElementById("authBtn").addEventListener("click", async ()=>{
         await authInitializationReady;
         if (__user || auth().currentUser) {
@@ -3032,9 +3317,13 @@ async function chatFetch(path, options = {}) {
       }
       document.getElementById("authForm").addEventListener("submit", event => {
         event.preventDefault();
+        if (!validateAuthForm()) return;
         signIn(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value);
       });
-      document.getElementById("doSignUp").addEventListener("click", ()=>signUp(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value));
+      document.getElementById("doSignUp").addEventListener("click", ()=>{
+        if (!validateAuthForm()) return;
+        signUp(document.getElementById("authEmail").value.trim(), document.getElementById("authPass").value);
+      });
 
       function clearCustomerCheckoutCache({ clearOwner = false } = {}) {
         Cookie.remove("grubz_shipto");
@@ -3162,7 +3451,15 @@ async function chatFetch(path, options = {}) {
         document.getElementById("a_line1").value = a.line1 || a.addressLine1 || "";
         document.getElementById("a_line2").value = a.line2 || a.addressLine2 || "";
         document.getElementById("a_city").value = a.city || "";
-        document.getElementById("a_region").value = a.region || "";
+        const regionSelect = document.getElementById("a_region");
+        regionSelect.querySelector('option[data-saved-region]')?.remove();
+        const region = a.region || "";
+        if (region && !Array.from(regionSelect.options).some(option => option.value === region)) {
+          const savedOption = new Option(region, region, true, true);
+          savedOption.dataset.savedRegion = "true";
+          regionSelect.add(savedOption);
+        }
+        regionSelect.value = region;
         document.getElementById("a_postal").value = a.postal || a.postalCode || "";
         document.getElementById("a_country").value = a.country || "Greece";
       }
@@ -3189,18 +3486,27 @@ async function chatFetch(path, options = {}) {
         return validAddr(norm) && !!norm.line1 && !!norm.city;
       }
 
+      function validAcsAddr(a){
+        const norm = normalizeAddress(a);
+        return validCourierAddr(norm) &&
+          /\d+[A-Za-zΑ-Ωα-ω]?$/u.test(norm.line1) &&
+          /^\d{5}$/.test(norm.postal.replace(/\s/g, "")) &&
+          Boolean(norm.region);
+      }
+
       function setCourierAddressFields(_show){
         ["addrLine1Field", "addrLine2Field", "addrCityField", "addrRegionField"].forEach(id => {
-          document.getElementById(id)?.classList.remove("hidden");
+          document.getElementById(id)?.classList.toggle("hidden", !_show);
         });
-        document.getElementById("a_line1").required = true;
-        document.getElementById("a_city").required = true;
+        document.getElementById("a_line1").required = Boolean(_show);
+        document.getElementById("a_city").required = Boolean(_show);
+	        document.getElementById("a_region").required = Boolean(_show && ["acs", "acs_point"].includes(__deliveryMethod));
       }
 
       function openAddr(force=false, courier=false){
         setCourierAddressFields(courier);
         openDialog('addrModal', 'addrModal');
-        if (!force) document.getElementById("addrErr").textContent="";
+        document.getElementById("addrErr").textContent="";
       }
       function closeAddr(){ closeDialog('addrModal', 'addrModal'); document.getElementById("addrErr").textContent=""; }
 
@@ -3220,43 +3526,54 @@ async function chatFetch(path, options = {}) {
       });
       document.getElementById("addrSave").addEventListener("click", async ()=>{
         if (!__user && auth().currentUser) __user = auth().currentUser;
-        if (!__user){ openAuth(); return; }
         const a = readAddrForm();
-        if (!validCourierAddr(a)){
+	        if (["acs", "acs_point"].includes(__deliveryMethod) && !validAcsAddr(a)) {
+	          const d = i18n[lang()] || i18n.en;
+	          const msg = d.acsAddressRequired || "For ACS, enter the street and number in Address line 1, a five-digit postal code, and the region.";
+	          document.getElementById("addrErr").textContent = msg;
+	          announce(msg);
+	          return;
+	        }
+        const needsCourierAddress = __deliveryMethod !== "boxnow";
+        if (!(needsCourierAddress ? validCourierAddr(a) : validAddr(a))){
           const d = i18n[lang()]||i18n.en;
-          const msg = d.fullAddressRequired || d.courierAddressRequired || "Please enter your full address for the receipt or invoice.";
+          const msg = needsCourierAddress
+            ? (d.courierAddressRequired || "Please enter your street address and city for courier delivery.")
+            : (d.contactDetailsRequired || "Please enter your name, phone, postal code, and country.");
           document.getElementById("addrErr").textContent = msg;
           announce(msg);
           return;
         }
         try{
-          const resp = await authedFetch("/saveShipping", {
-            method: "POST",
-            body: JSON.stringify({ shipping: { ...a, ...(hasBoxNowLocker() ? { boxNow: __boxNowLocker } : {}) } })
-          });
-          if (!resp.ok) {
-            const e = await resp.json().catch(()=> ({}));
-            throw new Error(e.error || `Save failed (${resp.status})`);
+          if (__user) {
+            const resp = await authedFetch("/saveShipping", {
+              method: "POST",
+              body: JSON.stringify({ shipping: { ...a, deliveryMethod: __deliveryMethod, ...(hasBoxNowLocker() ? { boxNow: __boxNowLocker } : {}) } })
+            });
+            if (!resp.ok) {
+              const e = await resp.json().catch(()=> ({}));
+              throw new Error(e.error || `Save failed (${resp.status})`);
+            }
+	            const contentType = resp.headers.get("content-type") || "";
+	            if (!contentType.includes("application/json")) throw new Error("Address service is unavailable. Please refresh and try again.");
+	            const saved = await resp.json();
+	            if (saved?.ok !== true) throw new Error("Your address was not saved. Please try again.");
           }
-	          const contentType = resp.headers.get("content-type") || "";
-	          if (!contentType.includes("application/json")) {
-	            throw new Error("Address service is unavailable. Please refresh and try again.");
-	          }
-	          const saved = await resp.json();
-	          if (saved?.ok !== true) throw new Error("Your address was not saved. Please try again.");
 	          Cookie.set("grubz_shipto", JSON.stringify(a));
 	          __currentReviewAddress = a;
 	          trackEvent("address_saved", { hasLine1: Boolean(a.line1), postal: a.postal || "", country: a.country || "" });
-	          closeAddr();
           if (__reopenReviewAfterAddr) {
             const resumeCheckout = __resumeReviewConfirmAfterAddr;
             __reopenReviewAfterAddr = false;
             __resumeReviewConfirmAfterAddr = false;
             __currentReviewAddress = a;
             openReview(a);
+	        closeDialog('addrModal', 'addrModal');
             if (resumeCheckout) {
               setTimeout(() => document.getElementById("reviewConfirm")?.click(), 0);
             }
+	      } else {
+	        closeAddr();
           }
         } catch(e){
           const msg = e.message || "Failed to save";
@@ -3332,6 +3649,152 @@ async function chatFetch(path, options = {}) {
         return Boolean(locker && String(locker.id || "").trim());
       }
 
+      function hasAcsPoint(point = __acsPoint){ return Boolean(point && String(point.id || "").trim()); }
+      function renderAcsPointSelection(){
+        const selected = document.getElementById("acsPointSelected");
+        const choose = document.getElementById("acsPointChoose");
+        if (!selected || !choose) return;
+        selected.textContent = hasAcsPoint()
+          ? [__acsPoint.name, __acsPoint.street, [__acsPoint.postalCode, __acsPoint.city].filter(Boolean).join(" ")].filter(Boolean).join("\n")
+          : "No ACS Point selected.";
+        choose.textContent = hasAcsPoint() ? "Change point" : "Choose point";
+      }
+
+	  function loadExternalScript(src, marker){
+	    if (document.querySelector(`script[data-loader="${marker}"]`)) return Promise.resolve();
+	    return new Promise((resolve, reject) => {
+	      const script = document.createElement("script");
+	      script.src = src; script.async = true; script.dataset.loader = marker;
+	      script.onload = resolve; script.onerror = () => reject(new Error(`Could not load ${marker}`));
+	      document.head.appendChild(script);
+	    });
+	  }
+
+	  function ensureGoogleMaps(){
+	    if (window.google?.maps && window.markerClusterer?.MarkerClusterer) return Promise.resolve();
+	    if (__googleMapsPromise) return __googleMapsPromise;
+	    if (!__googleMapsApiKey) return Promise.reject(new Error("Google Maps is not configured."));
+	    __googleMapsPromise = loadExternalScript(
+	      `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(__googleMapsApiKey)}&v=weekly`, "google-maps"
+	    ).then(() => loadExternalScript(
+	      "https://unpkg.com/@googlemaps/markerclusterer@2.6.2/dist/index.min.js", "google-marker-clusterer"
+	    ));
+	    return __googleMapsPromise;
+	  }
+
+	  function selectAcsPoint(point){
+	    __acsPoint = point || null;
+	    closeAcsPointPicker();
+	    invalidateAcsQuote();
+	    renderReview(__currentReviewAddress);
+	  }
+
+	  async function renderAcsGoogleMap(points, focusPoints = points){
+	    const root = document.getElementById("acsPointMap");
+	    if (!root) return;
+	    try {
+	      await ensureGoogleMaps();
+	      const fallback = { lat: 38.0, lng: 23.73 };
+	      __acsGoogleMap ||= new google.maps.Map(root, { center: fallback, zoom: 10, mapTypeControl: false, streetViewControl: false, fullscreenControl: false });
+	      if (__acsGoogleCluster) __acsGoogleCluster.clearMarkers();
+	      __acsGoogleMarkers.forEach(marker => marker.setMap(null));
+	      const bounds = new google.maps.LatLngBounds();
+	      const info = new google.maps.InfoWindow({ maxWidth: 272 });
+	      __acsGoogleMarkers = points.map(point => {
+	        const position = { lat: Number(point.lat), lng: Number(point.lng) };
+	        bounds.extend(position);
+	        const marker = new google.maps.Marker({ position, title: point.name });
+	        marker.addListener("click", () => {
+	          const content = document.createElement("div");
+	          content.className = "acs-map-popup";
+	          const body = document.createElement("div"); body.className = "acs-map-popup__body";
+	          const eyebrow = document.createElement("div"); eyebrow.className = "acs-map-popup__eyebrow"; eyebrow.textContent = "ACS Point";
+	          const title = document.createElement("strong"); title.className = "acs-map-popup__title"; title.textContent = point.name;
+	          const address = document.createElement("div"); address.className = "acs-map-popup__address";
+	          const street = document.createElement("span"); street.textContent = point.street || "";
+	          const locality = document.createElement("span"); locality.className = "acs-map-popup__locality";
+	          locality.textContent = [point.postalCode, point.city].filter(Boolean).join(" ");
+	          address.append(street, locality);
+	          const choose = document.createElement("button"); choose.type = "button"; choose.className = "acs-map-popup__choose"; choose.textContent = "Choose this point";
+	          choose.addEventListener("click", () => selectAcsPoint(point));
+	          body.append(eyebrow, title, address);
+	          content.append(body, choose);
+	          info.setContent(content); info.open({ map: __acsGoogleMap, anchor: marker });
+	        });
+	        return marker;
+	      });
+	      __acsGoogleCluster = new markerClusterer.MarkerClusterer({ map: __acsGoogleMap, markers: __acsGoogleMarkers });
+	      const focusBounds = new google.maps.LatLngBounds();
+	      focusPoints.forEach(point => focusBounds.extend({ lat: Number(point.lat), lng: Number(point.lng) }));
+	      if (focusPoints.length === 1) { __acsGoogleMap.setCenter(focusBounds.getCenter()); __acsGoogleMap.setZoom(14); }
+	      else if (focusPoints.length) __acsGoogleMap.fitBounds(focusBounds, 48);
+	      else if (points.length) __acsGoogleMap.fitBounds(bounds, 36);
+	    } catch (error) {
+	      root.innerHTML = `<p class="p-4 text-sm text-red-600">${escapeHtml(error.message || "Google Maps could not be loaded.")}</p>`;
+	    }
+	  }
+
+      function renderAcsPointResults(){
+        const root = document.getElementById("acsPointResults");
+        const query = String(document.getElementById("acsPointSearch")?.value || "").trim().toLocaleLowerCase("el-GR");
+        const addressPostal = String(__currentReviewAddress?.postal || "").replace(/\s/g, "");
+	    const postalFocus = !query && addressPostal
+	      ? ([5, 3, 2].map(length => __acsPoints.filter(point => String(point.postalCode || "").slice(0, length) === addressPostal.slice(0, length))).find(points => points.length) || [])
+	      : [];
+	    const focusCenter = postalFocus.length ? postalFocus.reduce((center, point) => ({
+	      lat: center.lat + Number(point.lat) / postalFocus.length,
+	      lng: center.lng + Number(point.lng) / postalFocus.length,
+	    }), { lat: 0, lng: 0 }) : null;
+	    const distanceFromFocus = point => {
+	      if (!focusCenter) return 0;
+	      const radians = value => value * Math.PI / 180;
+	      const lat1 = radians(focusCenter.lat), lat2 = radians(Number(point.lat));
+	      const deltaLat = lat2 - lat1, deltaLng = radians(Number(point.lng) - focusCenter.lng);
+	      const value = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+	      return 6371 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+	    };
+	    const matches = __acsPoints.filter(point => {
+          const haystack = [point.name, point.street, point.city, point.area, point.postalCode, point.type].join(" ").toLocaleLowerCase("el-GR");
+	      return query ? haystack.includes(query) : true;
+	    }).sort((a, b) => {
+	      if (!query && focusCenter) return distanceFromFocus(a) - distanceFromFocus(b);
+	      return String(a.name || "").localeCompare(String(b.name || ""), "el");
+	    });
+	    renderAcsGoogleMap(matches, query ? matches : postalFocus);
+	    const visibleList = matches.slice(0, 100);
+	    root.innerHTML = matches.length ? `<p class="mb-2 text-xs font-semibold text-zinc-500">${matches.length.toLocaleString()} ACS Points shown on the map${matches.length > visibleList.length ? ` · first ${visibleList.length} listed below` : ""}</p>` + visibleList.map(point => `
+          <button type="button" class="w-full rounded-xl border border-zinc-200 p-3 text-left hover:border-orange-300 hover:bg-orange-50" data-acs-point-id="${escapeHtml(point.id)}">
+            <span class="block font-bold">${escapeHtml(point.name)}</span>
+            <span class="block text-sm text-zinc-700">${escapeHtml(point.street)}</span>
+	        <span class="block text-xs text-zinc-500">${escapeHtml([point.postalCode, point.city, point.type, point.is24h ? "24h" : "", focusCenter ? `${distanceFromFocus(point).toFixed(1)} km away` : ""].filter(Boolean).join(" · "))}</span>
+          </button>`).join("") : '<p class="text-sm text-zinc-500">No matching ACS Points. Try a city or postal code.</p>';
+      }
+
+      async function openAcsPointPicker(){
+	    openDialog("acsPointModal", "acsPointModalPanel", document.getElementById("acsPointChoose"));
+	    document.getElementById("acsPointChoose").setAttribute("aria-expanded", "true");
+	    requestAnimationFrame(() => {
+	      document.getElementById("acsPointSearch")?.focus({ preventScroll: true });
+	    });
+        if (!__acsPoints.length) {
+          const base = LOCAL_HOSTS.has(location.hostname) ? "/api" : API_BASE;
+          const response = await fetch(`${base}/getAcsPoints`);
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !Array.isArray(data.points)) {
+            document.getElementById("acsPointResults").innerHTML = `<p class="text-sm text-red-600">${escapeHtml(data.error || "ACS Points could not be loaded.")}</p>`;
+            return;
+          }
+	      __googleMapsApiKey = String(data.googleMapsApiKey || "");
+          __acsPoints = data.points;
+        }
+        renderAcsPointResults();
+      }
+
+      function closeAcsPointPicker(){
+        closeDialog("acsPointModal", "acsPointModalPanel");
+        document.getElementById("acsPointChoose")?.setAttribute("aria-expanded", "false");
+      }
+
       function renderBoxNowSelection(){
         const dict = i18n[lang()] || i18n.en;
         const selected = document.getElementById("boxnowSelected");
@@ -3350,8 +3813,76 @@ async function chatFetch(path, options = {}) {
         __boxNowFee = null;
         __boxNowFeeKey = "";
         __boxNowFeePromise = null;
+        __acsQuote = null;
+        __acsQuoteKey = "";
+        __acsQuotePromise = null;
+        __acsQuoteError = "";
         if (typeof renderBoxNowFee === "function") renderBoxNowFee();
         if (typeof updateReviewConfirmState === "function") updateReviewConfirmState();
+      }
+
+      function invalidateAcsQuote(){
+        __acsQuote = null;
+        __acsQuoteKey = "";
+        __acsQuotePromise = null;
+        __acsQuoteError = "";
+        if (typeof renderBoxNowFee === "function") renderBoxNowFee();
+        if (typeof updateReviewConfirmState === "function") updateReviewConfirmState();
+      }
+
+      function acsQuoteKey(addr){
+        return JSON.stringify({
+          items: Array.from(cart.entries()).map(([id, qty]) => ({ id, qty })),
+          postal: String(addr?.postal || addr?.postalCode || "").replace(/\s/g, ""),
+          country: addr?.country || "Greece",
+	        point: __acsPoint?.id || "",
+        });
+      }
+
+      async function refreshAcsQuote(addr){
+	      if (!["acs", "acs_point"].includes(__deliveryMethod)) return null;
+        const postal = String(addr?.postal || addr?.postalCode || "").replace(/\s/g, "");
+        if (!/^\d{5}$/.test(postal)) {
+          __acsQuote = null;
+          __acsQuoteError = lang() === "el" ? "Συμπληρώστε έναν έγκυρο πενταψήφιο Τ.Κ." : "Enter a valid five-digit postal code.";
+          renderBoxNowFee();
+          updateReviewConfirmState();
+          return null;
+        }
+        const key = acsQuoteKey(addr);
+        if (__acsQuote && __acsQuoteKey === key) return __acsQuote;
+        if (__acsQuotePromise && __acsQuoteKey === key) return __acsQuotePromise;
+        __acsQuoteKey = key;
+        __acsQuote = null;
+        __acsQuoteError = "";
+        const items = Array.from(cart.entries()).map(([id, qty]) => ({ id, qty })).filter(item => item.qty > 0);
+        renderBoxNowFee();
+        updateReviewTotal();
+        __acsQuotePromise = (async () => {
+          const acsApiBase = LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE;
+          const response = await fetch(`${acsApiBase}/getAcsQuote`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+	        body: JSON.stringify({ items, shipping: { ...addr, postal, postalCode: postal, ...(__deliveryMethod === "acs_point" ? { acsPoint: __acsPoint } : {}) } }),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data?.quote) throw new Error(data.error || "ACS delivery price is unavailable.");
+          __acsQuote = data.quote;
+          __acsQuoteError = "";
+          return __acsQuote;
+        })().catch(error => {
+          console.warn("ACS quote failed", error);
+          __acsQuote = null;
+          __acsQuoteError = String(error?.message || "").trim();
+          return null;
+        }).finally(() => {
+          __acsQuotePromise = null;
+          renderBoxNowFee();
+          updateReviewTotal();
+          updateReviewConfirmState();
+        });
+        renderBoxNowFee();
+        updateReviewConfirmState();
+        return __acsQuotePromise;
       }
 
       async function loadPublicShippingSettings(){
@@ -3403,9 +3934,9 @@ async function chatFetch(path, options = {}) {
         });
       }
 
-      function boxNowEstimatedAmountCents(parcelAmount = 0){
+      function boxNowEstimatedAmountCents(parcelAmount = 0, parcelCount = 1){
         const baseAmount = __publicShippingSettings.boxnowFeeOverrideEnabled
-          ? Math.max(0, Math.round(Number(__publicShippingSettings.boxnowFeeOverrideCents || 0)))
+          ? Math.max(0, Math.round(Number(__publicShippingSettings.boxnowFeeOverrideCents || 0))) * Math.max(1, Math.round(Number(parcelCount || 0)))
           : Math.max(0, Math.round(Number(parcelAmount || 0)));
         const discountCents = __publicShippingSettings.boxnowFeeDiscountEnabled
           ? Math.min(baseAmount, Math.max(0, Math.round(Number(__publicShippingSettings.boxnowFeeDiscountCents || 0))))
@@ -3674,13 +4205,19 @@ async function chatFetch(path, options = {}) {
       function currentBoxNowParcel(){
         const weightGrams = cartWeightGrams();
         const kgUnits = Math.max(1, Math.ceil(Math.max(0, weightGrams) / 1000));
-        const parcels = cheapestParcelCombinationForWeight(weightGrams);
+        const parcelSizes = boxNowParcelSizes();
+        const mediumParcel = parcelSizes.find(parcel => String(parcel.code) === "2") || parcelSizes[1];
+        const mediumParcelCount = Math.max(1, Math.ceil(kgUnits / BOXNOW_MEDIUM_CAPACITY_KG));
+        const parcels = Array.from(
+          { length: mediumParcelCount },
+          () => ({ ...mediumParcel, capacityKg: BOXNOW_MEDIUM_CAPACITY_KG })
+        );
         const largestParcel = parcels.reduce((largest, parcel) => (
           parcel.heightCm > largest.heightCm ? parcel : largest
         ), parcels[0] || BOXNOW_PARCEL_SIZES[BOXNOW_PARCEL_SIZES.length - 1]);
         const capacityKg = parcels.reduce((sum, parcel) => sum + flattenedBagCapacityKg(parcel), 0);
         const parcelAmount = parcels.reduce((sum, parcel) => sum + parcel.amount, 0);
-        const amount = boxNowEstimatedAmountCents(parcelAmount);
+        const amount = boxNowEstimatedAmountCents(parcelAmount, parcels.length);
         return {
           ...largestParcel,
           amount,
@@ -3691,7 +4228,9 @@ async function chatFetch(path, options = {}) {
           weightGrams,
           kgUnits,
           capacityKg,
-          requiredHeightCm: Math.ceil(flattenedBagRequiredHeightCm(weightGrams) * 10) / 10,
+          requiredHeightCm: Math.ceil((
+            parcels.length * BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM
+          ) * 10) / 10,
           maxItemWidthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.widthCm,
           maxItemLengthCm: ONE_KG_FLEXIBLE_BAG_PARCEL.lengthCm,
         };
@@ -3703,7 +4242,37 @@ async function chatFetch(path, options = {}) {
         const value = document.getElementById("reviewDeliveryValue");
         const msg = document.getElementById("reviewDeliveryMsg");
         if (!row || !value || !msg) return;
+        const resetMessageStyle = () => {
+          msg.className = "mt-1 text-xs text-zinc-500";
+          msg.replaceChildren();
+        };
 
+	    if (["acs", "acs_point"].includes(__deliveryMethod)) {
+          resetMessageStyle();
+          row.classList.remove("hidden");
+          document.getElementById("reviewDeliveryLogo").src = "/images/acs-courier-logo.png";
+          document.getElementById("reviewDeliveryLabel").textContent = dict.acsFeeLabel || "ACS Courier delivery";
+          if (__acsQuote) {
+            value.textContent = nf((__acsQuote.amount || 0) / 100);
+            msg.textContent = __acsQuote.destination?.area
+              ? `${__acsQuote.destination.area} · ${__acsQuote.billableWeightKg || 0.5} kg`
+              : "";
+          } else if (__acsQuotePromise) {
+            value.textContent = "…";
+            msg.className = "mt-2 inline-flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-800";
+            const spinner = document.createElement("span");
+            spinner.className = "loading-spinner";
+            spinner.setAttribute("aria-hidden", "true");
+            msg.append(spinner, document.createTextNode(dict.acsFeeLoading || "Calculating ACS delivery..."));
+          } else {
+            value.textContent = "—";
+            msg.textContent = __acsQuoteError || dict.acsFeeUnavailable || "ACS delivery price is unavailable.";
+          }
+          return;
+        }
+        resetMessageStyle();
+        document.getElementById("reviewDeliveryLogo").src = "/images/boxnow-logo.png";
+        document.getElementById("reviewDeliveryLabel").textContent = dict.boxnowFeeLabel || "BOX NOW delivery";
         if (__deliveryMethod !== "boxnow" || !hasBoxNowLocker()) {
           row.classList.add("hidden");
           msg.textContent = "";
@@ -3729,14 +4298,17 @@ async function chatFetch(path, options = {}) {
         const total = document.getElementById("reviewSubtotal");
         if (!total) return;
         const { grand } = cartTotals();
-        const deliveryFee = __deliveryMethod === "boxnow" && __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0;
+	    const deliveryFee = ["acs", "acs_point"].includes(__deliveryMethod) && __acsQuote
+          ? (__acsQuote.amount || 0) / 100
+          : (__deliveryMethod === "boxnow" && __boxNowFee ? (__boxNowFee.amount || 0) / 100 : 0);
         total.textContent = nf(grand + deliveryFee);
       }
 
       function canConfirmReview(){
-        if (!validCourierAddr(__currentReviewAddress)) {
+        const addressIsValid = __deliveryMethod === "boxnow" ? validAddr : validCourierAddr;
+        if (!addressIsValid(__currentReviewAddress)) {
           const formAddress = normalizeAddress(readAddrForm());
-          if (validCourierAddr(formAddress)) __currentReviewAddress = formAddress;
+          if (addressIsValid(formAddress)) __currentReviewAddress = formAddress;
         }
         if (!hasBoxNowLocker()) {
           try {
@@ -3744,10 +4316,14 @@ async function chatFetch(path, options = {}) {
             if (hasBoxNowLocker(cachedLocker)) __boxNowLocker = cachedLocker;
           } catch { /* Ignore an invalid legacy locker cookie. */ }
         }
+	    if (["acs", "acs_point"].includes(__deliveryMethod)) {
+	      const addressOkay = __deliveryMethod === "acs_point" ? validCourierAddr(__currentReviewAddress) && hasAcsPoint() : validAcsAddr(__currentReviewAddress);
+	          return Boolean(addressOkay && __acsQuote && !__acsQuotePromise && !__reviewSubmitting);
+        }
         if (__deliveryMethod === "courier_quote") {
           return Boolean(validCourierAddr(__currentReviewAddress) && !__reviewSubmitting);
         }
-        return Boolean(validCourierAddr(__currentReviewAddress) && hasBoxNowLocker() && !__reviewSubmitting);
+        return Boolean(validAddr(__currentReviewAddress) && hasBoxNowLocker() && !__reviewSubmitting);
       }
 
       function updateReviewConfirmState(){
@@ -3758,10 +4334,22 @@ async function chatFetch(path, options = {}) {
         b.classList.toggle("opacity-60", disabled);
         b.removeAttribute("aria-describedby");
         b.title = "";
+        b.removeAttribute("aria-busy");
         if (__reviewSubmitting) {
           b.textContent = "Processing…";
+        } else if (["acs", "acs_point"].includes(__deliveryMethod) && __acsQuotePromise) {
+          b.setAttribute("aria-busy", "true");
+          b.setAttribute("aria-describedby", "reviewDeliveryMsg");
+          const spinner = document.createElement("span");
+          spinner.className = "loading-spinner";
+          spinner.setAttribute("aria-hidden", "true");
+          const label = document.createElement("span");
+          label.textContent = (i18n[lang()] || i18n.en).acsFeeLoading || "Calculating ACS delivery...";
+          b.replaceChildren(spinner, label);
+          b.classList.add("inline-flex", "items-center", "justify-center", "gap-2");
         } else {
           b.textContent = reviewConfirmLabel();
+          b.classList.remove("inline-flex", "items-center", "justify-center", "gap-2");
         }
       }
 
@@ -3909,23 +4497,36 @@ async function chatFetch(path, options = {}) {
 
 	      function openReview(addr){
 	        const nextAddress = normalizeAddress(addr || __currentReviewAddress || readAddrForm());
-	        if (validCourierAddr(nextAddress)) __currentReviewAddress = nextAddress;
+	        if ((__deliveryMethod === "boxnow" ? validAddr(nextAddress) : validCourierAddr(nextAddress))) __currentReviewAddress = nextAddress;
 	        __reviewSubmitting = false;
 	        trackEvent("review_open", { cartItems: cartItemCount(), cartValue: cartTotals().grand, hasLocker: hasBoxNowLocker() });
 	        renderReview(__currentReviewAddress);
         openDialog('reviewModal', 'reviewPanel');
         scrollDialogToTop('reviewPanel');
+        requestAnimationFrame(updateReviewScrollCue);
         const backdrop = document.getElementById("reviewBackdrop"), panel = document.getElementById("reviewPanel");
-        requestAnimationFrame(()=>{
-          backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
-          panel.classList.remove("opacity-0","scale-95"); panel.classList.add("opacity-100","scale-100");
-        });
+        backdrop.classList.remove("opacity-0"); backdrop.classList.add("opacity-100");
+        panel.classList.remove("opacity-0","scale-95"); panel.classList.add("opacity-100","scale-100");
       }
       function closeReview(){
         const backdrop = document.getElementById("reviewBackdrop"), panel = document.getElementById("reviewPanel");
         backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
         panel.classList.add("opacity-0","scale-95"); panel.classList.remove("opacity-100","scale-100");
         setTimeout(()=> closeDialog('reviewModal', 'reviewPanel'), 150);
+      }
+	  function closeReviewImmediately(){
+	    const backdrop = document.getElementById("reviewBackdrop"), panel = document.getElementById("reviewPanel");
+	    backdrop.classList.add("opacity-0"); backdrop.classList.remove("opacity-100");
+	    panel.classList.add("opacity-0","scale-95"); panel.classList.remove("opacity-100","scale-100");
+	    closeDialog('reviewModal', 'reviewPanel');
+	  }
+
+      function updateReviewScrollCue(){
+        const area = document.getElementById("reviewScrollArea");
+        const cue = document.getElementById("reviewScrollCue");
+        if (!area || !cue) return;
+        const hasMoreBelow = area.scrollHeight - area.scrollTop - area.clientHeight > 12;
+        cue.classList.toggle("hidden", !hasMoreBelow);
       }
 
       function setReviewLoading(on){
@@ -3935,7 +4536,8 @@ async function chatFetch(path, options = {}) {
 
       function reviewConfirmLabel(){
         const d = i18n[lang()]||i18n.en;
-	        if (__deliveryMethod === "courier_quote") return d.reviewConfirmQuote || "Request shipping quote";
+	    if (["acs", "acs_point"].includes(__deliveryMethod)) return d.reviewConfirmQuote || "Confirm & Pay";
+        if (__deliveryMethod === "courier_quote") return d.reviewConfirmQuoteRequest || "Request shipping quote";
         return document.getElementById("boxnowCod")?.checked === true
           ? (d.reviewConfirmOrder || "Confirm order")
           : d.reviewConfirmPay;
@@ -3956,12 +4558,25 @@ async function chatFetch(path, options = {}) {
         ].filter(Boolean);
         document.getElementById("reviewAddr").textContent = lines.join("\n");
 
+	    const isAcs = __deliveryMethod === "acs";
+	    const isAcsPoint = __deliveryMethod === "acs_point";
         const isCourierQuote = __deliveryMethod === "courier_quote";
-        document.getElementById("deliveryBoxNow").checked = !isCourierQuote;
-        document.getElementById("deliveryCourierQuote").checked = isCourierQuote;
-        document.getElementById("boxnowReviewSection").classList.toggle("hidden", isCourierQuote);
+	    const methodLabels = {
+	      boxnow: (i18n[lang()] || i18n.en).deliveryBoxNow || "BOX NOW locker",
+	      acs: (i18n[lang()] || i18n.en).deliveryAcs || "ACS Courier",
+	      acs_point: "ACS Point",
+	      courier_quote: (i18n[lang()] || i18n.en).deliveryCourierQuote || "Other Courier - quote required",
+	    };
+	    document.getElementById("reviewDeliveryMethodSummary").textContent = methodLabels[__deliveryMethod] || methodLabels.boxnow;
+	    document.getElementById("boxnowReviewSection").classList.toggle("hidden", isAcs || isAcsPoint || isCourierQuote);
+	    document.getElementById("acsPointReviewSection").classList.toggle("hidden", !isAcsPoint);
+	    if (!isAcsPoint) {
+	      closeDialog("acsPointModal", "acsPointModalPanel");
+	      document.getElementById("acsPointChoose").setAttribute("aria-expanded", "false");
+	    }
+	    renderAcsPointSelection();
         document.getElementById("courierQuoteSection").classList.toggle("hidden", !isCourierQuote);
-        document.getElementById("secureCheckoutSection").classList.toggle("hidden", isCourierQuote);
+        document.getElementById("secureCheckoutSection").classList.remove("hidden");
 
         const dict = i18n[lang()] || i18n.en;
         const ul = document.getElementById("reviewItems"); ul.innerHTML = "";
@@ -3986,7 +4601,17 @@ async function chatFetch(path, options = {}) {
         renderBoxNowSelection();
         renderBoxNowFee();
         updateReviewConfirmState();
-        if (!isCourierQuote) refreshBoxNowFee(__currentReviewAddress);
+	    if ((isAcs && validAcsAddr(__currentReviewAddress)) || (isAcsPoint && validAcsAddr(__currentReviewAddress) && hasAcsPoint())) {
+          refreshAcsQuote(__currentReviewAddress);
+	    } else if (isAcs || isAcsPoint) {
+          invalidateAcsQuote();
+          __acsQuoteError = isAcsPoint && validAcsAddr(__currentReviewAddress)
+            ? "Choose an ACS Point to calculate delivery."
+            : dict.acsAddressRequired || "For ACS, enter the street and number, a five-digit postal code, and the region.";
+          renderBoxNowFee();
+        }
+        else if (!isCourierQuote) refreshBoxNowFee(__currentReviewAddress);
+        requestAnimationFrame(updateReviewScrollCue);
 
         const row = document.getElementById("reviewDiscountRow");
         const val = document.getElementById("reviewDiscountValue");
@@ -3999,25 +4624,73 @@ async function chatFetch(path, options = {}) {
       }
 
       (function wireReview(){
+        document.getElementById("reviewScrollArea").addEventListener("scroll", updateReviewScrollCue, { passive: true });
+        window.addEventListener("resize", updateReviewScrollCue);
         document.getElementById("reviewBackdrop").addEventListener("click", closeReview);
         window.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeReview(); });
         document.getElementById("reviewClose").addEventListener("click", closeReview);
-        document.getElementById("reviewCancel").addEventListener("click", closeReview);
+        const returnToCartFromReview = () => {
+	      openCart({ instant:true });
+	      closeReviewImmediately();
+        };
+        document.getElementById("reviewCancel").addEventListener("click", returnToCartFromReview);
         document.getElementById("reviewEdit").addEventListener("click", () => {
-          openAddressFromReview(true);
+          openAddressFromReview(__deliveryMethod !== "boxnow");
         });
-        document.querySelectorAll('input[name="deliveryMethod"]').forEach(input => {
-          input.addEventListener("change", () => {
-            __deliveryMethod = input.value === "courier_quote" ? "courier_quote" : "boxnow";
-            renderReview(__currentReviewAddress);
-          });
-        });
-        document.getElementById("boxnowChoose").addEventListener("click", openBoxNowWidget);
+        document.getElementById("reviewDeliveryMethodEdit").addEventListener("click", returnToCartFromReview);
+	        document.getElementById("boxnowChoose").addEventListener("click", openBoxNowWidget);
+	    document.getElementById("acsPointChoose").addEventListener("click", openAcsPointPicker);
+	    document.getElementById("acsPointBackdrop").addEventListener("click", closeAcsPointPicker);
+	    document.getElementById("acsPointClose").addEventListener("click", closeAcsPointPicker);
+	    document.getElementById("acsPointSearch").addEventListener("input", renderAcsPointResults);
+	    document.getElementById("acsPointResults").addEventListener("click", event => {
+	      const button = event.target.closest("[data-acs-point-id]");
+	      if (!button) return;
+	      selectAcsPoint(__acsPoints.find(point => point.id === button.dataset.acsPointId) || null);
+	    });
         document.getElementById("boxnowCod").addEventListener("change", refreshReviewConfirmLabel);
         document.getElementById("boxnowBackdrop").addEventListener("click", closeBoxNowWidget);
         document.getElementById("boxnowClose").addEventListener("click", closeBoxNowWidget);
 	        document.getElementById("reviewConfirm").addEventListener("click", async () => {
 	          trackEvent("checkout_submit", { cartItems: cartItemCount(), cartValue: cartTotals().grand, deliveryMethod: __deliveryMethod, cod: __deliveryMethod === "boxnow" && document.getElementById("boxnowCod")?.checked === true });
+	      const requiresAccount = __deliveryMethod === "courier_quote" || (__deliveryMethod === "boxnow" && document.getElementById("boxnowCod")?.checked === true);
+	      if (requiresAccount && !(__user || auth().currentUser)) {
+	        const dict = i18n[lang()] || i18n.en;
+	        const message = __deliveryMethod === "courier_quote"
+	          ? (dict.authRequiredCourierQuote || "Sign in to request a courier quote so we can email the quote to you.")
+	          : (dict.authRequiredCod || "Sign in to place a cash-on-delivery order.");
+	        openAuth();
+	        document.getElementById("authErr").textContent = message;
+	        announce(message);
+	        closeReviewImmediately();
+	        return;
+	      }
+	      if (["acs", "acs_point"].includes(__deliveryMethod)) {
+	        if (__deliveryMethod === "acs_point" && !hasAcsPoint()) { openAcsPointPicker(); return; }
+	        const addressOkay = __deliveryMethod === "acs_point"
+	          ? validAcsAddr(__currentReviewAddress)
+	          : validAcsAddr(__currentReviewAddress);
+	        if (!addressOkay) {
+	              const msg = (i18n[lang()] || i18n.en).acsAddressRequired || "For ACS, enter the street and number in Address line 1, a five-digit postal code, and the region.";
+	              announce(msg);
+	              openCourierAddressFromReview(true);
+	              return;
+	        }
+            setReviewLoading(true);
+            try {
+              const quote = await refreshAcsQuote(__currentReviewAddress);
+              if (!quote) throw new Error((i18n[lang()] || i18n.en).acsFeeUnavailable || "ACS delivery price is unavailable.");
+              await createCheckout({
+                ...__currentReviewAddress,
+                deliveryMethod: "acs",
+	            ...(__deliveryMethod === "acs_point" ? { deliveryMethod: "acs_point", acsPoint: __acsPoint } : {}),
+                cashOnDelivery: false
+              });
+            } finally {
+              setReviewLoading(false);
+            }
+            return;
+          }
           if (__deliveryMethod === "courier_quote") {
             if (!validCourierAddr(__currentReviewAddress)) {
               const msg = (i18n[lang()] || i18n.en).courierAddressRequired || "Please enter your street address and city for courier delivery.";
@@ -4027,20 +4700,16 @@ async function chatFetch(path, options = {}) {
             }
             setReviewLoading(true);
             try {
-              await createCheckout({
-                ...__currentReviewAddress,
-                deliveryMethod: "courier_quote",
-                cashOnDelivery: false
-              });
+              await createCheckout({ ...__currentReviewAddress, deliveryMethod: "courier_quote", cashOnDelivery: false });
             } finally {
               setReviewLoading(false);
             }
             return;
           }
-          if (!validCourierAddr(__currentReviewAddress)) {
-            const msg = (i18n[lang()] || i18n.en).fullAddressRequired || "Please enter your full address for the receipt or invoice.";
+          if (!validAddr(__currentReviewAddress)) {
+            const msg = (i18n[lang()] || i18n.en).contactDetailsRequired || "Please enter your name, phone, postal code, and country.";
             announce(msg);
-            openAddressFromReview(true, true);
+            openAddressFromReview(false, true);
             return;
           }
           if (!hasBoxNowLocker()) {
@@ -4091,6 +4760,54 @@ async function chatFetch(path, options = {}) {
         setCheckoutLoading(false);
         updateReviewConfirmState();
       });
+
+      function saveStripeCheckoutReturn(shipping){
+        try {
+          sessionStorage.setItem(STRIPE_CHECKOUT_RETURN_KEY, JSON.stringify({
+            createdAt: Date.now(),
+            shipping: shipping || {},
+          }));
+        } catch (error) {
+          console.warn("Could not save checkout return state", error);
+        }
+      }
+
+      function restoreStripeCheckoutReturn(){
+        const url = new URL(location.href);
+        if (url.searchParams.get("checkout") !== "review") return;
+        url.searchParams.delete("checkout");
+        history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+
+        let saved = null;
+        try {
+          saved = JSON.parse(sessionStorage.getItem(STRIPE_CHECKOUT_RETURN_KEY) || "null");
+        } catch {}
+        if (!saved?.shipping || Date.now() - Number(saved.createdAt || 0) > 2 * 60 * 60 * 1000) {
+          sessionStorage.removeItem(STRIPE_CHECKOUT_RETURN_KEY);
+          guardedCheckout();
+          return;
+        }
+
+        const shipping = saved.shipping;
+        __deliveryMethod = ["boxnow", "acs", "acs_point", "courier_quote"].includes(shipping.deliveryMethod)
+          ? shipping.deliveryMethod
+          : "boxnow";
+        document.querySelectorAll('input[name="cartDeliveryMethod"]').forEach(input => {
+          input.checked = input.value === __deliveryMethod;
+        });
+        if (hasBoxNowLocker(shipping.boxNow)) {
+          __boxNowLocker = shipping.boxNow;
+          Cookie.set("grubz_boxnow_locker", JSON.stringify(__boxNowLocker));
+        }
+        __acsPoint = shipping.acsPoint || null;
+        document.getElementById("boxnowCod").checked = shipping.cashOnDelivery === true;
+        __currentReviewAddress = normalizeAddress(shipping);
+        fillAddrForm(__currentReviewAddress);
+        renderCart();
+        openReview(__currentReviewAddress);
+      }
+
+      window.addEventListener("load", () => requestAnimationFrame(restoreStripeCheckoutReturn));
 
       // ===== Coupon state & helpers (frontend preview) =====
       function currentSubtotal(){
@@ -4311,7 +5028,7 @@ async function chatFetch(path, options = {}) {
         if (!shouldShowFirstOrderOffer()) return;
         setTimeout(() => {
           if (!shouldShowFirstOrderOffer()) return;
-          const anyModalOpen = ["cartModal", "authModal", "addrModal", "reviewModal", "boxnowModal", "productModal"]
+          const anyModalOpen = ["cartModal", "authModal", "addrModal", "reviewModal", "boxnowModal", "acsPointModal", "productModal"]
             .some(id => !document.getElementById(id)?.classList.contains("hidden"));
           if (anyModalOpen) return;
           openDialog("firstOrderOfferModal", "firstOrderOfferPanel");
@@ -4479,6 +5196,7 @@ async function chatFetch(path, options = {}) {
           }
 	          if (!data || !data.url) throw new Error("No checkout URL returned.");
 	          trackEvent("checkout_success", { cartItems: cartItemCount(), cartValue: cartTotals().grand, cod: shipping?.cashOnDelivery === true });
+	          saveStripeCheckoutReturn(shipping);
 	          location.href = data.url;
 	        } catch (e) {
           console.error("Checkout error:", e);
@@ -4492,17 +5210,32 @@ async function chatFetch(path, options = {}) {
       }
 
       async function guardedCheckout(){
-        const u = await ensureSignedIn();
-        if (!u) return;
+        await authInitializationReady;
+        if (!__user && auth().currentUser) __user = auth().currentUser;
         const addr = await getSavedAddress();
-        if (!validCourierAddr(addr)) {
+        const needsLocationSelection = (__deliveryMethod === "boxnow" && !hasBoxNowLocker()) ||
+          (__deliveryMethod === "acs_point" && !hasAcsPoint());
+        if (needsLocationSelection) {
+          const draftAddress = normalizeAddress(addr || readAddrForm());
+          __currentReviewAddress = draftAddress;
+          openReview(draftAddress);
+	      closeCartImmediately();
+          if (__deliveryMethod === "boxnow") openBoxNowWidget();
+          else openAcsPointPicker();
+          return;
+        }
+        const needsCourierAddress = __deliveryMethod !== "boxnow";
+        const addressIsValid = needsCourierAddress ? validCourierAddr(addr) : validAddr(addr);
+        if (!addressIsValid) {
           if (addr) fillAddrForm(addr);
           __currentReviewAddress = addr || {};
           __reopenReviewAfterAddr = true;
-          openAddr(true, true);
+          openAddr(true, needsCourierAddress);
+	      closeCartImmediately();
           return;
         }
         openReview(addr || {});
+	    closeCartImmediately();
       }
 
 	      document.getElementById("checkout").addEventListener("click", guardedCheckout);

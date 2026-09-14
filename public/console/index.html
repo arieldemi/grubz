@@ -351,7 +351,8 @@
 	                <div id="analyticsTrafficSources" class="grid gap-3 text-sm md:grid-cols-2"></div>
 	              </div>
 	              <div class="mt-5 border-t border-zinc-200 pt-4">
-	                <h4 class="text-sm font-bold">Ad campaigns</h4>
+	                <h4 class="text-sm font-bold">Campaign results</h4>
+	                <p class="mt-1 text-xs text-zinc-500">Revenue is based on paid orders carrying the campaign's UTM attribution.</p>
 	                <div id="analyticsCampaigns" class="mt-3 grid gap-2 text-sm md:grid-cols-2"></div>
 	              </div>
 	              <div class="mt-5 border-t border-zinc-200 pt-4">
@@ -627,7 +628,7 @@
 	            </div>
 	            <div class="panel overflow-x-auto">
 	              <table class="w-full text-sm">
-	                <thead class="bg-zinc-50 text-left"><tr><th class="p-3">Date</th><th class="p-3">Customer</th><th class="p-3">Email</th><th class="p-3">Order</th><th class="p-3">Status</th></tr></thead>
+	                <thead class="bg-zinc-50 text-left"><tr><th class="p-3">Date</th><th class="p-3">Customer</th><th class="p-3">Email</th><th class="p-3">Order</th><th class="p-3">Status</th><th class="p-3">Action</th></tr></thead>
 	                <tbody id="emailHistoryTable" class="divide-y"></tbody>
 	              </table>
 	            </div>
@@ -1506,7 +1507,7 @@
               <button id="boxNowTabPlayground" class="btn-soft" type="button" data-boxnow-tab="playground">Playground</button>
             </div>
             <div class="space-y-4">
-              <div id="boxNowPanelSettings" class="panel p-4 space-y-4" data-boxnow-panel="settings">
+              <form id="boxNowPanelSettings" class="panel p-4 space-y-4" data-boxnow-panel="settings">
                 <div class="flex flex-wrap items-end gap-3">
                   <div>
                     <label class="label" for="boxNowActiveEnvironment">Active environment</label>
@@ -1516,7 +1517,7 @@
                     </select>
                     <p id="boxNowModeNote" class="mt-1 text-xs text-zinc-500"></p>
                   </div>
-                  <button id="saveBoxNowSettingsBtn" class="btn" type="button">Save BOX NOW settings</button>
+                  <button id="saveBoxNowSettingsBtn" class="btn" type="submit">Save BOX NOW settings</button>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-4">
@@ -1650,7 +1651,7 @@
                   </div>
                   <p id="boxNowWebhookMsg" class="text-sm" role="status" aria-live="polite"></p>
                 </div>
-              </div>
+              </form>
 
               <div id="boxNowPanelShipping" class="panel p-4 space-y-4 hidden" data-boxnow-panel="shipping">
                 <div>
@@ -1659,10 +1660,10 @@
                 </div>
                 <label class="inline-flex items-center gap-2 font-semibold">
                   <input id="boxnowOverrideEnabled" type="checkbox" class="h-4 w-4">
-                  Override BOX NOW shipping cost
+                  Override BOX NOW shipping cost per parcel
                 </label>
                 <div>
-                  <label class="label" for="boxnowOverrideAmount">BOX NOW cost override</label>
+                  <label class="label" for="boxnowOverrideAmount">BOX NOW cost override per parcel</label>
                   <div class="flex items-center gap-2">
                     <input id="boxnowOverrideAmount" class="input" type="number" min="0" step="0.01" inputmode="decimal">
                     <span class="font-bold text-zinc-600">EUR</span>
@@ -1753,16 +1754,16 @@
 	                          <td class="p-2">28cm</td>
 	                        </tr>
 	                        <tr>
-	                          <td class="p-2 font-semibold">Up to 10x flattened 1KG bags</td>
+	                          <td class="p-2 font-semibold">Any 10KG order</td>
 	                          <td class="p-2">Medium compartment</td>
-	                          <td class="p-2">Any product</td>
-	                          <td class="p-2">10KG max</td>
+	                          <td class="p-2">2 parcels</td>
+	                          <td class="p-2">7KG max each</td>
 	                        </tr>
 	                      </tbody>
 	                    </table>
 	                  </div>
 	                  <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-	                    Verified fit: up to 10KG fits in one Medium compartment. Use the same flattened 1KG bag logic for every product; each extra 10KG requires another BOX NOW compartment.
+	                    Every BOX NOW order is split into Medium parcels carrying no more than 7KG each. Any 10KG cart uses two parcels: 7KG and 3KG.
 	                  </div>
                   <div id="packingRows" class="space-y-2"></div>
                   <div class="flex flex-wrap justify-end gap-2">
@@ -1861,6 +1862,7 @@
             <div class="flex flex-wrap gap-2" role="tablist" aria-label="Settings sections">
               <button id="settingsTabStripe" class="btn-soft" type="button" data-settings-tab="stripe">Stripe</button>
               <button id="settingsTabShipping" class="btn-soft" type="button" data-settings-tab="shipping">BOX NOW Integration</button>
+              <button id="settingsTabAcs" class="btn-soft" type="button" data-settings-tab="acs">ACS</button>
               <button id="settingsTabEmails" class="btn-soft" type="button" data-settings-tab="emails">Emails</button>
               <button id="settingsTabNotifications" class="btn-soft" type="button" data-settings-tab="notifications">Notifications</button>
               <button id="settingsTabChatbot" class="btn-soft" type="button" data-settings-tab="chatbot">Chatbot</button>
@@ -1888,6 +1890,79 @@
                     </span>
                   </label>
                 </fieldset>
+              </div>
+              <div id="settingsPanelAcs" class="space-y-4 hidden" data-settings-panel="acs">
+                <form id="acsSettingsForm" class="rounded-xl border border-zinc-200 bg-white p-4 space-y-4">
+                  <div class="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <h3 class="font-extrabold text-lg">ACS credentials</h3>
+                      <p class="text-sm text-zinc-500">Credentials are write-only in the console. Leave a field blank to keep its current value.</p>
+                    </div>
+                    <div class="min-w-[190px]">
+                      <label class="label" for="acsActiveEnvironment">Active environment</label>
+                      <select id="acsActiveEnvironment" class="input"><option value="test">Test</option><option value="production">Live</option></select>
+                    </div>
+                  </div>
+                  <div class="grid gap-4 lg:grid-cols-2">
+                    <section class="rounded-lg border border-zinc-200 p-3 space-y-3">
+                      <h4 class="font-extrabold">Test credentials</h4>
+                      <p id="acsTestMask" class="text-xs text-zinc-500"></p>
+                      <div><label class="label" for="acsTestCompanyId">Company_Id</label><input id="acsTestCompanyId" class="input" autocomplete="off" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsTestCompanyPassword">Company_Password</label><input id="acsTestCompanyPassword" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsTestUserId">Username</label><input id="acsTestUserId" class="input" autocomplete="off" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsTestUserPassword">Password</label><input id="acsTestUserPassword" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsTestBillingCode">Billing_Code</label><input id="acsTestBillingCode" class="input" autocomplete="off" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsTestApiKey">AcsApiKey</label><input id="acsTestApiKey" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+                    </section>
+                    <section class="rounded-lg border border-red-200 bg-red-50 p-3 space-y-3">
+                      <h4 class="font-extrabold text-red-950">Live credentials</h4>
+                      <p id="acsProductionMask" class="text-xs text-red-800"></p>
+                      <div><label class="label" for="acsProductionCompanyId">Company_Id</label><input id="acsProductionCompanyId" class="input" autocomplete="off" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsProductionCompanyPassword">Company_Password</label><input id="acsProductionCompanyPassword" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsProductionUserId">Username</label><input id="acsProductionUserId" class="input" autocomplete="off" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsProductionUserPassword">Password</label><input id="acsProductionUserPassword" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsProductionBillingCode">Billing_Code</label><input id="acsProductionBillingCode" class="input" autocomplete="off" placeholder="Leave blank to keep current"></div>
+                      <div><label class="label" for="acsProductionApiKey">AcsApiKey</label><input id="acsProductionApiKey" class="input" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+                    </section>
+                  </div>
+                  <div class="flex items-center justify-between gap-3">
+                    <p id="acsSettingsMsg" class="text-sm" role="status" aria-live="polite"></p>
+                    <button id="saveAcsSettingsBtn" class="btn" type="submit">Save ACS settings</button>
+                  </div>
+                </form>
+                <section class="rounded-xl border border-red-200 bg-red-50 p-4 space-y-4">
+                  <div>
+                    <h3 class="font-extrabold text-lg text-red-950">ACS shipping price calculator</h3>
+                    <p class="text-sm text-red-800">Get a price from the currently configured ACS environment for a Greek delivery address and package weight.</p>
+                  </div>
+                  <form id="acsPriceCalculatorForm" class="space-y-3">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <div class="sm:col-span-2">
+                        <label class="label" for="acsCalculatorStreet">Street address</label>
+                        <input id="acsCalculatorStreet" class="input" autocomplete="street-address" placeholder="e.g. Ermou 25" required>
+                      </div>
+                      <div>
+                        <label class="label" for="acsCalculatorCity">City</label>
+                        <input id="acsCalculatorCity" class="input" autocomplete="address-level2" placeholder="e.g. Athens" required>
+                      </div>
+                      <div>
+                        <label class="label" for="acsCalculatorPostal">Postal code</label>
+                        <input id="acsCalculatorPostal" class="input" inputmode="numeric" autocomplete="postal-code" pattern="[0-9]{5}" maxlength="5" placeholder="10563" required>
+                      </div>
+                      <div>
+                        <label class="label" for="acsCalculatorCountry">Country</label>
+                        <select id="acsCalculatorCountry" class="input"><option value="Greece">Greece</option></select>
+                      </div>
+                      <div>
+                        <label class="label" for="acsCalculatorWeight">Package weight</label>
+                        <div class="flex items-center gap-2"><input id="acsCalculatorWeight" class="input" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="1.5" required><span class="font-bold text-zinc-600">kg</span></div>
+                      </div>
+                    </div>
+                    <div class="flex justify-end"><button id="acsCalculatePriceBtn" class="btn" type="submit">Calculate ACS price</button></div>
+                  </form>
+                  <div id="acsCalculatorResult" class="hidden rounded-lg border border-red-200 bg-white p-4" aria-live="polite"></div>
+                  <p id="acsCalculatorMsg" class="text-sm" role="status" aria-live="polite"></p>
+                </section>
               </div>
               <div id="settingsPanelShipping" class="space-y-4 hidden" data-settings-panel="shipping">
                 <div id="boxNowSettingsMount" class="space-y-4"></div>
@@ -2264,6 +2339,13 @@
 	            <button id="closeManualOrderModal" class="btn-soft" type="button">Close</button>
 	          </div>
 	          <div class="grid sm:grid-cols-2 gap-3">
+	            <div class="sm:col-span-2">
+	              <label class="label" for="manualExistingCustomer">Customer</label>
+	              <select id="manualExistingCustomer" class="input">
+	                <option value="">New customer</option>
+	              </select>
+	              <p class="mt-1 text-xs text-zinc-500">Select an existing customer to fill their saved contact and delivery details, or leave New customer selected.</p>
+	            </div>
 	            <div>
 	              <label class="label" for="manualCustomerName">Customer name</label>
 	              <input id="manualCustomerName" class="input">
@@ -2284,6 +2366,15 @@
 		              </select>
 		            </div>
 		            <div class="sm:col-span-2 rounded-md border border-zinc-200 p-3 space-y-3">
+		              <div>
+		                <label class="label" for="manualDeliveryMethod">Delivery method</label>
+		                <select id="manualDeliveryMethod" class="input">
+		                  <option value="boxnow">BOX NOW locker</option>
+		                  <option value="acs">ACS Courier</option>
+		                  <option value="acs_point">ACS Point</option>
+		                  <option value="courier_quote">Other Courier - quote required</option>
+		                </select>
+		              </div>
 		              <div>
 		                <h4 class="font-extrabold text-sm">Shipping address</h4>
 		                <p class="text-xs text-zinc-500">Customer delivery/contact address. This is separate from the BOX NOW locker address.</p>
@@ -2319,7 +2410,7 @@
 		                </div>
 		              </div>
 		            </div>
-		            <div class="sm:col-span-2 rounded-md border border-zinc-200 p-3 space-y-3">
+		            <div id="manualBoxNowSection" class="sm:col-span-2 rounded-md border border-zinc-200 p-3 space-y-3">
 		              <div class="flex flex-wrap items-center justify-between gap-2">
 		                <div class="font-bold text-sm">BOX NOW locker</div>
 		                <button id="chooseManualBoxNowBtn" class="btn-soft text-sm" type="button">Choose locker</button>
@@ -2335,17 +2426,28 @@
 		                <input id="manualBoxNowLng" class="input" placeholder="Longitude">
 		              </div>
 		            </div>
-		            <div class="sm:col-span-2">
-		              <label class="label" for="manualStripePaymentLink">Stripe payment link</label>
-		              <input id="manualStripePaymentLink" class="input" type="url" placeholder="https://buy.stripe.com/...">
+	            <div class="sm:col-span-2">
+	              <label class="label" for="manualStripePaymentLink">Stripe payment link</label>
+	              <input id="manualStripePaymentLink" class="input" type="url" placeholder="https://buy.stripe.com/...">
+	              <label class="mt-2 inline-flex items-center gap-2 text-sm font-semibold">
+	                <input id="manualGeneratePaymentLink" type="checkbox" class="h-4 w-4" checked>
+	                Generate a live Stripe Checkout payment link when creating the order
+	              </label>
 	            </div>
 	            <div>
 	              <label class="label" for="manualShippingCents">Shipping cents</label>
 	              <input id="manualShippingCents" class="input" type="number" min="0" step="1" value="0">
+	              <button id="calculateManualShippingBtn" class="btn-soft mt-2 w-full text-sm" type="button">Calculate shipping</button>
+	              <p id="manualShippingQuoteMsg" class="mt-1 text-xs text-zinc-500" role="status" aria-live="polite"></p>
 	            </div>
 		            <div>
 		              <label class="label" for="manualDiscountCents">Discount cents</label>
 		              <input id="manualDiscountCents" class="input" type="number" min="0" step="1" value="0">
+		            </div>
+		            <div>
+		              <label class="label" for="manualDiscountPercent">Discount percentage</label>
+		              <input id="manualDiscountPercent" class="input" type="number" min="0" max="100" step="0.01" value="0">
+		              <p class="mt-1 text-xs text-zinc-500">Applied to the catalog product subtotal. Percentage takes precedence over discount cents.</p>
 		            </div>
 		            <div class="sm:col-span-2 rounded-md border border-zinc-200 p-3 space-y-2">
 		              <label class="inline-flex items-center gap-2 font-semibold">
@@ -2410,7 +2512,7 @@
 	          <div class="panel p-3 space-y-3">
 	            <div>
 	              <h4 class="font-extrabold">Shipping address</h4>
-	              <p class="text-xs text-zinc-500">Customer delivery/contact address. This is separate from the BOX NOW locker address.</p>
+	              <p class="text-xs text-zinc-500">Customer delivery and contact address.</p>
 	            </div>
 	            <div class="grid sm:grid-cols-2 gap-2">
 	              <div>
@@ -2438,6 +2540,25 @@
 	                <input id="o_city" class="input">
 	              </div>
 	              <div>
+	                <label class="label" for="o_region">Region</label>
+	                <select id="o_region" class="input" autocomplete="address-level1">
+	                  <option value="">Select region</option>
+	                  <option value="Attica">Attica / Αττική</option>
+	                  <option value="Central Greece">Central Greece / Στερεά Ελλάδα</option>
+	                  <option value="Central Macedonia">Central Macedonia / Κεντρική Μακεδονία</option>
+	                  <option value="Crete">Crete / Κρήτη</option>
+	                  <option value="Eastern Macedonia and Thrace">Eastern Macedonia and Thrace / Ανατολική Μακεδονία και Θράκη</option>
+	                  <option value="Epirus">Epirus / Ήπειρος</option>
+	                  <option value="Ionian Islands">Ionian Islands / Ιόνια Νησιά</option>
+	                  <option value="North Aegean">North Aegean / Βόρειο Αιγαίο</option>
+	                  <option value="Peloponnese">Peloponnese / Πελοπόννησος</option>
+	                  <option value="South Aegean">South Aegean / Νότιο Αιγαίο</option>
+	                  <option value="Thessaly">Thessaly / Θεσσαλία</option>
+	                  <option value="Western Greece">Western Greece / Δυτική Ελλάδα</option>
+	                  <option value="Western Macedonia">Western Macedonia / Δυτική Μακεδονία</option>
+	                </select>
+	              </div>
+	              <div>
 	                <label class="label" for="o_country">Country</label>
 	                <input id="o_country" class="input">
 	              </div>
@@ -2446,18 +2567,18 @@
 	          <div class="panel p-3 space-y-2">
 	            <div class="flex flex-wrap items-center justify-between gap-2">
 	              <div>
-	                <h4 class="font-extrabold">BOX NOW shipment</h4>
+	                <h4 id="orderDeliveryShipmentTitle" class="font-extrabold">BOX NOW shipment</h4>
 	                <p id="orderBoxNowShipmentSummary" class="text-xs text-zinc-500"></p>
 	              </div>
-	              <div class="flex flex-wrap gap-2">
-	                <button id="downloadBoxNowParcelLabelBtn" class="btn-soft" type="button">Download branded parcel label</button>
+	              <div class="flex flex-wrap gap-2" data-boxnow-only>
+	                <button id="downloadBoxNowParcelLabelBtn" class="btn-soft" type="button">Download branded parcel labels</button>
 	                <button id="downloadBoxNowOrderLabelBtn" class="btn-soft" type="button">Download branded order label</button>
 	                <button id="createBoxNowShipmentBtn" class="btn-soft" type="button">Create BOX NOW delivery</button>
 	              </div>
 	            </div>
-	            <div id="orderBoxNowTimeline" class="rounded-md border border-violet-200 bg-violet-50 p-3"></div>
-	            <div id="orderBoxNowNotificationReview" class="hidden rounded-md border border-amber-300 bg-amber-50 p-3"></div>
-		            <div class="grid sm:grid-cols-3 gap-2">
+	            <div id="orderBoxNowTimeline" class="rounded-md border border-violet-200 bg-violet-50 p-3" data-boxnow-only></div>
+	            <div id="orderBoxNowNotificationReview" class="hidden rounded-md border border-amber-300 bg-amber-50 p-3" data-boxnow-conditional></div>
+		            <div class="grid sm:grid-cols-3 gap-2" data-boxnow-only>
 	              <div>
 	                <label class="label" for="boxNowPaymentMode">BOX NOW shipping type</label>
 	                <select id="boxNowPaymentMode" class="input">
@@ -2479,8 +2600,8 @@
 		                <input id="boxNowCodAmount" class="input" type="number" min="0" step="0.01">
 		              </div>
 		            </div>
-		            <pre id="orderBoxNowResult" class="hidden bg-zinc-950 text-zinc-100 text-xs rounded-md p-3 overflow-auto max-h-[260px]"></pre>
-		            <div class="rounded-md border border-zinc-200 p-3 space-y-2">
+		            <pre id="orderBoxNowResult" class="hidden bg-zinc-950 text-zinc-100 text-xs rounded-md p-3 overflow-auto max-h-[260px]" data-boxnow-conditional></pre>
+		            <div class="rounded-md border border-zinc-200 p-3 space-y-2" data-boxnow-only>
 		              <div class="flex flex-wrap items-center justify-between gap-2">
 		                <div class="font-bold text-sm">Order BOX NOW locker</div>
 		                <button id="chooseOrderBoxNowBtn" class="btn-soft text-sm" type="button">Choose locker</button>
@@ -2526,11 +2647,32 @@
 	                <input id="o_quoteEstimate" class="input" placeholder="e.g. 2–3 business days">
 	              </div>
 	            </div>
+	            <label class="flex items-center gap-2 rounded-md border border-blue-200 bg-white p-3 text-sm font-semibold text-blue-950" for="o_quoteBoxNowAvailable">
+	              <input id="o_quoteBoxNowAvailable" type="checkbox" class="h-4 w-4 rounded border-zinc-300">
+	              There is a BOXNOW locker in the customer's area
+	            </label>
+	            <div>
+	              <label class="label" for="o_quoteAdditionalInformation">Additional email information</label>
+	              <textarea id="o_quoteAdditionalInformation" class="input min-h-24" maxlength="2000" placeholder="Optional information to include in the quote email"></textarea>
+	            </div>
 	            <div id="courierQuotePaymentSummary" class="rounded-md border border-blue-200 bg-white p-3 text-sm"></div>
 	            <div class="flex flex-col gap-2 sm:flex-row">
-	              <button id="finalizeCourierQuoteBtn" class="btn flex-1" type="button">Create checkout &amp; email customer</button>
+	              <button id="createCourierQuoteCheckoutBtn" class="btn flex-1" type="button">Create checkout</button>
 	              <button id="testCourierQuoteEmailBtn" class="btn-soft flex-1" type="button">Send test to info@grubz.gr</button>
+	              <button id="sendCourierQuoteCustomerBtn" class="btn-soft flex-1" type="button">Send to customer</button>
 	            </div>
+	          </div>
+	          <div id="acsShipmentPanel" class="hidden rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
+	            <div>
+	              <h4 class="font-extrabold text-red-950">ACS shipment</h4>
+	              <p class="text-xs text-red-800">Uses the configured ACS environment. In production this creates a real shipment. Print every voucher before issuing the pickup list.</p>
+	            </div>
+	            <div class="flex flex-wrap gap-2">
+	              <button id="createAcsVoucherBtn" class="btn" type="button">Create ACS voucher</button>
+	              <button id="printAcsVoucherBtn" class="btn-soft" type="button">Download laser voucher</button>
+	              <button id="issueAcsPickupListBtn" class="btn-soft" type="button">Issue + download pickup list</button>
+	            </div>
+	            <div id="acsShipmentStatus" class="text-xs text-red-900"></div>
 	          </div>
 		          <div class="grid sm:grid-cols-2 gap-3">
 	            <div>
@@ -2585,7 +2727,15 @@
 	            </div>
 	            <div class="sm:col-span-2">
 	              <label class="label" for="o_stripePaymentLink">Stripe payment link</label>
-	              <input id="o_stripePaymentLink" class="input" type="url">
+	              <div class="flex gap-2">
+	                <input id="o_stripePaymentLink" class="input min-w-0 flex-1" type="url">
+	                <button id="copyOrderPaymentLinkBtn" class="btn-soft shrink-0" type="button">Copy link</button>
+	              </div>
+	              <div id="manualOrderPaymentLinkActions" class="mt-2 hidden grid grid-cols-2 gap-2">
+	                <button id="createManualTestPaymentLinkBtn" class="btn-soft" type="button">Create test link</button>
+	                <button id="createManualLivePaymentLinkBtn" class="btn" type="button">Create live link</button>
+	              </div>
+	              <p id="manualOrderPaymentLinkMsg" class="mt-1 text-xs text-zinc-500" role="status" aria-live="polite"></p>
 	            </div>
 	            <div class="sm:col-span-2">
 	              <label class="label" for="o_notes">Notes</label>
@@ -2622,7 +2772,7 @@
 	            <button id="deleteOrderBtn" class="btn-danger h-11 shrink-0 px-3" type="button">Delete order</button>
 	            <button id="saveOrderBtn" class="btn h-11 w-full px-8 sm:ml-auto sm:w-auto sm:min-w-[220px]" type="button">Save order</button>
 	          </div>
-	          <div class="panel p-3 space-y-2">
+	          <div id="lockerReminderPanel" class="panel p-3 space-y-2">
 	            <div>
 	              <h4 class="font-extrabold">BOX NOW pickup reminder</h4>
 	              <p id="lockerReminderEmailStatus" class="text-xs text-zinc-500">Remind the customer that their parcel is waiting in the locker.</p>
@@ -2760,6 +2910,18 @@
 	          <div class="flex items-center justify-between gap-3"><div><h3 id="customerEmailHistoryTitle" class="font-extrabold text-lg">Customer email history</h3><p id="customerEmailHistoryRecipient" class="text-xs text-zinc-500"></p></div><button id="closeCustomerEmailHistoryModal" class="btn-soft" type="button">Close</button></div>
 	          <div class="overflow-x-auto rounded-md border border-zinc-200"><table class="w-full text-sm"><thead class="bg-zinc-50 text-left"><tr><th class="p-3">Date</th><th class="p-3">Email</th><th class="p-3">Order</th><th class="p-3">Status</th></tr></thead><tbody id="customerEmailHistoryTable" class="divide-y"></tbody></table></div>
 	          <p id="customerEmailHistoryMsg" class="text-sm"></p>
+	        </section>
+	      </div>
+
+	      <div id="emailHistoryBodyModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="emailHistoryBodyTitle">
+	        <div class="modal-backdrop" data-close-modal="emailHistoryBodyModal"></div>
+	        <section class="modal-panel p-4 space-y-3">
+	          <div class="flex items-start justify-between gap-3">
+	            <div><h3 id="emailHistoryBodyTitle" class="font-extrabold text-lg">Email</h3><p id="emailHistoryBodyMeta" class="text-xs text-zinc-500"></p></div>
+	            <button id="closeEmailHistoryBodyModal" class="btn-soft" type="button">Close</button>
+	          </div>
+	          <div id="emailHistoryBodyNotice" class="hidden rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"></div>
+	          <iframe id="emailHistoryBodyFrame" class="h-[65vh] w-full rounded-md border border-zinc-200 bg-white" sandbox title="Email body"></iframe>
 	        </section>
 	      </div>
 
@@ -3068,6 +3230,7 @@
 	      let selectedCoupon = null;
 	      let selectedOrder = null;
 	      let manualOrderItems = [];
+	      let manualOrderCustomerUid = "";
 	      let orderEditorItems = [];
 	      let pendingBoxNowCreate = null;
 	      let pendingOrderSave = null;
@@ -3133,6 +3296,7 @@
 	      };
 	      let orderEmailSettings = { placeholders:defaultEmailPlaceholders, templates:[] };
 		      let boxNowSettings = { activeEnvironment:"stage", webhookEnvironment:"stage", environments:{} };
+		      let acsSettings = { activeEnvironment:"test", environments:{} };
 	      let marketingSettings = { firstOrderOffer:{ enabled:true, couponCode:"WELCOME10" } };
 	      let chatbotSettings = {
 	        enabled:false,
@@ -3263,8 +3427,11 @@
 		        const offsetMs = date.getTimezoneOffset() * 60000;
 		        return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 		      }
-		      const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
-		      const boxNowEnvIds = {
+	      const BOXNOW_WIDGET_BASE = "https://widget-v5.boxnow.gr/";
+	      const acsTrackingUrl = trackingNumber => trackingNumber
+	        ? `https://www.acscourier.net/en/quick-access/non-registered-users/track-and-trace/?trackingNumber=${encodeURIComponent(trackingNumber)}`
+	        : "";
+	      const boxNowEnvIds = {
 	        stage: {
 	          clientId: "boxNowStageClientId",
 	          clientSecret: "boxNowStageClientSecret",
@@ -3286,6 +3453,16 @@
 	          originContactEmail: "boxNowProductionOriginEmail",
 	          originContactNumber: "boxNowProductionOriginPhone",
 	          mask: "boxNowProductionMask",
+	        },
+	      };
+	      const acsEnvIds = {
+	        test: {
+	          companyId:"acsTestCompanyId", companyPassword:"acsTestCompanyPassword", userId:"acsTestUserId",
+	          userPassword:"acsTestUserPassword", billingCode:"acsTestBillingCode", apiKey:"acsTestApiKey", mask:"acsTestMask",
+	        },
+	        production: {
+	          companyId:"acsProductionCompanyId", companyPassword:"acsProductionCompanyPassword", userId:"acsProductionUserId",
+	          userPassword:"acsProductionUserPassword", billingCode:"acsProductionBillingCode", apiKey:"acsProductionApiKey", mask:"acsProductionMask",
 	        },
 	      };
 	      const boxNowParcelSizes = [
@@ -3349,7 +3526,7 @@
 	      const orderPricing = o => {
 	        const itemSubtotal = orderItemsSubtotal(o);
 	        const storedSubtotal = Number(o?.amountSubtotal || 0);
-	        const shipping = Number(o?.amountShipping || o?.boxnowFee?.amount || 0);
+	        const shipping = Number(o?.amountShipping || o?.acsFee?.amount || o?.boxnowFee?.amount || 0);
 	        const storedTotal = Number(o?.amountTotal || 0);
 	        const subtotal = itemSubtotal > 0 ? itemSubtotal : (
 	          storedSubtotal > 0 && !(shipping > 0 && storedSubtotal === storedTotal)
@@ -3445,6 +3622,7 @@
           ["Shipment environment", shipment.environment || ""],
           ["Shipment status", shipment.lastEvent || shipment.status || ""],
           ["Parcel IDs", Array.isArray(shipment.parcelIds) ? shipment.parcelIds.join(", ") : ""],
+          ["Tracking links", Array.isArray(shipment.parcelIds) ? shipment.parcelIds.map(id => `https://track.boxnow.gr/en?track=${encodeURIComponent(id)}`).join("\n") : ""],
           ["Delivery method", s.deliveryMethod || "boxnow"],
           ["Cash on delivery", s.cashOnDelivery ? "Yes" : "No"],
           ["Recipient name", s.name || ""],
@@ -3964,7 +4142,7 @@
 	      });
 	      showIdeaWeekTab("2026-09-07");
 	      function showSettingsTab(tab = "stripe"){
-	        const active = ["stripe", "shipping", "emails", "notifications", "chatbot"].includes(tab) ? tab : "stripe";
+	        const active = ["stripe", "shipping", "acs", "emails", "notifications", "chatbot"].includes(tab) ? tab : "stripe";
 	        document.querySelectorAll("[data-settings-panel]").forEach(panel => {
 	          panel.classList.toggle("hidden", panel.dataset.settingsPanel !== active);
 	        });
@@ -4085,6 +4263,11 @@
 	      $("emailHistorySearch").addEventListener("input", renderEmailHistory);
 	      $("emailHistoryStatus").addEventListener("change", renderEmailHistory);
 	      $("refreshEmailHistoryBtn").addEventListener("click", () => loadEmailHistory().catch(err => setMsg("emailHistoryMsg", err.message || "Email history could not load", false)));
+	      $("emailHistoryTable").addEventListener("click", event => {
+	        const button = event.target.closest("[data-view-email]");
+	        if (button) openEmailHistoryBody(emailHistoryRows.find(row => row.id === button.dataset.viewEmail));
+	      });
+	      $("closeEmailHistoryBodyModal").addEventListener("click", () => closeModal("emailHistoryBodyModal"));
 	      $("sendBulkEmailBtn").addEventListener("click", sendBulkCustomerEmail);
 	      $("bulkEmailTemplate").addEventListener("change", applyBulkEmailTemplate);
 	      $("bulkEmailLanguage").addEventListener("change", applyBulkEmailTemplate);
@@ -4836,8 +5019,21 @@
 	          <td class="p-3"><div class="font-semibold">${esc(emailHistoryLabel(row))}</div>${row.error ? `<div class="text-xs text-red-700">${esc(row.error)}</div>` : ""}</td>
 	          <td class="p-3">${esc(row.orderNumber || row.orderId || "-")}</td>
 	          <td class="p-3"><span class="inline-flex rounded-full px-2 py-1 text-xs font-bold ${statusClass(row.status)}">${esc(row.status || "unknown")}</span></td>
-	        </tr>`).join("") : `<tr><td class="p-6 text-center text-zinc-500" colspan="5">No emails match these filters.</td></tr>`;
+	          <td class="p-3">${row.bodyHtml || row.bodyText ? `<button class="btn-soft whitespace-nowrap" type="button" data-view-email="${esc(row.id)}">View email</button>` : `<span class="text-xs text-zinc-400">Unavailable</span>`}</td>
+	        </tr>`).join("") : `<tr><td class="p-6 text-center text-zinc-500" colspan="6">No emails match these filters.</td></tr>`;
 	        setMsg("emailHistoryMsg", `${rows.length} of ${emailHistoryRows.length} email record(s).`);
+	      }
+
+	      function openEmailHistoryBody(row){
+	        if (!row) return;
+	        $("emailHistoryBodyTitle").textContent = row.subject || emailHistoryLabel(row);
+	        $("emailHistoryBodyMeta").textContent = [row.recipient, row.orderNumber || row.orderId, ts(row.sentAt || row.scheduledAt)].filter(Boolean).join(" · ");
+	        const notice = $("emailHistoryBodyNotice");
+	        notice.textContent = row.bodyReconstructed ? "This older email was not stored. This is a reconstructed preview using the order's current data and may differ from the originally sent email." : "";
+	        notice.classList.toggle("hidden", !row.bodyReconstructed);
+	        const html = row.bodyHtml || `<div style="white-space:pre-wrap;font:15px/1.5 Arial,sans-serif;color:#18181b">${esc(row.bodyText || "Email body unavailable.")}</div>`;
+	        $("emailHistoryBodyFrame").srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>body{margin:20px;font-family:Arial,sans-serif;color:#18181b}img{max-width:100%;height:auto}</style></head><body>${html}</body></html>`;
+	        openModal("emailHistoryBodyModal");
 	      }
 
 	      async function loadEmailHistory(){
@@ -6355,6 +6551,7 @@
 	            orderEmailSettings = { ...orderEmailSettings, templates:[...orderEmailSettings.templates, defaultLockerArrivalTemplate] };
 	          }
 	          boxNowSettings = data.boxNow || boxNowSettings;
+	          acsSettings = data.acs || acsSettings;
 	          marketingSettings = data.marketing || marketingSettings;
 	          chatbotSettings = data.chatbot || chatbotSettings;
 	          renderSettings();
@@ -6386,6 +6583,7 @@
 		        renderNewsletterTemplateOptions();
 		        renderFirstOrderOfferCouponOptions(marketingSettings.firstOrderOffer?.couponCode || "");
 		        renderBoxNowSettings();
+		        renderAcsSettings();
 		        renderChatbotSettings();
 		      }
 
@@ -6517,6 +6715,36 @@
 	            `Webhook: ${config.webhookSecretSet ? config.webhookSecretMasked : "not set"}`,
 	          ].join(" | ");
 	        }
+	      }
+
+	      function renderAcsSettings(){
+	        $("acsActiveEnvironment").value = acsSettings.activeEnvironment === "production" ? "production" : "test";
+	        for (const environment of Object.keys(acsEnvIds)) {
+	          const ids = acsEnvIds[environment];
+	          const config = acsSettings.environments?.[environment] || {};
+	          for (const key of ["companyId", "companyPassword", "userId", "userPassword", "billingCode", "apiKey"]) $(ids[key]).value = "";
+	          ids.mask && ($(ids.mask).textContent = [
+	            `Company: ${config.companyIdSet ? config.companyIdMasked : "not set"}`,
+	            `Company password: ${config.companyPasswordSet ? config.companyPasswordMasked : "not set"}`,
+	            `Username: ${config.userIdSet ? config.userIdMasked : "not set"}`,
+	            `Password: ${config.userPasswordSet ? config.userPasswordMasked : "not set"}`,
+	            `Billing: ${config.billingCodeSet ? config.billingCodeMasked : "not set"}`,
+	            `API key: ${config.apiKeySet ? config.apiKeyMasked : "not set"}`,
+	          ].join(" | "));
+	        }
+	      }
+
+	      function acsSettingsPayload(){
+	        const payload = { activeEnvironment: $("acsActiveEnvironment").value === "production" ? "production" : "test" };
+	        for (const environment of Object.keys(acsEnvIds)) {
+	          const ids = acsEnvIds[environment];
+	          payload[environment] = {};
+	          for (const key of ["companyId", "companyPassword", "userId", "userPassword", "billingCode", "apiKey"]) {
+	            const value = $(ids[key]).value.trim();
+	            if (value) payload[environment][key] = value;
+	          }
+	        }
+	        return payload;
 	      }
 
 	      function boxNowSettingsPayload(){
@@ -7231,7 +7459,8 @@
 	        }
 	      }
 
-	      $("saveBoxNowSettingsBtn").addEventListener("click", async () => {
+	      $("boxNowPanelSettings").addEventListener("submit", async event => {
+	        event.preventDefault();
 	        try {
 	          setMsg("boxNowMsg", "Saving BOX NOW settings...");
 	          const data = await api("/adminSettings", {
@@ -7245,6 +7474,21 @@
 	        } catch (err) {
 	          setMsg("boxNowMsg", err.message || "BOX NOW settings save failed", false);
 	        }
+	      });
+
+	      $("acsSettingsForm").addEventListener("submit", async event => {
+	        event.preventDefault();
+	        const button = $("saveAcsSettingsBtn");
+	        try {
+	          button.disabled = true;
+	          setMsg("acsSettingsMsg", "Saving ACS settings...");
+	          const data = await api("/adminSettings", { method:"PATCH", body:JSON.stringify({ acs:acsSettingsPayload() }) });
+	          acsSettings = data.acs || acsSettings;
+	          renderAcsSettings();
+	          setMsg("acsSettingsMsg", `ACS settings saved. ${acsSettings.activeEnvironment === "production" ? "Live" : "Test"} is active.`);
+	        } catch (err) {
+	          setMsg("acsSettingsMsg", err.message || "ACS settings save failed", false);
+	        } finally { button.disabled = false; }
 	      });
 
 	      async function refreshBoxNowWebhookStatus(){
@@ -7963,7 +8207,9 @@
 		          fulfillmentStatus: order.fulfillmentStatus || "",
 		          previousFulfillmentStatus,
 		          trackingNumber: shipping.trackingNumber || order.trackingNumber || "",
-	          trackingUrl: shipping.trackingUrl || order.trackingUrl || (shipping.trackingNumber || order.boxNowShipment?.parcelIds?.[0] ? `https://track.boxnow.gr/en?track=${encodeURIComponent(shipping.trackingNumber || order.boxNowShipment.parcelIds[0])}` : ""),
+	          trackingUrl: ['acs', 'acs_point'].includes(String(shipping.deliveryMethod || '').toLowerCase())
+	            ? acsTrackingUrl(shipping.trackingNumber || order.trackingNumber)
+	            : shipping.trackingUrl || order.trackingUrl || (shipping.trackingNumber || order.boxNowShipment?.parcelIds?.[0] ? `https://track.boxnow.gr/en?track=${encodeURIComponent(shipping.trackingNumber || order.boxNowShipment.parcelIds[0])}` : ""),
 		          total: money(orderPricing(order).total, order.currency),
 		          coupon: order.couponCode || order.coupon || order.metadata?.couponCode || order.metadata?.coupon || "",
 		          grubz_url: "https://grubz.gr",
@@ -8003,6 +8249,7 @@
 		          postalCode: $("o_postalCode").value.trim(),
 		          postal: $("o_postalCode").value.trim(),
 		          city: $("o_city").value.trim(),
+		          region: $("o_region").value.trim(),
 		          country: $("o_country").value.trim(),
 		        };
 			        return {
@@ -9027,8 +9274,28 @@
 		            </div>
 		          `;
 		        }).join("") : `<div class="text-zinc-500 md:col-span-2">No traffic-source data yet. Attribution begins after visitors accept analytics cookies.</div>`;
-		        const campaigns = uxAnalytics?.campaigns || [];
-		        $("analyticsCampaigns").innerHTML = campaigns.length ? campaigns.map(row => `<div class="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-3 py-2"><span class="font-bold">${esc(row.label)}</span><span class="text-zinc-600">${Number(row.count || 0)} session${Number(row.count || 0) === 1 ? "" : "s"}</span></div>`).join("") : `<div class="text-zinc-500 md:col-span-2">No UTM campaigns recorded yet. Add utm_campaign to ad links.</div>`;
+		        const sessionCampaigns = uxAnalytics?.campaigns || [];
+		        const campaignResults = new Map(sessionCampaigns.map(row => [String(row.label || "").trim(), {
+		          label: String(row.label || "").trim(), sessions: Number(row.count || 0), orders: 0, cents: 0,
+		        }]));
+		        for (const { order } of analyticsOrders()) {
+		          if (isNoPaymentRequiredOrder(order)) continue;
+		          const paid = ["paid", "succeeded", "complete"].includes(statusKey(order.paymentStatus)) ||
+		            ["paid", "succeeded", "complete"].includes(statusKey(order.status));
+		          const campaign = String(order.attribution?.campaign || order.metadata?.attributionCampaign || "").trim();
+		          if (!paid || !campaign) continue;
+		          const current = campaignResults.get(campaign) || { label: campaign, sessions: 0, orders: 0, cents: 0 };
+		          current.orders += 1;
+		          current.cents += orderRevenueCents(order);
+		          campaignResults.set(campaign, current);
+		        }
+		        const campaigns = [...campaignResults.values()].sort((a, b) => b.cents - a.cents || b.sessions - a.sessions);
+		        const campaignCurrency = analyticsOrders().find(({ order }) => order.currency)?.order.currency || "eur";
+		        $("analyticsCampaigns").innerHTML = campaigns.length ? campaigns.map(row => `
+		          <div class="rounded border border-zinc-200 bg-zinc-50 px-3 py-3">
+		            <div class="flex items-start justify-between gap-3"><span class="font-bold">${esc(row.label)}</span><strong class="text-emerald-700">${money(row.cents, campaignCurrency)}</strong></div>
+		            <div class="mt-1 text-xs text-zinc-600">${Number(row.orders || 0)} paid order${Number(row.orders || 0) === 1 ? "" : "s"} · ${Number(row.sessions || 0)} session${Number(row.sessions || 0) === 1 ? "" : "s"}</div>
+		          </div>`).join("") : `<div class="text-zinc-500 md:col-span-2">No campaign-attributed sessions or paid orders yet. Add utm_campaign to campaign links.</div>`;
 		        const daily = uxAnalytics?.daily || [];
 		        const maxSessions = Math.max(1, ...daily.map(row => Number(row.sessions || 0)));
 		        $("analyticsVisitorTrend").innerHTML = daily.length ? daily.map(row => {
@@ -9091,11 +9358,16 @@
 	        const paidIds = new Set(paidOrders.map(({ order }) => order.id));
 	        const unpaidOrders = items.filter(({ order }) => !paidIds.has(order.id) && !pendingCodIds.has(order.id));
 	        const paidAmount = paidOrders.reduce((sum, { order }) => sum + orderRevenueCents(order), 0);
+	        const campaignPaidOrders = paidOrders.filter(({ order }) => String(
+	          order.attribution?.campaign || order.metadata?.attributionCampaign || ""
+	        ).trim());
+	        const campaignRevenue = campaignPaidOrders.reduce((sum, { order }) => sum + orderRevenueCents(order), 0);
 	        const pendingCodAmount = pendingCodOrders.reduce((sum, { order }) => sum + orderRevenueCents(order), 0);
 	        const range = $("analyticsRange")?.value || "30";
 	        $("analyticsRangeLabel").textContent = range === "all" ? "All loaded orders" : `Last ${range} days`;
 	        $("analyticsKpis").innerHTML = [
 	          ["Revenue", money(revenue, currency), `${revenueOrderCount} order(s)`],
+	          ["Campaign revenue", money(campaignRevenue, currency), `${campaignPaidOrders.length} paid attributed order(s)`],
 	          ["Avg order value", money(avgCents(revenue, revenueOrderCount), currency), `${customersSeen.size} customer(s)`],
 		          ["Discounts", money(discounts, currency), `${percent(discounts, subtotal || revenue)} of subtotal`],
 		          ["Shipping", money(shipping, currency), `${percent(shipping, revenue)} of revenue`],
@@ -9181,6 +9453,7 @@
 	          </button>
 	        `).join("") || `<div class="text-zinc-500">No recent orders in this range.</div>`;
 		        $("analyticsMsg").textContent = `${items.length} commercial order(s) included; ${creatorKitItems.length} creator kit order(s) tracked separately`;
+		        renderAnalyticsTrafficSources();
 		      }
 
 	      function orderNeedsHandling(order = {}){
@@ -9223,6 +9496,54 @@
 	          ? "border-violet-300 bg-violet-50 text-violet-800"
 	          : "border-zinc-300 bg-zinc-50 text-zinc-600";
 	        return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${style}" title="${esc(details)}">${esc(label)}</span>`;
+	      }
+
+	      function boxNowTrackingOverviewHtml(order = {}){
+	        const shipment = order.boxNowShipment || {};
+	        const parcelIds = Array.isArray(shipment.parcelIds)
+	          ? shipment.parcelIds.map(id => String(id || "").trim()).filter(Boolean)
+	          : [];
+	        if (!parcelIds.length) return "";
+	        const parcelEvents = Object.values(shipment.parcelEvents || {});
+	        return `
+	          <div class="rounded-md border border-violet-200 bg-violet-50 p-3 sm:col-span-2">
+	            <div class="flex flex-wrap items-center justify-between gap-2">
+	              <div class="text-xs font-bold uppercase tracking-wide text-violet-700">BOX NOW tracking</div>
+	              <div class="text-xs font-semibold text-violet-700">${parcelIds.length} parcel${parcelIds.length === 1 ? "" : "s"}</div>
+	            </div>
+	            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+	              ${parcelIds.map((parcelId, index) => {
+	                const latest = parcelEvents
+	                  .filter(event => String(event?.parcelId || "").trim() === parcelId)
+	                  .sort((a, b) => dateMs(b.eventTime) - dateMs(a.eventTime))[0];
+	                const status = latest?.event || latest?.parcelState || "Awaiting update";
+	                return `<a class="rounded-md border border-violet-200 bg-white p-3 hover:border-violet-400" href="https://track.boxnow.gr/en?track=${encodeURIComponent(parcelId)}" target="_blank" rel="noopener">
+	                  <span class="block text-xs font-bold text-zinc-500">Parcel ${index + 1}</span>
+	                  <span class="mt-0.5 block break-all font-extrabold text-violet-800">${esc(parcelId)}</span>
+	                  <span class="mt-1 block text-xs text-zinc-600">${esc(boxNowEventLabel(status))}${latest?.eventTime ? ` · ${esc(ts(latest.eventTime))}` : ""}</span>
+	                </a>`;
+	              }).join("")}
+	            </div>
+	          </div>`;
+	      }
+
+	      function orderDeliveryIcon(order = {}){
+	        const method = String(order.shipping?.deliveryMethod || order.shippingQuote?.selectedDeliveryMethod || '').trim().toLowerCase();
+	        if (method === 'boxnow') {
+	          return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-200 bg-white p-0.5" role="img" aria-label="BOX NOW" title="BOX NOW"><img src="/images/boxnow-logo.png" alt="" class="max-h-full w-full object-contain"></span>`;
+	        }
+	        const rawCourier = String(order.shipping?.courier || order.shippingQuote?.courier || '').trim();
+	        const courier = rawCourier === 'ACS' ? 'ACS Courier' : rawCourier === 'Geniki taxydromiki' ? 'Γενική Ταχυδρομική' : rawCourier;
+	        if (method === 'acs' || method === 'acs_point' || courier === 'ACS Courier') {
+	          return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-200 bg-white p-0.5" role="img" aria-label="ACS Courier" title="ACS Courier"><img src="/images/acs-courier-logo.png" alt="" class="h-auto w-full object-contain"></span>`;
+	        }
+	        if (courier === 'Γενική Ταχυδρομική') {
+	          return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-200 bg-white p-0.5" role="img" aria-label="Γενική Ταχυδρομική" title="Γενική Ταχυδρομική"><img src="/images/geniki-taxydromiki-logo.jpeg" alt="" class="h-full w-full object-contain"></span>`;
+	        }
+	        if (method === 'courier_quote' || courier) {
+	          return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-sm" role="img" aria-label="${esc(courier || 'Courier')}" title="${esc(courier || 'Courier')}">🚚</span>`;
+	        }
+	        return '';
 	      }
 
 	      function orderPdfLines(order){
@@ -9477,10 +9798,10 @@
             <td class="order-select-cell p-3"><input type="checkbox" class="h-4 w-4" data-order-select="${esc(o.id)}" ${selectedOrderIds.has(o.id) ? "checked" : ""} aria-label="Select order ${esc(orderNumber(o))}"></td>
             <td class="p-3" data-label="Order">
               <div class="flex flex-wrap items-center gap-2">
+                ${orderDeliveryIcon(o)}
                 <button class="font-bold text-left hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>
               </div>
               <div class="mt-1 font-bold">${money(o.amountTotal, o.currency)}</div>
-              <div class="mt-1 text-xs text-zinc-500">Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}</div>
             </td>
 	            <td class="p-3" data-label="Created" data-sort-value="${orderCreatedMs(o)}">${esc(ts(o.createdAt) || "-")}</td>
 	            <td class="p-3" data-label="Customer">
@@ -9633,9 +9954,124 @@
         }, 0);
       }
 
+      function manualOrderDiscountCents(subtotal){
+        const percent = Math.max(0, Math.min(100, Number($("manualDiscountPercent")?.value || 0)));
+        if (percent > 0) return Math.min(subtotal, Math.round(subtotal * percent / 100));
+        return Math.max(0, Math.round(Number($("manualDiscountCents")?.value || 0)));
+      }
+
+      function manualOrderRows(){
+        return manualOrderItems
+          .map(item => ({ id:item.id, qty:Math.max(1, Math.round(Number(item.qty || 1))) }))
+          .filter(item => item.id && item.qty > 0);
+      }
+
+      function manualOrderWeightGrams(){
+        return manualOrderRows().reduce((total, item) => {
+          const product = products.find(candidate => candidate.id === item.id);
+          return total + Math.max(0, Number(product?.weightGrams || 0)) * item.qty;
+        }, 0);
+      }
+
+      function manualOrderShippingPayload(){
+        return {
+          deliveryMethod: $("manualDeliveryMethod").value,
+          name: $("manualShipName").value.trim() || $("manualCustomerName").value.trim(),
+          phone: $("manualShipPhone").value.trim() || $("manualCustomerPhone").value.trim(),
+          addressLine1: $("manualAddressLine1").value.trim(),
+          line1: $("manualAddressLine1").value.trim(),
+          addressLine2: $("manualAddressLine2").value.trim(),
+          line2: $("manualAddressLine2").value.trim(),
+          postalCode: $("manualPostalCode").value.trim(),
+          postal: $("manualPostalCode").value.trim(),
+          city: $("manualCity").value.trim(),
+          country: $("manualCountry").value.trim() || "Greece",
+          boxNow: $("manualDeliveryMethod").value === "boxnow" ? boxNowLockerFromFields("manual") : {},
+        };
+      }
+
+      async function calculateManualOrderShipping(){
+        const button = $("calculateManualShippingBtn");
+        const message = $("manualShippingQuoteMsg");
+        const items = manualOrderRows();
+        if (!items.length) return setMsg("manualShippingQuoteMsg", "Add at least one product.", false);
+        button.disabled = true;
+        button.textContent = "Calculating…";
+        message.className = "mt-1 text-xs text-zinc-500";
+        message.textContent = `Calculating from ${(manualOrderWeightGrams() / 1000).toFixed(2)} kg…`;
+        try {
+          const result = await orderAdminApi("/adminOrders", {
+            method:"POST",
+            body:JSON.stringify({ action:"calculateManualOrderShipping", order:{ items, shipping:manualOrderShippingPayload() } }),
+          });
+          if (result.quoteRequired) {
+            message.textContent = `${(Number(result.weightGrams || 0) / 1000).toFixed(2)} kg · A courier quote is required.`;
+            return;
+          }
+          const amount = Math.max(0, Math.round(Number(result.quote?.amount || 0)));
+          $("manualShippingCents").value = String(amount);
+          renderManualOrderItems();
+          const parcel = result.quote?.parcel;
+          const details = result.deliveryMethod === "boxnow"
+            ? [parcel?.label, parcel?.count ? `${parcel.count} parcel${parcel.count === 1 ? "" : "s"}` : ""]
+            : [result.quote?.destination?.area, `${result.quote?.billableWeightKg || 0.5} kg billable`];
+          message.textContent = `${(Number(result.weightGrams || 0) / 1000).toFixed(2)} kg · ${money(amount, "eur")}${details.filter(Boolean).length ? ` · ${details.filter(Boolean).join(" · ")}` : ""}`;
+        } catch (err) {
+          message.className = "mt-1 text-xs text-red-600";
+          message.textContent = err.message || "Shipping calculation failed";
+        } finally {
+          button.disabled = false;
+          button.textContent = "Calculate shipping";
+        }
+      }
+
+      function renderManualCustomerOptions(selectedKey = ""){
+        const options = [...customers]
+          .sort((a, b) => customerLabel(a).localeCompare(customerLabel(b)))
+          .map(customer => `<option value="${esc(customer.key)}">${esc(customerLabel(customer))}${customer.email && customer.name ? ` — ${esc(customer.email)}` : ""}</option>`)
+          .join("");
+        $("manualExistingCustomer").innerHTML = `<option value="">New customer</option>${options}`;
+        $("manualExistingCustomer").value = selectedKey;
+      }
+
+      function updateManualDeliveryFields(){
+        const method = $("manualDeliveryMethod").value || "boxnow";
+        $("manualBoxNowSection").classList.toggle("hidden", method !== "boxnow");
+      }
+
+      function applyManualCustomer(customerKey){
+        const customer = customers.find(item => item.key === customerKey) || null;
+        manualOrderCustomerUid = customer?.uid || "";
+        if (!customer) {
+          ["manualCustomerName", "manualCustomerEmail", "manualCustomerPhone", "manualShipName", "manualShipPhone", "manualAddressLine1", "manualAddressLine2", "manualPostalCode", "manualCity"].forEach(id => $(id).value = "");
+          $("manualCountry").value = "Greece";
+          $("manualLanguage").value = "en";
+          $("manualDeliveryMethod").value = "boxnow";
+          setBoxNowLockerFields("manual", {});
+          updateManualDeliveryFields();
+          return;
+        }
+        const shipping = customer.shipping || {};
+        $("manualCustomerName").value = customer.name || shipping.name || "";
+        $("manualCustomerEmail").value = customer.email || "";
+        $("manualCustomerPhone").value = customer.phone || shipping.phone || "";
+        $("manualLanguage").value = String(customer.language || customer.locale || "en").toLowerCase().startsWith("el") ? "el" : "en";
+        $("manualShipName").value = shipping.name || customer.name || "";
+        $("manualShipPhone").value = shipping.phone || customer.phone || "";
+        $("manualAddressLine1").value = shipping.addressLine1 || shipping.line1 || shipping.address || "";
+        $("manualAddressLine2").value = shipping.addressLine2 || shipping.line2 || "";
+        $("manualPostalCode").value = shipping.postalCode || shipping.postal || shipping.zip || "";
+        $("manualCity").value = shipping.city || "";
+        $("manualCountry").value = shipping.country || "Greece";
+        const deliveryMethod = ["boxnow", "acs", "acs_point", "courier_quote"].includes(shipping.deliveryMethod) ? shipping.deliveryMethod : "boxnow";
+        $("manualDeliveryMethod").value = deliveryMethod;
+        setBoxNowLockerFields("manual", shipping.boxNow || {});
+        updateManualDeliveryFields();
+      }
+
       function renderManualOrderItems(){
-        const available = activeOrderProducts();
-        const options = available.map(p => `<option value="${esc(p.id)}">${esc(p.name || p.id)} - ${money(p.amount, p.currency || "eur")}</option>`).join("");
+        const available = allOrderProducts();
+        const options = available.map(p => `<option value="${esc(p.id)}">${esc(p.name || p.id)}${p.active === false ? " [Inactive]" : ""} - ${money(p.amount, p.currency || "eur")}</option>`).join("");
         if (!manualOrderItems.length && available.length) {
           manualOrderItems = [{ id: available[0].id, qty: 1 }];
         }
@@ -9660,26 +10096,33 @@
         });
 	        const subtotal = manualOrderItemTotalCents();
 	        const shipping = Math.max(0, Number($("manualShippingCents")?.value || 0));
-	        const discount = Math.max(0, Number($("manualDiscountCents")?.value || 0));
+	        const discount = manualOrderDiscountCents(subtotal);
 	        const calculatedTotal = Math.max(0, subtotal + shipping - discount);
+	        const discountPercent = Math.max(0, Math.min(100, Number($("manualDiscountPercent")?.value || 0)));
 	        const overrideEnabled = $("manualTotalOverrideEnabled")?.checked;
 	        const overrideTotal = Math.max(0, Number($("manualTotalOverrideCents")?.value || 0));
 	        const finalTotal = overrideEnabled ? overrideTotal : calculatedTotal;
 	        $("manualTotalOverrideCents").disabled = !overrideEnabled;
 	        $("manualOrderTotal").innerHTML = `
+	          <div>Package weight: ${(manualOrderWeightGrams() / 1000).toFixed(2)} kg</div>
 	          <div>Catalog subtotal: ${money(subtotal, "eur")}</div>
+	          <div>Shipping: ${money(shipping, "eur")}</div>
+	          <div>Discount${discountPercent > 0 ? ` (${discountPercent}%)` : ""}: -${money(discount, "eur")}</div>
 	          <div>Calculated total: ${money(calculatedTotal, "eur")}</div>
 	          <div class="text-base">Final total: ${money(finalTotal, "eur")}</div>
 	        `;
       }
 
       function openManualOrder(){
-        const available = activeOrderProducts();
+        const available = allOrderProducts();
         manualOrderItems = available.length ? [{ id: available[0].id, qty: 1 }] : [];
+        manualOrderCustomerUid = "";
+	      renderManualCustomerOptions();
         $("manualCustomerName").value = "";
         $("manualCustomerEmail").value = "";
 	        $("manualCustomerPhone").value = "";
 	        $("manualLanguage").value = "en";
+	        $("manualDeliveryMethod").value = "boxnow";
 	        $("manualShipName").value = "";
 	        $("manualShipPhone").value = "";
 	        $("manualAddressLine1").value = "";
@@ -9689,12 +10132,16 @@
 	        $("manualCountry").value = "Greece";
 	        setBoxNowLockerFields("manual", {});
 	        $("manualStripePaymentLink").value = "";
+	        $("manualGeneratePaymentLink").checked = true;
 	        $("manualShippingCents").value = "0";
+	        $("manualShippingQuoteMsg").textContent = "";
 	        $("manualDiscountCents").value = "0";
+	        $("manualDiscountPercent").value = "0";
 	        $("manualTotalOverrideEnabled").checked = false;
 	        $("manualTotalOverrideCents").value = "0";
 	        $("manualTotalOverrideCents").disabled = true;
 	        $("manualNotes").value = "";
+        updateManualDeliveryFields();
         $("manualOrderMsg").textContent = available.length ? "" : "Load or create active products before creating an order.";
         renderManualOrderItems();
         openModal("manualOrderModal");
@@ -9750,6 +10197,54 @@
 
       $("newManualOrderBtn").addEventListener("click", openManualOrder);
       $("closeManualOrderModal").addEventListener("click", () => closeModal("manualOrderModal"));
+	  async function createManualPaymentLink(stripeMode){
+	    if (!selectedOrder?.manual) return setMsg("orderModalMsg", "Select a manual order first.", false);
+	    const mode = stripeMode === "test" ? "test" : "live";
+	    const button = mode === "test" ? $("createManualTestPaymentLinkBtn") : $("createManualLivePaymentLinkBtn");
+	    const confirmed = window.confirm(
+	      `Create a ${mode.toUpperCase()} Stripe Checkout link for ${orderNumber(selectedOrder)}? This replaces the currently saved payment link. No message will be sent to the customer.`
+	    );
+	    if (!confirmed) return;
+	    try {
+	      button.disabled = true;
+	      button.textContent = `Creating ${mode} link…`;
+	      setMsg("manualOrderPaymentLinkMsg", `Creating ${mode} Stripe Checkout link…`);
+	      const result = await orderAdminApi("/adminOrders", {
+	        method:"POST",
+	        body:JSON.stringify({ action:"createManualOrderCheckout", id:selectedOrder.id, stripeMode:mode }),
+	      });
+	      await loadOrders();
+	      selectedOrder = orders.find(order => order.id === selectedOrder.id) || result.order || selectedOrder;
+	      fillOrder(selectedOrder);
+	      setMsg("manualOrderPaymentLinkMsg", `${mode === "live" ? "Live" : "Test"} payment link created. Use Copy link to share it.`);
+	      setMsg("orderMsg", `${mode === "live" ? "Live" : "Test"} payment link created for ${orderNumber(selectedOrder)}; nothing was sent.`);
+	    } catch (err) {
+	      setMsg("manualOrderPaymentLinkMsg", err.message || "Payment link creation failed", false);
+	    } finally {
+	      button.textContent = mode === "test" ? "Create test link" : "Create live link";
+	      button.disabled = String(selectedOrder?.paymentStatus || "").toLowerCase() === "paid";
+	    }
+	  }
+	  $("createManualTestPaymentLinkBtn").addEventListener("click", () => createManualPaymentLink("test"));
+	  $("createManualLivePaymentLinkBtn").addEventListener("click", () => createManualPaymentLink("live"));
+	  $("copyOrderPaymentLinkBtn").addEventListener("click", async () => {
+	    const link = $("o_stripePaymentLink").value.trim();
+	    if (!link) return setMsg("orderMsg", "Create or enter a payment link first.", false);
+	    try {
+	      await navigator.clipboard.writeText(link);
+	      setMsg("orderMsg", "Payment link copied");
+	    } catch {
+	      $("o_stripePaymentLink").focus();
+	      $("o_stripePaymentLink").select();
+	      setMsg("orderMsg", "The link is selected. Copy it with Ctrl/Cmd+C.");
+	    }
+	  });
+      $("manualExistingCustomer").addEventListener("change", event => applyManualCustomer(event.target.value));
+      $("manualDeliveryMethod").addEventListener("change", () => {
+        updateManualDeliveryFields();
+        $("manualShippingQuoteMsg").textContent = "";
+      });
+	  $("calculateManualShippingBtn").addEventListener("click", calculateManualOrderShipping);
       $("addOrderItemBtn").addEventListener("click", () => {
         if (!orderProductsCanEdit()) return setMsg("orderMsg", "Products can only be edited while fulfillment is New.", false);
         const available = allOrderProducts();
@@ -9780,8 +10275,8 @@
       });
       $("o_fulfillment").addEventListener("change", renderOrderItemsEditor);
       $("addManualOrderItemBtn").addEventListener("click", () => {
-        const available = activeOrderProducts();
-        if (!available.length) return setMsg("manualOrderMsg", "No active products found.", false);
+        const available = allOrderProducts();
+        if (!available.length) return setMsg("manualOrderMsg", "No products found.", false);
         manualOrderItems.push({ id: available[0].id, qty: 1 });
         renderManualOrderItems();
       });
@@ -9805,7 +10300,7 @@
         manualOrderItems.splice(index, 1);
         renderManualOrderItems();
       });
-	      ["manualShippingCents", "manualDiscountCents", "manualTotalOverrideCents"].forEach(id => {
+	      ["manualShippingCents", "manualDiscountCents", "manualDiscountPercent", "manualTotalOverrideCents"].forEach(id => {
 	        $(id).addEventListener("input", renderManualOrderItems);
 	      });
 	      $("manualTotalOverrideEnabled").addEventListener("change", renderManualOrderItems);
@@ -9815,35 +10310,27 @@
             .map(item => ({ id: item.id, qty: Math.max(1, Math.round(Number(item.qty || 1))) }))
             .filter(item => item.id && item.qty > 0);
           if (!items.length) return setMsg("manualOrderMsg", "Add at least one product.", false);
+          const discountPercent = Number($("manualDiscountPercent").value || 0);
+          if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) return setMsg("manualOrderMsg", "Discount percentage must be between 0 and 100.", false);
           setMsg("manualOrderMsg", "Creating new order...");
           const result = await orderAdminApi("/adminOrders", {
             method:"POST",
             body: JSON.stringify({
               action: "createManualOrder",
+              generatePaymentLink: $("manualGeneratePaymentLink").checked,
               order: {
+                uid: manualOrderCustomerUid || "manual",
                 customer: {
                   name: $("manualCustomerName").value.trim(),
                   email: $("manualCustomerEmail").value.trim(),
                   phone: $("manualCustomerPhone").value.trim(),
                 },
 	                language: $("manualLanguage").value,
-	                shipping: {
-	                  deliveryMethod: "boxnow",
-	                  name: $("manualShipName").value.trim() || $("manualCustomerName").value.trim(),
-	                  phone: $("manualShipPhone").value.trim() || $("manualCustomerPhone").value.trim(),
-	                  addressLine1: $("manualAddressLine1").value.trim(),
-	                  line1: $("manualAddressLine1").value.trim(),
-	                  addressLine2: $("manualAddressLine2").value.trim(),
-	                  line2: $("manualAddressLine2").value.trim(),
-	                  postalCode: $("manualPostalCode").value.trim(),
-	                  postal: $("manualPostalCode").value.trim(),
-	                  city: $("manualCity").value.trim(),
-	                  country: $("manualCountry").value.trim(),
-	                  boxNow: boxNowLockerFromFields("manual"),
-	                },
+	                shipping: manualOrderShippingPayload(),
 	                stripePaymentLink: $("manualStripePaymentLink").value.trim(),
 	                amountShipping: Math.max(0, Math.round(Number($("manualShippingCents").value || 0))),
-	                amountDiscount: Math.max(0, Math.round(Number($("manualDiscountCents").value || 0))),
+	                amountDiscount: manualOrderDiscountCents(manualOrderItemTotalCents()),
+	                discountPercent,
 	                amountTotalOverride: $("manualTotalOverrideEnabled").checked ? Math.max(0, Math.round(Number($("manualTotalOverrideCents").value || 0))) : undefined,
 	                notes: $("manualNotes").value.trim(),
                 items,
@@ -9890,6 +10377,7 @@
 	        const productsPanel = $("orderItemsEditor")?.closest(".panel");
 	        const shippingPanel = $("o_shipName")?.closest(".panel");
 	        const boxNowPanel = $("orderBoxNowShipmentSummary")?.closest(".panel");
+	        const acsPanel = $("acsShipmentPanel");
 	        const courierQuotePanel = $("courierQuoteFinalizePanel");
 	        const statusGrid = $("o_status")?.closest(".grid");
 	        const aadePanel = $("o_invoiceReceiptIssued")?.closest(".panel");
@@ -9901,6 +10389,7 @@
 	        if (productsPanel) $("orderTabProducts").append(productsPanel);
 	        if (shippingPanel) $("orderTabDelivery").append(shippingPanel);
 	        if (boxNowPanel) $("orderTabDelivery").append(boxNowPanel);
+	        if (acsPanel) $("orderTabDelivery").append(acsPanel);
 	        if (aadePanel) $("orderTabAade").append(aadePanel);
 	        if (lockerReminderPanel) $("orderTabCommunication").append(lockerReminderPanel);
 	        if (feedbackPanel) $("orderTabCommunication").append(feedbackPanel);
@@ -9951,6 +10440,26 @@
 	          [o.shipping?.postalCode || o.shipping?.postal || o.shipping?.zip || "", o.shipping?.city || ""].filter(Boolean).join(" "),
 	          o.shipping?.country || "",
 	        ].filter(Boolean).map(part => esc(part)).join("<br>");
+	        const deliveryMethod = o.shipping?.deliveryMethod === 'acs_point' ? 'acs_point' : (o.shipping?.deliveryMethod === 'acs' ? 'acs' : (
+	          o.shipping?.deliveryMethod === 'courier_quote' ||
+	          o.shippingQuote?.selectedDeliveryMethod === 'courier_quote' ||
+	          (o.shipping?.courier && o.shipping?.deliveryMethod !== 'boxnow')
+	        ) ? 'courier_quote' : 'boxnow');
+	        const deliveryName = deliveryMethod === 'boxnow'
+	          ? 'BOX NOW'
+	          : (deliveryMethod === 'acs_point' ? 'ACS Point' : (deliveryMethod === 'acs' ? 'ACS Courier' : (o.shipping?.courier || o.shippingQuote?.courier || 'Courier')));
+	        const deliveryDetail = deliveryMethod === 'boxnow'
+	          ? (o.shipping?.boxNow?.name || o.shipping?.boxNow?.id || 'Locker selected')
+	          : (deliveryMethod === 'acs_point'
+	            ? [
+	                o.shipping?.acsPoint?.name,
+	                o.shipping?.acsPoint?.street,
+	                [o.shipping?.acsPoint?.postalCode, o.shipping?.acsPoint?.city].filter(Boolean).join(' '),
+	                [o.shipping?.acsPoint?.station && `Station ${o.shipping.acsPoint.station}`, o.shipping?.acsPoint?.branch && `Branch ${o.shipping.acsPoint.branch}`].filter(Boolean).join('/'),
+	              ].filter(Boolean).join(' · ') || 'ACS Point selected'
+	          : (o.shipping?.shippingPaymentMode === 'pay_on_delivery'
+	            ? 'Shipping paid to courier on delivery'
+	            : 'Shipping prepaid online'));
         $("orderDetails").innerHTML = `
 	          <div class="grid gap-2 sm:grid-cols-2">
 	            <div class="rounded-md border border-zinc-200 bg-white p-3">
@@ -9967,6 +10476,12 @@
 	              <div class="mt-1 text-xl font-extrabold">${money(pricing.total, o.currency)}</div>
 	              <div class="text-xs text-zinc-500">Subtotal ${money(pricing.subtotal, o.currency)} · Shipping ${money(pricing.shipping, o.currency)}${pricing.discount > 0 ? ` · ${discountLabel} -${money(pricing.discount, o.currency)}` : ""}</div>
 	            </div>
+	            <div class="rounded-md border border-zinc-200 bg-white p-3">
+	              <div class="text-xs font-bold uppercase tracking-wide text-zinc-500">Delivery method</div>
+	              <div class="mt-1 flex items-center gap-2">${orderDeliveryIcon(o)}<span class="font-extrabold">${esc(deliveryName)}</span></div>
+	              <div class="mt-1 text-xs text-zinc-500">${esc(deliveryDetail)}</div>
+	            </div>
+	            ${deliveryMethod === "boxnow" ? boxNowTrackingOverviewHtml(o) : ""}
 	            <div class="rounded-md border border-zinc-200 bg-white p-3">
 	              <div class="text-xs font-bold uppercase tracking-wide text-zinc-500">AADE</div>
 	              <div class="mt-1 font-bold">${o.invoiceReceiptIssued === true ? "Invoice/receipt issued" : "Not issued"}</div>
@@ -9988,7 +10503,7 @@
 	            <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
 	              <div><strong>Shipping address:</strong><br>${shippingAddress || "<span class=\"text-zinc-500\">No shipping address saved.</span>"}</div>
 	              <div><strong>Attribution:</strong><br>Source: ${esc(o.attribution?.source || o.metadata?.attributionSource || "Direct / unknown")}<br>Medium: ${esc(o.attribution?.medium || o.metadata?.attributionMedium || "-")}<br>Campaign: ${esc(o.attribution?.campaign || o.metadata?.attributionCampaign || "-")}<br>Landing page: ${esc(o.attribution?.landingPage || o.metadata?.attributionLandingPage || "-")}<br>Referrer: ${esc(o.attribution?.referrer || o.metadata?.attributionReferrer || "-")}<br>Coupon: ${esc(o.couponCode || o.metadata?.couponCode || "-")}<br>Referral: ${esc(o.referralCode || o.metadata?.referralCode || "-")}</div>
-	              <div><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
+	              <div data-boxnow-only><strong>BOX NOW:</strong><br>${boxNowDetailsHtml(o)}</div>
 	              <div><strong>Customer feedback:</strong><br>${o.customerFeedback?.rating ? `${"★".repeat(Number(o.customerFeedback.rating))}${"☆".repeat(5 - Number(o.customerFeedback.rating))} (${Number(o.customerFeedback.rating)}/5)` : "Not received"}${o.customerFeedback?.comment ? `<br>${esc(o.customerFeedback.comment)}` : ""}</div>
 	              <div class="sm:col-span-2"><strong>Items:</strong><ul class="ml-5 list-disc">${(o.items || []).map(i => `<li>${esc(i.quantity)} x ${esc(i.name)} - ${money(i.totalAmount, i.currency)}${i.backorder ? ` <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">Backorder: ${esc(i.backorderQuantity || i.quantity)}</span>` : ""}</li>`).join("")}</ul><div class="mt-2 text-xs font-semibold text-zinc-600">Bulk inventory: ${esc(o.inventoryState || "Not reserved")}${o.inventoryRequirementsGrams ? ` · ${Object.entries(o.inventoryRequirementsGrams).map(([pool, grams]) => `${pool}: ${kgValue(grams)}`).join(" · ")}` : ""}</div></div>
 	              <div class="sm:col-span-2 break-all"><strong>Stripe:</strong><br>Session: ${esc(o.stripeSessionId || "-")}<br>Payment intent: ${esc(o.stripePaymentIntentId || "-")}</div>
@@ -10033,12 +10548,18 @@
 	        $("o_deliveredAt").value = deliveredDate && !Number.isNaN(deliveredDate.getTime())
 	          ? `${deliveredDate.getFullYear()}-${String(deliveredDate.getMonth() + 1).padStart(2, "0")}-${String(deliveredDate.getDate()).padStart(2, "0")}`
 	          : "";
-        const shipment = o.boxNowShipment || {};
+	        const shipment = o.boxNowShipment || {};
+	        const isBoxNowDelivery = deliveryMethod === 'boxnow';
+	        $('orderDeliveryShipmentTitle').textContent = isBoxNowDelivery ? 'BOX NOW shipment' : deliveryName;
+	        document.querySelectorAll('[data-boxnow-only]').forEach(element => element.classList.toggle('hidden', !isBoxNowDelivery));
         const shipmentParcelId = Array.isArray(shipment.parcelIds) && shipment.parcelIds[0] ? shipment.parcelIds[0] : "";
         const trackingNumber = o.shipping?.trackingNumber || shipment.trackingNumber || shipmentParcelId || "";
         const isCodOrder = o.paymentMethod === "cash_on_delivery" || o.shipping?.cashOnDelivery === true;
 	        $("o_tracking").value = trackingNumber;
-	        $("o_trackingUrl").value = o.shipping?.trackingUrl || (trackingNumber ? `https://track.boxnow.gr/en?track=${encodeURIComponent(trackingNumber)}` : "");
+	        const isAcsDelivery = ['acs', 'acs_point'].includes(deliveryMethod) || o.shipping?.courier === 'ACS Courier';
+	        $("o_trackingUrl").value = isAcsDelivery && trackingNumber
+	          ? acsTrackingUrl(trackingNumber)
+	          : o.shipping?.trackingUrl || (isBoxNowDelivery && trackingNumber ? `https://track.boxnow.gr/en?track=${encodeURIComponent(trackingNumber)}` : "");
 	        updateTrackingUrlButton();
 	        $("o_shipName").value = o.shipping?.name || o.customer?.name || "";
 	        $("o_shipPhone").value = o.shipping?.phone || o.customer?.phone || "";
@@ -10046,9 +10567,25 @@
 	        $("o_addressLine2").value = o.shipping?.addressLine2 || o.shipping?.line2 || "";
 	        $("o_postalCode").value = o.shipping?.postalCode || o.shipping?.postal || o.shipping?.zip || "";
 	        $("o_city").value = o.shipping?.city || "";
+	        const orderRegionSelect = $("o_region");
+	        orderRegionSelect.querySelector('option[data-saved-region]')?.remove();
+	        const orderRegion = String(o.shipping?.region || "").trim();
+	        if (orderRegion && !Array.from(orderRegionSelect.options).some(option => option.value === orderRegion)) {
+	          const savedRegionOption = new Option(orderRegion, orderRegion, true, true);
+	          savedRegionOption.dataset.savedRegion = "true";
+	          orderRegionSelect.add(savedRegionOption);
+	        }
+	        orderRegionSelect.value = orderRegion;
 	        $("o_country").value = o.shipping?.country || "";
-	        const isCourierQuoteOrder = o.shipping?.deliveryMethod === 'courier_quote';
-	        $('courierQuoteFinalizePanel').classList.toggle('hidden', !isCourierQuoteOrder || statusKey(o.paymentStatus) === 'paid');
+	        const isCourierQuoteOrder = (
+	          o.shipping?.deliveryMethod === 'courier_quote' ||
+	          o.source === 'storefront_courier_quote' ||
+	          o.shippingQuotePending === true ||
+	          Boolean(o.shippingQuote?.checkoutUrl || o.shippingQuote?.courier || o.shippingQuote?.status)
+	        );
+	        $("lockerReminderPanel")?.classList.toggle("hidden", !isBoxNowDelivery);
+	        const isPaidCourierQuote = ['paid', 'succeeded', 'complete'].includes(statusKey(o.paymentStatus));
+	        $('courierQuoteFinalizePanel').classList.toggle('hidden', !isCourierQuoteOrder || isPaidCourierQuote);
 	        const rawSavedCourier = o.shippingQuote?.courier || o.shipping?.courier || 'ACS Courier';
 	        const savedCourier = rawSavedCourier === 'Geniki taxydromiki'
 	          ? 'Γενική Ταχυδρομική'
@@ -10057,12 +10594,47 @@
 	        $('o_quoteShippingCost').value = (Math.max(0, Number(o.shippingQuote?.shippingAmount ?? o.amountShipping ?? 0)) / 100).toFixed(2);
 	        $('o_quotePaymentMode').value = o.shippingQuote?.paymentMode || o.shipping?.shippingPaymentMode || 'prepaid';
 	        $('o_quoteEstimate').value = o.shippingQuote?.estimatedDelivery || '';
-	        $('finalizeCourierQuoteBtn').textContent = o.shippingQuote?.status === 'sent'
-	          ? 'Replace checkout & resend quote'
-	          : 'Create checkout & email customer';
+	        $('o_quoteBoxNowAvailable').checked = o.shippingQuote?.boxNowAvailableInArea === true;
+	        $('o_quoteAdditionalInformation').value = o.shippingQuote?.additionalInformation || '';
+	        $('createCourierQuoteCheckoutBtn').textContent = o.shippingQuote?.checkoutUrl
+	          ? 'Replace checkout'
+	          : 'Create checkout';
+	        $('testCourierQuoteEmailBtn').disabled = !o.shippingQuote?.checkoutUrl;
+	        $('sendCourierQuoteCustomerBtn').disabled = !o.shippingQuote?.checkoutUrl;
 	        renderCourierQuotePaymentSummary();
+	        const isAcsOrder = ['acs', 'acs_point'].includes(o.shipping?.deliveryMethod) || (isCourierQuoteOrder && savedCourier === 'ACS Courier' && isPaidCourierQuote);
+	        $('acsShipmentPanel').classList.toggle('hidden', !isAcsOrder);
+	        const deliveryTab = document.querySelector('[data-order-tab="delivery"]');
+	        const rawAcsAddress = String(o.shipping?.addressLine1 || o.shipping?.line1 || o.shipping?.address || '').trim();
+	        const hasAcsStreetNumber = /\d+[A-Za-zΑ-Ωα-ω]?$/u.test(rawAcsAddress);
+	        const hasAcsAddress = Boolean(
+	          rawAcsAddress && hasAcsStreetNumber &&
+	          /^\d{5}$/.test(String(o.shipping?.postalCode || o.shipping?.postal || '').replace(/\s/g, '')) &&
+	          String(o.shipping?.region || o.shipping?.city || '').trim()
+	        );
+	        if (deliveryTab) {
+	          deliveryTab.innerHTML = isAcsOrder && !hasAcsAddress
+	            ? 'Customer &amp; Delivery <span class="ml-1 font-black text-orange-700" aria-label="Warning">!</span>'
+	            : 'Customer &amp; Delivery';
+	          deliveryTab.classList.toggle('border-amber-400', isAcsOrder && !hasAcsAddress);
+	          deliveryTab.title = isAcsOrder && !hasAcsAddress
+	            ? 'ACS requires a street and number, five-digit postal code, and region.'
+	            : '';
+	        }
+	        $('printAcsVoucherBtn').disabled = !o.acsShipment?.voucherNo;
+	        $('issueAcsPickupListBtn').disabled = !o.acsShipment?.voucherNo;
+	        $('acsShipmentStatus').textContent = !hasAcsAddress
+	          ? '⚠ Complete the street and number, five-digit postal code, and region above, then save the order.'
+	          : o.acsShipment?.voucherNo
+	          ? `${o.acsShipment.environment === 'production' ? 'Live' : 'Test'} voucher ${o.acsShipment.voucherNo} · pickup ${o.acsShipment.pickupDate}`
+	          : 'No ACS voucher created.';
 	        setBoxNowLockerFields("order", o.shipping?.boxNow || {});
 	        $("o_stripePaymentLink").value = o.stripePaymentLink || o.paymentLink || "";
+	        $("copyOrderPaymentLinkBtn").disabled = !$("o_stripePaymentLink").value.trim();
+	        $("manualOrderPaymentLinkActions").classList.toggle("hidden", o.manual !== true);
+	        const manualPaymentLinkDisabled = o.manual !== true || String(o.paymentStatus || "").toLowerCase() === "paid";
+	        $("createManualTestPaymentLinkBtn").disabled = manualPaymentLinkDisabled;
+	        $("createManualLivePaymentLinkBtn").disabled = manualPaymentLinkDisabled;
         $("o_notes").value = o.notes || "";
 	        $("invoiceReceiptPdfFile").value = "";
 	        const invoicePdf = o.invoiceReceiptPdf || {};
@@ -10096,11 +10668,19 @@
           ? o.boxNowShipment.parcelIds[0]
           : (o.shipping?.trackingNumber || "");
 	        renderOrderItemsEditor();
-	        $("orderBoxNowShipmentSummary").textContent = shipment.deliveryRequestId
-	          ? `Created in ${shipment.environment || "BOX NOW"}: ${shipment.deliveryRequestId}`
-	          : "No BOX NOW delivery request has been created for this order yet.";
+	        if (isBoxNowDelivery && shipment.deliveryRequestId) {
+	          const parcelIds = Array.isArray(shipment.parcelIds) ? shipment.parcelIds.filter(Boolean) : [];
+	          $("orderBoxNowShipmentSummary").innerHTML = `
+	            <span>Created in ${esc(shipment.environment || "BOX NOW")}: ${esc(shipment.deliveryRequestId)}</span>
+	            ${parcelIds.length ? `<span class="mt-2 flex flex-wrap gap-2">${parcelIds.map((id, index) => `<a class="font-bold text-violet-700 underline" href="https://track.boxnow.gr/en?track=${encodeURIComponent(id)}" target="_blank" rel="noopener">Track parcel ${index + 1}: ${esc(id)}</a>`).join("")}</span>` : ""}`;
+	        } else {
+	          $("orderBoxNowShipmentSummary").textContent = isBoxNowDelivery
+	            ? "No BOX NOW delivery request has been created for this order yet."
+	            : `${deliveryDetail} · Shipping ${money(pricing.shipping, o.currency)}${trackingNumber ? ` · Tracking ${trackingNumber}` : ''}`;
+	        }
 	        renderBoxNowTimeline(o);
 	        renderBoxNowNotificationReview(o);
+	        if (!isBoxNowDelivery) document.querySelectorAll('[data-boxnow-conditional]').forEach(element => element.classList.add('hidden'));
 	        pendingBoxNowCreate = null;
 	        $("createBoxNowShipmentBtn").disabled = Boolean(shipment.deliveryRequestId);
 	        $("createBoxNowShipmentBtn").textContent = "Create BOX NOW delivery";
@@ -10216,6 +10796,7 @@
               action,
               environment: env,
               parcelId,
+              parcelIds: Array.isArray(shipment.parcelIds) ? shipment.parcelIds : [],
               deliveryRequestId: shipment.deliveryRequestId || "",
               deliveryRequestIds: Array.isArray(shipment.deliveryRequestIds) ? shipment.deliveryRequestIds : [],
               orderNumber: shipment.deliveryRequestId || orderNumber(selectedOrder),
@@ -10319,6 +10900,14 @@
 	      });
 
 	      ['o_quoteShippingCost', 'o_quotePaymentMode'].forEach(id => $(id).addEventListener('input', renderCourierQuotePaymentSummary));
+	      ['o_quoteCourier', 'o_quoteShippingCost', 'o_quotePaymentMode', 'o_quoteEstimate', 'o_quoteBoxNowAvailable', 'o_quoteAdditionalInformation'].forEach(id => {
+	        $(id).addEventListener('input', () => {
+	          if (!selectedOrder?.shippingQuote?.checkoutUrl) return;
+	          $('testCourierQuoteEmailBtn').disabled = true;
+	          $('sendCourierQuoteCustomerBtn').disabled = true;
+	          setMsg('orderModalMsg', 'Quote details changed. Replace the live checkout before sending a test or emailing the customer.');
+	        });
+	      });
 	      function courierQuoteFormPayload(action){
 	        return {
 	          action,
@@ -10327,15 +10916,13 @@
 	          shippingAmountCents: Math.max(0, Math.round(Number($('o_quoteShippingCost').value || 0) * 100)),
 	          shippingPaymentMode: $('o_quotePaymentMode').value,
 	          estimatedDelivery: $('o_quoteEstimate').value.trim(),
+	          boxNowAvailableInArea: $('o_quoteBoxNowAvailable').checked,
+	          additionalInformation: $('o_quoteAdditionalInformation').value.trim(),
 	        };
 	      }
 
 	      $('testCourierQuoteEmailBtn').addEventListener('click', async () => {
 	        if (!selectedOrder) return setMsg('orderModalMsg', 'Select an order first.', false);
-	        const courier = $('o_quoteCourier').value.trim();
-	        const shippingValue = Number($('o_quoteShippingCost').value);
-	        if (!courier) return setMsg('orderModalMsg', 'Choose a courier.', false);
-	        if (!Number.isFinite(shippingValue) || shippingValue < 0) return setMsg('orderModalMsg', 'Enter a valid shipping cost.', false);
 	        const button = $('testCourierQuoteEmailBtn');
 	        try {
 	          button.disabled = true;
@@ -10354,7 +10941,7 @@
 	        }
 	      });
 
-	      $('finalizeCourierQuoteBtn').addEventListener('click', async () => {
+	      $('createCourierQuoteCheckoutBtn').addEventListener('click', async () => {
 	        if (!selectedOrder) return setMsg('orderModalMsg', 'Select an order first.', false);
 	        const courier = $('o_quoteCourier').value.trim();
 	        const shippingValue = Number($('o_quoteShippingCost').value);
@@ -10367,32 +10954,150 @@
 	        const online = products + (mode === 'prepaid' ? shipping : 0);
 	        const due = mode === 'pay_on_delivery' ? shipping : 0;
 	        const confirmed = window.confirm(
-	          `Send this quote to ${selectedOrder.customer?.email || 'the customer'}?\n\n` +
+	          `Create a Stripe checkout for ${selectedOrder.customer?.email || 'the customer'}? On localhost this always uses Stripe test mode. No email will be sent.\n\n` +
 	          `Courier: ${courier}\nProducts paid online: ${money(products, selectedOrder.currency)}\n` +
 	          `Shipping: ${money(shipping, selectedOrder.currency)}\nOnline checkout: ${money(online, selectedOrder.currency)}\n` +
 	          `Due to courier: ${money(due, selectedOrder.currency)}`
 	        );
 	        if (!confirmed) return;
-	        const button = $('finalizeCourierQuoteBtn');
+	        const button = $('createCourierQuoteCheckoutBtn');
 	        try {
 	          button.disabled = true;
-	          button.textContent = 'Creating checkout & sending...';
-	          setMsg('orderModalMsg', 'Creating the Stripe checkout and emailing the customer...');
+	          button.textContent = 'Creating checkout...';
+	          setMsg('orderModalMsg', 'Creating and saving the Stripe checkout. On localhost this uses test mode. No email will be sent...');
 	          const result = await orderAdminApi('/adminOrders', {
 	            method: 'POST',
-	            body: JSON.stringify(courierQuoteFormPayload('finalizeCourierQuote')),
+	            body: JSON.stringify(courierQuoteFormPayload('createCourierQuoteCheckout')),
 	          });
 	          await loadOrders();
 	          selectedOrder = orders.find(order => order.id === selectedOrder.id) || result.order || selectedOrder;
 	          fillOrder(selectedOrder);
-	          setMsg('orderModalMsg', 'Shipping quote sent. The order is awaiting online product payment.');
-	          setMsg('orderMsg', `Shipping quote sent for ${orderNumber(selectedOrder)}.`);
+	          setMsg('orderModalMsg', 'Checkout created. Test-mode links cannot be sent to the customer.');
+	          setMsg('orderMsg', `Checkout created for ${orderNumber(selectedOrder)}; no email was sent.`);
 	        } catch (err) {
-	          setMsg('orderModalMsg', err.message || 'Could not finalize the shipping quote.', false);
+	          setMsg('orderModalMsg', err.message || 'Could not create the checkout.', false);
 	        } finally {
 	          button.disabled = false;
-	          if (selectedOrder) fillOrder(selectedOrder);
+	          button.textContent = selectedOrder?.shippingQuote?.checkoutUrl ? 'Replace checkout' : 'Create checkout';
 	        }
+	      });
+
+	      $('sendCourierQuoteCustomerBtn').addEventListener('click', async () => {
+	        if (!selectedOrder) return setMsg('orderModalMsg', 'Select an order first.', false);
+	        const recipient = selectedOrder.customer?.email || '';
+	        if (!recipient) return setMsg('orderModalMsg', 'This order has no customer email address.', false);
+	        if (!window.confirm(`Send the saved shipping quote and live payment link to ${recipient}?`)) return;
+	        const button = $('sendCourierQuoteCustomerBtn');
+	        try {
+	          button.disabled = true;
+	          button.textContent = 'Sending...';
+	          setMsg('orderModalMsg', `Sending the saved quote to ${recipient}...`);
+	          await orderAdminApi('/adminOrders', {
+	            method: 'POST',
+	            body: JSON.stringify({ action: 'sendCourierQuoteCustomerEmail', id: selectedOrder.id }),
+	          });
+	          await loadOrders();
+	          selectedOrder = orders.find(order => order.id === selectedOrder.id) || selectedOrder;
+	          fillOrder(selectedOrder);
+	          setMsg('orderModalMsg', `Shipping quote sent to ${recipient}.`);
+	          setMsg('orderMsg', `Shipping quote sent for ${orderNumber(selectedOrder)}.`);
+	        } catch (err) {
+	          setMsg('orderModalMsg', err.message || 'Could not send the shipping quote.', false);
+	        } finally {
+	          button.disabled = false;
+	          button.textContent = 'Send to customer';
+	        }
+	      });
+
+	      async function callAcs(body){
+	        return orderAdminApi('/adminAcs', { method: 'POST', body: JSON.stringify(body) });
+	      }
+	      $('acsPriceCalculatorForm').addEventListener('submit', async event => {
+	        event.preventDefault();
+	        const button = $('acsCalculatePriceBtn');
+	        const resultBox = $('acsCalculatorResult');
+	        const message = $('acsCalculatorMsg');
+	        try {
+	          button.disabled = true;
+	          button.textContent = 'Calculating...';
+	          resultBox.classList.add('hidden');
+	          message.className = 'text-sm text-zinc-600';
+	          message.textContent = 'Requesting a live price from ACS...';
+	          const result = await callAcs({
+	            action: 'calculatePrice',
+	            weightKg: Number($('acsCalculatorWeight').value),
+	            address: {
+	              street: $('acsCalculatorStreet').value.trim(),
+	              city: $('acsCalculatorCity').value.trim(),
+	              postalCode: $('acsCalculatorPostal').value.trim(),
+	              country: $('acsCalculatorCountry').value,
+	            },
+	          });
+	          const quote = result.quote || {};
+	          resultBox.innerHTML = `
+	            <div class="text-xs font-bold uppercase tracking-wide text-red-700">Estimated ACS shipping price</div>
+	            <div class="mt-1 text-3xl font-black text-red-950">${money(quote.amount, quote.currency || 'eur')}</div>
+	            <div class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+	              <div><span class="text-zinc-500">Billable weight:</span> <strong>${Number(quote.billableWeightKg || 0).toFixed(1)} kg</strong></div>
+	              <div><span class="text-zinc-500">Destination:</span> <strong>${esc(quote.destination?.area || quote.address?.city || '')} (${esc(quote.destination?.postalCode || quote.address?.postalCode || '')})</strong></div>
+	              <div><span class="text-zinc-500">Net:</span> <strong>${money(Math.round(Number(quote.netAmount || 0) * 100), quote.currency || 'eur')}</strong></div>
+	              <div><span class="text-zinc-500">VAT:</span> <strong>${money(Math.round(Number(quote.vatAmount || 0) * 100), quote.currency || 'eur')}</strong></div>
+	            </div>`;
+	          resultBox.classList.remove('hidden');
+	          message.textContent = `ACS ${quote.environment || 'configured'} API quote for pickup on ${quote.pickupDate || '-'}.`;
+	          message.className = 'text-sm text-emerald-700';
+	        } catch (err) {
+	          message.textContent = err.message || 'Could not calculate the ACS shipping price.';
+	          message.className = 'text-sm text-red-700';
+	        } finally {
+	          button.disabled = false;
+	          button.textContent = 'Calculate ACS price';
+	        }
+	      });
+	      $('createAcsVoucherBtn').addEventListener('click', async () => {
+	        if (!selectedOrder) return;
+	        if (!window.confirm(`Create an ACS voucher for ${orderNumber(selectedOrder)}?\n\nIf ACS is configured for production, this creates a real shipment.`)) return;
+	        const button = $('createAcsVoucherBtn');
+	        try {
+	          button.disabled = true;
+	          setMsg('orderModalMsg', 'Creating ACS voucher...');
+	          const result = await callAcs({ action: 'createVoucher', orderId: selectedOrder.id });
+	          selectedOrder.acsShipment = result.acsShipment;
+	          const listed = orders.find(order => order.id === selectedOrder.id);
+	          if (listed) listed.acsShipment = result.acsShipment;
+	          fillOrder(selectedOrder);
+	          setMsg('orderModalMsg', `ACS ${result.environment || result.acsShipment.environment || ''} voucher ${result.acsShipment.voucherNo} created. Download it before issuing the pickup list.`);
+	        } catch (err) { setMsg('orderModalMsg', err.message || 'ACS voucher creation failed', false); }
+	        finally { button.disabled = false; }
+	      });
+	      $('printAcsVoucherBtn').addEventListener('click', async () => {
+	        const voucherNo = selectedOrder?.acsShipment?.voucherNo;
+	        if (!voucherNo) return;
+	        const button = $('printAcsVoucherBtn');
+	        try {
+	          button.disabled = true;
+	          setMsg('orderModalMsg', 'Downloading ACS laser voucher...');
+	          const result = await callAcs({ action: 'printVoucher', voucherNo, printType: 2, startPosition: 1 });
+	          downloadBase64File(result.pdf.base64, `acs-${result.environment || 'voucher'}-${voucherNo}-GRUBZ.pdf`, result.pdf.contentType);
+	          setMsg('orderModalMsg', `ACS ${result.environment || ''} voucher ${voucherNo} downloaded.`);
+	        } catch (err) { setMsg('orderModalMsg', err.message || 'ACS voucher download failed', false); }
+	        finally { button.disabled = false; }
+	      });
+	      $('issueAcsPickupListBtn').addEventListener('click', async () => {
+	        const pickupDate = selectedOrder?.acsShipment?.pickupDate;
+	        if (!pickupDate) return setMsg('orderModalMsg', 'Create the ACS voucher first.', false);
+	        if (!window.confirm(`Finalize your printed ACS vouchers for ${pickupDate} and issue the pickup list?\n\nIn production this action is real. Do this only after downloading every voucher for that date.`)) return;
+	        const button = $('issueAcsPickupListBtn');
+	        try {
+	          button.disabled = true;
+	          setMsg('orderModalMsg', 'Issuing ACS pickup list...');
+	          const issued = await callAcs({ action: 'issuePickupList', pickupDate, confirm: true });
+	          if (!issued.pickupListNo) throw new Error(issued.unprintedFound ? `ACS found ${issued.unprintedFound} unprinted voucher(s). Print or delete them first.` : 'ACS returned no pickup-list number.');
+	          const printed = await callAcs({ action: 'printPickupList', pickupListNo: issued.pickupListNo, pickupDate });
+	          downloadBase64File(printed.pdf.base64, `acs-${printed.environment || 'pickup'}-pickup-list-${issued.pickupListNo}-GRUBZ.pdf`, printed.pdf.contentType);
+	          setMsg('orderModalMsg', `ACS ${printed.environment || ''} pickup list ${issued.pickupListNo} issued and downloaded.`);
+	        } catch (err) { setMsg('orderModalMsg', err.message || 'ACS pickup-list creation failed', false); }
+	        finally { button.disabled = false; }
 	      });
 
 	      $("deleteOrderBtn").addEventListener("click", async () => {

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Choose a BOX NOW locker | GRUBZ</title>
+  <link rel="stylesheet" href="/styles/tailwind.css">
+</head>
+<body class="min-h-screen bg-zinc-50 text-zinc-900">
+  <main class="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+    <a href="/" class="inline-flex items-center gap-2" aria-label="GRUBZ home">
+      <img src="/images/grubz-icon.png" alt="" class="h-12 w-12 rounded-full object-cover">
+      <span class="text-2xl font-black text-orange-700">GRUBZ</span>
+    </a>
+
+    <section class="mt-6 overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm">
+      <div class="border-b border-violet-100 bg-violet-50 p-5">
+        <div class="flex items-center gap-3">
+          <img src="/images/boxnow-logo.png" alt="BOX NOW" class="h-9 w-auto rounded">
+          <div>
+            <h1 id="title" class="text-xl font-extrabold text-violet-950">Choose your BOX NOW locker</h1>
+            <p id="subtitle" class="mt-1 text-sm text-violet-800">Select a convenient locker, then continue to secure payment.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading" class="p-6 text-sm text-zinc-600">Loading your shipping quote…</div>
+      <div id="error" class="hidden p-6 text-sm font-semibold text-red-700" role="alert"></div>
+
+      <div id="content" class="hidden space-y-5 p-5 sm:p-6">
+        <div>
+          <div id="orderLabel" class="text-xs font-bold uppercase tracking-wide text-zinc-500"></div>
+          <ul id="items" class="mt-2 divide-y divide-zinc-100 rounded-xl border border-zinc-200 px-4"></ul>
+          <div class="mt-3 flex items-center justify-between text-sm">
+            <span id="feeLabel">BOX NOW delivery</span>
+            <strong id="fee"></strong>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-zinc-200 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="lockerTitle" class="font-extrabold">Locker</h2>
+            <button id="choose" type="button" class="rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-50">Choose locker</button>
+          </div>
+          <div id="locker" class="mt-3 text-sm text-zinc-600">No locker selected.</div>
+        </div>
+
+        <button id="continue" type="button" disabled class="w-full rounded-xl bg-orange-700 px-5 py-3 font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">Continue to secure payment</button>
+        <p id="message" class="text-center text-sm text-zinc-600" role="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="fixed inset-0 z-50 hidden bg-black/50 p-3 sm:p-8" role="dialog" aria-modal="true" aria-label="Choose BOX NOW locker">
+    <div class="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div class="flex items-center justify-between border-b p-3">
+        <strong id="modalTitle">Choose a BOX NOW locker</strong>
+        <button id="close" type="button" class="rounded-lg px-3 py-2 font-bold hover:bg-zinc-100" aria-label="Close">✕</button>
+      </div>
+      <iframe id="widget" class="min-h-0 flex-1 border-0" title="BOX NOW locker map" allow="geolocation"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const order = params.get('order') || '';
+    const token = params.get('token') || '';
+    const api = '/api/courierQuoteBoxNowCheckout';
+    let quote = null;
+    let selectedLocker = null;
+
+    const el = id => document.getElementById(id);
+    const money = cents => new Intl.NumberFormat(quote?.language === 'el' ? 'el-GR' : 'en-GB', { style:'currency', currency:(quote?.currency || 'eur').toUpperCase() }).format(Number(cents || 0) / 100);
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
+
+    function copy(language) {
+      return language === 'el' ? {
+        title:'Επίλεξε θυρίδα BOX NOW', subtitle:'Επίλεξε τη θυρίδα που σε εξυπηρετεί και συνέχισε στην ασφαλή πληρωμή.',
+        order:'Παραγγελία', fee:'Αποστολή BOX NOW', locker:'Θυρίδα', choose:'Επιλογή θυρίδας', change:'Αλλαγή θυρίδας',
+        none:'Δεν έχει επιλεγεί θυρίδα.', continue:'Συνέχεια στην ασφαλή πληρωμή', loading:'Δημιουργία ασφαλούς πληρωμής…', modal:'Επίλεξε θυρίδα BOX NOW'
+      } : {
+        title:'Choose your BOX NOW locker', subtitle:'Select a convenient locker, then continue to secure payment.',
+        order:'Order', fee:'BOX NOW delivery', locker:'Locker', choose:'Choose locker', change:'Change locker',
+        none:'No locker selected.', continue:'Continue to secure payment', loading:'Creating secure checkout…', modal:'Choose a BOX NOW locker'
+      };
+    }
+
+    function applyCopy() {
+      const c = copy(quote.language);
+      document.documentElement.lang = quote.language;
+      el('title').textContent = c.title; el('subtitle').textContent = c.subtitle; el('feeLabel').textContent = c.fee;
+      el('lockerTitle').textContent = c.locker; el('choose').textContent = selectedLocker ? c.change : c.choose;
+      el('locker').textContent = selectedLocker ? lockerLines(selectedLocker).join('\n') : c.none;
+      el('continue').textContent = c.continue; el('modalTitle').textContent = c.modal;
+      el('orderLabel').textContent = `${c.order} ${quote.orderNumber}`;
+    }
+
+    function lockerLines(locker) { return [locker.name, locker.id ? `ID: ${locker.id}` : '', locker.addressLine1, locker.addressLine2, locker.postalCode].filter(Boolean); }
+    function messageValue(data, keys) {
+      for (const key of keys) {
+        const value = data?.[key] ?? data?.locker?.[key] ?? data?.location?.[key] ?? data?.boxnow?.[key];
+        if (value != null && String(value).trim()) return String(value).trim();
+      }
+      return '';
+    }
+    function parseMessage(raw) {
+      if (typeof raw !== 'string') return raw && typeof raw === 'object' ? raw : {};
+      try { return JSON.parse(raw); } catch { try { return Object.fromEntries(new URLSearchParams(raw)); } catch { return {}; } }
+    }
+    function acceptLocker(data) {
+      const id = messageValue(data, ['boxnowLockerId','lockerId','locationId','id']);
+      if (!id) return;
+      selectedLocker = {
+        id, name:messageValue(data, ['boxnowLockerName','lockerName','name','title']), postalCode:messageValue(data, ['boxnowLockerPostalCode','postalCode','zip']),
+        addressLine1:messageValue(data, ['boxnowLockerAddressLine1','addressLine1','address']), addressLine2:messageValue(data, ['boxnowLockerAddressLine2','addressLine2']),
+        lat:messageValue(data, ['boxnowLockerLat','lat','latitude']), lng:messageValue(data, ['boxnowLockerLng','lng','lon','longitude'])
+      };
+      el('locker').classList.add('whitespace-pre-line'); el('continue').disabled = false; closeWidget(); applyCopy();
+    }
+    function widgetUrl() {
+      const url = new URL('https://widget-v5.boxnow.gr/');
+      url.searchParams.set('language', quote.language === 'el' ? 'el' : 'en');
+      url.searchParams.set('size', quote.boxNow?.parcelSize || '2'); url.searchParams.set('islands', 'yes'); url.searchParams.set('gps', 'no');
+      const postal = String(quote.shipping?.postalCode || '').replace(/\s+/g, ''); if (postal) url.searchParams.set('zip', postal);
+      if (selectedLocker?.id) url.searchParams.set('lockerId', selectedLocker.id);
+      return url.toString();
+    }
+    function openWidget() { el('widget').src = widgetUrl(); el('modal').classList.remove('hidden'); }
+    function closeWidget() { el('modal').classList.add('hidden'); el('widget').src = 'about:blank'; }
+
+    window.addEventListener('message', event => {
+      if (!/^https:\/\/(?:.*\.)?boxnow\.gr$/i.test(event.origin)) return;
+      const data = parseMessage(event.data);
+      if (data.boxnowClose === 'yes' || data.close === true || data.close === 'yes') return closeWidget();
+      acceptLocker(data);
+    });
+    el('choose').addEventListener('click', openWidget); el('close').addEventListener('click', closeWidget);
+    el('modal').addEventListener('click', event => { if (event.target === el('modal')) closeWidget(); });
+    el('continue').addEventListener('click', async () => {
+      if (!selectedLocker) return;
+      const c = copy(quote.language); el('continue').disabled = true; el('continue').textContent = c.loading; el('message').textContent = '';
+      try {
+        const response = await fetch(api, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ order, token, locker:selectedLocker }) });
+        const data = await response.json().catch(() => ({})); if (!response.ok || !data.url) throw new Error(data.error || 'Checkout failed.');
+        location.href = data.url;
+      } catch (error) { el('message').textContent = error.message || 'Checkout failed.'; el('message').className = 'text-center text-sm font-semibold text-red-700'; el('continue').disabled = false; el('continue').textContent = c.continue; }
+    });
+
+    (async () => {
+      try {
+        const response = await fetch(`${api}?order=${encodeURIComponent(order)}&token=${encodeURIComponent(token)}`);
+        const data = await response.json().catch(() => ({})); if (!response.ok || !data.quote) throw new Error(data.error || 'This checkout link is unavailable.');
+        quote = data.quote; applyCopy();
+        el('items').innerHTML = quote.items.map(item => `<li class="flex items-center justify-between gap-3 py-3 text-sm"><span>${escapeHtml(item.quantity)} × ${escapeHtml(item.name)}</span><strong>${money(item.totalAmount)}</strong></li>`).join('');
+        el('fee').textContent = money(quote.boxNow?.fee || 0); el('loading').classList.add('hidden'); el('content').classList.remove('hidden');
+      } catch (error) { el('loading').classList.add('hidden'); el('error').textContent = error.message || 'This checkout link is unavailable.'; el('error').classList.remove('hidden'); }
+    })();
+  </script>
+</body>
+</html>
