@@ -2,9 +2,20 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Product and newsletter images are intentionally public storefront assets.
+    // Uploads still go through admin-authenticated Cloud Functions, so clients
+    // can fetch individual images but cannot list, create, change, or delete them.
+    match /product-images/{fileName} {
+      allow get: if resource != null
+        && resource.contentType.matches('image/(jpeg|png|webp)');
+      allow list, write: if false;
+    }
+
+    // Invoices, receipts, and every other object remain private. Authorized
+    // admins access order documents through adminOrders, whose Admin SDK access
+    // is server-side and does not depend on these client rules.
     match /{allPaths=**} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
     }
   }
 }
