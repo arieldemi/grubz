@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://www.grubz.gr/en/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/" />
+    <xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.grubz.gr/en/" />
+  </url>
+  <url>
+    <loc>https://www.grubz.gr/el/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/" />
+    <xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.grubz.gr/en/" />
+  </url>
+  <url>
+    <loc>https://www.grubz.gr/en/benefits.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/benefits.html" />
+    <xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/benefits.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.grubz.gr/en/benefits.html" />
+  </url>
+  <url>
+    <loc>https://www.grubz.gr/el/benefits.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/benefits.html" />
+    <xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/benefits.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.grubz.gr/en/benefits.html" />
+  </url>
+  <url>
+    <loc>https://www.grubz.gr/happy-chicken/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url><loc>https://www.grubz.gr/en/products/grubz-bundle-1</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/grubz-bundle-1" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/grubz-bundle-1" /></url>
+  <url><loc>https://www.grubz.gr/el/products/grubz-bundle-1</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/grubz-bundle-1" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/grubz-bundle-1" /></url>
+  <url><loc>https://www.grubz.gr/en/products/happy-chicken-3kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/happy-chicken-3kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/happy-chicken-3kg" /></url>
+  <url><loc>https://www.grubz.gr/el/products/happy-chicken-3kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/happy-chicken-3kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/happy-chicken-3kg" /></url>
+  <url><loc>https://www.grubz.gr/en/products/happy-chicken-6kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/happy-chicken-6kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/happy-chicken-6kg" /></url>
+  <url><loc>https://www.grubz.gr/el/products/happy-chicken-6kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/happy-chicken-6kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/happy-chicken-6kg" /></url>
+  <url><loc>https://www.grubz.gr/en/products/happy-chicken-10kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/happy-chicken-10kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/happy-chicken-10kg" /></url>
+  <url><loc>https://www.grubz.gr/el/products/happy-chicken-10kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/happy-chicken-10kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/happy-chicken-10kg" /></url>
+  <url><loc>https://www.grubz.gr/en/products/terragrub-3kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/terragrub-3kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/terragrub-3kg" /></url>
+  <url><loc>https://www.grubz.gr/el/products/terragrub-3kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/terragrub-3kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/terragrub-3kg" /></url>
+  <url><loc>https://www.grubz.gr/en/products/terragrub-10kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/terragrub-10kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/terragrub-10kg" /></url>
+  <url><loc>https://www.grubz.gr/el/products/terragrub-10kg</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.grubz.gr/en/products/terragrub-10kg" /><xhtml:link rel="alternate" hreflang="el" href="https://www.grubz.gr/el/products/terragrub-10kg" /></url>
+</urlset>

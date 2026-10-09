@@ -17,10 +17,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
     <link rel="manifest" href="/images/favicon/site.webmanifest">
 
-    <title>GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια</title>
-    <meta name="description" content="GRUBZ: φυσική, βιώσιμη και νόστιμη διατροφή για πουλερικά, ερπετά, πτηνά και ψάρια, ελληνικής παραγωγής.">
-    <meta property="og:title" content="GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια" />
-    <meta property="og:description" content="Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής." />
+    <title>Black Soldier Fly (BSF) Larvae in Greece | GRUBZ</title>
+    <meta name="description" content="Greek-produced dried Black Soldier Fly (BSF) larvae for chickens, birds, reptiles and fish, plus TerraGrub BSF frass soil amendment. Shop GRUBZ in Greece.">
+    <meta property="og:title" content="Black Soldier Fly (BSF) Larvae in Greece | GRUBZ" />
+    <meta property="og:description" content="Dried BSF larvae and BSF frass, sustainably produced in Greece by GRUBZ." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.grubz.gr/" />
     <meta property="og:image" content="https://www.grubz.gr/images/social-share.png" />
@@ -31,9 +31,18 @@
     <meta property="og:locale" content="el_GR" />
     <meta property="og:locale:alternate" content="en_GB" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια" />
-    <meta name="twitter:description" content="Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής." />
+    <meta name="twitter:title" content="Black Soldier Fly (BSF) Larvae in Greece | GRUBZ" />
+    <meta name="twitter:description" content="Dried BSF larvae and BSF frass, sustainably produced in Greece by GRUBZ." />
     <meta name="twitter:image" content="https://www.grubz.gr/images/social-share.png" />
+
+    <link id="seoCanonical" rel="canonical" href="https://www.grubz.gr/" />
+    <link id="seoAlternateEn" rel="alternate" hreflang="en" href="https://www.grubz.gr/en/" />
+    <link id="seoAlternateEl" rel="alternate" hreflang="el" href="https://www.grubz.gr/el/" />
+    <link id="seoAlternateDefault" rel="alternate" hreflang="x-default" href="https://www.grubz.gr/" />
+
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.grubz.gr/#organization","name":"GRUBZ","url":"https://www.grubz.gr/","logo":"https://www.grubz.gr/images/grubz-icon-80.png","description":"Greek producer of dried Black Soldier Fly larvae and BSF frass products.","email":"info@grubz.gr","areaServed":{"@type":"Country","name":"Greece"}},{"@type":"WebSite","@id":"https://www.grubz.gr/#website","url":"https://www.grubz.gr/","name":"GRUBZ","inLanguage":["en","el"],"publisher":{"@id":"https://www.grubz.gr/#organization"}}]}
+    </script>
 
     <link rel="stylesheet" href="/styles/tailwind.css">
 
@@ -151,7 +160,11 @@
       .details-btn:hover{ background:#fff7f2; border-color:#f2b48d; }
       .badge-oos{ position:absolute; top:.75rem; left:.75rem; background:#111; color:#fff; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
       .badge-low{ position:absolute; top:.75rem; right:.75rem; background:#eab308; color:#111; font-weight:800; font-size:.72rem; padding:.28rem .5rem; border-radius:.5rem; letter-spacing:.02em; }
-      .boxnow-frame{ width:100%; height:min(76vh,720px); border:0; }
+      .boxnow-modal-panel{
+        height:min(900px, calc(100vh - 2rem));
+        height:min(900px, calc(100dvh - 2rem));
+      }
+      .boxnow-frame{ width:100%; height:100%; border:0; }
       #acsPointMap .gm-style-iw-c{
         max-width:min(17rem, calc(100vw - 4rem)) !important;
         padding:0 !important;
@@ -245,8 +258,8 @@
         </div>
         <nav class="hidden sm:flex items-center gap-6 text-sm">
           <a href="#products" class="hover:opacity-80" data-i18n="navProducts">Products</a>
-          <a href="#usage-calculators" class="hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
           <a href="#benefits" class="hover:opacity-80" data-i18n="navBenefits">Benefits</a>
+          <a href="#usage-calculators" class="hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
           <a href="#faq" class="hover:opacity-80" data-i18n="navFAQ">FAQ</a>
           <a href="#contact" class="hover:opacity-80" data-i18n="navContact">Contact</a>
         </nav>
@@ -256,8 +269,8 @@
       </div>
       <nav class="flex gap-5 overflow-x-auto border-t border-zinc-100 px-4 py-2 text-sm sm:hidden" aria-label="Mobile navigation">
         <a href="#products" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navProducts">Products</a>
-        <a href="#usage-calculators" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
         <a href="#benefits" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navBenefits">Benefits</a>
+        <a href="#usage-calculators" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
         <a href="#faq" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navFAQ">FAQ</a>
         <a href="#contact" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navContact">Contact</a>
       </nav>
@@ -274,11 +287,11 @@
         <div class="hero-shell mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6 sm:pt-14 lg:pt-20">
           <div class="max-w-2xl">
             <h1 class="hero-title text-3xl font-extrabold leading-tight text-shadow sm:text-4xl lg:text-5xl">
-              <span data-i18n="heroTitleL1">High Protein</span>
-              <span data-i18n="heroTitleL2">Supplement for Poultry, Reptiles, Birds, and Fish</span>
+              <span data-i18n="heroTitleL1">Black Soldier Fly (BSF) Larvae</span>
+              <span data-i18n="heroTitleL2">Produced in Greece</span>
             </h1>
             <p class="mt-5 text-lg/7 opacity-95" data-i18n="heroSubtitle">
-              Natural sustainable and tasty nutrition made in Greece
+              Dried BSF larvae for poultry, birds, reptiles and fish—plus BSF frass for healthier soil.
             </p>
             <div class="mt-8 flex flex-wrap gap-3">
               <a href="#products" class="btn" data-i18n="ctaShop">Shop GRUBZ</a>
@@ -296,10 +309,20 @@
       <!-- Products -->
       <section id="products" class="bg-white scroll-mt-28">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="productsTitle">Products</h2>
+          <h2 class="text-3xl font-extrabold" style="color:var(--grubz-4)" data-i18n="productsTitle">BSF products made in Greece</h2>
+          <p class="mb-8 mt-3 max-w-3xl text-zinc-600" data-i18n="productsIntro">Choose Happy Chicken dried Black Soldier Fly larvae as a natural protein-rich treat, or TerraGrub insect frass as a circular soil amendment.</p>
 
           <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr" aria-live="polite">
-            <p class="text-sm text-zinc-600">Loading products...</p>
+            <article class="card border p-5 h-full flex flex-col product-card">
+              <a href="/en/products/happy-chicken-3kg"><img src="/images/products/happy-chicken-3kg.jpg" alt="Happy Chicken dried Black Soldier Fly larvae produced in Greece" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy"></a>
+              <h3 class="font-bold"><a class="hover:underline" href="/en/products/happy-chicken-3kg">Happy Chicken dried BSF larvae</a></h3>
+              <p class="mt-1 text-sm opacity-80">Naturally protein- and calcium-rich Black Soldier Fly larvae for chickens and other insect-eating animals.</p>
+            </article>
+            <article class="card border p-5 h-full flex flex-col product-card">
+              <a href="/en/products/terragrub-3kg"><img src="/images/products/terragrub-3kg.jpg" alt="TerraGrub Black Soldier Fly frass soil amendment from Greece" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy"></a>
+              <h3 class="font-bold"><a class="hover:underline" href="/en/products/terragrub-3kg">TerraGrub BSF frass</a></h3>
+              <p class="mt-1 text-sm opacity-80">A circular insect-frass soil amendment made from the Black Soldier Fly production process.</p>
+            </article>
           </div>
 
           <div class="mt-10 flex flex-wrap gap-3">
@@ -365,7 +388,7 @@
               <p class="text-sm opacity-90" data-i18n="b4Text">Lower footprint vs. traditional protein sources.</p>
             </div>
           </div>
-          <a href="/benefits.html"
+          <a id="benefitsLearnMore" href="/en/benefits.html"
            class="btn mt-5 inline-flex items-center gap-2"
            aria-label="Read more about BSF larvae benefits"
            data-analytics="benefits_read_more_click"
@@ -647,11 +670,6 @@
                 <span class="min-w-0 flex-1 font-semibold">ACS Point</span>
                 <span class="text-right text-xs text-zinc-500" data-i18n="deliveryAfterAddress">After address</span>
               </label>
-              <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2">
-                <input type="radio" name="cartDeliveryMethod" value="courier_quote">
-                <span class="min-w-0 flex-1 font-semibold" data-i18n="deliveryOtherCourier">Other courier</span>
-                <span class="text-right text-xs text-zinc-500" data-i18n="deliveryQuoteRequired">Quote required</span>
-              </label>
             </div>
           </section>
           <div id="cartEstimatedTotalRow" class="mb-3 flex items-center justify-between rounded-lg bg-orange-50 px-3 py-2">
@@ -840,14 +858,19 @@
             <div id="reviewAddr" class="mt-2 text-sm text-zinc-700 whitespace-pre-line"></div>
           </section>
 
-          <section id="courierQuoteSection" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-            <h4 class="font-bold" data-i18n="courierQuoteTitle">Shipping quote required</h4>
-            <p class="mt-1" data-i18n="courierQuoteText">Request the quote without payment. We will email the courier price, delivery estimate, and a secure checkout.</p>
-          </section>
-
           <section class="border rounded-xl p-4">
             <h4 class="font-bold mb-2" data-i18n="reviewItems">Items</h4>
             <ul id="reviewItems" class="divide-y"></ul>
+
+            <div class="mt-4 border-t border-zinc-200 pt-4">
+              <div class="flex gap-2 items-center">
+                <label class="sr-only" for="reviewCouponCode" data-i18n="couponPlaceholder">Coupon code</label>
+                <input id="reviewCouponCode" class="input flex-1" placeholder="Coupon code" autocomplete="off" />
+                <button id="reviewApplyCoupon" class="btn-soft text-sm" type="button" data-i18n="couponApply">Apply</button>
+                <button id="reviewRemoveCoupon" class="btn-soft text-sm hidden" type="button" data-i18n="couponRemove">Remove</button>
+              </div>
+              <p id="reviewCouponMsg" class="mt-2 text-sm empty:hidden" role="status" aria-live="polite"></p>
+            </div>
 
             <div id="reviewDeliveryRow" class="hidden mt-3 flex items-center justify-between">
               <span class="flex items-center gap-2 text-sm text-zinc-600">
@@ -889,7 +912,7 @@
     <!-- BOX NOW MODAL -->
     <div id="boxnowModal" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true" aria-labelledby="boxnowModalTitle">
       <div id="boxnowBackdrop" class="absolute inset-0 bg-black/40"></div>
-      <div class="purchase-modal-panel viewport-modal-panel absolute left-1/2 top-1/2 flex w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div id="boxnowModalPanel" class="boxnow-modal-panel purchase-modal-panel viewport-modal-panel absolute left-1/2 top-1/2 flex w-[min(96vw,1100px)] -translate-x-1/2 -translate-y-1/2 flex-col bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div class="p-4 border-b flex flex-none items-center justify-between">
           <h3 id="boxnowModalTitle" class="text-lg font-extrabold" data-i18n="boxnowModalTitle">Choose BOX NOW locker</h3>
           <button id="boxnowClose" class="p-2 rounded hover:bg-zinc-100" aria-label="Close BOX NOW">✕</button>
@@ -1070,7 +1093,7 @@ const BOXNOW_PARCEL_SIZES = [
 const ONE_KG_FLEXIBLE_BAG_PARCEL = { heightCm: 16 / 3, widthCm: 30, lengthCm: 28 };
 const BOXNOW_FLATTENED_BAGS_PER_COMPARTMENT = 10;
 const BOXNOW_MIN_FLATTENED_BAG_COMPARTMENT_HEIGHT_CM = 17;
-const BOXNOW_MEDIUM_CAPACITY_KG = 7;
+const BOXNOW_MEDIUM_CAPACITY_KG = 10;
 const HAPPY_CHICKEN_PACKED_PARCELS = {
   "happy-chicken-1kg": ONE_KG_FLEXIBLE_BAG_PARCEL,
   "happy-chicken-2kg": { heightCm: 14, widthCm: 24, lengthCm: 41 },
@@ -1287,14 +1310,26 @@ async function chatFetch(path, options = {}) {
 	      let __lastSectionView = "";
 	      let __analyticsActiveSection = "";
 	      let __analyticsEngagementStartedAt = Date.now();
+	      let __consentState = null;
       function showCookieBanner(){ document.getElementById('cookieBanner').classList.remove('hidden'); }
       function hideCookieBanner(){ document.getElementById('cookieBanner').classList.add('hidden'); }
       function getConsent(){
-        const raw = Cookie.get('grubz_consent');
-        try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+	        if (__consentState) return __consentState;
+	        let raw = Cookie.get('grubz_consent');
+	        if (!raw) {
+	          try { raw = localStorage.getItem('grubz_consent'); } catch {}
+	        }
+	        try {
+	          __consentState = raw ? JSON.parse(raw) : null;
+	          return __consentState;
+	        } catch {
+	          return null;
+	        }
       }
       function setConsent(consent){
+	        __consentState = consent;
         Cookie.set('grubz_consent', JSON.stringify(consent));
+	        try { localStorage.setItem('grubz_consent', JSON.stringify(consent)); } catch {}
         applyConsent(consent);
       }
 	      function analyticsSessionId(){
@@ -1398,6 +1433,7 @@ async function chatFetch(path, options = {}) {
 	        });
 	      }
 	      const META_PIXEL_ID = "2792868587751630";
+	      const __metaViewedProductIds = new Set();
 	      function loadMetaPixelOnce(){
 	        if (window.__metaPixelLoaded) return;
 	        window.__metaPixelLoaded = true;
@@ -1414,6 +1450,24 @@ async function chatFetch(path, options = {}) {
 	        loadMetaPixelOnce();
 	        window.fbq?.('track', event, params);
 	      }
+	      function metaTrackProductView(params = {}){
+	        metaTrack("ViewContent", params);
+	      }
+	      function metaTrackCatalogProductView(id){
+	        const productId = String(id || "").trim();
+	        if (!productId || !getConsent()?.marketing || __metaViewedProductIds.has(productId)) return false;
+	        const product = CATALOG[productId];
+	        if (!product || product.active === false) return false;
+	        metaTrackProductView({
+	          content_ids: [productId],
+	          content_name: productName(productId, i18n[lang()] || i18n.en),
+	          content_type: "product",
+	          value: Number(product.price || 0),
+	          currency: String(product.currency || "eur").toUpperCase(),
+	        });
+	        __metaViewedProductIds.add(productId);
+	        return true;
+	      }
 	      function loadAnalyticsOnce(){
 	        if (window.__analyticsLoaded) return;
 	        window.__analyticsLoaded = true;
@@ -1421,7 +1475,10 @@ async function chatFetch(path, options = {}) {
 	      }
 	      function applyConsent(consent){
 	        if (consent?.analytics) loadAnalyticsOnce();
-	        if (consent?.marketing) loadMetaPixelOnce();
+	        if (consent?.marketing) {
+	          loadMetaPixelOnce();
+	          if (__currentProductId) metaTrackCatalogProductView(__currentProductId);
+	        }
 	      }
 	      function marketingEmail(){
 	        return (__user?.email || localStorage.getItem(MARKETING_EMAIL_KEY) || localStorage.getItem("grubz_chat_email") || "").trim().toLowerCase();
@@ -1455,8 +1512,8 @@ async function chatFetch(path, options = {}) {
           navBenefits:"Benefits", navProducts:"Products", navGame:"Happy Chicken Run", navCalculators:"Usage calculators", navFAQ:"FAQ", navContact:"Contact",
           gamePromoBadge:"Free browser game · No download", gamePromoTitle:"Think your chicken can beat the high score?", gamePromoText:"Jump obstacles, collect GRUBZ treats and challenge your flock.", gamePromoCta:"Play Happy Chicken Run →",
           buyNow:"Buy Now",
-          heroTitleL1:"High Protein", heroTitleL2:"Supplement for Poultry, Reptiles, Birds, and Fish",
-          heroSubtitle:"Natural sustainable and tasty nutrition made in Greece",
+          heroTitleL1:"Black Soldier Fly (BSF) Larvae", heroTitleL2:"Produced in Greece",
+          heroSubtitle:"Dried BSF larvae for poultry, birds, reptiles and fish—plus BSF frass for healthier soil.",
           ctaShop:"Shop GRUBZ", ctaLearn:"Why GRUBZ?",
           chipProtein:"Up to 50% protein", chipCalcium:"Naturally high calcium", chipSustainable:"Sustainably produced",
           heroCaption:"Loved by reptiles. Trusted by keepers.",
@@ -1465,7 +1522,8 @@ async function chatFetch(path, options = {}) {
           b2Title:"Naturally High Calcium", b2Text:"BSF larvae have excellent calcium levels—great for bones and eggshells.",
           b3Title:"Made in Greece", b3Text:"Fresh, local production you can trust.",
           b4Title:"Sustainable", b4Text:"Lower footprint vs. traditional protein sources.",
-          productsTitle:"Products",
+          productsTitle:"BSF products made in Greece",
+          productsIntro:"Choose Happy Chicken dried Black Soldier Fly larvae as a natural protein-rich treat, or TerraGrub insect frass as a circular soil amendment.",
           calculatorTitle:"Recommended usage calculators",
           calculatorIntro:"Estimate how much you need and find a practical package combination. Adjust the usage rate for your own routine.",
           chickenCalcTitle:"Happy Chicken calculator", chickenCalcText:"For dried BSF larvae used as a supplementary treat, not complete feed.",
@@ -1529,11 +1587,11 @@ async function chatFetch(path, options = {}) {
           cartTitle:"Your cart",
           cartEmpty:"Your cart is empty.",
           cartSubtotal:"Subtotal",
-          deliveryOptionsCart:"Delivery options", deliveryEstimateCart:"Estimate", deliveryAfterAddress:"After address", deliveryOtherCourier:"Other courier", deliveryQuoteRequired:"Quote required",
+          deliveryOptionsCart:"Delivery options", deliveryEstimateCart:"Estimate", deliveryAfterAddress:"After address",
           estimatedTotalCart:"Estimated total",
           contactDetailsRequired:"Please enter your name, phone, postal code, and country.",
           passwordHelp:"Use at least 6 characters when creating an account.", authEmailRequired:"Enter a valid email address.", authPasswordRequired:"Enter a password.",
-          authRequiredCourierQuote:"Sign in to request a courier quote so we can email the quote to you.", authRequiredCod:"Sign in to place a cash-on-delivery order.",
+          authRequiredCod:"Sign in to place a cash-on-delivery order.",
           cartCheckout:"Checkout",
           cartContinue:"Continue shopping",
           cartRemove:"Remove",
@@ -1603,14 +1661,9 @@ async function chatFetch(path, options = {}) {
           deliveryBoxNow:"BOX NOW locker",
           deliveryBoxNowHelp:"Choose a nearby locker and pay now.",
           deliveryAcs:"ACS Courier",
-          deliveryCourierQuote:"Other Courier - quote required",
-          deliveryCourierQuoteHelp:"We will confirm the shipping cost and delivery time by email before you pay.",
-          courierQuoteTitle:"Shipping quote required",
-          courierQuoteText:"Request the quote without payment. We will email the courier price, estimated delivery time, and a secure checkout.",
 	          courierAddressRequired:"Please enter your street address and city for courier delivery.",
 	          acsAddressRequired:"For ACS, enter the street and number in Address line 1 (for example, Solonos 12), a five-digit postal code, and the region.",
           reviewConfirmQuote:"Confirm & Pay",
-          reviewConfirmQuoteRequest:"Request shipping quote",
           acsFeeLabel:"ACS Courier delivery",
           acsFeeLoading:"Calculating ACS delivery...",
           acsFeeUnavailable:"ACS could not price this address. Check the postal code and try again.",
@@ -1634,7 +1687,7 @@ async function chatFetch(path, options = {}) {
           productFeedingDefault:"Use as a snack or topper as part of a balanced diet. Start with a small amount and adjust to your animal’s needs.",
           productStorageDefault:"Keep sealed in a cool, dry place away from direct sun. Close the bag after each use.",
           productNutritionDefault:"Dried black soldier fly larvae: high protein, naturally rich in calcium and healthy fats.",
-          productShippingDefault:"BOX NOW orders use Medium parcels carrying up to 7kg each. A 10kg cart ships as two parcels.",
+          productShippingDefault:"BOX NOW orders use Medium parcels carrying up to 10kg each. A 10kg cart ships as one parcel.",
           inStock:"In stock",
 
           // Coupons
@@ -1652,8 +1705,8 @@ async function chatFetch(path, options = {}) {
           navBenefits:"Οφέλη", navProducts:"Προϊόντα", navGame:"Happy Chicken Run", navCalculators:"Υπολογιστές χρήσης", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
           gamePromoBadge:"Δωρεάν παιχνίδι browser · Χωρίς λήψη", gamePromoTitle:"Μπορεί η κότα σου να σπάσει το ρεκόρ;", gamePromoText:"Πήδα εμπόδια, μάζεψε λιχουδιές GRUBZ και δοκίμασε το κοπάδι σου.", gamePromoCta:"Παίξε Happy Chicken Run →",
           buyNow:"Αγορά τώρα",
-          heroTitleL1:"Υψηλή Πρωτεΐνη", heroTitleL2:"Συμπλήρωμα για Πουλερικά, Ερπετά, Πτηνά και Ψάρια",
-          heroSubtitle:"Φυσική, βιώσιμη και νόστιμη διατροφή, ελληνικής παραγωγής",
+          heroTitleL1:"Προνύμφες Μαύρης Μύγας (BSF)", heroTitleL2:"Ελληνικής Παραγωγής",
+          heroSubtitle:"Αποξηραμένες προνύμφες BSF για πουλερικά, πτηνά, ερπετά και ψάρια—και frass BSF για υγιέστερο έδαφος.",
           ctaShop:"Αγορά GRUBZ", ctaLearn:"Γιατί GRUBZ;",
           chipProtein:"Έως 50% πρωτεΐνη", chipCalcium:"Φυσικά υψηλό ασβέστιο", chipSustainable:"Βιώσιμη παραγωγή",
           heroCaption:"Αγαπημένο από τα ερπετά. Εμπιστοσύνη στους κηδεμόνες.",
@@ -1662,7 +1715,8 @@ async function chatFetch(path, options = {}) {
           b2Title:"Φυσικά Υψηλό Ασβέστιο", b2Text:"Οι προνύμφες BSF έχουν εξαιρετικά επίπεδα ασβεστίου—ιδανικό για οστά και τσόφλια.",
           b3Title:"Ελληνικής Παραγωγής", b3Text:"Φρέσκια, τοπική παραγωγή που εμπιστεύεστε.",
           b4Title:"Βιώσιμο", b4Text:"Μικρότερο αποτύπωμα σε σχέση με παραδοσιακές πηγές πρωτεΐνης.",
-          productsTitle:"Προϊόντα",
+          productsTitle:"Προϊόντα BSF ελληνικής παραγωγής",
+          productsIntro:"Επιλέξτε αποξηραμένες προνύμφες Black Soldier Fly Happy Chicken ως φυσική λιχουδιά πλούσια σε πρωτεΐνη ή TerraGrub insect frass ως κυκλικό εδαφοβελτιωτικό.",
           calculatorTitle:"Υπολογιστές προτεινόμενης χρήσης",
           calculatorIntro:"Υπολογίστε την ποσότητα που χρειάζεστε και βρείτε έναν πρακτικό συνδυασμό συσκευασιών. Προσαρμόστε τη δοσολογία στη δική σας ρουτίνα.",
           chickenCalcTitle:"Υπολογιστής Happy Chicken", chickenCalcText:"Για αποξηραμένες προνύμφες BSF ως συμπληρωματική λιχουδιά, όχι ως πλήρη τροφή.",
@@ -1726,11 +1780,11 @@ async function chatFetch(path, options = {}) {
           cartTitle:"Το καλάθι σας",
           cartEmpty:"Το καλάθι είναι άδειο.",
           cartSubtotal:"Μερικό σύνολο",
-          deliveryOptionsCart:"Επιλογές αποστολής", deliveryEstimateCart:"Εκτίμηση", deliveryAfterAddress:"Μετά τη διεύθυνση", deliveryOtherCourier:"Άλλη courier", deliveryQuoteRequired:"Απαιτείται προσφορά",
+          deliveryOptionsCart:"Επιλογές αποστολής", deliveryEstimateCart:"Εκτίμηση", deliveryAfterAddress:"Μετά τη διεύθυνση",
           estimatedTotalCart:"Εκτιμώμενο σύνολο",
           contactDetailsRequired:"Συμπληρώστε όνομα, τηλέφωνο, ταχυδρομικό κώδικα και χώρα.",
           passwordHelp:"Χρησιμοποιήστε τουλάχιστον 6 χαρακτήρες για δημιουργία λογαριασμού.", authEmailRequired:"Συμπληρώστε έγκυρη διεύθυνση email.", authPasswordRequired:"Συμπληρώστε κωδικό πρόσβασης.",
-          authRequiredCourierQuote:"Συνδεθείτε για να ζητήσετε προσφορά courier ώστε να σας τη στείλουμε με email.", authRequiredCod:"Συνδεθείτε για παραγγελία με αντικαταβολή.",
+          authRequiredCod:"Συνδεθείτε για παραγγελία με αντικαταβολή.",
           cartCheckout:"Ολοκλήρωση αγοράς",
           cartContinue:"Συνέχεια αγορών",
           cartRemove:"Αφαίρεση",
@@ -1800,14 +1854,9 @@ async function chatFetch(path, options = {}) {
           deliveryBoxNow:"BOX NOW locker",
           deliveryBoxNowHelp:"Επιλέξτε κοντινό locker και πληρώστε τώρα.",
           deliveryAcs:"ACS Courier",
-          deliveryCourierQuote:"Άλλη Courier - απαιτείται προσφορά",
-          deliveryCourierQuoteHelp:"Θα επιβεβαιώσουμε το κόστος και τον χρόνο παράδοσης μέσω email πριν πληρώσετε.",
-          courierQuoteTitle:"Απαιτείται προσφορά μεταφορικών",
-          courierQuoteText:"Ζητήστε την προσφορά χωρίς πληρωμή. Θα σας στείλουμε με email το κόστος courier, τον εκτιμώμενο χρόνο παράδοσης και ασφαλές checkout.",
 	          courierAddressRequired:"Παρακαλώ συμπληρώστε οδό και πόλη για την παράδοση με courier.",
 	          acsAddressRequired:"Για την ACS, συμπληρώστε οδό και αριθμό στη γραμμή διεύθυνσης (π.χ. Σόλωνος 12), πενταψήφιο Τ.Κ. και περιοχή.",
           reviewConfirmQuote:"Επιβεβαίωση & Πληρωμή",
-          reviewConfirmQuoteRequest:"Αίτημα προσφοράς μεταφορικών",
           acsFeeLabel:"Αποστολή ACS Courier",
           acsFeeLoading:"Υπολογισμός κόστους ACS...",
           acsFeeUnavailable:"Η ACS δεν μπόρεσε να υπολογίσει το κόστος. Ελέγξτε τον Τ.Κ. και δοκιμάστε ξανά.",
@@ -1829,7 +1878,7 @@ async function chatFetch(path, options = {}) {
           productFeedingDefault:"Χρησιμοποιήστε το ως σνακ ή topping μέσα σε ισορροπημένη διατροφή. Ξεκινήστε με μικρή ποσότητα και προσαρμόστε ανάλογα με τις ανάγκες του ζώου.",
           productStorageDefault:"Κρατήστε τη συσκευασία κλειστή σε δροσερό και ξηρό μέρος, μακριά από άμεσο ήλιο.",
           productNutritionDefault:"Αποξηραμένες προνύμφες black soldier fly: υψηλή πρωτεΐνη, φυσικά πλούσιες σε ασβέστιο και καλά λιπαρά.",
-          productShippingDefault:"Οι παραγγελίες BOX NOW χρησιμοποιούν Medium δέματα έως 7kg το καθένα. Ένα καλάθι 10kg αποστέλλεται σε δύο δέματα.",
+          productShippingDefault:"Οι παραγγελίες BOX NOW χρησιμοποιούν Medium δέματα έως 10kg το καθένα. Ένα καλάθι 10kg αποστέλλεται σε ένα δέμα.",
           inStock:"Διαθέσιμο",
           availableOnBackorder:"Διαθέσιμο με προπαραγγελία",
           backorder:"Προπαραγγελία",
@@ -1902,20 +1951,69 @@ async function chatFetch(path, options = {}) {
 
       const $ = s=>document.querySelector(s);
       const $$ = s=>document.querySelectorAll(s);
-      const lang = () => (Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') || (navigator.language.startsWith('el') ? 'el' : 'en'));
+      const routeLang = () => location.pathname.match(/^\/(en|el)(?:\/|$)/)?.[1] || "";
+      const lang = () => (routeLang() || Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') || (navigator.language.startsWith('el') ? 'el' : 'en'));
+
+      function localizedPath(l, pathname = location.pathname){
+        const barePath = String(pathname || "/").replace(/^\/(?:en|el)(?=\/|$)/, "") || "/";
+        return `/${l}${barePath === "/" ? "/" : barePath}`;
+      }
+
+      function updateLocalizedSeo(l){
+        const origin = "https://www.grubz.gr";
+        const canonical = `${origin}${localizedPath(l)}`;
+        const canonicalEl = document.getElementById("seoCanonical");
+        const alternateEn = document.getElementById("seoAlternateEn");
+        const alternateEl = document.getElementById("seoAlternateEl");
+        if (canonicalEl) canonicalEl.href = canonical;
+        if (alternateEn) alternateEn.href = `${origin}${localizedPath("en")}`;
+        if (alternateEl) alternateEl.href = `${origin}${localizedPath("el")}`;
+        const ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.content = canonical;
+      }
+
+      function switchLanguageRoute(l){
+        localStorage.setItem('grubz_lang', l);
+        Cookie.set('grubz_lang', l);
+        location.assign(`${localizedPath(l)}${location.search}${location.hash}`);
+      }
 
       function applyLang(l){
         localStorage.setItem('grubz_lang', l);
         Cookie.set('grubz_lang', l);
         const dict = i18n[l] || i18n.en;
+        const homeSeo = l === "el"
+          ? {
+              title:"Προνύμφες Black Soldier Fly (BSF) στην Ελλάδα | GRUBZ",
+              description:"Αποξηραμένες προνύμφες Μαύρης Μύγας (BSF) ελληνικής παραγωγής για κότες, πτηνά, ερπετά και ψάρια, καθώς και εδαφοβελτιωτικό TerraGrub BSF frass."
+            }
+          : {
+              title:"Black Soldier Fly (BSF) Larvae in Greece | GRUBZ",
+              description:"Greek-produced dried Black Soldier Fly (BSF) larvae for chickens, birds, reptiles and fish, plus TerraGrub BSF frass soil amendment."
+            };
+        document.title = homeSeo.title;
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) metaDescription.content = homeSeo.description;
+        updateLocalizedSeo(l);
+        const benefitsLearnMore = document.getElementById("benefitsLearnMore");
+        if (benefitsLearnMore) benefitsLearnMore.href = `/${l}/benefits.html`;
         $$("[data-i18n]").forEach(el=>{
           const key = el.getAttribute("data-i18n");
           if (dict[key]) el.textContent = dict[key];
         });
-        const cp = document.getElementById("couponCode"); if (cp) cp.placeholder = dict.couponPlaceholder || "Coupon code";
+        ["couponCode", "reviewCouponCode"].forEach(id => {
+          const input = document.getElementById(id);
+          if (input) input.placeholder = dict.couponPlaceholder || "Coupon code";
+        });
         const offerEmail = document.getElementById("offerEmail"); if (offerEmail) offerEmail.placeholder = dict.email || "Email";
-        const ap = document.getElementById("applyCoupon"); if (ap) ap.textContent = dict.couponApply || "Apply";
-        const rm = document.getElementById("removeCoupon"); if (rm) rm.textContent = dict.couponRemove || "Remove";
+        ["applyCoupon", "reviewApplyCoupon"].forEach(id => {
+          const button = document.getElementById(id);
+          if (button) button.textContent = dict.couponApply || "Apply";
+        });
+        ["removeCoupon", "reviewRemoveCoupon"].forEach(id => {
+          const button = document.getElementById(id);
+          if (button) button.textContent = dict.couponRemove || "Remove";
+        });
         if (typeof applyStockStatus === "function") applyStockStatus();
         if (typeof wireProductCards === "function") wireProductCards();
         if (typeof renderProducts === "function") renderProducts();
@@ -1935,8 +2033,8 @@ async function chatFetch(path, options = {}) {
         en.setAttribute('aria-label', 'Switch language to English');
         el.setAttribute('aria-label', 'Αλλαγή γλώσσας σε Ελληνικά');
       }
-      document.getElementById('lang-en').addEventListener('click', () => { applyLang('en'); setLangButtons('en'); });
-      document.getElementById('lang-el').addEventListener('click', () => { applyLang('el'); setLangButtons('el'); });
+      document.getElementById('lang-en').addEventListener('click', () => switchLanguageRoute('en'));
+      document.getElementById('lang-el').addEventListener('click', () => switchLanguageRoute('el'));
       document.getElementById("year").textContent = new Date().getFullYear();
 
       /* ---------- Cart ---------- */
@@ -2299,8 +2397,10 @@ async function chatFetch(path, options = {}) {
         }
         grid.innerHTML = products.map(([id, p]) => `
           <article class="card border p-5 h-full flex flex-col product-card" data-id="${escapeHtml(id)}">
-            <img src="${escapeHtml(productImageForLanguage(id))}" alt="${escapeHtml(productName(id, dict))}" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy" decoding="async">
-            <h3 class="font-bold">${escapeHtml(productName(id, dict))}</h3>
+            <a href="/${lang()}/products/${encodeURIComponent(id)}" aria-label="${escapeHtml(productName(id, dict))}">
+              <img src="${escapeHtml(productImageForLanguage(id))}" alt="${escapeHtml(productName(id, dict))}" class="product-thumb mb-4 rounded-lg bg-zinc-100" loading="lazy" decoding="async">
+            </a>
+            <h3 class="font-bold"><a class="hover:underline" href="/${lang()}/products/${encodeURIComponent(id)}">${escapeHtml(productName(id, dict))}</a></h3>
             <p class="text-sm opacity-80 mt-1">${escapeHtml(productDescription(id, dict))}</p>
             <div class="mt-3 flex flex-wrap gap-1.5">${productAudienceTags(id, dict).slice(0, 3).map(label => `<span class="product-info-pill">${escapeHtml(label)}</span>`).join("")}</div>
             ${id.startsWith("happy-chicken-") || id.startsWith("terragrub-") ? `<a class="mt-3 inline-flex w-fit items-center gap-1 text-sm font-bold underline decoration-2 underline-offset-4 hover:opacity-75" style="color:var(--grubz-4)" href="#${id.startsWith("happy-chicken-") ? "happy-chicken-calculator" : "terragrub-calculator"}">${escapeHtml(dict.calculatorCardLink || "Calculate recommended amount")} <span aria-hidden="true">→</span></a>` : ""}
@@ -2696,13 +2796,13 @@ async function chatFetch(path, options = {}) {
       const __defaultPageTitle = document.title;
 
       function productIdFromPath(pathname = location.pathname){
-        const match = String(pathname || "").match(/^\/products\/([^/]+)\/?$/);
+        const match = String(pathname || "").match(/^\/(?:en\/|el\/)?products\/([^/]+)\/?$/);
         if (!match) return "";
         try { return decodeURIComponent(match[1]); } catch { return ""; }
       }
 
       function productUrl(id){
-        return `/products/${encodeURIComponent(id)}${location.search || ""}`;
+        return `/${lang()}/products/${encodeURIComponent(id)}${location.search || ""}`;
       }
 
 	    function openProductModal(id, openerEl, { updateHistory = true } = {}){
@@ -2715,6 +2815,7 @@ async function chatFetch(path, options = {}) {
         document.title = `${productName(id, i18n[lang()] || i18n.en)} | GRUBZ`;
         if (!wasCurrentProduct) {
 	        trackEvent("product_view", { productId: id, productName: productName(id, i18n[lang()] || i18n.en) });
+	          metaTrackCatalogProductView(id);
         }
 	      renderProductModal(id);
         openDialog("productModal", "productPanel", openerEl);
@@ -2773,7 +2874,7 @@ async function chatFetch(path, options = {}) {
             card.dataset.productCardWired = "true";
             card.addEventListener("click", (e) => {
               if (e.target.closest("button, a, input, select, textarea")) return;
-              openProductModal(id, card);
+              location.assign(productUrl(id));
             });
           }
         });
@@ -2786,7 +2887,7 @@ async function chatFetch(path, options = {}) {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         e.stopPropagation();
-        openProductModal(btn.dataset.productDetails, btn);
+        location.assign(productUrl(btn.dataset.productDetails));
       });
 
       window.addEventListener("popstate", syncProductRoute);
@@ -2815,10 +2916,11 @@ async function chatFetch(path, options = {}) {
         __couponCartSignature = "";
         __couponRefreshSequence += 1;
         clearTimeout(__couponRefreshTimer);
-        const couponMsg = document.getElementById("couponMsg");
-        if (couponMsg) { couponMsg.textContent = ""; couponMsg.className = "mb-3 text-sm empty:hidden"; }
-        document.getElementById("removeCoupon")?.classList.add("hidden");
-        document.getElementById("applyCoupon")?.classList.remove("hidden");
+        setCouponUiState(false, null);
+        ["couponCode", "reviewCouponCode"].forEach(id => {
+          const input = document.getElementById(id);
+          if (input) input.value = "";
+        });
         cart.clear();
         updateCartInfo();
         renderCart();
@@ -3032,7 +3134,7 @@ async function chatFetch(path, options = {}) {
       document.getElementById("cartDeliveryOptions").addEventListener("change", event => {
         const input = event.target.closest('input[name="cartDeliveryMethod"]');
         if (!input) return;
-        __deliveryMethod = ["acs", "acs_point", "courier_quote"].includes(input.value) ? input.value : "boxnow";
+        __deliveryMethod = ["acs", "acs_point"].includes(input.value) ? input.value : "boxnow";
         invalidateBoxNowFee();
         invalidateAcsQuote();
         renderCartDeliveryOptions();
@@ -3069,13 +3171,13 @@ async function chatFetch(path, options = {}) {
         if (detailsBtn) {
           e.stopPropagation();
           closeCart();
-          setTimeout(() => openProductModal(detailsBtn.dataset.suggestDetails, detailsBtn), 180);
+          setTimeout(() => location.assign(productUrl(detailsBtn.dataset.suggestDetails)), 180);
           return;
         }
         const item = e.target.closest("[data-suggest-product]");
         if (!item) return;
         closeCart();
-        setTimeout(() => openProductModal(item.dataset.suggestProduct, item), 180);
+        setTimeout(() => location.assign(productUrl(item.dataset.suggestProduct)), 180);
       });
 
       /* ---------- AUTH ---------- */
@@ -4320,9 +4422,6 @@ async function chatFetch(path, options = {}) {
 	      const addressOkay = __deliveryMethod === "acs_point" ? validCourierAddr(__currentReviewAddress) && hasAcsPoint() : validAcsAddr(__currentReviewAddress);
 	          return Boolean(addressOkay && __acsQuote && !__acsQuotePromise && !__reviewSubmitting);
         }
-        if (__deliveryMethod === "courier_quote") {
-          return Boolean(validCourierAddr(__currentReviewAddress) && !__reviewSubmitting);
-        }
         return Boolean(validAddr(__currentReviewAddress) && hasBoxNowLocker() && !__reviewSubmitting);
       }
 
@@ -4537,7 +4636,6 @@ async function chatFetch(path, options = {}) {
       function reviewConfirmLabel(){
         const d = i18n[lang()]||i18n.en;
 	    if (["acs", "acs_point"].includes(__deliveryMethod)) return d.reviewConfirmQuote || "Confirm & Pay";
-        if (__deliveryMethod === "courier_quote") return d.reviewConfirmQuoteRequest || "Request shipping quote";
         return document.getElementById("boxnowCod")?.checked === true
           ? (d.reviewConfirmOrder || "Confirm order")
           : d.reviewConfirmPay;
@@ -4560,22 +4658,19 @@ async function chatFetch(path, options = {}) {
 
 	    const isAcs = __deliveryMethod === "acs";
 	    const isAcsPoint = __deliveryMethod === "acs_point";
-        const isCourierQuote = __deliveryMethod === "courier_quote";
 	    const methodLabels = {
 	      boxnow: (i18n[lang()] || i18n.en).deliveryBoxNow || "BOX NOW locker",
 	      acs: (i18n[lang()] || i18n.en).deliveryAcs || "ACS Courier",
 	      acs_point: "ACS Point",
-	      courier_quote: (i18n[lang()] || i18n.en).deliveryCourierQuote || "Other Courier - quote required",
 	    };
 	    document.getElementById("reviewDeliveryMethodSummary").textContent = methodLabels[__deliveryMethod] || methodLabels.boxnow;
-	    document.getElementById("boxnowReviewSection").classList.toggle("hidden", isAcs || isAcsPoint || isCourierQuote);
+	    document.getElementById("boxnowReviewSection").classList.toggle("hidden", isAcs || isAcsPoint);
 	    document.getElementById("acsPointReviewSection").classList.toggle("hidden", !isAcsPoint);
 	    if (!isAcsPoint) {
 	      closeDialog("acsPointModal", "acsPointModalPanel");
 	      document.getElementById("acsPointChoose").setAttribute("aria-expanded", "false");
 	    }
 	    renderAcsPointSelection();
-        document.getElementById("courierQuoteSection").classList.toggle("hidden", !isCourierQuote);
         document.getElementById("secureCheckoutSection").classList.remove("hidden");
 
         const dict = i18n[lang()] || i18n.en;
@@ -4610,7 +4705,7 @@ async function chatFetch(path, options = {}) {
             : dict.acsAddressRequired || "For ACS, enter the street and number, a five-digit postal code, and the region.";
           renderBoxNowFee();
         }
-        else if (!isCourierQuote) refreshBoxNowFee(__currentReviewAddress);
+        else refreshBoxNowFee(__currentReviewAddress);
         requestAnimationFrame(updateReviewScrollCue);
 
         const row = document.getElementById("reviewDiscountRow");
@@ -4653,12 +4748,10 @@ async function chatFetch(path, options = {}) {
         document.getElementById("boxnowClose").addEventListener("click", closeBoxNowWidget);
 	        document.getElementById("reviewConfirm").addEventListener("click", async () => {
 	          trackEvent("checkout_submit", { cartItems: cartItemCount(), cartValue: cartTotals().grand, deliveryMethod: __deliveryMethod, cod: __deliveryMethod === "boxnow" && document.getElementById("boxnowCod")?.checked === true });
-	      const requiresAccount = __deliveryMethod === "courier_quote" || (__deliveryMethod === "boxnow" && document.getElementById("boxnowCod")?.checked === true);
+	      const requiresAccount = __deliveryMethod === "boxnow" && document.getElementById("boxnowCod")?.checked === true;
 	      if (requiresAccount && !(__user || auth().currentUser)) {
 	        const dict = i18n[lang()] || i18n.en;
-	        const message = __deliveryMethod === "courier_quote"
-	          ? (dict.authRequiredCourierQuote || "Sign in to request a courier quote so we can email the quote to you.")
-	          : (dict.authRequiredCod || "Sign in to place a cash-on-delivery order.");
+	        const message = dict.authRequiredCod || "Sign in to place a cash-on-delivery order.";
 	        openAuth();
 	        document.getElementById("authErr").textContent = message;
 	        announce(message);
@@ -4686,21 +4779,6 @@ async function chatFetch(path, options = {}) {
 	            ...(__deliveryMethod === "acs_point" ? { deliveryMethod: "acs_point", acsPoint: __acsPoint } : {}),
                 cashOnDelivery: false
               });
-            } finally {
-              setReviewLoading(false);
-            }
-            return;
-          }
-          if (__deliveryMethod === "courier_quote") {
-            if (!validCourierAddr(__currentReviewAddress)) {
-              const msg = (i18n[lang()] || i18n.en).courierAddressRequired || "Please enter your street address and city for courier delivery.";
-              announce(msg);
-              openCourierAddressFromReview(true);
-              return;
-            }
-            setReviewLoading(true);
-            try {
-              await createCheckout({ ...__currentReviewAddress, deliveryMethod: "courier_quote", cashOnDelivery: false });
             } finally {
               setReviewLoading(false);
             }
@@ -4789,7 +4867,7 @@ async function chatFetch(path, options = {}) {
         }
 
         const shipping = saved.shipping;
-        __deliveryMethod = ["boxnow", "acs", "acs_point", "courier_quote"].includes(shipping.deliveryMethod)
+        __deliveryMethod = ["boxnow", "acs", "acs_point"].includes(shipping.deliveryMethod)
           ? shipping.deliveryMethod
           : "boxnow";
         document.querySelectorAll('input[name="cartDeliveryMethod"]').forEach(input => {
@@ -4835,14 +4913,21 @@ async function chatFetch(path, options = {}) {
       }
 
       function setCouponUiState(applied, message = ""){
-        const msgEl = document.getElementById("couponMsg");
         const dict = i18n[lang()] || i18n.en;
-        if (msgEl) {
-          msgEl.className = message === null ? "mb-3 text-sm empty:hidden" : (applied ? "mb-3 text-sm text-green-700 empty:hidden" : "mb-3 text-sm text-red-600 empty:hidden");
-          msgEl.textContent = message === null ? "" : (message || (applied ? (dict.couponApplied || "Coupon applied") : (dict.couponConditions || "Coupon conditions not met")));
-        }
-        document.getElementById("removeCoupon")?.classList.toggle("hidden", !applied);
-        document.getElementById("applyCoupon")?.classList.toggle("hidden", applied);
+        const text = message === null ? "" : (message || (applied ? (dict.couponApplied || "Coupon applied") : (dict.couponConditions || "Coupon conditions not met")));
+        ["couponMsg", "reviewCouponMsg"].forEach(id => {
+          const msgEl = document.getElementById(id);
+          if (!msgEl) return;
+          const spacing = id === "reviewCouponMsg" ? "mt-2" : "mb-3";
+          msgEl.className = `${spacing} text-sm ${message === null ? "" : (applied ? "text-green-700" : "text-red-600")} empty:hidden`;
+          msgEl.textContent = text;
+        });
+        ["removeCoupon", "reviewRemoveCoupon"].forEach(id => document.getElementById(id)?.classList.toggle("hidden", !applied));
+        ["applyCoupon", "reviewApplyCoupon"].forEach(id => document.getElementById(id)?.classList.toggle("hidden", applied));
+        ["couponCode", "reviewCouponCode"].forEach(id => {
+          const input = document.getElementById(id);
+          if (input && applied && __coupon?.code) input.value = __coupon.code;
+        });
       }
 
       function scheduleAppliedCouponRefresh(){
@@ -4921,19 +5006,23 @@ async function chatFetch(path, options = {}) {
       }
 
       // FINAL: apply coupon -> store the normalized code and preview discount
-	      async function applyCouponFromInput(){
-        const codeEl = document.getElementById("couponCode");
-        const msgEl  = document.getElementById("couponMsg");
+	      async function applyCouponFromInput(source = "cart"){
+        const fromReview = source === "review";
+        const codeEl = document.getElementById(fromReview ? "reviewCouponCode" : "couponCode");
+        const msgEl  = document.getElementById(fromReview ? "reviewCouponMsg" : "couponMsg");
         const dict = i18n[lang()] || i18n.en;
 	        const code = (codeEl?.value || "").trim();
 	        if (!code) return;
+	        ["couponCode", "reviewCouponCode"].forEach(id => {
+	          const input = document.getElementById(id);
+	          if (input) input.value = code;
+	        });
 	        if (!cart.size) {
 	          __coupon = null;
 	          __pendingCouponCode = code;
-	          msgEl.className = "mb-3 text-sm text-amber-700 empty:hidden";
+	          msgEl.className = `${fromReview ? "mt-2" : "mb-3"} text-sm text-amber-700 empty:hidden`;
 	          msgEl.textContent = dict.couponEmptyCart || "Add a product to use this coupon.";
-	          document.getElementById("removeCoupon")?.classList.add("hidden");
-	          document.getElementById("applyCoupon")?.classList.remove("hidden");
+	          setCouponUiState(false, msgEl.textContent);
 	          announce(msgEl.textContent);
 	          return;
 	        }
@@ -4958,33 +5047,24 @@ async function chatFetch(path, options = {}) {
               amountOffCents: Number(data.amountOffCents || 0)
             };
             __couponCartSignature = couponCartSignature();
-            msgEl.className = "mb-3 text-sm text-green-700 empty:hidden";
-            msgEl.textContent = dict.couponApplied || "Coupon applied";
-            announce(msgEl.textContent);
-	            document.getElementById("removeCoupon")?.classList.remove("hidden");
-	            document.getElementById("applyCoupon")?.classList.add("hidden");
+	            setCouponUiState(true);
+	            announce(dict.couponApplied || "Coupon applied");
 	            trackEvent("coupon_applied", { code: data.code || code, discountCents: Number(data.discountCents || 0) });
 	          } else {
             __coupon = null;
-            msgEl.className = "mb-3 text-sm text-red-600 empty:hidden";
-            msgEl.textContent =
+            const errorMessage =
               (data && data.error === "Conditions not met")
               ? (dict.couponConditions || "Coupon conditions not met")
               : (dict.couponInvalid || "Invalid coupon");
-            announce(msgEl.textContent);
-	            document.getElementById("removeCoupon")?.classList.add("hidden");
-	            document.getElementById("applyCoupon")?.classList.remove("hidden");
+            setCouponUiState(false, errorMessage);
+            announce(errorMessage);
 	            trackEvent("coupon_failed", { code, reason: data?.error || "invalid" });
 	          }
         } catch(e){
           __coupon = null;
-          if (msgEl){
-            msgEl.className = "mb-3 text-sm text-red-600 empty:hidden";
-            msgEl.textContent = (i18n[lang()]||i18n.en).couponInvalid || "Invalid coupon";
-            announce(msgEl.textContent);
-          }
-	          document.getElementById("removeCoupon")?.classList.add("hidden");
-	          document.getElementById("applyCoupon")?.classList.remove("hidden");
+          const errorMessage = (i18n[lang()]||i18n.en).couponInvalid || "Invalid coupon";
+          setCouponUiState(false, errorMessage);
+          announce(errorMessage);
 	          trackEvent("coupon_failed", { code, reason: e.message || "error" });
 	        }
 
@@ -4998,16 +5078,20 @@ async function chatFetch(path, options = {}) {
         __couponCartSignature = "";
         __couponRefreshSequence += 1;
         clearTimeout(__couponRefreshTimer);
-        const msgEl = document.getElementById("couponMsg");
-        if (msgEl){ msgEl.textContent = ""; msgEl.className = "mb-3 text-sm empty:hidden"; }
-        document.getElementById("removeCoupon")?.classList.add("hidden");
-        document.getElementById("applyCoupon")?.classList.remove("hidden");
+        setCouponUiState(false, null);
+        ["couponCode", "reviewCouponCode"].forEach(id => {
+          const input = document.getElementById(id);
+          if (input) input.value = "";
+        });
         renderCart();
         if (typeof renderReview === "function") renderReview(__currentReviewAddress);
       }
       document.getElementById("applyCoupon")?.addEventListener("click", applyCouponFromInput);
       document.getElementById("couponCode")?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyCouponFromInput(); });
       document.getElementById("removeCoupon")?.addEventListener("click", removeCoupon);
+      document.getElementById("reviewApplyCoupon")?.addEventListener("click", () => applyCouponFromInput("review"));
+      document.getElementById("reviewCouponCode")?.addEventListener("keydown", (e)=>{ if(e.key === "Enter") applyCouponFromInput("review"); });
+      document.getElementById("reviewRemoveCoupon")?.addEventListener("click", removeCoupon);
       initCouponFromLink();
 
       function closeFirstOrderOffer(markSeen = true){

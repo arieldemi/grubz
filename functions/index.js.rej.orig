@@ -1,0 +1,29 @@
+@@ -11284,1 +11284,21 @@
+       await requireAdmin(req);
++      let scopes = {};
++      let keys = {};
++      try { scopes = JSON.parse(process.env.NOMA_INTEGRATION_SCOPES || "{}"); } catch { throw Object.assign(new Error("NOMA_INTEGRATION_SCOPES is invalid"), { status:503, code:"not_configured" }); }
++      try { keys = JSON.parse(secretValue(NOMA_INTEGRATION_KEYS, "{}")); } catch { throw Object.assign(new Error("NOMA_INTEGRATION_KEYS is invalid"), { status:503, code:"not_configured" }); }
++      if (!Object.keys(scopes).length && secretValue(NOMA_INTEGRATION_KEY)) {
++        scopes.primary = { tenantId:process.env.NOMA_TENANT_ID || "", farmId:process.env.NOMA_FARM_ID || "", label:"Primary" };
++        keys.primary = secretValue(NOMA_INTEGRATION_KEY);
++      }
++      const connections = Object.entries(scopes).map(([id, scope]) => ({
++        id,
++        label: String(scope?.label || id),
++        tenantId: String(scope?.tenantId || ""),
++        farmId: String(scope?.farmId || ""),
++        configured: !!keys[id],
++      })).filter(item => item.tenantId && item.farmId);
++      if (req.query.action === "connections") return res.json({ ok:true, connections });
++      const connectionId = String(req.query.connection || connections[0]?.id || "").trim();
++      const connection = connections.find(item => item.id === connectionId);
++      if (!connection) return jsonError(res, 400, "Unknown NOMA connection");
++      if (!keys[connectionId]) return jsonError(res, 503, "NOMA connection credential is not configured");
+@@ -11290,1 +11314,2 @@
+-        apiKey: secretValue(NOMA_INTEGRATION_KEY),
++        apiKey: keys[connectionId],
++        expectedScope: connection,
+@@ -11297,1 +11322,1 @@
+-      return res.json({ ok:true, connected:true, summary });
++      return res.json({ ok:true, connected:true, connection:{ id:connection.id, label:connection.label }, summary });

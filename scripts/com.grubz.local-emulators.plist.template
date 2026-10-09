@@ -6,12 +6,8 @@
   <string>com.grubz.local-emulators</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/opt/homebrew/bin/firebase</string>
-    <string>emulators:start</string>
-    <string>--only</string>
-    <string>hosting,functions,storage</string>
-    <string>--project</string>
-    <string>grubz-99b84</string>
+    <string>/bin/zsh</string>
+    <string>__PROJECT_DIR__/scripts/run-local-emulators.sh</string>
   </array>
   <key>WorkingDirectory</key>
   <string>__PROJECT_DIR__</string>

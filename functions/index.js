@@ -15,15 +15,31 @@ const { sanitizePilot, pilotMetrics } = require("./collaborationPilot");
 const OpenAI = require("openai");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
+const archiver = require("archiver");
 const { brandBoxNowLabelPdf, composeA4BoxNowLabels, prepareA4BoxNowLabelPdf } = require("./boxNowLabelPdf");
 const { verifyBoxNowWebhookPayload } = require("./boxNowWebhookSignature");
-const { boxNowFulfillmentForEvent } = require("./boxNowFulfillment");
+const { boxNowFulfillmentForEvent, shouldRetryBoxNowFulfillmentEmail } = require("./boxNowFulfillment");
 const { normalizeOrderLanguage, resolveOrderLanguage } = require("./orderLanguage");
 const { isVisibleOrderEmailHistoryRecord } = require("./emailHistory");
 const { emailMarkdownToPlainText, emailMarkdownToHtml } = require("./emailFormatting");
+const { formatOrderShippingDate } = require("./orderEmailTemplateVars");
 const { createAcsClient, acsOutput, acsValueRows, acsTableRows, extractPdf } = require("./acsClient");
+const { acsFulfillmentForTracking, isTerminalAcsTracking, normalizeAcsTrackingSummary } = require("./acsFulfillment");
+const {
+  acsTrackingUrl: acsTrackingUrlForVoucher,
+  missingTrackingPlaceholders,
+  orderTrackingDetails,
+  shouldRetryAcsFulfillmentEmail,
+} = require("./orderTracking");
 const { validateShipping } = require("./shippingValidation");
 const { manualOrderDiscount } = require("./manualOrderPricing");
+const { buildProductMeta, injectProductMeta } = require("./productPage");
+const { sanitizePeriod, sanitizeEntry, aggregateEntries } = require("./profitData");
+const { summarizeShopSales } = require("./profitShopSales");
+const { fetchNomaCredentialInfo, fetchNomaExpenseInvoice, fetchNomaExpenses, fetchNomaInventorySummary, fetchNomaProductionSummary } = require("./nomaFlowClient");
+const { encryptNomaCredential, decryptNomaCredential } = require("./nomaCredentialVault");
+const { dateKey, nextOccurrence, sanitizeMarketingEvent, dueReminder } = require("./marketingCalendar");
+const { expenseView, isoDate: expenseIsoDate, parseInvoiceDataUrl, sanitizeExpense } = require("./grubzExpenses");
 
 // ----- Secrets -----
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
@@ -58,6 +74,15 @@ const ACS_USER_PASSWORD = defineSecret("ACS_USER_PASSWORD");
 const ACS_BILLING_CODE = defineSecret("ACS_BILLING_CODE");
 const ACS_API_KEY = defineSecret("ACS_API_KEY");
 const GOOGLE_MAPS_API_KEY = defineSecret("GOOGLE_MAPS_API_KEY");
+const NOMA_INTEGRATION_KEY = defineSecret("NOMA_INTEGRATION_KEY");
+const NOMA_INTEGRATION_KEYS = defineSecret("NOMA_INTEGRATION_KEYS");
+const NOMA_CREDENTIAL_ENCRYPTION_KEY = defineSecret("NOMA_CREDENTIAL_ENCRYPTION_KEY");
+function nomaApiBaseUrl() {
+  const configured = String(process.env.NOMA_API_BASE_URL || "").trim();
+  if (configured) return configured;
+  const emulator = process.env.FUNCTIONS_EMULATOR === "true" || !!process.env.FIREBASE_EMULATOR_HUB;
+  return emulator ? "http://127.0.0.1:5517" : "";
+}
 const ACS_SECRETS = [ACS_COMPANY_ID, ACS_COMPANY_PASSWORD, ACS_USER_ID, ACS_USER_PASSWORD, ACS_BILLING_CODE, ACS_API_KEY];
 const ACS_ORIGIN_POSTAL_CODE = "57500";
 const { acsBillableWeightKg, acsPriceCents } = require("./acsPricing");
@@ -103,6 +128,11 @@ const ACS_SETTINGS_DOC = "settings/acs";
 const SOCIAL_AGENT_SETTINGS_DOC = "settings/socialAgent";
 const CHATBOT_SETTINGS_DOC = "settings/chatbot";
 const MARKETING_SETTINGS_DOC = "settings/marketing";
+const NOMA_FLOW_SETTINGS_DOC = "settings/nomaFlow";
+async function isNomaFlowEnabled() {
+  const snapshot = await db.doc(NOMA_FLOW_SETTINGS_DOC).get();
+  return snapshot.exists && snapshot.data()?.enabled === true;
+}
 const COUPONS_COLLECTION = "coupons";
 const EMAIL_RESERVATIONS_COLLECTION = "emailReservations";
 const SOCIAL_OPPORTUNITIES_COLLECTION = "socialOpportunities";
@@ -115,7 +145,12 @@ const ABANDONED_CARTS_COLLECTION = "abandonedCarts";
 const NEWSLETTER_SUBSCRIBERS_COLLECTION = "newsletterSubscribers";
 const NEWSLETTER_SENDS_COLLECTION = "newsletterSends";
 const NEWSLETTER_IDEAS_COLLECTION = "newsletterIdeas";
+const MARKETING_CALENDAR_COLLECTION = "marketingCalendarEvents";
+const MARKETING_CALENDAR_REMINDERS_COLLECTION = "marketingCalendarReminders";
 const ORDER_FEEDBACK_COLLECTION = "orderFeedback";
+const PROFIT_PERIODS_COLLECTION = "profitPeriods";
+const PROFIT_ENTRIES_COLLECTION = "profitEntries";
+const GRUBZ_EXPENSES_COLLECTION = "grubzExpenses";
 const FEEDBACK_CUSTOMERS_COLLECTION = "feedbackCustomers";
 const SCHEDULED_ORDER_EMAILS_COLLECTION = "scheduledOrderEmails";
 const FEEDBACK_LINK_LIFETIME_DAYS = 30;
@@ -196,6 +231,19 @@ function grubzEmailSignatureText(language = "en") {
 const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
   {
     enabled: true,
+    templateContext: "customer",
+    fulfillmentStatus: "high_demand_delay",
+    subject: "An update on your GRUBZ order",
+    body: "{greeting}\n\nWe’re writing to let you know that your GRUBZ order is taking a little longer than expected due to high demand.\n\nWe’re working hard to prepare it as soon as possible and will let you know as soon as it ships. We’re sorry for the delay and truly appreciate your patience and understanding.",
+    translations: {
+      el: {
+        subject: "Ενημέρωση για την παραγγελία σου GRUBZ",
+        body: "{greeting}\n\nΘα θέλαμε να σε ενημερώσουμε ότι η προετοιμασία της παραγγελίας σου GRUBZ θα διαρκέσει λίγο περισσότερο από το αναμενόμενο λόγω αυξημένης ζήτησης.\n\nΕργαζόμαστε εντατικά για να την ετοιμάσουμε το συντομότερο δυνατό και θα σε ενημερώσουμε μόλις αποσταλεί. Ζητούμε συγγνώμη για την καθυστέρηση και σε ευχαριστούμε θερμά για την υπομονή και την κατανόησή σου.",
+      },
+    },
+  },
+  {
+    enabled: true,
     fulfillmentStatus: "new",
     subject: "We received your GRUBZ order {orderNumber}",
     body: "{greeting}\n\nWe received your GRUBZ order {orderNumber} and it is now in our queue.\n\nTotal: {total}",
@@ -215,6 +263,30 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
       el: {
         subject: "Η παραγγελία GRUBZ {orderNumber} ετοιμάζεται",
         body: "{greeting}\n\nΗ παραγγελία σου {orderNumber} ετοιμάζεται.\n\nΘα σε ενημερώσουμε ξανά όταν συσκευαστεί.",
+      },
+    },
+  },
+  {
+    enabled: true,
+    fulfillmentStatus: "shipping_scheduled",
+    subject: "Your GRUBZ order {orderNumber} will ship on {shippingDate}",
+    body: "{greeting}\n\nGood news - your GRUBZ order {orderNumber} is scheduled to ship on {shippingDate}.\n\nWe’ll send you another email with tracking details as soon as it is on its way.",
+    translations: {
+      el: {
+        subject: "Η παραγγελία GRUBZ {orderNumber} θα αποσταλεί στις {shippingDate}",
+        body: "{greeting}\n\nΚαλά νέα - η παραγγελία σου GRUBZ {orderNumber} έχει προγραμματιστεί να αποσταλεί στις {shippingDate}.\n\nΘα σου στείλουμε νέο email με τα στοιχεία παρακολούθησης μόλις ξεκινήσει η αποστολή της.",
+      },
+    },
+  },
+  {
+    enabled: true,
+    fulfillmentStatus: "delayed",
+    subject: "An update on your GRUBZ order {orderNumber}",
+    body: "{greeting}\n\nWe’re writing to let you know that your GRUBZ order {orderNumber} is taking a little longer than expected due to high demand.\n\nWe’re working hard to prepare it as soon as possible and will let you know as soon as it ships. We’re sorry for the delay and truly appreciate your patience and understanding.",
+    translations: {
+      el: {
+        subject: "Ενημέρωση για την παραγγελία GRUBZ {orderNumber}",
+        body: "{greeting}\n\nΘα θέλαμε να σε ενημερώσουμε ότι η προετοιμασία της παραγγελίας σου GRUBZ {orderNumber} θα διαρκέσει λίγο περισσότερο από το αναμενόμενο λόγω αυξημένης ζήτησης.\n\nΕργαζόμαστε εντατικά για να την ετοιμάσουμε το συντομότερο δυνατό και θα σε ενημερώσουμε μόλις αποσταλεί. Ζητούμε συγγνώμη για την καθυστέρηση και σε ευχαριστούμε θερμά για την υπομονή και την κατανόησή σου.",
       },
     },
   },
@@ -266,6 +338,32 @@ const ORDER_FULFILLMENT_EMAIL_TEMPLATES = [
       },
     },
   },
+	{
+	  enabled: true,
+	  templateContext: "order",
+	  fulfillmentStatus: "expired",
+	  subject: "Your BOX NOW parcel for order {orderNumber} expired",
+	  body: "{greeting}\n\nThe collection period for your GRUBZ order {orderNumber} at the BOX NOW locker has expired. BOX NOW will return the parcel to us.\n\nWe will review the order and contact you about the next steps. If you have any questions, reply to this email.\n\nTrack your parcel: {trackingUrl}",
+	  translations: {
+	    el: {
+	      subject: "Έληξε η προθεσμία παραλαβής του δέματος BOX NOW για την παραγγελία {orderNumber}",
+	      body: "{greeting}\n\nΗ προθεσμία παραλαβής της παραγγελίας σου GRUBZ {orderNumber} από τη θυρίδα BOX NOW έληξε. Η BOX NOW θα επιστρέψει το δέμα σε εμάς.\n\nΘα ελέγξουμε την παραγγελία και θα επικοινωνήσουμε μαζί σου για τα επόμενα βήματα. Αν έχεις ερωτήσεις, απάντησε σε αυτό το email.\n\nΠαρακολούθηση δέματος: {trackingUrl}",
+	    },
+	  },
+	},
+	{
+	  enabled: true,
+	  templateContext: "order",
+	  fulfillmentStatus: "returned",
+	  subject: "Your BOX NOW parcel for order {orderNumber} was returned",
+	  body: "{greeting}\n\nBOX NOW has returned the parcel for your GRUBZ order {orderNumber} to us.\n\nWe will review the order and contact you about the next steps. If you have any questions, reply to this email.\n\nTrack your parcel: {trackingUrl}",
+	  translations: {
+	    el: {
+	      subject: "Το δέμα BOX NOW για την παραγγελία {orderNumber} επιστράφηκε",
+	      body: "{greeting}\n\nΗ BOX NOW επέστρεψε σε εμάς το δέμα της παραγγελίας σου GRUBZ {orderNumber}.\n\nΘα ελέγξουμε την παραγγελία και θα επικοινωνήσουμε μαζί σου για τα επόμενα βήματα. Αν έχεις ερωτήσεις, απάντησε σε αυτό το email.\n\nΠαρακολούθηση δέματος: {trackingUrl}",
+	    },
+	  },
+	},
   {
     enabled: true,
     templateContext: "feedback",
@@ -618,6 +716,11 @@ function inventoryPoolView(id, data = {}) {
     reservedGrams,
     availableGrams: Math.max(0, onHandGrams - reservedGrams),
     backorderedGrams: Math.max(0, reservedGrams - onHandGrams),
+    inventorySource: data.inventorySource === "noma" ? "noma" : "manual",
+    nomaConnectionId: String(data.nomaConnectionId || ""),
+    nomaItemIds: Array.isArray(data.nomaItemIds) ? data.nomaItemIds.map(String) : [],
+    nomaScope: data.nomaScope && typeof data.nomaScope === "object" ? { tenantId:String(data.nomaScope.tenantId || ""), farmId:String(data.nomaScope.farmId || "") } : null,
+    nomaSyncedAt: data.nomaSyncedAt || null,
     updatedAt: data.updatedAt || null,
   };
 }
@@ -657,8 +760,18 @@ async function transitionOrderInventory(orderId, targetState, actor = "system") 
     const order = orderSnap.data() || {};
     const currentState = String(order.inventoryState || "none");
     if (currentState === targetState) return { skipped: true, reason: "already_applied" };
-    if (currentState === "consumed" && targetState !== "consumed") return { skipped: true, reason: "already_consumed" };
-    const requirements = inventoryRequirements(order.items || []);
+	    if (currentState === "consumed" && !["consumed", "restocked"].includes(targetState)) return { skipped: true, reason: "already_consumed" };
+	    if (targetState === "restocked" && !["reserved", "consumed"].includes(currentState)) {
+	      return { skipped: true, reason: "no_inventory_to_restock", state: currentState };
+	    }
+	    const storedRequirements = order.inventoryRequirementsGrams && typeof order.inventoryRequirementsGrams === "object"
+	      ? Object.fromEntries(Object.entries(order.inventoryRequirementsGrams)
+	        .map(([poolId, grams]) => [String(poolId || "").trim(), Math.max(0, Math.round(Number(grams || 0)))])
+	        .filter(([poolId, grams]) => poolId && grams > 0))
+	      : {};
+	    const requirements = targetState === "restocked" && Object.keys(storedRequirements).length
+	      ? storedRequirements
+	      : inventoryRequirements(order.items || []);
     const poolIds = Object.keys(requirements);
     const poolRefs = poolIds.map(id => db.collection("inventoryPools").doc(id));
     const poolSnaps = [];
@@ -676,6 +789,9 @@ async function transitionOrderInventory(orderId, targetState, actor = "system") 
         if (currentState !== "consumed") onHandGrams = Math.max(0, onHandGrams - grams);
       } else if (targetState === "released" && currentState === "reserved") {
         reservedGrams = Math.max(0, reservedGrams - grams);
+	      } else if (targetState === "restocked") {
+	        if (currentState === "reserved") reservedGrams = Math.max(0, reservedGrams - grams);
+	        if (currentState === "consumed") onHandGrams += grams;
       }
       updates[poolId] = { onHandGrams, reservedGrams };
       transaction.set(poolRefs[index], { onHandGrams, reservedGrams, updatedAt: now() }, { merge: true });
@@ -780,6 +896,37 @@ async function saveProductImageToStorage({ id, contentType, buffer, ext }) {
   }
 
   throw lastError || new Error("Storage upload failed");
+}
+
+async function saveInvoiceReceiptPdfToStorage({ orderId, filename, buffer, uploadedBy = "" }) {
+  const path = `order-documents/${orderId}/${Date.now()}-${filename}`;
+  let lastError = null;
+
+  for (const bucketName of FIREBASE_STORAGE_BUCKET_FALLBACKS) {
+    try {
+      const bucket = getStorage().bucket(bucketName);
+      await bucket.file(path).save(buffer, {
+        resumable: false,
+        metadata: {
+          contentType: "application/pdf",
+          cacheControl: "private, no-store, max-age=0",
+          metadata: { orderId, uploadedBy },
+        },
+      });
+      return { bucketName: bucket.name, path };
+    } catch (err) {
+      lastError = err;
+      logger.warn("Invoice/receipt PDF bucket upload failed", {
+        orderId,
+        bucketName,
+        code: err.code || "",
+        message: err.message || "Storage upload failed",
+      });
+      if (Number(err.code || 0) !== 404) break;
+    }
+  }
+
+  throw lastError || new Error("Invoice/receipt PDF storage upload failed");
 }
 
 function productImageDownloadUrl({ bucketName, filePath, token }) {
@@ -1518,7 +1665,7 @@ function shippingSummaryForChatbot(shipping = {}, boxNow = {}) {
     override,
     discount,
     `BOX NOW compartments: ${sizes}`,
-    "Packing rule currently used by GRUBZ: every BOX NOW order uses Medium parcels carrying no more than 7kg each.",
+    "Packing rule currently used by GRUBZ: every BOX NOW order uses Medium parcels carrying no more than 10kg each.",
   ].join("\n");
 }
 
@@ -3900,12 +4047,71 @@ function customerEmailTemplateHtml(value = "", customer = {}, context = {}) {
     .join("<br>\n");
 }
 
+function sanitizeNewsletterHtml(value = "") {
+  const allowed = new Set(["p", "div", "br", "hr", "h1", "h2", "h3", "strong", "b", "em", "i", "u", "ul", "ol", "li", "a", "blockquote"]);
+  const styles = {
+    p: "margin:0 0 14px;line-height:1.6",
+    h1: "margin:0 0 18px;font-size:28px;line-height:1.2;font-weight:800;color:#18181b",
+    h2: "margin:22px 0 10px;font-size:22px;line-height:1.25;font-weight:800;color:#18181b",
+    h3: "margin:18px 0 8px;font-size:18px;line-height:1.3;font-weight:700;color:#18181b",
+    ul: "margin:0 0 16px;padding-left:24px",
+    ol: "margin:0 0 16px;padding-left:24px",
+    li: "margin:0 0 7px;line-height:1.55",
+    blockquote: "margin:16px 0;padding:10px 14px;border-left:3px solid #d4d4d8;color:#52525b",
+    a: "color:#256643;text-decoration:underline",
+    hr: "border:0;border-top:1px solid #e4e4e7;margin:20px 0",
+  };
+  const withoutActiveContent = String(value || "")
+    .slice(0, 30000)
+    .replace(/<!--([\s\S]*?)-->/g, "")
+    .replace(/<(script|style|iframe|object|embed|svg|math)[^>]*>[\s\S]*?<\/\1\s*>/gi, "");
+  return withoutActiveContent.replace(/<\/?([a-z0-9]+)([^>]*)>/gi, (tag, rawName, rawAttributes) => {
+    const rawTagName = rawName.toLowerCase();
+    const name = rawTagName === "div" ? "p" : rawTagName;
+    if (!allowed.has(rawTagName)) return "";
+    if (/^<\//.test(tag)) return name === "br" || name === "hr" ? "" : `</${name}>`;
+    if (name === "br") return "<br>";
+    if (name === "hr") return `<hr style="${styles.hr}">`;
+    let attributes = styles[name] ? ` style="${styles[name]}"` : "";
+    if (name === "a") {
+      const hrefMatch = rawAttributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const href = String(hrefMatch?.[1] || hrefMatch?.[2] || hrefMatch?.[3] || "").trim();
+      if (/^(https?:\/\/|mailto:|\{(?:grubz_url|unsubscribe_url)\})/i.test(href)) {
+        attributes += ` href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"`;
+      }
+    }
+    return `<${name}${attributes}>`;
+  });
+}
+
+function customerNewsletterHtml(value = "", customer = {}, context = {}) {
+  const sanitized = sanitizeNewsletterHtml(value);
+  const language = String(context.language || "en").trim().toLowerCase() === "el" ? "el" : "en";
+  const placeholders = sanitizeEmailPlaceholderSettings(context.placeholders || {});
+  const customerName = String(customer.name || "").trim();
+  const greetingTemplate = customerName ? placeholders.greeting[language] : placeholders.greetingNoName[language];
+  const replacements = {
+    greeting: greetingTemplate.replace(/\{customerName\}/g, customerName),
+    customerName,
+    customerEmail: customer.email || "",
+    customerPhone: customer.phone || "",
+    coupon: context.coupon || "",
+    grubz_url: GRUBZ_URL,
+    feedback_url: context.feedbackUrl || `${GRUBZ_URL}/feedback/`,
+    unsubscribe_url: context.unsubscribeUrl || "",
+  };
+  return sanitized.replace(/\{(greeting|customerName|customerEmail|customerPhone|coupon|grubz_url|feedback_url|unsubscribe_url)\}/g, (_, key) => {
+    const escaped = escapeHtml(replacements[key] || "");
+    return key === "coupon" && escaped ? `<strong>${escaped}</strong>` : escaped;
+  });
+}
+
 function containsCouponPlaceholder(value = "") {
   return /\{\s*coupon\s*\}/i.test(String(value || ""));
 }
 
 function containsOrderOnlyPlaceholder(value = "") {
-  return /\{\s*(orderNumber|status|previousStatus|fulfillmentStatus|previousFulfillmentStatus|trackingNumber|trackingUrl|total|boxNowLocker|orderDetails)\s*\}/i.test(String(value || ""));
+  return /\{\s*(orderNumber|status|previousStatus|fulfillmentStatus|previousFulfillmentStatus|trackingNumber|trackingUrl|shippingDate|total|boxNowLocker|orderDetails)\s*\}/i.test(String(value || ""));
 }
 
 async function sendBulkCustomerEmail({ adminUser, recipients, subject, body, coupon, language }) {
@@ -4107,9 +4313,10 @@ async function newsletterImageAttachment(rawImageUrl = "") {
   return { content, contentType: contentType === "image/jpg" ? "image/jpeg" : contentType };
 }
 
-async function sendNewsletter({ adminUser, subject, body, coupon = "", language = "en", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
+async function sendNewsletter({ adminUser, subject, body, bodyHtml = "", coupon = "", language = "en", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
   const cleanSubject = String(subject || "").trim().slice(0, 180);
   const cleanBody = String(body || "").trim().slice(0, 12000);
+  const cleanBodyHtml = bodyHtml ? sanitizeNewsletterHtml(bodyHtml) : "";
   const couponCode = normalizeCouponCode(coupon || "").slice(0, 80);
   const emailLanguage = String(language || "en").toLowerCase() === "el" ? "el" : "en";
   const rawImageUrl = String(image.url || "").trim();
@@ -4128,7 +4335,7 @@ async function sendNewsletter({ adminUser, subject, body, coupon = "", language 
     throw Object.assign(new Error("Select a coupon or remove the {coupon} placeholder before sending."), { status: 400 });
   }
   const contentHash = createHash("sha256")
-    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, coupon: couponCode, language: emailLanguage, imageUrl, imageAlt, imageLink }))
+    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, bodyHtml: cleanBodyHtml, coupon: couponCode, language: emailLanguage, imageUrl, imageAlt, imageLink }))
     .digest("hex");
 
   let recipients = [];
@@ -4199,6 +4406,8 @@ async function sendNewsletter({ adminUser, subject, body, coupon = "", language 
   try {
     await sendRef.set({
     subject: cleanSubject,
+    bodyText: cleanBody,
+    bodyHtml: cleanBodyHtml,
     contentHash,
     language: emailLanguage,
     coupon: couponCode,
@@ -4232,14 +4441,16 @@ async function sendNewsletter({ adminUser, subject, body, coupon = "", language 
       const personalizedSubject = customerEmailTemplateValue(cleanSubject, recipient, context);
       const imageText = embeddedImage && imageLink ? `\n\n${imageAlt}: ${imageLink}` : "";
       const personalizedText = `${customerEmailTemplateValue(cleanBody, recipient, context)}${imageText}\n\n${emailLanguage === "el" ? "Διαγραφή από το newsletter" : "Unsubscribe from this newsletter"}: ${unsubscribeUrl}`;
-      let bodyHtml = customerEmailTemplateHtml(cleanBody, recipient, context);
+      let bodyHtml = cleanBodyHtml
+        ? customerNewsletterHtml(cleanBodyHtml, recipient, context)
+        : customerEmailTemplateHtml(cleanBody, recipient, context);
       if (embeddedImage) {
         const img = `<img src="cid:newsletter-image" alt="${escapeHtml(imageAlt)}" width="600" style="display:block;width:100%;max-width:600px;height:auto;margin:20px 0;border:0;border-radius:14px;">`;
         const imageHtml = imageLink ? `<a href="${escapeHtml(imageLink)}" style="display:block;text-decoration:none;">${img}</a>` : img;
-        const firstLineBreak = bodyHtml.indexOf("<br>\n");
-        bodyHtml = firstLineBreak >= 0
-          ? `${bodyHtml.slice(0, firstLineBreak + 5)}${imageHtml}${bodyHtml.slice(firstLineBreak + 5)}`
-          : `${imageHtml}${bodyHtml}`;
+        const firstParagraphEnd = bodyHtml.indexOf("</p>");
+        const firstLineBreak = bodyHtml.indexOf("<br>");
+        const insertAt = firstParagraphEnd >= 0 ? firstParagraphEnd + 4 : (firstLineBreak >= 0 ? firstLineBreak + 4 : 0);
+        bodyHtml = insertAt ? `${bodyHtml.slice(0, insertAt)}${imageHtml}${bodyHtml.slice(insertAt)}` : `${imageHtml}${bodyHtml}`;
       }
       const footerLabel = emailLanguage === "el" ? "Διαγραφή από το newsletter" : "Unsubscribe from this newsletter";
       const personalizedHtml = `${bodyHtml}<br><br><hr style="border:0;border-top:1px solid #e4e4e7"><p style="font-size:12px;color:#71717a"><a href="${escapeHtml(unsubscribeUrl)}">${footerLabel}</a></p>`;
@@ -4565,6 +4776,10 @@ function sanitizeOrderEmailSettings(input = {}) {
 function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true } = {}) {
   const templates = Array.isArray(input.templates) ? input.templates : [];
   const placeholders = sanitizeEmailPlaceholderSettings(input.placeholders || {});
+  const receiptRecipientEmail = normalizedEmail(input.receiptRecipientEmail || "");
+  if (receiptRecipientEmail && !validEmailAddress(receiptRecipientEmail)) {
+    throw new Error("Enter a valid receipt recipient email address");
+  }
   const sanitized = templates
     .map((template = {}) => {
         const fulfillmentStatus = String(template.fulfillmentStatus || template.status || "").trim();
@@ -4606,6 +4821,7 @@ function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true
   }
 
   return {
+    receiptRecipientEmail,
     placeholders,
     templates: merged.slice(0, 50),
     updatedAt: now(),
@@ -4627,12 +4843,13 @@ function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfil
   const customerName = String(customer.name || "").trim();
   const greetingTemplate = customerName ? placeholders.greeting[language] : placeholders.greetingNoName[language];
   const boxNowTracking = boxNowTrackingEntries(order.boxNowShipment?.parcelIds || shipping.trackingNumbers || []);
+  const fallbackTracking = orderTrackingDetails(order);
   const trackingNumbers = boxNowTracking.length
     ? boxNowTracking.map(item => item.parcelId)
-    : [shipping.trackingNumber].filter(Boolean);
+    : [fallbackTracking.trackingNumber].filter(Boolean);
   const trackingUrls = boxNowTracking.length
     ? boxNowTracking.map(item => item.trackingUrl)
-    : [shipping.trackingUrl].filter(Boolean);
+    : [fallbackTracking.trackingUrl].filter(Boolean);
   return {
     orderNumber: publicOrderId(order),
     greeting: greetingTemplate.replace(/\{customerName\}/g, customerName),
@@ -4645,6 +4862,7 @@ function orderStatusTemplateVars(order = {}, previousStatus = "", previousFulfil
     previousFulfillmentStatus,
     trackingNumber: trackingNumbers.join(", "),
     trackingUrl: trackingUrls.join("\n"),
+    shippingDate: formatOrderShippingDate(order.shippingDate || order.estimatedShippingDate || shipping.shippingDate, language),
     total: formatMoney(order.amountTotal, order.currency),
     coupon: order.couponCode || order.metadata?.couponCode || "",
     grubz_url: GRUBZ_URL,
@@ -4684,8 +4902,8 @@ function templateContentForLanguage(template = {}, language = "en") {
 	const lang = normalizeOrderLanguage(language);
   const translated = lang !== "en" ? template.translations?.[lang] : null;
   return {
-    subject: translated?.subject || template.subject || "",
-    body: translated?.body || template.body || "",
+    subject: String(translated?.subject || template.subject || "").replace(/\s*—\s*/g, " - "),
+    body: String(translated?.body || template.body || "").replace(/\s*—\s*/g, " - "),
   };
 }
 
@@ -4866,6 +5084,21 @@ async function sendEmail({ to, from, bcc, subject, text, html, attachments, lang
     accepted: info.accepted || [],
     rejected: info.rejected || [],
   };
+}
+
+function createZipBuffer(files = []) {
+  return new Promise((resolve, reject) => {
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    const chunks = [];
+    archive.on("data", chunk => chunks.push(Buffer.from(chunk)));
+    archive.on("warning", err => {
+      if (err.code !== "ENOENT") reject(err);
+    });
+    archive.on("error", reject);
+    archive.on("end", () => resolve(Buffer.concat(chunks)));
+    files.forEach(file => archive.append(file.content, { name: file.filename }));
+    archive.finalize().catch(reject);
+  });
 }
 
 async function sendOrderNotificationOnce(type, order, event, recipientOverride = "") {
@@ -5128,6 +5361,14 @@ async function sendOrderStatusEmailOnce(order, previousFulfillmentStatus = "") {
     return { skipped: true, reason: "missing_template" };
   }
 	const content = templateContentForLanguage(template, resolveOrderLanguage(order));
+	const tracking = orderStatusTemplateVars(order, order.status || "", previousFulfillmentStatus, settings.placeholders);
+	const missingTracking = missingTrackingPlaceholders(`${content.subject}\n${content.body}`, tracking);
+	if (missingTracking.length) {
+	  throw Object.assign(new Error(`Cannot send fulfillment email without ${missingTracking.join(" and ")}.`), { status: 400 });
+	}
+  if (/\{\s*shippingDate\s*\}/i.test(`${content.subject}\n${content.body}`) && !tracking.shippingDate) {
+    throw Object.assign(new Error("Cannot send fulfillment email without an upcoming shipping date."), { status: 400 });
+  }
   const orderCouponCode = normalizeCouponCode(order.couponCode || order.coupon || order.metadata?.couponCode || order.metadata?.coupon || "");
   if (containsCouponPlaceholder(content.body) && !orderCouponCode) {
     throw Object.assign(new Error("This fulfillment template uses {coupon}, but the order has no coupon code. Remove the placeholder before sending."), { status: 400 });
@@ -5187,31 +5428,40 @@ async function sendBoxNowFulfillmentEmailOnce(order, previousFulfillmentStatus =
   const notificationRef = db.collection("orderNotifications").doc(
     `boxnow_fulfillment_${orderStatusDocKey(orderId)}_${orderStatusDocKey(fulfillmentKey)}`
   );
-  const claimed = await db.runTransaction(async transaction => {
+  const claim = await db.runTransaction(async transaction => {
     const existing = await transaction.get(notificationRef);
-    if (existing.exists) return false;
+    const existingData = existing.exists ? existing.data() || {} : {};
+    if (existing.exists && !shouldRetryBoxNowFulfillmentEmail(existingData.status)) {
+      return { claimed: false, previousFulfillmentStatus };
+    }
+    const originalPreviousFulfillmentStatus = String(
+      existingData.previousFulfillmentStatus || previousFulfillmentStatus || ""
+    );
     transaction.set(notificationRef, {
       type: "boxnow_fulfillment_automatic",
       orderId,
       orderNumber: publicOrderId(order),
       fulfillmentStatus: fulfillmentKey,
-      previousFulfillmentStatus,
+      previousFulfillmentStatus: originalPreviousFulfillmentStatus,
       language: resolveOrderLanguage(order),
       webhookEventId: eventId,
       status: "sending",
-      createdAt: now(),
+      error: FieldValue.delete(),
+      createdAt: existing.exists ? existingData.createdAt || now() : now(),
+      lastAttemptAt: now(),
       updatedAt: now(),
-    });
-    return true;
+    }, { merge: true });
+    return { claimed: true, previousFulfillmentStatus: originalPreviousFulfillmentStatus };
   });
-  if (!claimed) return { skipped: true, reason: "boxnow_fulfillment_email_already_processed" };
+  if (!claim.claimed) return { skipped: true, reason: "boxnow_fulfillment_email_already_processed" };
 
   try {
-    const result = await sendOrderStatusEmailOnce(order, previousFulfillmentStatus);
+    const result = await sendOrderStatusEmailOnce(order, claim.previousFulfillmentStatus);
     await notificationRef.set({
       status: result?.skipped ? "skipped" : "sent",
       result: result || {},
       sentAt: result?.skipped ? null : now(),
+      error: FieldValue.delete(),
       updatedAt: now(),
     }, { merge: true });
     return result;
@@ -5221,6 +5471,57 @@ async function sendBoxNowFulfillmentEmailOnce(order, previousFulfillmentStatus =
       error: err.message || "Email failed",
       updatedAt: now(),
     }, { merge: true });
+    throw err;
+  }
+}
+
+async function sendAcsFulfillmentEmailOnce(order, previousFulfillmentStatus = "", eventId = "") {
+  const fulfillmentKey = normalizeOrderStatus(order.fulfillmentStatus);
+  const orderId = String(order.id || publicOrderId(order) || "").trim();
+  if (!orderId || !["shipped", "delivered"].includes(fulfillmentKey)) {
+    return { skipped: true, reason: "unsupported_acs_fulfillment" };
+  }
+  const notificationRef = db.collection("orderNotifications").doc(
+    `acs_fulfillment_${orderStatusDocKey(orderId)}_${orderStatusDocKey(fulfillmentKey)}`
+  );
+  const claim = await db.runTransaction(async transaction => {
+    const existing = await transaction.get(notificationRef);
+    const existingData = existing.exists ? existing.data() || {} : {};
+    if (existing.exists && !shouldRetryAcsFulfillmentEmail(existingData.status)) {
+      return { claimed: false, previousFulfillmentStatus };
+    }
+    const originalPreviousFulfillmentStatus = String(
+      existingData.previousFulfillmentStatus || previousFulfillmentStatus || ""
+    );
+    transaction.set(notificationRef, {
+      type: "acs_fulfillment_automatic",
+      orderId,
+      orderNumber: publicOrderId(order),
+      fulfillmentStatus: fulfillmentKey,
+      previousFulfillmentStatus: originalPreviousFulfillmentStatus,
+      language: resolveOrderLanguage(order),
+      trackingEventId: eventId,
+      status: "sending",
+      error: FieldValue.delete(),
+      createdAt: existing.exists ? existingData.createdAt || now() : now(),
+      lastAttemptAt: now(),
+      updatedAt: now(),
+    }, { merge: true });
+    return { claimed: true, previousFulfillmentStatus: originalPreviousFulfillmentStatus };
+  });
+  if (!claim.claimed) return { skipped: true, reason: "acs_fulfillment_email_already_processed" };
+  try {
+    const result = await sendOrderStatusEmailOnce(order, claim.previousFulfillmentStatus);
+    await notificationRef.set({
+      status: result?.skipped ? "skipped" : "sent",
+      result: result || {},
+      sentAt: result?.skipped ? null : now(),
+      error: FieldValue.delete(),
+      updatedAt: now(),
+    }, { merge: true });
+    return result;
+  } catch (err) {
+    await notificationRef.set({ status: "failed", error: err.message || "Email failed", updatedAt: now() }, { merge: true });
     throw err;
   }
 }
@@ -5292,6 +5593,9 @@ async function sendFeedbackThankYouEmail(feedbackRef, feedback, couponCode) {
 }
 
 async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
+  if (normalizeOrderStatus(order.fulfillmentStatus) !== "delivered") {
+    throw Object.assign(new Error("Customer feedback is only available after the order has been delivered."), { status: 400 });
+  }
   const customerEmail = await resolveOrderCustomerEmail(order);
   if (!customerEmail) {
     throw Object.assign(new Error("This order has no customer email address."), { status: 400 });
@@ -5469,6 +5773,108 @@ async function sendOrderLockerReminderEmail(order, adminUser = {}) {
   }
 }
 
+async function sendOrderDelayEmail(order, adminUser = {}, languageInput = "") {
+  const language = normalizeOrderLanguage(languageInput || resolveOrderLanguage(order));
+  const delayOrder = { ...order, language, locale: language, fulfillmentStatus: "delayed" };
+  const previousFulfillmentStatus = normalizeOrderStatus(order.fulfillmentStatus) === "delayed"
+    ? "manual_delay_notice"
+    : order.fulfillmentStatus || "";
+  const result = await sendOrderStatusEmailOnce(delayOrder, previousFulfillmentStatus);
+  if (!result.skipped) {
+    const orderId = order.id || publicOrderId(order);
+    await db.collection("orders").doc(orderId).set({
+      delayEmailSentAt: now(),
+      delayEmailSentBy: adminUser.uid || "",
+      delayEmailSendCount: FieldValue.increment(1),
+      updatedAt: now(),
+    }, { merge: true });
+  }
+  return result;
+}
+
+async function sendOrderShippingDateEmail(order, adminUser = {}, shippingDateInput = "") {
+  const rawShippingDate = String(shippingDateInput || "").trim();
+  let shippingDate = order.shippingDate || order.estimatedShippingDate || order.shipping?.shippingDate || null;
+  if (rawShippingDate) {
+    const parsed = new Date(`${rawShippingDate}T12:00:00`);
+    if (Number.isNaN(parsed.getTime())) throw Object.assign(new Error("Enter a valid upcoming shipping date."), { status: 400 });
+    shippingDate = Timestamp.fromDate(parsed);
+  }
+  if (!formatOrderShippingDate(shippingDate, resolveOrderLanguage(order))) {
+    throw Object.assign(new Error("Add the upcoming shipping date before sending this email."), { status: 400 });
+  }
+  const shippingDateOrder = { ...order, shippingDate, fulfillmentStatus: "shipping_scheduled" };
+  const previousFulfillmentStatus = normalizeOrderStatus(order.fulfillmentStatus) === "shipping_scheduled"
+    ? "manual_shipping_date_notice"
+    : order.fulfillmentStatus || "";
+  const result = await sendOrderStatusEmailOnce(shippingDateOrder, previousFulfillmentStatus);
+  if (!result.skipped) {
+    const orderId = order.id || publicOrderId(order);
+    await db.collection("orders").doc(orderId).set({
+      shippingDate,
+      shippingDateEmailSentAt: now(),
+      shippingDateEmailSentBy: adminUser.uid || "",
+      shippingDateEmailSendCount: FieldValue.increment(1),
+      updatedAt: now(),
+    }, { merge: true });
+  }
+  return result;
+}
+
+async function sendOrderCommunicationTestEmail(order, type, adminUser = {}, options = {}) {
+  const templateStatus = {
+    locker_reminder: "locker_reminder",
+    delay: "delayed",
+    shipping_date: "shipping_scheduled",
+  }[type];
+  if (!templateStatus) throw Object.assign(new Error("Unknown communication email type."), { status: 400 });
+  const language = normalizeOrderLanguage(options.language || resolveOrderLanguage(order));
+  let testOrder = { ...order, language, locale: language, fulfillmentStatus: templateStatus };
+  if (type === "locker_reminder") {
+    const locker = order.shipping?.boxNow || order.boxNow || {};
+    if (!String(locker.name || locker.id || "").trim()) {
+      throw Object.assign(new Error("This order has no BOX NOW locker information."), { status: 400 });
+    }
+  }
+  if (type === "shipping_date") {
+    const rawShippingDate = String(options.shippingDate || "").trim();
+    const parsed = rawShippingDate ? new Date(`${rawShippingDate}T12:00:00`) : null;
+    const shippingDate = parsed && !Number.isNaN(parsed.getTime())
+      ? Timestamp.fromDate(parsed)
+      : order.shippingDate || order.estimatedShippingDate || order.shipping?.shippingDate || null;
+    if (!formatOrderShippingDate(shippingDate, language)) {
+      throw Object.assign(new Error("Add the upcoming shipping date before sending this test."), { status: 400 });
+    }
+    testOrder = { ...testOrder, shippingDate };
+  }
+  const settings = await getOrderEmailSettings();
+  const template = settings.templates.find(item =>
+    item.enabled !== false && item.templateContext === "order" && item.fulfillmentKey === templateStatus
+  );
+  if (!template) throw Object.assign(new Error("This communication template is missing or disabled."), { status: 400 });
+  const message = buildOrderStatusEmail(template, testOrder, order.status || "", order.fulfillmentStatus || "", settings);
+  const result = await sendEmail({
+    to: GRUBZ_INFO_EMAIL,
+    from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+    subject: `[TEST] ${message.subject}`,
+    text: message.text,
+    html: message.html,
+  });
+  await db.collection("orderNotifications").doc(`order_communication_test_${orderStatusDocKey(order.id || publicOrderId(order))}_${Date.now()}`).set({
+    type: "order_communication_test",
+    emailType: type,
+    orderId: order.id || publicOrderId(order),
+    orderNumber: publicOrderId(order),
+    recipientEmail: GRUBZ_INFO_EMAIL,
+    subject: message.subject,
+    status: result.skipped ? "skipped" : "sent",
+    createdAt: now(),
+    createdBy: adminUser.uid || "",
+    result,
+  });
+  return result;
+}
+
 async function sendBoxNowLockerArrivalEmail(order, parcelId = "") {
   const customerEmail = await resolveOrderCustomerEmail(order);
   if (!customerEmail) return { skipped: true, reason: "missing_customer_email" };
@@ -5522,6 +5928,67 @@ async function sendBoxNowLockerArrivalEmail(order, parcelId = "") {
   }
 }
 
+async function sendBoxNowExceptionEmailOnce(order, fulfillmentStatus, parcelId = "") {
+	const fulfillmentKey = normalizeOrderStatus(fulfillmentStatus);
+	if (!["expired", "returned"].includes(fulfillmentKey)) {
+	  return { skipped: true, reason: "unsupported_boxnow_exception" };
+	}
+	const customerEmail = await resolveOrderCustomerEmail(order);
+	if (!customerEmail) return { skipped: true, reason: "missing_customer_email" };
+	const settings = await getOrderEmailSettings();
+	const template = settings.templates.find(item =>
+	  item.enabled !== false && item.templateContext === "order" && item.fulfillmentKey === fulfillmentKey
+	);
+	if (!template) return { skipped: true, reason: "missing_template" };
+
+	const orderId = order.id || publicOrderId(order);
+	const notificationRef = db.collection("orderNotifications").doc(
+	  `order_boxnow_${fulfillmentKey}_${orderStatusDocKey(orderId)}_${orderStatusDocKey(parcelId || "parcel")}`
+	);
+	const existing = await notificationRef.get();
+	if (existing.exists && ["sending", "sent"].includes(String(existing.data()?.status || ""))) {
+	  return { skipped: true, reason: "already_sent" };
+	}
+	await notificationRef.set({
+	  type: `order_boxnow_${fulfillmentKey}`,
+	  orderId,
+	  orderNumber: publicOrderId(order),
+	  parcelId,
+	  customerEmail,
+	  recipientEmail: customerEmail,
+	  bccEmail: GRUBZ_INFO_EMAIL,
+	  fulfillmentStatus: fulfillmentKey,
+	  status: "sending",
+	  createdAt: existing.exists ? existing.data()?.createdAt || now() : now(),
+	  lastAttemptAt: now(),
+	  createdBy: "boxnow_webhook",
+	}, { merge: true });
+
+	try {
+	  const exceptionOrder = { ...order, fulfillmentStatus: fulfillmentKey };
+	  const message = buildOrderStatusEmail(template, exceptionOrder, order.status || "", order.fulfillmentStatus || "", settings);
+	  const result = await sendEmail({
+	    to: customerEmail,
+	    from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+	    bcc: GRUBZ_INFO_EMAIL,
+	    ...message,
+	  });
+	  await notificationRef.set({
+	    status: result.skipped ? "skipped" : "sent",
+	    subject: message.subject || "",
+	    bodyText: message.text || "",
+	    bodyHtml: message.html || "",
+	    result,
+	    sentAt: result.skipped ? null : now(),
+	    updatedAt: now(),
+	  }, { merge: true });
+	  return result;
+	} catch (err) {
+	  await notificationRef.set({ status: "failed", error: err.message || "Email failed", updatedAt: now() }, { merge: true });
+	  throw err;
+	}
+}
+
 async function scheduleAutomaticBoxNowLockerReminder(order, eventRecord = {}) {
   const orderId = order.id || publicOrderId(order);
   const parcelId = String(eventRecord.parcelId || "").trim();
@@ -5559,8 +6026,8 @@ async function cancelAutomaticBoxNowLockerReminder(orderId, parcelId, event = ""
   return { cancelled: true };
 }
 
-async function scheduleOrderEmail(order, type, sendAtInput, adminUser = {}, previousFulfillmentStatus = "") {
-  const allowedTypes = new Set(["fulfillment", "feedback", "locker_reminder"]);
+async function scheduleOrderEmail(order, type, sendAtInput, adminUser = {}, previousFulfillmentStatus = "", languageInput = "") {
+  const allowedTypes = new Set(["fulfillment", "feedback", "locker_reminder", "delay", "shipping_date"]);
   if (!allowedTypes.has(type)) throw Object.assign(new Error("Unknown scheduled email type."), { status: 400 });
   const sendAt = new Date(String(sendAtInput || ""));
   if (Number.isNaN(sendAt.getTime()) || sendAt.getTime() <= Date.now()) {
@@ -5576,6 +6043,7 @@ async function scheduleOrderEmail(order, type, sendAtInput, adminUser = {}, prev
     type,
     previousFulfillmentStatus: String(previousFulfillmentStatus || ""),
     fulfillmentStatus: String(order.fulfillmentStatus || ""),
+    language: normalizeOrderLanguage(languageInput || resolveOrderLanguage(order)),
     status: "pending",
     scheduledAt: Timestamp.fromDate(sendAt),
     createdAt: now(),
@@ -5617,7 +6085,7 @@ exports.sendScheduledOrderEmails = onSchedule(
           const parcelKey = orderStatusDocKey(job.parcelId || "unknown");
           const latestEvent = normalizeOrderStatus(order.boxNowShipment?.parcelEvents?.[parcelKey]?.event).replace(/[_\s]+/g, "-");
           const review = order.boxNowNotificationReview || {};
-          const approved = review.status === "approved" && String(review.parcelId || "") === String(job.parcelId || "");
+	          const approved = ["approved", "automatic"].includes(String(review.status || "")) && String(review.parcelId || "") === String(job.parcelId || "");
           if (latestEvent !== "final-destination" || !approved) {
             const cancelReason = latestEvent !== "final-destination" ? `parcel_event_${latestEvent || "unknown"}` : "approval_missing";
             await jobDoc.ref.set({ status: "cancelled", cancelReason, cancelledAt: now(), updatedAt: now() }, { merge: true });
@@ -5627,6 +6095,8 @@ exports.sendScheduledOrderEmails = onSchedule(
         let result;
         if (job.type === "feedback") result = await sendOrderFeedbackEmail(order, { uid: job.createdBy || "scheduler" });
         else if (job.type === "locker_reminder") result = await sendOrderLockerReminderEmail(order, { uid: job.createdBy || "scheduler" });
+        else if (job.type === "delay") result = await sendOrderDelayEmail(order, { uid: job.createdBy || "scheduler" }, job.language || "");
+        else if (job.type === "shipping_date") result = await sendOrderShippingDateEmail(order, { uid: job.createdBy || "scheduler" });
         else result = await sendOrderStatusEmailOnce(order, job.previousFulfillmentStatus || "");
         await jobDoc.ref.set({ status: result?.skipped ? "skipped" : "sent", result: result || {}, sentAt: now(), updatedAt: now() }, { merge: true });
       } catch (err) {
@@ -6088,6 +6558,10 @@ exports.verifyCheckout = onRequest(
         orderNumber: order?.orderNumber || session?.metadata?.orderNumber || "",
         amount_total: session?.amount_total || null,
         currency: session?.currency || null,
+        items: (order?.items || []).map((item) => ({
+          id: String(item?.id || item?.productId || "").trim(),
+          quantity: Math.max(1, Number(item?.quantity || item?.qty || 1)),
+        })).filter((item) => item.id),
         inventoryState: order?.inventoryState || (paid ? "reserved" : "none"),
       });
     } catch (e) {
@@ -7456,30 +7930,11 @@ exports.createCheckoutSession = onRequest(
       if (!items.length) return res.status(400).json({ error: "No items" });
       const shippingError = validateShipping(shipping);
       if (shippingError) return res.status(400).json({ error: shippingError });
+      if (!["boxnow", "acs", "acs_point"].includes(deliveryMethod)) {
+        return res.status(400).json({ error: "Unsupported delivery method" });
+      }
       if (uid) {
         await persistCustomerShipping(uid, shipping, { email: authUser?.email || "" });
-      }
-      if (deliveryMethod === "courier_quote") {
-        if (!uid || !authUser?.email) return res.status(401).json({ error: "Sign in is required to request a courier quote" });
-        const productsMap = await getProductsMap();
-        const order = await createCourierQuoteOrder({
-          uid,
-          email: authUser.email,
-          items,
-          shipping,
-          couponCode,
-          referralCode,
-          attribution,
-          productsMap,
-          language,
-        });
-        await sendOrderNotificationOnce("courier_quote_order", order, { id: order.id, type: "courier_quote" }, GRUBZ_INFO_EMAIL);
-        return res.status(200).json({
-          ok: true,
-          courierQuote: true,
-          orderNumber: order.orderNumber,
-          url: `/checkout/success/?quote=1&order=${encodeURIComponent(order.orderNumber)}`,
-        });
       }
       const isAcsDelivery = deliveryMethod === "acs" || deliveryMethod === "acs_point";
       if (deliveryMethod === "acs_point" && !String(shipping?.acsPoint?.id || "").trim()) {
@@ -7801,6 +8256,53 @@ exports.getProducts = onRequest(
   }
 );
 
+let storefrontShellCache = { html: "", expiresAt: 0 };
+
+async function getStorefrontShell() {
+  const now = Date.now();
+  if (storefrontShellCache.html && storefrontShellCache.expiresAt > now) {
+    return storefrontShellCache.html;
+  }
+  const response = await fetch("https://www.grubz.gr/", {
+    headers: { "User-Agent": "GRUBZ product-page renderer" },
+  });
+  if (!response.ok) throw new Error(`Storefront shell request failed (${response.status})`);
+  const html = await response.text();
+  if (!/<\/head>/i.test(html)) throw new Error("Storefront shell is missing </head>");
+  storefrontShellCache = { html, expiresAt: now + 5 * 60 * 1000 };
+  return html;
+}
+
+// Server-render product metadata so Meta's crawler can ingest catalog items
+// from the Pixel data source while customers still receive the normal SPA.
+exports.productPage = onRequest(
+  { region: "europe-west1", invoker: "public" },
+  async (req, res) => {
+    try {
+      if (req.method !== "GET" && req.method !== "HEAD") return jsonError(res, 405, "Use GET");
+      const requestUrl = String(req.originalUrl || req.url || req.path || "");
+      const match = requestUrl.match(/\/products\/([^/?#]+)\/?/);
+      const productId = match ? decodeURIComponent(match[1]) : "";
+      const language = requestUrl.match(/^\/(en|el)\/products\//)?.[1] || "";
+      if (!productId) return jsonError(res, 404, "Product not found");
+
+      const productsMap = await getProductsMap();
+      const product = productsMap[productId];
+      if (!product || product.active === false) return jsonError(res, 404, "Product not found");
+
+      const shell = await getStorefrontShell();
+      const meta = buildProductMeta(productId, product, "https://www.grubz.gr", language);
+      const html = injectProductMeta(shell, meta);
+      res.set("Content-Type", "text/html; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=3600");
+      return req.method === "HEAD" ? res.status(200).end() : res.status(200).send(html);
+    } catch (error) {
+      logger.error("productPage failed", error);
+      return jsonError(res, 500, "product_page_unavailable");
+    }
+  }
+);
+
 // ===== Admin console APIs =====
 exports.adminProducts = onRequest(
   {
@@ -7857,6 +8359,7 @@ exports.adminProducts = onRequest(
           const poolId = String(body.poolId || "").trim();
           const poolCheck = await db.collection("inventoryPools").doc(poolId).get();
           if (!poolCheck.exists) return jsonError(res, 400, "Unknown inventory pool");
+          if (poolCheck.data()?.inventorySource === "noma" && await isNomaFlowEnabled()) return jsonError(res, 409, "Physical stock is managed by NOMA Flow. Sync the linked inventory instead of entering a manual adjustment.");
           const deltaGrams = Math.round(Number(body.deltaGrams || 0));
           if (!Number.isFinite(deltaGrams) || !deltaGrams) return jsonError(res, 400, "Enter a non-zero stock adjustment");
           const reason = String(body.reason || "Manual adjustment").trim().slice(0, 500);
@@ -8065,10 +8568,32 @@ exports.adminOrders = onRequest(
       const adminUser = await requireAdmin(req);
 
       if (req.method === "GET") {
+        const orderId = String(req.query.id || "").trim();
+        if (orderId) {
+          const orderSnap = await db.collection("orders").doc(orderId).get();
+          if (!orderSnap.exists) return jsonError(res, 404, "Order not found");
+          return res.json({ order: { id: orderSnap.id, ...orderSnap.data() } });
+        }
         const limit = Math.min(200, Math.max(1, Number(req.query.limit || 50)));
         let query = db.collection("orders")
           .orderBy("createdAt", "desc")
           .orderBy(FieldPath.documentId(), "desc");
+        if (String(req.query.view || "").trim() === "list") {
+          query = query.select(
+            "orderNumber", "createdAt", "updatedAt", "uid", "customer", "shipping",
+            "amountTotal", "amountSubtotal", "amountShipping", "amountDiscount", "currency",
+            "status", "paymentStatus", "paymentMethod", "fulfillmentStatus", "inventoryState",
+            "items", "notes", "manual", "couponCode", "coupon", "metadata", "attribution", "referralCode",
+            "shippingDate", "estimatedShippingDate",
+            "shippingDateEmailSentAt", "shippingDateEmailSentBy", "shippingDateEmailSendCount",
+            "delayEmailSentAt", "delayEmailSentBy", "delayEmailSendCount",
+            "lockerReminderEmailSentAt", "lockerReminderEmailSentBy", "lockerReminderEmailSendCount",
+            "feedbackEmailSentAt", "feedbackEmailSentBy", "feedbackEmailSendCount", "deliveredAt",
+            "boxnowFee", "boxNowNotificationReview", "boxNowExceptionAction",
+            "boxNowShipment.deliveryRequestId", "boxNowShipment.parcelIds", "boxNowShipment.lastEvent", "boxNowShipment.status",
+            "invoiceReceiptIssued", "invoiceReceiptIssuedAt", "aadeInvoiceReceiptId", "invoiceReceiptPdf"
+          );
+        }
         const cursorMs = Number(req.query.cursorMs || 0);
         const cursorId = String(req.query.cursorId || "").trim();
         if (cursorMs > 0 && cursorId) {
@@ -8082,12 +8607,107 @@ exports.adminOrders = onRequest(
         const nextCursor = hasMore && lastDoc && typeof lastCreatedAt?.toMillis === "function"
           ? { ms: lastCreatedAt.toMillis(), id: lastDoc.id }
           : null;
-        const orders = pageDocs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const isListView = String(req.query.view || "").trim() === "list";
+        const orders = pageDocs.map((doc) => ({ id: doc.id, ...doc.data(), ...(isListView ? { _listSummary: true } : {}) }));
         return res.json({ orders, nextCursor });
       }
 
       if (req.method === "PATCH" || req.method === "POST") {
         const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (req.method === "POST" && String(body.action || "").trim() === "sendSelectedReceipts") {
+          const orderIds = [...new Set((Array.isArray(body.ids) ? body.ids : [])
+            .map(value => String(value || "").trim())
+            .filter(Boolean))];
+          if (!orderIds.length) return jsonError(res, 400, "Select at least one order.");
+          if (orderIds.length > 50) return jsonError(res, 400, "Send receipts for no more than 50 orders at once.");
+
+          const emailSettings = await getOrderEmailSettings();
+          const recipient = normalizedEmail(emailSettings.receiptRecipientEmail || "");
+          if (!recipient || !validEmailAddress(recipient)) {
+            return jsonError(res, 400, "Set a valid receipt recipient email address in Settings > Emails first.");
+          }
+
+          const snapshots = await db.getAll(...orderIds.map(id => db.collection("orders").doc(id)));
+          const receiptFiles = [];
+          const includedOrders = [];
+          const skippedOrders = [];
+          let attachmentBytes = 0;
+          const maxAttachmentBytes = 15 * 1024 * 1024;
+
+          for (const snapshot of snapshots) {
+            if (!snapshot.exists) {
+              skippedOrders.push(snapshot.id);
+              continue;
+            }
+            const order = { id: snapshot.id, ...snapshot.data() };
+            const document = order.invoiceReceiptPdf || {};
+            if (!document.path) {
+              skippedOrders.push(publicOrderId(order));
+              continue;
+            }
+            const [content] = await getStorage()
+              .bucket(document.bucket || PRODUCT_IMAGE_BUCKET)
+              .file(document.path)
+              .download();
+            if (attachmentBytes + content.length > maxAttachmentBytes) {
+              return jsonError(res, 400, "The selected receipt PDFs exceed the 15 MB email attachment limit. Send fewer orders at a time.");
+            }
+            attachmentBytes += content.length;
+            const orderLabel = publicOrderId(order);
+            const safeOrderLabel = orderLabel.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || snapshot.id;
+            const originalFilename = String(document.filename || "receipt.pdf");
+            const safeFilename = originalFilename.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "receipt.pdf";
+            receiptFiles.push({
+              filename: `${safeOrderLabel}-${safeFilename}`,
+              content,
+            });
+            includedOrders.push(orderLabel);
+          }
+
+          if (!receiptFiles.length) {
+            return jsonError(res, 400, "None of the selected orders has an attached invoice/receipt PDF.");
+          }
+
+          const zipContent = await createZipBuffer(receiptFiles);
+          const zipDate = new Date().toISOString().slice(0, 10);
+          const attachments = [{
+            filename: `grubz-receipts-${zipDate}.zip`,
+            content: zipContent,
+            contentType: "application/zip",
+          }];
+
+          const receiptSummaryText = [
+            `Attached ${includedOrders.length} invoice/receipt PDF${includedOrders.length === 1 ? "" : "s"}.`,
+            "",
+            ...includedOrders.map(orderNumber => `- ${orderNumber}`),
+            ...(skippedOrders.length ? ["", `Skipped without an attached PDF: ${skippedOrders.join(", ")}`] : []),
+          ].join("\n");
+          const receiptSummaryHtml = [
+            `<p>Attached ${includedOrders.length} invoice/receipt PDF${includedOrders.length === 1 ? "" : "s"}.</p>`,
+            `<ul>${includedOrders.map(orderNumber => `<li>${escapeHtml(orderNumber)}</li>`).join("")}</ul>`,
+            ...(skippedOrders.length
+              ? [`<p><strong>Skipped without an attached PDF:</strong> ${skippedOrders.map(escapeHtml).join(", ")}</p>`]
+              : []),
+          ].join("\n");
+          const sent = await sendEmail({
+            to: recipient,
+            from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+            subject: `GRUBZ receipts — ${includedOrders.length} order${includedOrders.length === 1 ? "" : "s"}`,
+            text: receiptSummaryText,
+            html: receiptSummaryHtml,
+            attachments,
+          });
+          if (sent.skipped) return jsonError(res, 503, "SMTP credentials are not configured.");
+          logger.info("Admin emailed selected invoice/receipt PDFs", {
+            recipient,
+            orderIds,
+            includedOrders,
+            skippedOrders,
+            attachmentBytes,
+            adminUid: adminUser.uid,
+          });
+          return res.json({ ok: true, recipient, sent: includedOrders.length, includedOrders, skippedOrders });
+        }
         if (req.method === "POST" && String(body.action || "").trim() === "calculateManualOrderShipping") {
           const input = body.order && typeof body.order === "object" ? body.order : body;
           const items = Array.isArray(input.items) ? input.items : [];
@@ -8153,9 +8773,31 @@ exports.adminOrders = onRequest(
           const feedbackEmail = await sendOrderFeedbackEmail(existingOrder, adminUser, { testOnly: true, feedbackBaseUrl });
           return res.json({ ok: true, feedbackEmail });
         }
+        if (String(body.action || "").trim() === "sendCommunicationTest") {
+          const emailType = String(body.emailType || "").trim();
+          if (emailType === "feedback") {
+            const origin = String(req.headers.origin || "").trim();
+            const feedbackBaseUrl = isLocalRequest(req) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin) ? origin : GRUBZ_URL;
+            const testEmail = await sendOrderFeedbackEmail(existingOrder, adminUser, { testOnly: true, feedbackBaseUrl });
+            return res.json({ ok: true, testEmail });
+          }
+          const testEmail = await sendOrderCommunicationTestEmail(existingOrder, emailType, adminUser, {
+            language: body.language || "",
+            shippingDate: body.shippingDate || "",
+          });
+          return res.json({ ok: true, testEmail });
+        }
         if (String(body.action || "").trim() === "sendLockerReminder") {
           const lockerReminderEmail = await sendOrderLockerReminderEmail(existingOrder, adminUser);
           return res.json({ ok: true, lockerReminderEmail });
+        }
+        if (String(body.action || "").trim() === "sendDelayEmail") {
+          const delayEmail = await sendOrderDelayEmail(existingOrder, adminUser, body.language || "");
+          return res.json({ ok: true, delayEmail });
+        }
+        if (String(body.action || "").trim() === "sendShippingDateEmail") {
+          const shippingDateEmail = await sendOrderShippingDateEmail(existingOrder, adminUser, body.shippingDate || "");
+          return res.json({ ok: true, shippingDateEmail });
         }
         if (String(body.action || "").trim() === "approveBoxNowLockerNotifications") {
           const review = existingOrder.boxNowNotificationReview || {};
@@ -8191,13 +8833,55 @@ exports.adminOrders = onRequest(
           }, { merge: true });
           return res.json({ ok: true });
         }
+	    if (String(body.action || "").trim() === "resolveBoxNowExceptionAction") {
+	      const action = existingOrder.boxNowExceptionAction || {};
+	      if (!action.key) return jsonError(res, 404, "This order has no BOX NOW exception action.");
+	      if (action.status === "resolved") return jsonError(res, 409, "This BOX NOW exception action is already resolved.");
+	      const resolution = normalizeOrderStatus(body.resolution || "");
+	      if (!["resend", "restock", "write_off"].includes(resolution)) {
+	        return jsonError(res, 400, "Choose Resend, Restock after inspection, or Write off/damaged.");
+	      }
+	      const inventory = resolution === "restock"
+	        ? await transitionOrderInventory(id, "restocked", adminUser.uid || "admin")
+	        : { skipped: true, reason: resolution === "resend" ? "parcel_will_be_resent" : "inventory_written_off" };
+	      const resolvedAction = {
+	        ...action,
+	        status: "resolved",
+	        resolution,
+	        inventory,
+	        resolvedAt: now(),
+	        resolvedBy: adminUser.uid || "",
+	      };
+	      await orderRef.set({ boxNowExceptionAction: resolvedAction, updatedAt: now() }, { merge: true });
+	      if (action.alertId) {
+	        await db.collection("adminAlerts").doc(String(action.alertId)).set({
+	          status: "resolved",
+	          resolution,
+	          inventory,
+	          resolvedAt: now(),
+	          resolvedBy: adminUser.uid || "",
+	          updatedAt: now(),
+	        }, { merge: true });
+	      }
+	      return res.json({ ok: true, action: resolvedAction });
+	    }
         if (String(body.action || "").trim() === "scheduleEmail") {
+          let orderForSchedule = existingOrder;
+          if (String(body.emailType || "").trim() === "shipping_date") {
+            const rawShippingDate = String(body.shippingDate || "").trim();
+            const parsed = rawShippingDate ? new Date(`${rawShippingDate}T12:00:00`) : null;
+            if (!parsed || Number.isNaN(parsed.getTime())) return jsonError(res, 400, "Add a valid upcoming shipping date before scheduling this email.");
+            const shippingDate = Timestamp.fromDate(parsed);
+            await orderRef.set({ shippingDate, updatedAt: now(), updatedBy: adminUser.uid }, { merge: true });
+            orderForSchedule = { ...existingOrder, shippingDate };
+          }
           const scheduledEmail = await scheduleOrderEmail(
-            existingOrder,
+            orderForSchedule,
             String(body.emailType || "").trim(),
             body.sendAt,
             adminUser,
-            body.previousFulfillmentStatus || ""
+            body.previousFulfillmentStatus || "",
+            body.language || ""
           );
           return res.json({ ok: true, scheduledEmail });
         }
@@ -8211,19 +8895,15 @@ exports.adminOrders = onRequest(
 	          if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") return jsonError(res, 400, "The uploaded file is not a valid PDF.");
 	          const originalName = String(body.filename || "invoice-receipt.pdf").trim().slice(0, 180) || "invoice-receipt.pdf";
 	          const safeName = originalName.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "invoice-receipt.pdf";
-	          const bucket = getStorage().bucket(FIREBASE_STORAGE_BUCKET);
-	          const path = `order-documents/${id}/${Date.now()}-${safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`}`;
-	          const file = bucket.file(path);
-	          await file.save(buffer, {
-	            resumable: false,
-	            metadata: {
-	              contentType: "application/pdf",
-	              cacheControl: "private, no-store, max-age=0",
-	              metadata: { orderId: id, uploadedBy: adminUser.uid || "" },
-	            },
+	          const storedPdf = await saveInvoiceReceiptPdfToStorage({
+	            orderId: id,
+	            filename: safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`,
+	            buffer,
+	            uploadedBy: adminUser.uid || "",
 	          });
+	          const path = storedPdf.path;
 	          const document = {
-	            bucket: bucket.name,
+	            bucket: storedPdf.bucketName,
 	            path,
 	            filename: originalName.toLowerCase().endsWith(".pdf") ? originalName : `${originalName}.pdf`,
 	            size: buffer.length,
@@ -8282,6 +8962,15 @@ exports.adminOrders = onRequest(
             allowed.deliveredAt = Timestamp.fromDate(deliveredDate);
           }
         }
+        if (Object.prototype.hasOwnProperty.call(body, "shippingDate")) {
+          if (!body.shippingDate) {
+            allowed.shippingDate = null;
+          } else {
+            const shippingDate = new Date(`${String(body.shippingDate).trim()}T12:00:00`);
+            if (Number.isNaN(shippingDate.getTime())) return jsonError(res, 400, "Invalid shipping date.");
+            allowed.shippingDate = Timestamp.fromDate(shippingDate);
+          }
+        }
         if (body.notes != null) allowed.notes = String(body.notes).slice(0, 5000);
         if (Object.prototype.hasOwnProperty.call(body, "boxNowPaymentMode")) {
           const paymentMode = String(body.boxNowPaymentMode || "").trim();
@@ -8330,10 +9019,11 @@ exports.adminOrders = onRequest(
           allowed.manualPricingOverride = false;
         }
         if (body.trackingNumber != null || body.trackingUrl != null) {
+          const acsVoucherNo = String(existingOrder.acsShipment?.voucherNo || "").trim();
           allowed.shipping = {
             ...(allowed.shipping || {}),
-            trackingNumber: String(body.trackingNumber || "").trim(),
-            trackingUrl: String(body.trackingUrl || "").trim(),
+            trackingNumber: String(body.trackingNumber || acsVoucherNo || "").trim(),
+            trackingUrl: String(body.trackingUrl || (acsVoucherNo ? acsTrackingUrlForVoucher(acsVoucherNo) : "")).trim(),
           };
         }
         allowed.updatedAt = now();
@@ -8359,6 +9049,12 @@ exports.adminOrders = onRequest(
           const orderCouponCode = normalizeCouponCode(existingOrder.couponCode || existingOrder.coupon || existingOrder.metadata?.couponCode || existingOrder.metadata?.coupon || "");
           if (content && containsCouponPlaceholder(content.body) && !orderCouponCode) {
             return jsonError(res, 400, "This fulfillment template uses {coupon}, but the order has no coupon code. Remove the placeholder before sending.");
+          }
+          if (content && /\{\s*shippingDate\s*\}/i.test(`${content.subject}\n${content.body}`)) {
+            const candidateShippingDate = allowed.shippingDate || existingOrder.shippingDate || existingOrder.estimatedShippingDate || existingOrder.shipping?.shippingDate;
+            if (!formatOrderShippingDate(candidateShippingDate, existingOrder.language || existingOrder.locale || "en")) {
+              return jsonError(res, 400, "Add the upcoming shipping date before sending this fulfillment email.");
+            }
           }
         }
 
@@ -8622,6 +9318,7 @@ exports.adminNewsletter = onRequest(
             adminUser,
             subject: body.subject,
             body: body.body,
+            bodyHtml: body.bodyHtml,
             coupon: body.coupon,
             language: body.language,
             testOnly: body.action === "test",
@@ -9319,7 +10016,7 @@ exports.adminChat = onRequest(
       const adminUser = await requireAdmin(req);
 
       if (req.method === "GET") {
-        const limit = Math.min(100, Math.max(1, Number(req.query.limit || 50)));
+        const limit = Math.min(500, Math.max(1, Number(req.query.limit || 50)));
         let snap;
         try {
           snap = await db.collection(CHAT_CONVERSATIONS_COLLECTION)
@@ -9789,6 +10486,168 @@ exports.adminCollaborations = onRequest(
   }
 );
 
+exports.adminProfitData = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+  },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const adminUser = await requireAdmin(req);
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+
+      if (req.method === "GET") {
+        const periodSnap = await db.collection(PROFIT_PERIODS_COLLECTION).orderBy("startDate", "desc").limit(100).get();
+        const periods = periodSnap.docs.map(doc => ({ id:doc.id, ...doc.data() }));
+        const periodId = String(req.query.periodId || "").trim();
+        let entries = [];
+        let shopSales = null;
+        if (periodId) {
+          const entrySnap = await db.collection(PROFIT_ENTRIES_COLLECTION).where("periodId", "==", periodId).limit(1000).get();
+          entries = entrySnap.docs.map(doc => ({ id:doc.id, ...doc.data() }))
+            .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")) || String(b.createdAt?.toMillis?.() || 0).localeCompare(String(a.createdAt?.toMillis?.() || 0)));
+          const period = periods.find(item => item.id === periodId);
+          if (period) {
+            const start = Timestamp.fromDate(new Date(`${period.startDate}T00:00:00.000Z`));
+            const endDate = new Date(`${period.endDate}T00:00:00.000Z`);
+            endDate.setUTCDate(endDate.getUTCDate() + 1);
+            const orderSnap = await db.collection("orders")
+              .where("createdAt", ">=", start)
+              .where("createdAt", "<", Timestamp.fromDate(endDate))
+              .orderBy("createdAt", "asc")
+              .limit(5000)
+              .get();
+            const summary = summarizeShopSales(orderSnap.docs.map(doc => ({ id:doc.id, ...doc.data() })), {
+              vatPercent:13,
+              includeCod:false,
+            });
+            entries = entries.filter(entry => entry.source !== "eshop_sync" && entry.source !== "eshop_live");
+            if (summary.orderCount > 0) {
+              entries.push({
+                id:`eshop_live_${periodId}`, type:"sale", periodId, date:period.endDate,
+                soldKg:summary.soldKg, productRevenue:summary.productRevenue,
+                frassSoldKg:summary.frassSoldKg, frassRevenue:summary.frassRevenue,
+                byproductRevenue:summary.otherRevenue, salesFees:0, source:"eshop_live", virtual:true,
+                description:`Live e-shop sales: ${summary.orderCount} included order(s), ${summary.skippedOrderCount} excluded`,
+              });
+            }
+            shopSales = { live:true, vatPercent:13, includeCod:false, summary };
+          }
+        }
+        return res.json({
+          periods,
+          entries,
+          aggregate:aggregateEntries(entries),
+          shopSales,
+          integrations:{
+            googleSheets:{
+              configured:Boolean(String(process.env.GOOGLE_SHEETS_OAUTH_CLIENT_ID || "").trim()),
+              clientId:String(process.env.GOOGLE_SHEETS_OAUTH_CLIENT_ID || "").trim(),
+            },
+          },
+        });
+      }
+
+      if (req.method === "POST" || req.method === "PATCH") {
+        const action = String(body.action || "").trim();
+        if (action === "savePeriod") {
+          const id = String(body.id || "").trim();
+          const ref = id ? db.collection(PROFIT_PERIODS_COLLECTION).doc(id) : db.collection(PROFIT_PERIODS_COLLECTION).doc();
+          const previous = id ? await ref.get() : null;
+          const period = sanitizePeriod(body.period || body, previous?.exists ? previous.data() : {});
+          await ref.set({
+            ...period,
+            createdAt:previous?.exists ? previous.data().createdAt || now() : now(),
+            updatedAt:now(),
+            updatedBy:adminUser.uid,
+          }, { merge:true });
+          return res.json({ ok:true, period:{ id:ref.id, ...period } });
+        }
+        if (action === "saveEntry") {
+          const periodId = String(body.periodId || "").trim();
+          if (!periodId) return jsonError(res, 400, "Choose a measurement period");
+          const periodRef = db.collection(PROFIT_PERIODS_COLLECTION).doc(periodId);
+          const periodSnap = await periodRef.get();
+          if (!periodSnap.exists) return jsonError(res, 404, "Measurement period not found");
+          if (periodSnap.data().status === "closed") return jsonError(res, 409, "Reopen the period before adding records");
+          const id = String(body.id || "").trim();
+          const ref = id ? db.collection(PROFIT_ENTRIES_COLLECTION).doc(id) : db.collection(PROFIT_ENTRIES_COLLECTION).doc();
+          const entry = sanitizeEntry(body.entry || body);
+          await ref.set({ ...entry, periodId, updatedAt:now(), updatedBy:adminUser.uid, ...(!id ? { createdAt:now(), createdBy:adminUser.uid } : {}) }, { merge:true });
+          await periodRef.set({ updatedAt:now(), updatedBy:adminUser.uid }, { merge:true });
+          return res.json({ ok:true, entry:{ id:ref.id, periodId, ...entry } });
+        }
+        if (action === "syncEshopSales") {
+          const periodId = String(body.periodId || "").trim();
+          if (!periodId) return jsonError(res, 400, "Choose an operating period");
+          const periodRef = db.collection(PROFIT_PERIODS_COLLECTION).doc(periodId);
+          const periodSnap = await periodRef.get();
+          if (!periodSnap.exists) return jsonError(res, 404, "Operating period not found");
+          if (periodSnap.data().status === "closed") return jsonError(res, 409, "Reopen the period before syncing e-shop sales");
+          const period = periodSnap.data();
+          const start = Timestamp.fromDate(new Date(`${period.startDate}T00:00:00.000Z`));
+          const endDate = new Date(`${period.endDate}T00:00:00.000Z`);
+          endDate.setUTCDate(endDate.getUTCDate() + 1);
+          const orderSnap = await db.collection("orders")
+            .where("createdAt", ">=", start)
+            .where("createdAt", "<", Timestamp.fromDate(endDate))
+            .orderBy("createdAt", "asc")
+            .limit(5000)
+            .get();
+          const summary = summarizeShopSales(orderSnap.docs.map(doc => ({ id:doc.id, ...doc.data() })), {
+            vatPercent:body.vatPercent,
+            includeCod:body.includeCod === true,
+          });
+          const ref = db.collection(PROFIT_ENTRIES_COLLECTION).doc(`eshop_${periodId}`);
+          const entry = {
+            type:"sale", periodId, date:period.endDate,
+            soldKg:summary.soldKg, productRevenue:summary.productRevenue,
+            frassSoldKg:summary.frassSoldKg, frassRevenue:summary.frassRevenue,
+            byproductRevenue:summary.otherRevenue, salesFees:0,
+            source:"eshop_sync",
+            description:`E-shop sync: ${summary.orderCount} included order(s), ${summary.skippedOrderCount} excluded`,
+            eshopSync:{ vatPercent:Math.max(0, Number(body.vatPercent || 0)), includeCod:body.includeCod === true, orderCount:summary.orderCount, skippedOrderCount:summary.skippedOrderCount },
+            updatedAt:now(), updatedBy:adminUser.uid,
+          };
+          await ref.set(entry, { merge:true });
+          await periodRef.set({ updatedAt:now(), updatedBy:adminUser.uid }, { merge:true });
+          return res.json({ ok:true, summary, entry:{ id:ref.id, ...entry } });
+        }
+        return jsonError(res, 400, "Unknown profit-data action");
+      }
+
+      if (req.method === "DELETE") {
+        const kind = String(req.query.kind || "entry");
+        const id = String(req.query.id || "").trim();
+        if (!id) return jsonError(res, 400, "Missing record id");
+        if (kind === "entry") {
+          await db.collection(PROFIT_ENTRIES_COLLECTION).doc(id).delete();
+          return res.json({ ok:true });
+        }
+        if (kind === "period") {
+          let deletedEntries = 0;
+          while (true) {
+            const entriesSnap = await db.collection(PROFIT_ENTRIES_COLLECTION).where("periodId", "==", id).limit(400).get();
+            if (entriesSnap.empty) break;
+            const entryBatch = db.batch();
+            entriesSnap.docs.forEach(doc => entryBatch.delete(doc.ref));
+            await entryBatch.commit();
+            deletedEntries += entriesSnap.size;
+          }
+          await db.collection(PROFIT_PERIODS_COLLECTION).doc(id).delete();
+          return res.json({ ok:true, deletedEntries });
+        }
+        return jsonError(res, 400, "Unknown record kind");
+      }
+      return jsonError(res, 405, "Use GET, POST, PATCH, or DELETE");
+    } catch (err) {
+      return adminError(res, err);
+    }
+  }
+);
+
 exports.adminSettings = onRequest(
   {
     region: "europe-west1",
@@ -10183,10 +11042,7 @@ function acsAddressParts(order = {}, overrides = {}) {
 }
 
 function acsTrackingUrl(voucherNo) {
-  const trackingNumber = String(voucherNo || "").trim();
-  return trackingNumber
-    ? `https://www.acscourier.net/en/quick-access/non-registered-users/track-and-trace/?trackingNumber=${encodeURIComponent(trackingNumber)}`
-    : "";
+  return acsTrackingUrlForVoucher(voucherNo);
 }
 
 function acsVoucherParameters(order = {}, body = {}, config = {}) {
@@ -10294,6 +11150,7 @@ async function adminAcsAction(body = {}, adminUser = {}) {
     const acsShipment = {
       environment: config.environment, voucherNo, returnVoucherNo: String(value.Voucher_No_Return || "").trim() || null,
       pickupDate: parameters.Pickup_Date, weight: parameters.Weight, itemQuantity: parameters.Item_Quantity,
+      trackingActive: true,
       createdAt: now(), createdBy: adminUser.uid || "",
     };
     await orderRef.set({ acsShipment, shipping: { ...(order.shipping || {}), courier: "ACS Courier", trackingNumber: voucherNo, trackingUrl: acsTrackingUrl(voucherNo) }, updatedAt: now() }, { merge: true });
@@ -10334,6 +11191,169 @@ exports.adminAcs = onRequest(
       return res.json(await adminAcsAction(body, adminUser));
     } catch (err) {
       return adminError(res, err);
+    }
+  }
+);
+
+function acsTrackingEventId(voucherNo, summary = {}) {
+  const fingerprint = JSON.stringify([
+    summary.shipmentStatus,
+    summary.deliveryFlag,
+    summary.returnedFlag,
+    summary.deliveryDate,
+    summary.deliveryInfo,
+    summary.nonDeliveryReasonCode,
+  ]);
+  return `${orderStatusDocKey(voucherNo)}_${createHash("sha256").update(fingerprint).digest("hex").slice(0, 20)}`;
+}
+
+async function migrateAcsTrackingOrders(environment) {
+  const settingsRef = db.doc(ACS_SETTINGS_DOC);
+  const settingsSnap = await settingsRef.get();
+  const migrationKey = `trackingMigrationCompleted_${environment}`;
+  if (settingsSnap.data()?.[migrationKey] === true) return;
+  const snapshots = await db.collection("orders").where("acsShipment.environment", "==", environment).get();
+  let batch = db.batch();
+  let writes = 0;
+  for (const snapshot of snapshots.docs) {
+    const order = snapshot.data() || {};
+    if (!order.acsShipment?.voucherNo || order.acsShipment.trackingActive != null) continue;
+    const terminal = normalizeOrderStatus(order.fulfillmentStatus) === "delivered" ||
+      String(order.status || "").trim().toLowerCase() === "cancelled";
+    batch.set(snapshot.ref, { acsShipment: { trackingActive: !terminal } }, { merge: true });
+    writes += 1;
+    if (writes % 450 === 0) {
+      await batch.commit();
+      batch = db.batch();
+    }
+  }
+  if (writes % 450 !== 0) await batch.commit();
+  await settingsRef.set({ [migrationKey]: true, updatedAt: now() }, { merge: true });
+}
+
+async function pollAcsTrackingOrder(snapshot, client, config) {
+  const order = { id: snapshot.id, ...snapshot.data() };
+  const voucherNo = String(order.acsShipment?.voucherNo || "").trim();
+  if (!voucherNo) return { skipped: true, reason: "missing_voucher" };
+  const response = await client.trackingSummary({ Language: "EN", Voucher_No: voucherNo });
+  const row = acsTableRows(response)[0];
+  if (!row) return { skipped: true, reason: "tracking_not_available" };
+  const summary = normalizeAcsTrackingSummary(row);
+  const eventId = acsTrackingEventId(voucherNo, summary);
+  const previousEventId = String(order.acsShipment?.lastTrackingEventId || "");
+  const automaticFulfillment = acsFulfillmentForTracking(summary);
+  const previousFulfillmentStatus = normalizeOrderStatus(order.fulfillmentStatus || "new");
+  const fulfillmentRank = { new: 0, processing: 1, packed: 2, shipped: 3, delivered: 4 };
+  const shouldAdvanceFulfillment = automaticFulfillment &&
+    String(order.status || "").trim().toLowerCase() !== "cancelled" &&
+    Number(fulfillmentRank[automaticFulfillment] ?? -1) > Number(fulfillmentRank[previousFulfillmentStatus] ?? -1);
+  const terminal = isTerminalAcsTracking(summary);
+  const eventRecord = { eventId, ...summary, polledAt: now() };
+  const eventHistory = previousEventId === eventId
+    ? (Array.isArray(order.acsShipment?.eventHistory) ? order.acsShipment.eventHistory : [])
+    : (Array.isArray(order.acsShipment?.eventHistory) ? order.acsShipment.eventHistory : [])
+      .filter(item => String(item?.eventId || "") !== eventId)
+      .concat(eventRecord)
+      .slice(-100);
+  const orderUpdate = {
+    acsShipment: {
+      trackingActive: !terminal,
+      lastTrackingEventId: eventId,
+      lastTrackingAt: now(),
+      trackingSummary: summary,
+      eventHistory,
+      trackingTerminal: terminal,
+    },
+    updatedAt: now(),
+  };
+  orderUpdate.shipping = {
+    courier: "ACS Courier",
+    trackingNumber: voucherNo,
+    trackingUrl: acsTrackingUrl(voucherNo),
+  };
+  if (shouldAdvanceFulfillment) {
+    orderUpdate.fulfillmentStatus = automaticFulfillment;
+    orderUpdate.fulfillmentAutomaticallyBy = "acs_tracking";
+  }
+  if (shouldAdvanceFulfillment && automaticFulfillment === "delivered") {
+    const deliveredDate = summary.deliveryDate ? new Date(summary.deliveryDate) : null;
+    orderUpdate.status = "completed";
+    orderUpdate.deliveredAt = deliveredDate && !Number.isNaN(deliveredDate.getTime())
+      ? Timestamp.fromDate(deliveredDate)
+      : now();
+    orderUpdate.deliveredAutomaticallyBy = "acs_tracking";
+  }
+  await snapshot.ref.set(orderUpdate, { merge: true });
+  if (shouldAdvanceFulfillment && ["packed", "shipped", "delivered"].includes(automaticFulfillment)) {
+    await transitionOrderInventory(snapshot.id, "consumed", "acs_tracking");
+  }
+  if (config.environment === "production" && shouldAdvanceFulfillment) {
+    const updatedOrder = {
+      ...order,
+      ...orderUpdate,
+      fulfillmentStatus: automaticFulfillment,
+      acsShipment: { ...(order.acsShipment || {}), ...(orderUpdate.acsShipment || {}) },
+      shipping: { ...(order.shipping || {}), ...(orderUpdate.shipping || {}) },
+    };
+    try {
+      await sendAcsFulfillmentEmailOnce(updatedOrder, previousFulfillmentStatus, eventId);
+    } catch (emailError) {
+      logger.error("Automatic ACS fulfillment email failed", {
+        orderId: snapshot.id,
+        fulfillmentStatus: automaticFulfillment,
+        trackingEventId: eventId,
+        error: emailError.message || "Email failed",
+      });
+    }
+  }
+  return { eventId, fulfillmentStatus: automaticFulfillment, advanced: Boolean(shouldAdvanceFulfillment), terminal };
+}
+
+exports.pollAcsTracking = onSchedule(
+  {
+    region: "europe-west1",
+    schedule: "every 10 minutes",
+    timeZone: "Europe/Athens",
+    secrets: [...ACS_SECRETS, SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM],
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const settings = await getAcsSettings({ includeSecrets: true });
+    const configs = ["test", "production"]
+      .map(environment => ({ environment, ...settings[environment] }))
+      .filter(config => ["companyId", "companyPassword", "userId", "userPassword", "billingCode", "apiKey"]
+        .every(key => String(config[key] || "").trim()));
+    for (const config of configs) {
+      const results = { environment: config.environment, checked: 0, updated: 0, failed: 0 };
+      try {
+        await migrateAcsTrackingOrders(config.environment);
+        const client = createAcsClient(config);
+        const snapshots = await db.collection("orders")
+          .where("acsShipment.environment", "==", config.environment)
+          .where("acsShipment.trackingActive", "==", true)
+          .limit(100)
+          .get();
+        results.checked = snapshots.size;
+        for (const snapshot of snapshots.docs) {
+          try {
+            const result = await pollAcsTrackingOrder(snapshot, client, config);
+            if (!result.skipped) results.updated += 1;
+          } catch (err) {
+            results.failed += 1;
+            logger.error("ACS tracking poll failed for order", {
+              environment: config.environment,
+              orderId: snapshot.id,
+              voucherNo: String(snapshot.data()?.acsShipment?.voucherNo || ""),
+              error: err.message || "ACS tracking failed",
+            });
+          }
+        }
+      } catch (err) {
+        results.failed += 1;
+        logger.error("ACS tracking poll failed for environment", { environment: config.environment, error: err.message || "ACS tracking failed" });
+      }
+      await db.collection("acsTrackingHealth").doc(config.environment).set({ ...results, lastRunAt: now() }, { merge: true });
+      logger.info("ACS tracking poll completed", results);
     }
   }
 );
@@ -10842,6 +11862,143 @@ exports.marketingEvents = onRequest(
   }
 );
 
+const MARKETING_CALENDAR_STARTERS = [
+  { title:"New Year's Day", titleEl:"Πρωτοχρονιά", monthDay:"01-01", categories:["holiday"], audiences:["general"], objective:"community", relevance:"medium", description:"A warm new-year message focused on fresh routines and caring well for animals and gardens." },
+  { title:"World Wetlands Day", titleEl:"Παγκόσμια Ημέρα Υγροτόπων", monthDay:"02-02", categories:["sustainability", "fish"], audiences:["fish", "general"], objective:"education", relevance:"medium", description:"Connect biodiversity, water habitats, and responsible care without forcing a product promotion." },
+  { title:"World Wildlife Day", titleEl:"Παγκόσμια Ημέρα Άγριας Ζωής", monthDay:"03-03", categories:["animal", "sustainability"], audiences:["general", "reptiles", "birds"], objective:"education", relevance:"high", description:"Celebrate wildlife and responsible animal care with a conservation-first message." },
+  { title:"International Day of Forests", titleEl:"Διεθνής Ημέρα Δασών", monthDay:"03-21", categories:["sustainability", "garden"], audiences:["gardeners", "general"], objective:"awareness", relevance:"medium", description:"Use the lower-footprint insect nutrition and circular-growing story carefully." },
+  { title:"Orthodox Easter", titleEl:"Ορθόδοξο Πάσχα", recurrence:"orthodox_easter_offset", easterOffsetDays:0, categories:["holiday", "culture"], audiences:["general", "chickens"], objective:"community", relevance:"high", description:"A Greece-relevant seasonal message; avoid treating eggs or chicks as novelty gifts." },
+  { title:"Earth Day", titleEl:"Ημέρα της Γης", monthDay:"04-22", categories:["sustainability", "garden"], audiences:["general", "gardeners"], objective:"education", relevance:"high", description:"Explain insect protein or frass through concrete circular-economy context; avoid unsupported environmental figures." },
+  { title:"World Bee Day", titleEl:"Παγκόσμια Ημέρα Μέλισσας", monthDay:"05-20", categories:["animal", "garden", "sustainability"], audiences:["gardeners", "general"], objective:"education", relevance:"medium", description:"Pollinator-friendly gardening education; GRUBZ can remain a supporting brand presence." },
+  { title:"World Environment Day", titleEl:"Παγκόσμια Ημέρα Περιβάλλοντος", monthDay:"06-05", categories:["sustainability"], audiences:["general", "retailers"], objective:"awareness", relevance:"high", description:"Talk about practical sustainability and Greece-made insect nutrition without unverified comparisons." },
+  { title:"World Snake Day", titleEl:"Παγκόσμια Ημέρα Φιδιού", monthDay:"07-16", categories:["reptile", "animal"], audiences:["reptiles"], objective:"education", relevance:"medium", description:"A reptile appreciation and responsible-care post; do not imply dried larvae suit every snake species." },
+  { title:"World Lizard Day", titleEl:"Παγκόσμια Ημέρα Σαύρας", monthDay:"08-14", categories:["reptile", "animal"], audiences:["reptiles"], objective:"engagement", relevance:"high", description:"Invite keepers to share their reptiles and discuss species-appropriate feeding variety." },
+  { title:"World Animal Day", titleEl:"Παγκόσμια Ημέρα Ζώων", monthDay:"10-04", categories:["animal"], audiences:["general", "chickens", "reptiles", "birds", "fish"], objective:"community", relevance:"high", description:"Celebrate everyday animal care across the GRUBZ community." },
+  { title:"World Egg Day", titleEl:"Παγκόσμια Ημέρα Αυγού", date:"2026-10-09", recurrence:"one_time", categories:["chicken", "food"], audiences:["chickens"], objective:"engagement", relevance:"high", description:"Celebrate flock routines and egg collecting without claiming increased egg production." },
+  { title:"World Food Day", titleEl:"Παγκόσμια Ημέρα Διατροφής", monthDay:"10-16", categories:["food", "sustainability"], audiences:["general", "retailers"], objective:"education", relevance:"high", description:"Discuss resilient food systems and insect nutrition in a factual, accessible way." },
+  { title:"Saint Demetrius name day", titleEl:"Εορτή Αγίου Δημητρίου", monthDay:"10-26", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", description:"A friendly Greek name-day greeting for Dimitris and Dimitra; keep the brand mention light." },
+  { title:"Ohi Day", titleEl:"Επέτειος του Όχι", monthDay:"10-28", categories:["holiday", "culture"], audiences:["general"], objective:"community", relevance:"high", sourceLabel:"Gov.gr official holidays", sourceUrl:"https://www.gov.gr/el/sdg/work-and-retirement/terms-and-conditions-of-employment/general/official-holidays", description:"A respectful Greek national-day message. Keep commercial promotion separate and subdued." },
+  { title:"Halloween", titleEl:"Halloween", monthDay:"10-31", categories:["culture", "seasonal"], audiences:["general", "reptiles"], objective:"engagement", relevance:"experimental", description:"A playful visual opportunity for reptiles, insects, and nocturnal animals; avoid presenting it as a Greek holiday." },
+  { title:"World Vegan Day", titleEl:"Παγκόσμια Ημέρα Αυστηρής Χορτοφαγίας", monthDay:"11-01", categories:["food", "sustainability", "garden"], audiences:["gardeners", "general"], objective:"education", relevance:"experimental", description:"Use only for plant-growing or frass education. Do not market animal feed products as vegan." },
+  { title:"Archangels name day", titleEl:"Εορτή Ταξιαρχών", monthDay:"11-08", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", sourceLabel:"Greek name-day calendar", sourceUrl:"https://www.behindthename.com/namedays/country/greece", description:"Name-day greeting for Michalis, Angelos, Angeliki, Gabriel, Raphael, Stamatis, and related names." },
+  { title:"Athens Polytechnic anniversary", titleEl:"Επέτειος Πολυτεχνείου", monthDay:"11-17", categories:["culture"], audiences:["general"], objective:"community", relevance:"medium", description:"A respectful remembrance post only; do not attach a discount or sales push." },
+  { title:"Saint Catherine name day", titleEl:"Εορτή Αγίας Αικατερίνης", monthDay:"11-25", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", sourceLabel:"Greek name-day calendar", sourceUrl:"https://www.behindthename.com/namedays/country/greece", description:"Name-day greeting for Katerina, Aikaterini, and related names." },
+  { title:"Black Friday", titleEl:"Black Friday", date:"2026-11-27", recurrence:"one_time", categories:["seasonal"], audiences:["general", "retailers"], objective:"sales", relevance:"high", description:"Commercial campaign opportunity. Confirm inventory, margin, offer terms, and fulfilment capacity before drafting any discount." },
+  { title:"Saint Andrew name day", titleEl:"Εορτή Αγίου Ανδρέα", monthDay:"11-30", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", sourceLabel:"Greek name-day calendar", sourceUrl:"https://www.behindthename.com/namedays/country/greece", description:"Name-day greeting for Andreas, Andriani, and related names." },
+  { title:"Cyber Monday", titleEl:"Cyber Monday", date:"2026-11-30", recurrence:"one_time", categories:["seasonal"], audiences:["general"], objective:"sales", relevance:"medium", description:"Online-sales follow-up opportunity. Use only if a distinct, profitable offer and adequate stock are confirmed." },
+  { title:"World Soil Day", titleEl:"Παγκόσμια Ημέρα Εδάφους", monthDay:"12-05", categories:["garden", "sustainability"], audiences:["gardeners"], objective:"education", relevance:"high", description:"A natural fit for Terragrub, soil care, composting, and practical growing education." },
+  { title:"Saint Nicholas name day", titleEl:"Εορτή Αγίου Νικολάου", monthDay:"12-06", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", sourceLabel:"Greek name-day calendar", sourceUrl:"https://www.behindthename.com/namedays/country/greece", description:"Name-day greeting for Nikos, Nikolaos, Nikoleta, and related names." },
+  { title:"Saint Spyridon name day", titleEl:"Εορτή Αγίου Σπυρίδωνος", monthDay:"12-12", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", sourceLabel:"Greek name-day calendar", sourceUrl:"https://www.behindthename.com/namedays/country/greece", description:"Name-day greeting for Spyros, Spyridon, and related names." },
+  { title:"Christmas Day", titleEl:"Χριστούγεννα", monthDay:"12-25", categories:["holiday", "culture"], audiences:["general"], objective:"community", relevance:"high", description:"A warm seasonal greeting, optionally paired with responsible gifting and order deadlines." },
+  { title:"Christmas name days", titleEl:"Εορτή Χρήστου και Χριστίνας", monthDay:"12-25", categories:["name_day", "culture"], audiences:["general"], objective:"community", relevance:"medium", sourceLabel:"Greek name-day calendar", sourceUrl:"https://www.behindthename.com/namedays/country/greece", description:"Name-day greeting for Christos, Christina, Chrysa, and related names." },
+];
+
+async function ensureMarketingCalendarStarters(adminUser = {}) {
+  const snap = await db.collection(MARKETING_CALENDAR_COLLECTION).limit(500).get();
+  const existingIds = new Set(snap.docs.map(doc => doc.id));
+  const batch = db.batch(); let created = 0;
+  for (const starter of MARKETING_CALENDAR_STARTERS) {
+    const id = marketingDocId("calendar", starter.title);
+    if (existingIds.has(id)) continue;
+    const event = sanitizeMarketingEvent({ recurrence:"annual_fixed", reminderDays:[10, 2], enabled:true, sourceLabel:"GRUBZ verified starter calendar", lastVerified:dateKey(new Date()), ...starter });
+    batch.set(db.collection(MARKETING_CALENDAR_COLLECTION).doc(id), { ...event, createdAt:now(), updatedAt:now(), createdBy:adminUser.uid || "calendar-bootstrap", updatedBy:adminUser.uid || "calendar-bootstrap" });
+    created += 1;
+  }
+  if (created) await batch.commit();
+  return created;
+}
+
+function publicMarketingCalendarEvent(id, data = {}) {
+  const occurrence = nextOccurrence(data, new Date());
+  return { id, ...data, nextOccurrence: occurrence ? dateKey(occurrence) : "" };
+}
+
+function marketingCalendarFallbackDraft(event = {}) {
+  const audience = (event.audiences || []).join(", ") || "the GRUBZ community";
+  return {
+    angle: event.description || `Use ${event.title} as a useful, authentic conversation with ${audience}.`,
+    socialCaption: `${event.title} is coming up. Share a practical, warm message that puts animal or plant care first and introduces GRUBZ only where it fits naturally.`,
+    storyText: `${event.title} — how will you mark the day?`, newsletterSubject:`${event.title}: a timely idea from GRUBZ`,
+    cta:"Discover GRUBZ", visualDirection:"Use a real animal, garden, or GRUBZ product photo that directly matches the occasion.",
+  };
+}
+
+function marketingCalendarEmail(event, reminder) {
+  const draft = { ...marketingCalendarFallbackDraft(event), ...(event.draft || {}) };
+  const label = reminder.leadDays === 2 ? "Final reminder" : "Planning reminder";
+  const consoleUrl = `${GRUBZ_URL}/console/#marketing`;
+  const subject = `[GRUBZ Calendar] ${reminder.leadDays} days: ${event.title}`;
+  const text = `${label}: ${event.title}\nEvent date: ${reminder.occurrenceKey}\nRelevance: ${event.relevance || "medium"}\nAudience: ${(event.audiences || []).join(", ") || "general"}\nObjective: ${event.objective || "engagement"}\n\nANGLE\n${draft.angle}\n\nSOCIAL CAPTION\n${draft.socialCaption}\n\nSTORY\n${draft.storyText}\n\nNEWSLETTER SUBJECT\n${draft.newsletterSubject}\n\nCTA\n${draft.cta}\n\nVISUAL\n${draft.visualDirection}\n\nReview in The Calendar: ${consoleUrl}`;
+  const html = `<div style="font:15px/1.55 Arial,sans-serif;color:#27272a;max-width:680px"><p style="color:#a12b1f;font-weight:700">${escapeHtml(label)}</p><h1 style="font-size:24px">${escapeHtml(event.title)}</h1><p><strong>Event date:</strong> ${escapeHtml(reminder.occurrenceKey)}<br><strong>Relevance:</strong> ${escapeHtml(event.relevance || "medium")}<br><strong>Audience:</strong> ${escapeHtml((event.audiences || []).join(", ") || "general")}<br><strong>Objective:</strong> ${escapeHtml(event.objective || "engagement")}</p><h2 style="font-size:17px">Angle</h2><p>${escapeHtml(draft.angle)}</p><h2 style="font-size:17px">Social caption</h2><p style="white-space:pre-wrap">${escapeHtml(draft.socialCaption)}</p><h2 style="font-size:17px">Story text</h2><p>${escapeHtml(draft.storyText)}</p><h2 style="font-size:17px">Newsletter subject</h2><p>${escapeHtml(draft.newsletterSubject)}</p><h2 style="font-size:17px">CTA</h2><p>${escapeHtml(draft.cta)}</p><h2 style="font-size:17px">Visual direction</h2><p>${escapeHtml(draft.visualDirection)}</p><p><a href="${consoleUrl}" style="color:#a12b1f;font-weight:700">Review in The Calendar</a></p></div>`;
+  return { subject, text, html };
+}
+
+async function sendMarketingCalendarReminder(event, reminder) {
+  return sendEmail({ to:GRUBZ_INFO_EMAIL, from:newsletterFromAddress(), ...marketingCalendarEmail(event, reminder), language:"en" });
+}
+
+exports.adminMarketingCalendar = onRequest(
+  { region:"europe-west1", invoker:"public", cors:ALLOWED_ORIGIN_LIST, secrets:[OPENAI_API_KEY, SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM] },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const adminUser = await requireAdmin(req);
+      if (req.method === "GET") {
+        const bootstrapped = await ensureMarketingCalendarStarters(adminUser);
+        const [eventsSnap, remindersSnap] = await Promise.all([
+          db.collection(MARKETING_CALENDAR_COLLECTION).limit(500).get(),
+          db.collection(MARKETING_CALENDAR_REMINDERS_COLLECTION).orderBy("createdAt", "desc").limit(100).get(),
+        ]);
+        const events = eventsSnap.docs.map(doc => publicMarketingCalendarEvent(doc.id, doc.data())).sort((a, b) => String(a.nextOccurrence).localeCompare(String(b.nextOccurrence)) || a.title.localeCompare(b.title));
+        return res.json({ events, reminders:remindersSnap.docs.map(doc => ({ id:doc.id, ...doc.data() })), bootstrapped });
+      }
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const action = String(body.action || "save");
+      if (action === "seed") {
+        const created = await ensureMarketingCalendarStarters(adminUser);
+        return res.json({ ok:true, created });
+      }
+      if (action === "delete") {
+        const id = String(body.id || "").trim(); if (!id) return jsonError(res, 400, "Missing calendar event id.");
+        await db.collection(MARKETING_CALENDAR_COLLECTION).doc(id).delete(); return res.json({ ok:true });
+      }
+      if (action === "generateDraft") {
+        const input = sanitizeMarketingEvent(body.event || {}); const apiKey = String(OPENAI_API_KEY.value() || "").trim();
+        if (!apiKey) return jsonError(res, 503, "OpenAI is not configured.");
+        const client = new OpenAI({ apiKey });
+        const response = await client.responses.create({ model:DEFAULT_CHATBOT_SETTINGS.model, store:false, max_output_tokens:1400,
+          instructions:"Create a concise, accurate GRUBZ marketing draft for a calendar event. GRUBZ is a Greek ecommerce brand selling dried Black Soldier Fly larvae products for reptiles, birds, fish, and chickens, plus frass for plants. Return only valid JSON with keys angle, socialCaption, storyText, newsletterSubject, cta, visualDirection. Write natural Greek unless the event clearly calls for English. Do not invent discounts, scientific claims, prices, availability, or guarantees. Never imply a product is suitable for every species. Keep the promotion useful and non-forced.", input:JSON.stringify(input) });
+        const raw = responseTextFromOpenAI(response).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+        let draft; try { draft = JSON.parse(raw); } catch { return jsonError(res, 502, "The draft generator returned an invalid response."); }
+        return res.json({ ok:true, draft:sanitizeMarketingEvent({ ...input, draft }).draft });
+      }
+      if (action === "test") {
+        const input = sanitizeMarketingEvent(body.event || {}); const occurrence = nextOccurrence(input, new Date()) || new Date();
+        const result = await sendMarketingCalendarReminder(input, { leadDays:2, occurrence, occurrenceKey:dateKey(occurrence) }); return res.json({ ok:true, result });
+      }
+      const id = String(body.id || "").trim() || db.collection(MARKETING_CALENDAR_COLLECTION).doc().id; const ref = db.collection(MARKETING_CALENDAR_COLLECTION).doc(id); const previousSnap = await ref.get();
+      const event = sanitizeMarketingEvent(body.event || body, previousSnap.exists ? previousSnap.data() : {});
+      await ref.set({ ...event, createdAt:previousSnap.exists ? previousSnap.data().createdAt || now() : now(), updatedAt:now(), createdBy:previousSnap.exists ? previousSnap.data().createdBy || adminUser.uid : adminUser.uid, updatedBy:adminUser.uid }, { merge:true });
+      return res.json({ ok:true, event:publicMarketingCalendarEvent(id, event) });
+    } catch (err) { return adminError(res, err); }
+  }
+);
+
+exports.sendMarketingCalendarReminders = onSchedule(
+  { region:"europe-west1", schedule:"0 9 * * *", timeZone:"Europe/Athens", secrets:[SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM] },
+  async () => {
+    const today = new Date(); const snap = await db.collection(MARKETING_CALENDAR_COLLECTION).where("enabled", "==", true).limit(500).get();
+    for (const eventDoc of snap.docs) {
+      const event = { id:eventDoc.id, ...eventDoc.data() }; const reminder = dueReminder(event, today); if (!reminder) continue;
+      const reminderId = `${eventDoc.id}_${reminder.occurrenceKey}_${reminder.leadDays}`; const reminderRef = db.collection(MARKETING_CALENDAR_REMINDERS_COLLECTION).doc(reminderId);
+      const claimed = await db.runTransaction(async transaction => { const current = await transaction.get(reminderRef); if (current.exists && ["sending", "sent"].includes(current.data()?.status)) return false; transaction.set(reminderRef, { eventId:eventDoc.id, eventTitle:event.title, occurrenceDate:reminder.occurrenceKey, leadDays:reminder.leadDays, recipient:GRUBZ_INFO_EMAIL, status:"sending", createdAt:current.exists ? current.data().createdAt || now() : now(), updatedAt:now() }, { merge:true }); return true; });
+      if (!claimed) continue;
+      try { const result = await sendMarketingCalendarReminder(event, reminder); await reminderRef.set({ status:result?.skipped ? "skipped" : "sent", result, sentAt:now(), updatedAt:now() }, { merge:true }); }
+      catch (err) { logger.error("Marketing calendar reminder failed", { eventId:eventDoc.id, error:err.message }); await reminderRef.set({ status:"failed", error:String(err.message || "Email failed").slice(0, 1000), updatedAt:now() }, { merge:true }); }
+    }
+  }
+);
+
 exports.adminAbandonedCarts = onRequest(
   {
     region: "europe-west1",
@@ -10932,6 +12089,311 @@ exports.trackEvent = onRequest(
     } catch (err) {
       logger.warn("trackEvent failed", err);
       return jsonError(res, err.status || 400, err.message || "Analytics event failed");
+    }
+  }
+);
+
+async function saveGrubzExpenseInvoice(expenseId, invoice, uploadedBy) {
+  const path = `expense-invoices/${expenseId}/${Date.now()}-${randomUUID()}`;
+  let lastError = null;
+  for (const bucketName of FIREBASE_STORAGE_BUCKET_FALLBACKS) {
+    try {
+      const bucket = getStorage().bucket(bucketName);
+      await bucket.file(path).save(invoice.buffer, { resumable:false, metadata:{ contentType:invoice.contentType, cacheControl:"private, no-store, max-age=0", metadata:{ originalName:invoice.fileName, expenseId, uploadedBy } } });
+      return { bucketName:bucket.name, path, fileName:invoice.fileName, contentType:invoice.contentType, size:invoice.buffer.length };
+    } catch (err) {
+      lastError = err;
+      if (Number(err.code || 0) !== 404) break;
+    }
+  }
+  throw lastError || new Error("Invoice storage failed");
+}
+
+async function deleteGrubzExpenseInvoice(invoice) {
+  if (!invoice?.path || !invoice?.bucketName) return;
+  await getStorage().bucket(invoice.bucketName).file(invoice.path).delete({ ignoreNotFound:true });
+}
+
+exports.adminGrubzExpenses = onRequest(
+  { region:"europe-west1", invoker:"public", cors:ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (!["GET", "POST", "PATCH", "DELETE"].includes(req.method)) return jsonError(res, 405, "Use GET, POST, PATCH, or DELETE");
+      const admin = await requireAdmin(req);
+      const collection = db.collection(GRUBZ_EXPENSES_COLLECTION);
+      if (req.method === "GET" && req.query.invoice) {
+        const snap = await collection.doc(String(req.query.invoice)).get();
+        const invoice = snap.exists ? snap.data()?.invoice : null;
+        if (!invoice?.path || !invoice?.bucketName) return jsonError(res, 404, "Invoice not found");
+        const [buffer] = await getStorage().bucket(invoice.bucketName).file(invoice.path).download();
+        return res.json({ ok:true, invoice:{ fileName:invoice.fileName, contentType:invoice.contentType, dataBase64:buffer.toString("base64") } });
+      }
+      if (req.method === "GET") {
+        const startDate = req.query.startDate ? expenseIsoDate(req.query.startDate, "startDate") : "";
+        const endDate = req.query.endDate ? expenseIsoDate(req.query.endDate, "endDate") : "";
+        if (startDate && endDate && startDate > endDate) return jsonError(res, 400, "startDate must not be after endDate");
+        const snapshot = await collection.get();
+        const expenses = snapshot.docs.map(doc => expenseView(doc.id, doc.data())).filter(item => (!startDate || item.date >= startDate) && (!endDate || item.date <= endDate)).sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+        return res.json({ ok:true, expenses, totals:{ amount:expenses.reduce((sum, item) => sum + item.amount, 0), currency:"EUR" } });
+      }
+      const id = String(req.query.id || req.body?.id || "").trim();
+      if (req.method === "DELETE") {
+        if (!id) return jsonError(res, 400, "Expense ID is required");
+        const ref = collection.doc(id);
+        const snap = await ref.get();
+        if (!snap.exists) return jsonError(res, 404, "Expense not found");
+        await deleteGrubzExpenseInvoice(snap.data()?.invoice);
+        await ref.delete();
+        return res.json({ ok:true, deleted:id });
+      }
+      const ref = id ? collection.doc(id) : collection.doc();
+      const previous = await ref.get();
+      if (req.method === "PATCH" && !previous.exists) return jsonError(res, 404, "Expense not found");
+      const expense = sanitizeExpense(req.body?.expense || req.body || {});
+      let invoice = previous.data()?.invoice || null;
+      if (req.body?.invoiceDataUrl) {
+        const parsed = parseInvoiceDataUrl(req.body.invoiceDataUrl, req.body.invoiceFileName);
+        const nextInvoice = await saveGrubzExpenseInvoice(ref.id, parsed, admin.uid);
+        await deleteGrubzExpenseInvoice(invoice).catch(err => logger.warn("Old GRUBZ expense invoice cleanup failed", { expenseId:ref.id, message:err.message }));
+        invoice = nextInvoice;
+      }
+      if (req.body?.removeInvoice === true && invoice) {
+        await deleteGrubzExpenseInvoice(invoice);
+        invoice = null;
+      }
+      const timestamp = now();
+      await ref.set({ ...expense, invoice, source:"grubz", createdAt:previous.data()?.createdAt || timestamp, createdBy:previous.data()?.createdBy || admin.uid, updatedAt:timestamp, updatedBy:admin.uid }, { merge:true });
+      return res.status(req.method === "POST" ? 201 : 200).json({ ok:true, expense:expenseView(ref.id, (await ref.get()).data()) });
+    } catch (err) {
+      logger.error("GRUBZ expense request failed", { status:Number(err.status || 500), message:err.message });
+      return jsonError(res, Number(err.status || 500), err.message || "Expense request failed");
+    }
+  }
+);
+
+exports.adminNomaProduction = onRequest(
+  {
+    region: "europe-west1",
+    invoker: "public",
+    cors: ALLOWED_ORIGIN_LIST,
+    secrets: [NOMA_INTEGRATION_KEY, NOMA_INTEGRATION_KEYS, NOMA_CREDENTIAL_ENCRYPTION_KEY],
+  },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (!["GET", "POST", "DELETE"].includes(req.method)) return jsonError(res, 405, "Use GET, POST, or DELETE");
+      const admin = await requireAdmin(req);
+      let scopes = {};
+      let keys = {};
+      try { scopes = JSON.parse(process.env.NOMA_INTEGRATION_SCOPES || "{}"); } catch { throw Object.assign(new Error("NOMA_INTEGRATION_SCOPES is invalid"), { status:503, code:"not_configured" }); }
+      try { keys = JSON.parse(secretValue(NOMA_INTEGRATION_KEYS, "{}")); } catch { throw Object.assign(new Error("NOMA_INTEGRATION_KEYS is invalid"), { status:503, code:"not_configured" }); }
+      if (!Object.keys(scopes).length && secretValue(NOMA_INTEGRATION_KEY)) {
+        scopes.primary = { tenantId:process.env.NOMA_TENANT_ID || "", farmId:process.env.NOMA_FARM_ID || "", label:"Primary" };
+        keys.primary = secretValue(NOMA_INTEGRATION_KEY);
+      }
+      const settingsRef = db.doc(NOMA_FLOW_SETTINGS_DOC);
+      const settingsSnap = await settingsRef.get();
+      const integrationEnabled = settingsSnap.exists && settingsSnap.data()?.enabled === true;
+      const savedConnections = settingsSnap.exists && settingsSnap.data()?.connections && typeof settingsSnap.data().connections === "object"
+        ? settingsSnap.data().connections
+        : {};
+      const encryptedCredentials = settingsSnap.exists && settingsSnap.data()?.encryptedCredentials && typeof settingsSnap.data().encryptedCredentials === "object"
+        ? settingsSnap.data().encryptedCredentials
+        : {};
+      const encryptionSecret = secretValue(NOMA_CREDENTIAL_ENCRYPTION_KEY);
+      if (encryptionSecret) {
+        Object.entries(encryptedCredentials).forEach(([id, encrypted]) => {
+          keys[id] = decryptNomaCredential(encrypted, encryptionSecret);
+        });
+      }
+      scopes = { ...scopes, ...savedConnections };
+      const normalizeConnection = (id, scope) => ({
+        id,
+        label:String(scope?.label || id).trim(),
+        tenantId:String(scope?.tenantId || "").trim(),
+        farmId:String(scope?.farmId || "").trim(),
+        configured:!!keys[id],
+      });
+      const validConnectionId = id => /^[a-z0-9][a-z0-9_-]{1,49}$/.test(id);
+      if (req.method === "POST") {
+        const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+        if (body.action === "setEnabled") {
+          const enabled = body.enabled === true;
+          await settingsRef.set({ enabled, updatedAt:now(), updatedBy:admin.uid }, { merge:true });
+          return res.json({ ok:true, enabled });
+        }
+        if (!integrationEnabled) return jsonError(res, 409, "NOMA Flow integration is disabled");
+        if (body.action === "syncInventoryPool" || body.action === "unlinkInventoryPool") {
+          const poolId = String(body.poolId || "").trim();
+          if (!poolId) return jsonError(res, 400, "Inventory pool is required");
+          const poolRef = db.collection("inventoryPools").doc(poolId);
+          const poolSnap = await poolRef.get();
+          if (!poolSnap.exists) return jsonError(res, 404, "Inventory pool not found");
+          if (body.action === "unlinkInventoryPool") {
+            await poolRef.set({
+              inventorySource:"manual",
+              nomaConnectionId:FieldValue.delete(), nomaItemIds:FieldValue.delete(), nomaScope:FieldValue.delete(), nomaSyncedAt:FieldValue.delete(),
+              updatedAt:now(), updatedBy:admin.uid,
+            }, { merge:true });
+            return res.json({ ok:true, pool:inventoryPoolView(poolId, (await poolRef.get()).data()) });
+          }
+          const connectionId = String(body.connectionId || "").trim();
+          const connectionScope = scopes[connectionId];
+          if (!connectionScope || !keys[connectionId]) return jsonError(res, 400, "Select a configured NOMA connection");
+          const itemIds = Array.from(new Set(Array.isArray(body.itemIds) ? body.itemIds.map(value => String(value || "").trim()).filter(Boolean) : []));
+          if (!itemIds.length || itemIds.length > 100) return jsonError(res, 400, "Select one or more NOMA inventory items");
+          const inventory = await fetchNomaInventorySummary({
+            baseUrl:nomaApiBaseUrl(), apiKey:keys[connectionId], timeoutMs:Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000), retries:Number(process.env.NOMA_REQUEST_RETRIES || 2),
+          });
+          if (inventory.scope.tenantId !== String(connectionScope.tenantId) || inventory.scope.farmId !== String(connectionScope.farmId)) {
+            return jsonError(res, 502, "NOMA inventory scope does not match the configured connection");
+          }
+          const selected = inventory.items.filter(item => itemIds.includes(item.id));
+          if (selected.length !== itemIds.length) return jsonError(res, 400, "One or more selected NOMA inventory items no longer exist");
+          if (selected.some(item => item.active === false)) return jsonError(res, 400, "Inactive NOMA inventory items cannot feed GRUBZ bulk inventory");
+          if (selected.some(item => String(item.unit).trim().toLowerCase() !== "kg")) return jsonError(res, 400, "Bulk inventory can only sync NOMA items measured in kilograms");
+          if (selected.some(item => !["Finished Product", "By-product"].includes(String(item.category)))) return jsonError(res, 400, "Only finished products and by-products can feed GRUBZ bulk inventory");
+          const onHandGrams = Math.max(0, Math.round(selected.reduce((sum, item) => sum + Number(item.stock || 0), 0) * 1000));
+          const previous = inventoryPoolView(poolId, poolSnap.data());
+          const syncedAt = now();
+          const transactionRef = db.collection("inventoryTransactions").doc();
+          const batch = db.batch();
+          batch.set(poolRef, {
+            onHandGrams, inventorySource:"noma", nomaConnectionId:connectionId, nomaItemIds:itemIds,
+            nomaScope:inventory.scope, nomaSyncedAt:syncedAt, updatedAt:syncedAt, updatedBy:admin.uid,
+          }, { merge:true });
+          batch.set(transactionRef, { poolId, type:"noma_sync", deltaGrams:onHandGrams - previous.onHandGrams, previousOnHandGrams:previous.onHandGrams, onHandGrams, connectionId, itemIds, createdAt:syncedAt, createdBy:admin.uid });
+          await batch.commit();
+          return res.json({ ok:true, pool:inventoryPoolView(poolId, (await poolRef.get()).data()), sourceItems:selected });
+        }
+        if (body.action === "saveCredential") {
+          const apiKey = String(body.apiKey || "").trim();
+          const metadata = await fetchNomaCredentialInfo({
+            baseUrl:nomaApiBaseUrl(),
+            apiKey,
+            timeoutMs:Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000),
+            retries:Number(process.env.NOMA_REQUEST_RETRIES || 2),
+          });
+          if (!metadata.allowedScopes.includes("production:read")) return jsonError(res, 403, "NOMA credential does not include production:read");
+          const suggestedId = String(metadata.clientId || "").trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+          const id = String(body.connectionId || suggestedId || `noma-${createHash("sha256").update(apiKey).digest("hex").slice(0, 12)}`).trim().toLowerCase();
+          if (!validConnectionId(id)) return jsonError(res, 400, "Invalid connection ID");
+          const encrypted = encryptNomaCredential(apiKey, encryptionSecret);
+          const connection = {
+            label:String(body.label || metadata.name || id).trim().slice(0, 100),
+            tenantId:String(metadata.scope.tenantId),
+            farmId:String(metadata.scope.farmId),
+          };
+          await settingsRef.set({ credentialStoreInitialized:true }, { merge:true });
+          await settingsRef.update({
+            [`connections.${id}`]:connection,
+            [`encryptedCredentials.${id}`]:encrypted,
+            credentialUpdatedAt:now(),
+            credentialUpdatedBy:admin.uid,
+          });
+          const persistedSnap = await settingsRef.get();
+          const persisted = persistedSnap.data() || {};
+          const persistedConnection = persisted.connections?.[id];
+          if (!persistedConnection || !persisted.encryptedCredentials?.[id] ||
+              persistedConnection.tenantId !== connection.tenantId || persistedConnection.farmId !== connection.farmId) {
+            throw Object.assign(new Error("NOMA connection could not be verified after saving"), { status:500, code:"persistence_failed" });
+          }
+          return res.json({ ok:true, persisted:true, connection:{ id, ...connection, configured:true }, allowedScopes:metadata.allowedScopes, expiresAt:metadata.expiresAt || null });
+        }
+        if (body.action !== "saveConnection") return jsonError(res, 400, "Unsupported action");
+        const input = body.connection || {};
+        const id = String(input.id || "").trim().toLowerCase();
+        const connection = normalizeConnection(id, input);
+        if (!validConnectionId(id)) return jsonError(res, 400, "Connection ID must be 2-50 lowercase letters, numbers, underscores, or hyphens");
+        if (!connection.tenantId || !connection.farmId) return jsonError(res, 400, "Tenant ID and farm ID are required");
+        if (connection.label.length > 100 || connection.tenantId.length > 200 || connection.farmId.length > 200) return jsonError(res, 400, "Connection fields are too long");
+        await settingsRef.set({ connectionStoreInitialized:true }, { merge:true });
+        await settingsRef.update({
+          [`connections.${id}`]:{ label:connection.label, tenantId:connection.tenantId, farmId:connection.farmId },
+          updatedAt:now(),
+          updatedBy:admin.uid,
+        });
+        return res.json({ ok:true, connection });
+      }
+      if (req.method === "DELETE") {
+        if (!integrationEnabled) return jsonError(res, 409, "NOMA Flow integration is disabled");
+        const id = String(req.query.connection || "").trim().toLowerCase();
+        if (!validConnectionId(id)) return jsonError(res, 400, "Invalid connection ID");
+        if (!Object.prototype.hasOwnProperty.call(savedConnections, id)) return jsonError(res, 400, "Only connections saved in Settings can be removed here");
+        await settingsRef.update({
+          [`connections.${id}`]:FieldValue.delete(),
+          [`encryptedCredentials.${id}`]:FieldValue.delete(),
+          updatedAt:now(),
+          updatedBy:admin.uid,
+        });
+        return res.json({ ok:true, removed:id });
+      }
+      const connections = Object.entries(scopes).map(([id, scope]) => ({ id, label:String(scope?.label || id), tenantId:String(scope?.tenantId || ""), farmId:String(scope?.farmId || ""), configured:!!keys[id] })).filter(item => item.tenantId && item.farmId);
+      if (req.query.action === "connections") return res.json({
+        ok:true,
+        connections,
+        config:{
+          enabled:integrationEnabled,
+          baseUrl:nomaApiBaseUrl() || "Not configured",
+          timeoutMs:Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000),
+          retries:Number(process.env.NOMA_REQUEST_RETRIES || 2),
+          credentialStorageReady:!!encryptionSecret,
+        },
+      });
+      if (!integrationEnabled) return jsonError(res, 409, "NOMA Flow integration is disabled");
+      const connectionId = String(req.query.connection || connections[0]?.id || "").trim();
+      const connection = connections.find(item => item.id === connectionId);
+      if (!connection) return jsonError(res, 400, "Unknown NOMA connection");
+      if (!keys[connectionId]) return jsonError(res, 503, "NOMA connection credential is not configured");
+      if (req.query.action === "expenseInvoice") {
+        const invoice = await fetchNomaExpenseInvoice({
+          baseUrl:nomaApiBaseUrl(), apiKey:keys[connectionId], expenseId:String(req.query.expenseId || "").trim(),
+          timeoutMs:Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000),
+        });
+        return res.json({ ok:true, invoice });
+      }
+      if (req.query.action === "expenses") {
+        const expenses = await fetchNomaExpenses({
+          baseUrl:nomaApiBaseUrl(), apiKey:keys[connectionId], startDate:String(req.query.startDate || "").trim(), endDate:String(req.query.endDate || "").trim(),
+          timeoutMs:Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000), retries:Number(process.env.NOMA_REQUEST_RETRIES || 2),
+        });
+        if (expenses.scope.tenantId !== connection.tenantId || expenses.scope.farmId !== connection.farmId) return jsonError(res, 502, "NOMA expenses scope does not match the configured connection");
+        return res.json({ ok:true, connection:{ id:connection.id, label:connection.label }, expenses });
+      }
+      if (req.query.action === "inventory") {
+        const inventory = await fetchNomaInventorySummary({
+          baseUrl:nomaApiBaseUrl(), apiKey:keys[connectionId], timeoutMs:Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000), retries:Number(process.env.NOMA_REQUEST_RETRIES || 2),
+        });
+        if (inventory.scope.tenantId !== connection.tenantId || inventory.scope.farmId !== connection.farmId) return jsonError(res, 502, "NOMA inventory scope does not match the configured connection");
+        return res.json({ ok:true, connection:{ id:connection.id, label:connection.label }, inventory });
+      }
+      const startDate = String(req.query.startDate || "").trim();
+      const endDate = String(req.query.endDate || "").trim();
+      const updatedSince = String(req.query.updatedSince || "").trim() || undefined;
+      const summary = await fetchNomaProductionSummary({
+        baseUrl:nomaApiBaseUrl(),
+        apiKey: keys[connectionId],
+        expectedScope: connection,
+        startDate,
+        endDate,
+        updatedSince,
+        timeoutMs: Number(process.env.NOMA_REQUEST_TIMEOUT_MS || 8000),
+        retries: Number(process.env.NOMA_REQUEST_RETRIES || 2),
+      });
+      return res.json({ ok:true, connected:true, connection:{ id:connection.id, label:connection.label }, summary });
+    } catch (err) {
+      const status = Number(err.status || 502);
+      logger.error("NOMA production request failed", {
+        status,
+        code: err.code || "noma_integration_error",
+        message: err.message || "NOMA production request failed",
+      });
+      return jsonError(res, status, err.message || "NOMA production request failed", {
+        code: err.code || "noma_integration_error",
+      });
     }
   }
 );
@@ -11367,6 +12829,9 @@ function boxNowWebhookHandler(fixedEnvironment) {
             return res.status(200).send("[ok: stale event ignored]");
           }
           const normalizedEvent = normalizeOrderStatus(update.event).replace(/[_\s]+/g, "-");
+	      const boxNowExceptionStatus = ["expired", "expired-return"].includes(normalizedEvent)
+	        ? "expired"
+	        : normalizedEvent === "returned" ? "returned" : "";
           const eventRecord = {
             parcelId: update.parcelId,
             event: normalizedEvent,
@@ -11442,43 +12907,123 @@ function boxNowWebhookHandler(fixedEnvironment) {
               : now();
             orderUpdate.deliveredAutomaticallyBy = "boxnow_webhook";
           }
+	      if (boxNowExceptionStatus) {
+	        const actionKey = `boxnow_exception_${orderStatusDocKey(update.parcelId || "parcel")}`;
+	        const currentAction = order.boxNowExceptionAction || {};
+	        const sameAction = String(currentAction.key || "") === actionKey;
+	        const sameExceptionType = sameAction && currentAction.type === boxNowExceptionStatus;
+	        const exceptionEventMs = millisFromTimestamp(update.eventTime);
+	        orderUpdate.fulfillmentStatus = boxNowExceptionStatus;
+	        orderUpdate.boxNowExceptionAt = exceptionEventMs ? Timestamp.fromMillis(exceptionEventMs) : now();
+	        orderUpdate.boxNowExceptionEvent = normalizedEvent;
+	        orderUpdate.boxNowExceptionParcelId = update.parcelId;
+	        orderUpdate.boxNowExceptionAction = {
+	          ...(sameAction ? currentAction : {}),
+	          key: actionKey,
+	          status: sameExceptionType ? String(currentAction.status || "open") : "open",
+	          type: boxNowExceptionStatus,
+	          parcelId: update.parcelId,
+	          event: normalizedEvent,
+	          message: boxNowExceptionStatus === "expired"
+	            ? "Review the expired BOX NOW parcel and choose whether to resend it, restock it after inspection, or write it off."
+	            : "Inspect the returned BOX NOW parcel and choose whether to resend it, restock it, or write it off.",
+	          createdAt: sameAction ? currentAction.createdAt || now() : now(),
+	          createdBy: "boxnow_webhook",
+	        };
+	      }
           if (config.environment === "production") {
             const currentReview = order.boxNowNotificationReview || {};
-            if (normalizedEvent === "final-destination" && !(
-              String(currentReview.parcelId || "") === update.parcelId &&
-              ["pending", "approved", "dismissed"].includes(String(currentReview.status || ""))
-            )) {
+	            if (normalizedEvent === "final-destination") {
               const eventMs = millisFromTimestamp(update.eventTime) || Date.now();
               orderUpdate.boxNowNotificationReview = {
-                status: "pending",
+	                ...(String(currentReview.parcelId || "") === update.parcelId ? currentReview : {}),
+	                status: "automatic",
                 parcelId: update.parcelId,
                 event: normalizedEvent,
                 eventTime: update.eventTime || "",
                 webhookEventId: eventId,
                 proposedReminderAt: Timestamp.fromMillis(eventMs + 18 * 60 * 60 * 1000),
-                createdAt: now(),
+	                createdAt: currentReview.createdAt || now(),
+	                automatic: true,
+	                automaticStartedAt: now(),
               };
-            } else if (
-              ["delivered", "expired", "returned", "canceled", "missing"].includes(normalizedEvent) &&
-              currentReview.status === "pending" &&
-              String(currentReview.parcelId || "") === update.parcelId
-            ) {
+	            } else if (
+	              normalizedEvent !== "final-destination" &&
+	              ["pending", "automatic", "approved"].includes(String(currentReview.status || "")) &&
+	              String(currentReview.parcelId || "") === update.parcelId
+	            ) {
               orderUpdate.boxNowNotificationReview = {
                 ...currentReview,
                 status: "cancelled",
-                cancelReason: normalizedEvent,
+	                cancelReason: `newer_event_${normalizedEvent || "unknown"}`,
                 cancelledAt: now(),
               };
             }
           }
           await orderRef.set(orderUpdate, { merge: true });
+          if (shouldAdvanceFulfillment && ["packed", "shipped", "delivered"].includes(automaticFulfillment)) {
+            await transitionOrderInventory(orderRef.id, "consumed", "boxnow_webhook");
+          }
+	      if (boxNowExceptionStatus && config.environment === "production") {
+	        const inventory = { skipped: true, reason: "awaiting_admin_decision" };
+	        const exceptionOrder = {
+	          ...order,
+	          ...orderUpdate,
+	          id: orderRef.id,
+	          fulfillmentStatus: boxNowExceptionStatus,
+	          shipping: { ...(order.shipping || {}), ...(orderUpdate.shipping || {}) },
+	          boxNowShipment: { ...(order.boxNowShipment || {}), ...(orderUpdate.boxNowShipment || {}) },
+	        };
+	        let customerEmailResult;
+	        try {
+	          customerEmailResult = await sendBoxNowExceptionEmailOnce(exceptionOrder, boxNowExceptionStatus, update.parcelId);
+	        } catch (emailError) {
+	          customerEmailResult = { failed: true, error: emailError.message || "Email failed" };
+	          logger.error("Automatic BOX NOW exception email failed", {
+	            orderId: orderRef.id,
+	            parcelId: update.parcelId,
+	            fulfillmentStatus: boxNowExceptionStatus,
+	            error: emailError.message || "Email failed",
+	          });
+	        }
+	        const alertId = `boxnow_exception_${orderStatusDocKey(orderRef.id)}_${orderStatusDocKey(update.parcelId || "parcel")}`;
+	        const alertRef = db.collection("adminAlerts").doc(alertId);
+	        const alertSnap = await alertRef.get();
+	        await alertRef.set({
+	          type: "boxnow_exception",
+	          status: alertSnap.exists && alertSnap.data()?.fulfillmentStatus === boxNowExceptionStatus
+	            ? String(alertSnap.data()?.status || "open")
+	            : "open",
+	          severity: "high",
+	          orderId: orderRef.id,
+	          orderNumber: publicOrderId(exceptionOrder),
+	          parcelId: update.parcelId,
+	          event: normalizedEvent,
+	          fulfillmentStatus: boxNowExceptionStatus,
+	          message: orderUpdate.boxNowExceptionAction?.message || "Review this BOX NOW exception.",
+	          inventory,
+	          customerEmail: customerEmailResult,
+	          createdAt: alertSnap.exists ? alertSnap.data()?.createdAt || now() : now(),
+	          updatedAt: now(),
+	        }, { merge: true });
+	        await orderRef.set({
+	          boxNowExceptionAction: {
+	            ...(orderUpdate.boxNowExceptionAction || {}),
+	            inventory,
+	            customerEmail: customerEmailResult,
+	            alertId,
+	            updatedAt: now(),
+	          },
+	          updatedAt: now(),
+	        }, { merge: true });
+	      }
 
-          if (config.environment === "production" && shouldAdvanceFulfillment) {
+          if (config.environment === "production" && automaticFulfillment) {
             const updatedOrder = {
               ...order,
               ...orderUpdate,
               id: orderRef.id,
-              fulfillmentStatus: automaticFulfillment,
+              fulfillmentStatus: shouldAdvanceFulfillment ? automaticFulfillment : order.fulfillmentStatus,
               shipping: {
                 ...(order.shipping || {}),
                 ...(orderUpdate.shipping || {}),
@@ -11502,10 +13047,47 @@ function boxNowWebhookHandler(fixedEnvironment) {
 
           if (config.environment === "production") {
             try {
-              if (["delivered", "expired", "returned", "canceled", "missing"].includes(normalizedEvent)) {
+	              if (normalizedEvent === "final-destination") {
+	                const automaticOrder = {
+	                  ...order,
+	                  ...orderUpdate,
+	                  id: orderRef.id,
+	                  shipping: { ...(order.shipping || {}), ...(orderUpdate.shipping || {}) },
+	                  boxNowShipment: { ...(order.boxNowShipment || {}), ...(orderUpdate.boxNowShipment || {}) },
+	                };
+	                const arrivalEmail = await sendBoxNowLockerArrivalEmail(automaticOrder, update.parcelId);
+	                const reminder = await scheduleAutomaticBoxNowLockerReminder(automaticOrder, {
+	                  parcelId: update.parcelId,
+	                  eventTime: update.eventTime || "",
+	                });
+	                await orderRef.set({
+	                  boxNowNotificationReview: {
+	                    ...(orderUpdate.boxNowNotificationReview || {}),
+	                    status: "approved",
+	                    automatic: true,
+	                    approvedAt: now(),
+	                    approvedBy: "boxnow_webhook",
+	                    arrivalEmail,
+	                    reminder,
+	                  },
+	                  updatedAt: now(),
+	                }, { merge: true });
+	              } else {
                 await cancelAutomaticBoxNowLockerReminder(orderRef.id, update.parcelId, normalizedEvent);
               }
             } catch (automationError) {
+	              if (normalizedEvent === "final-destination") {
+	                await orderRef.set({
+	                  boxNowNotificationReview: {
+	                    ...(orderUpdate.boxNowNotificationReview || {}),
+	                    status: "automatic_failed",
+	                    automatic: true,
+	                    error: automationError.message || "Notification automation failed",
+	                    failedAt: now(),
+	                  },
+	                  updatedAt: now(),
+	                }, { merge: true }).catch(() => {});
+	              }
               logger.error("BOX NOW customer notification automation failed", {
                 orderId: orderRef.id,
                 parcelId: update.parcelId,

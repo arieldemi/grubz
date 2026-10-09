@@ -7,6 +7,10 @@ test("hides the BOX NOW automation claim from customer email history", () => {
   assert.equal(isVisibleOrderEmailHistoryRecord({ type: "boxnow_fulfillment_automatic" }), false);
 });
 
+test("hides the ACS automation claim from customer email history", () => {
+  assert.equal(isVisibleOrderEmailHistoryRecord({ type: "acs_fulfillment_automatic" }), false);
+});
+
 test("keeps the fulfillment email produced by the BOX NOW automation visible", () => {
   assert.equal(isVisibleOrderEmailHistoryRecord({ type: "order_fulfillment" }), true);
 });

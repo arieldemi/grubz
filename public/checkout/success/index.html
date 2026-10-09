@@ -202,10 +202,24 @@
       t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
       (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', META_PIXEL_ID);
-      fbq('track', 'Purchase', {
+      fbq('set', 'autoConfig', false, META_PIXEL_ID);
+      const contents = (Array.isArray(data.items) ? data.items : [])
+        .map(item => ({
+          id: String(item?.id || '').trim(),
+          quantity: Math.max(1, Number(item?.quantity || 1)),
+        }))
+        .filter(item => item.id);
+      const purchaseParams = {
         value: Number(data.amount_total || 0) / 100,
         currency: String(data.currency || 'EUR').toUpperCase(),
-      });
+      };
+      if (contents.length) {
+        purchaseParams.content_ids = contents.map(item => item.id);
+        purchaseParams.contents = contents;
+        purchaseParams.content_type = 'product';
+        purchaseParams.num_items = contents.reduce((total, item) => total + item.quantity, 0);
+      }
+      fbq('track', 'Purchase', purchaseParams);
       localStorage.setItem(dedupeKey, new Date().toISOString());
     }
 

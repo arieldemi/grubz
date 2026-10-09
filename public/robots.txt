@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /console/
+Disallow: /feedback/
+Disallow: /boxnow-quote.html
+
+Sitemap: https://www.grubz.gr/sitemap.xml

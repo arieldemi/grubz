@@ -1,5 +1,6 @@
 const INTERNAL_ORDER_NOTIFICATION_TYPES = new Set([
   "boxnow_fulfillment_automatic",
+  "acs_fulfillment_automatic",
 ]);
 
 function isVisibleOrderEmailHistoryRecord(record = {}) {

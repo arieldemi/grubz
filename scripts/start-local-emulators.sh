@@ -4,6 +4,9 @@ set -euo pipefail
 service_label="com.grubz.local-emulators"
 domain="gui/$(id -u)"
 installed_plist="$HOME/Library/LaunchAgents/$service_label.plist"
+project_dir="${0:A:h:h}"
+
+zsh "$project_dir/scripts/ensure-local-secrets.sh"
 
 if ! launchctl print "$domain/$service_label" >/dev/null 2>&1; then
   if [[ ! -f "$installed_plist" ]]; then

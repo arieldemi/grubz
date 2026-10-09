@@ -3,11 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Happy Chicken | Natural protein supplement for chickens</title>
-  <meta name="description" content="Dried Black Soldier Fly larvae for chickens: naturally high in protein, calcium and beneficial fats. Made in Greece.">
+  <title>Dried BSF Larvae for Chickens in Greece | Happy Chicken</title>
+  <meta name="description" content="Happy Chicken dried Black Soldier Fly (BSF) larvae for hens: a natural protein- and calcium-rich treat, sustainably produced in Greece by GRUBZ.">
   <meta property="og:title" content="Happy Chicken | The natural protein supplement chickens love">
   <meta property="og:description" content="Real insect protein for real backyard flocks. Made in Greece.">
   <meta property="og:image" content="https://www.grubz.gr/images/chicken-rectangle-highres.png">
+  <meta property="og:type" content="product">
+  <meta property="og:url" content="https://www.grubz.gr/happy-chicken/">
+  <link rel="canonical" href="https://www.grubz.gr/happy-chicken/">
   <link rel="icon" href="/images/favicon/favicon-32x32.png">
   <link rel="stylesheet" href="/styles/tailwind.css">
   <style>
@@ -121,14 +124,8 @@
       t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
       (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', META_PIXEL_ID);
+      fbq('set', 'autoConfig', false, META_PIXEL_ID);
       fbq('track', 'PageView');
-      fbq('track', 'ViewContent', {
-        content_ids: ['happy-chicken'],
-        content_name: 'Happy Chicken landing page',
-        content_category: 'Poultry supplement',
-        content_type: 'product_group',
-        currency: 'EUR',
-      });
     }
     function trackLandingCta(link){
       if (!readConsent()?.marketing || typeof window.fbq !== "function") return;

@@ -18,7 +18,12 @@ function boxNowFulfillmentForEvent(value = "", options = {}) {
   return SHIPPED_EVENTS.has(event) || SHIPPED_EVENTS.has(parcelState) ? "shipped" : "";
 }
 
+function shouldRetryBoxNowFulfillmentEmail(status = "") {
+  return !["sending", "sent"].includes(String(status || "").trim().toLowerCase());
+}
+
 module.exports = {
   boxNowFulfillmentForEvent,
   normalizeBoxNowEvent,
+  shouldRetryBoxNowFulfillmentEmail,
 };

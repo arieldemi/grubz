@@ -1,4 +1,4 @@
-const BOXNOW_MEDIUM_CAPACITY_KG = 7;
+const BOXNOW_MEDIUM_CAPACITY_KG = 10;
 
 function boxNowBaseFeeCents(parcelAmount, parcelCount, settings = {}) {
   if (settings.boxnowFeeOverrideEnabled === true) {

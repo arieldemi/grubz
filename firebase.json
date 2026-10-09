@@ -42,6 +42,11 @@
     "rewrites": [
       { "source": "/api/createCheckoutSession", "function": { "functionId": "createCheckoutSession", "region": "europe-west1" } },
       { "source": "/api/getProducts", "function": { "functionId": "getProducts", "region": "europe-west1" } },
+      { "source": "/products/**", "function": { "functionId": "productPage", "region": "europe-west1" } },
+      { "source": "/en/products/**", "function": { "functionId": "productPage", "region": "europe-west1" } },
+      { "source": "/el/products/**", "function": { "functionId": "productPage", "region": "europe-west1" } },
+      { "source": "/en/benefits.html", "destination": "/benefits.html" },
+      { "source": "/el/benefits.html", "destination": "/benefits.html" },
       { "source": "/api/getStock", "function": { "functionId": "getStock", "region": "europe-west1" } },
       { "source": "/api/getShippingSettings", "function": { "functionId": "getShippingSettings", "region": "europe-west1" } },
       { "source": "/api/getBoxNowFee", "function": { "functionId": "getBoxNowFee", "region": "europe-west1" } },
@@ -70,12 +75,16 @@
       { "source": "/api/adminChatbotDraft", "function": { "functionId": "adminChatbotDraft", "region": "europe-west1" } },
       { "source": "/api/adminCollaborations", "function": { "functionId": "adminCollaborations", "region": "europe-west1" } },
       { "source": "/api/adminSocialAgent", "function": { "functionId": "adminSocialAgent", "region": "europe-west1" } },
+      { "source": "/api/adminMarketingCalendar", "function": { "functionId": "adminMarketingCalendar", "region": "europe-west1" } },
       { "source": "/api/adminAbandonedCarts", "function": { "functionId": "adminAbandonedCarts", "region": "europe-west1" } },
       { "source": "/api/adminSettings", "function": { "functionId": "adminSettings", "region": "europe-west1" } },
       { "source": "/api/adminBoxNow", "function": { "functionId": "adminBoxNow", "region": "europe-west1" } },
       { "source": "/api/marketingEvents", "function": { "functionId": "marketingEvents", "region": "europe-west1" } },
       { "source": "/api/trackEvent", "function": { "functionId": "trackEvent", "region": "europe-west1" } },
       { "source": "/api/adminAnalytics", "function": { "functionId": "adminAnalytics", "region": "europe-west1" } },
+      { "source": "/api/adminProfitData", "function": { "functionId": "adminProfitData", "region": "europe-west1" } },
+      { "source": "/api/adminGrubzExpenses", "function": { "functionId": "adminGrubzExpenses", "region": "europe-west1" } },
+      { "source": "/api/adminNomaProduction", "function": { "functionId": "adminNomaProduction", "region": "europe-west1" } },
       { "source": "/api/social-agent/webhook", "function": { "functionId": "socialAgentWebhook", "region": "europe-west1" } },
       { "source": "/api/stripe/webhook", "function": { "functionId": "stripeWebhook", "region": "europe-west1" } },
       { "source": "/api/boxnow/webhook/stage", "function": { "functionId": "boxNowWebhookStage", "region": "europe-west1" } },
@@ -84,6 +93,18 @@
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [
+      {
+        "source": "/",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/index.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+        ]
+      },
       {
         "source": "/console/**",
         "headers": [
@@ -107,6 +128,12 @@
     },
     "functions": {
       "port": 5101
+    },
+    "eventarc": {
+      "port": 9298
+    },
+    "tasks": {
+      "port": 9498
     },
     "hosting": {
       "port": 5100

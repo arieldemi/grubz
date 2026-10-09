@@ -16,6 +16,11 @@
   <meta property="og:type" content="article" />
   <meta property="og:locale" content="en_GB" />
 
+  <link id="seoCanonical" rel="canonical" href="https://www.grubz.gr/en/benefits.html" />
+  <link id="seoAlternateEn" rel="alternate" hreflang="en" href="https://www.grubz.gr/en/benefits.html" />
+  <link id="seoAlternateEl" rel="alternate" hreflang="el" href="https://www.grubz.gr/el/benefits.html" />
+  <link rel="alternate" hreflang="x-default" href="https://www.grubz.gr/en/benefits.html" />
+
   <link rel="stylesheet" href="/styles/tailwind.css">
 
   <style>
@@ -484,9 +489,21 @@
     }
   };
 
+  const routeLang = () => location.pathname.match(/^\/(en|el)(?:\/|$)/)?.[1] || '';
   const lang = () =>
-    (Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') ||
+    (routeLang() || Cookie.get('grubz_lang') || localStorage.getItem('grubz_lang') ||
      (navigator.language && navigator.language.startsWith('el') ? 'el' : 'en'));
+
+  function localizedPath(l, pathname = location.pathname) {
+    const barePath = String(pathname || '/benefits.html').replace(/^\/(?:en|el)(?=\/|$)/, '') || '/benefits.html';
+    return `/${l}${barePath}`;
+  }
+
+  function switchLanguageRoute(l) {
+    localStorage.setItem('grubz_lang', l);
+    Cookie.set('grubz_lang', l);
+    location.assign(`${localizedPath(l)}${location.search}${location.hash}`);
+  }
 
   function setLangButtons(l) {
     const en = document.getElementById('lang-en');
@@ -521,11 +538,18 @@
     if (mDesc && dict.pageDesc) mDesc.setAttribute('content', dict.pageDesc);
     const ogLocale = document.querySelector('meta[property="og:locale"]');
     if (ogLocale) ogLocale.setAttribute('content', l === 'el' ? 'el_GR' : 'en_GB');
+    const origin = 'https://www.grubz.gr';
+    document.getElementById('seoCanonical').href = `${origin}${localizedPath(l)}`;
+    document.querySelectorAll('a[href^="/#"]').forEach(link => {
+      link.href = `/${l}/${link.getAttribute('href').slice(1)}`;
+    });
+    const homeLink = document.querySelector('a[href="/"]');
+    if (homeLink) homeLink.href = `/${l}/`;
   }
 
   // Wire clicks AFTER DOM is ready (the script is at the end, but this is safe)
-  document.getElementById('lang-en')?.addEventListener('click', () => applyLang('en'));
-  document.getElementById('lang-el')?.addEventListener('click', () => applyLang('el'));
+  document.getElementById('lang-en')?.addEventListener('click', () => switchLanguageRoute('en'));
+  document.getElementById('lang-el')?.addEventListener('click', () => switchLanguageRoute('el'));
 
   // Footer year (single id only)
   document.getElementById('year').textContent = new Date().getFullYear();

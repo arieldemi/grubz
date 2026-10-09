@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { boxNowFulfillmentForEvent } = require("./boxNowFulfillment");
+const { boxNowFulfillmentForEvent, shouldRetryBoxNowFulfillmentEmail } = require("./boxNowFulfillment");
 
 test("maps BOX NOW transport events to shipped", () => {
   for (const event of ["shipped", "accepted-to-locker", "picked-up", "picked_up", "in-transit", "in transit", "final-destination"]) {
@@ -23,4 +23,12 @@ test("does not change fulfillment for non-transport events", () => {
   for (const event of ["", "new", "created", "expired", "returned", "canceled", "missing"]) {
     assert.equal(boxNowFulfillmentForEvent(event), "");
   }
+});
+
+test("retries failed or skipped BOX NOW fulfillment emails", () => {
+  assert.equal(shouldRetryBoxNowFulfillmentEmail("failed"), true);
+  assert.equal(shouldRetryBoxNowFulfillmentEmail("skipped"), true);
+  assert.equal(shouldRetryBoxNowFulfillmentEmail(""), true);
+  assert.equal(shouldRetryBoxNowFulfillmentEmail("sending"), false);
+  assert.equal(shouldRetryBoxNowFulfillmentEmail("sent"), false);
 });
