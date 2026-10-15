@@ -116,6 +116,9 @@
       .rich-text-editor ul{list-style:disc;margin:.45rem 0;padding-left:1.5rem}
       .rich-text-editor ol{list-style:decimal;margin:.45rem 0;padding-left:1.5rem}
       .rich-text-editor blockquote{border-left:3px solid #d4d4d8;color:#52525b;margin:.6rem 0;padding-left:.8rem}
+      .newsletter-background-controls{display:flex;flex-wrap:wrap;align-items:center;gap:.55rem}
+      .newsletter-background-controls input[type="color"]{width:2.75rem;height:2.5rem;border:1px solid #d4d4d8;border-radius:8px;background:#fff;padding:.2rem;cursor:pointer}
+      .newsletter-color-preset{width:1.9rem;min-width:1.9rem!important;height:1.9rem;border-radius:999px!important;padding:0!important;box-shadow:inset 0 0 0 1px rgba(24,24,27,.14)}
       .label{font-size:.75rem;font-weight:700;color:#52525b}
 	      .panel{border:1px solid #e4e4e7;background:#fff;border-radius:8px}
 	      .modal-backdrop{position:fixed;inset:0;background:rgba(24,24,27,.5)}
@@ -3736,8 +3739,20 @@
 	            <div id="newsletterBody" class="rich-text-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="{greeting}"></div>
 	            <p class="mt-1 text-xs text-zinc-500">Paste formatted text here or use the toolbar. Headings, bold, italic, underline, lists, and links are preserved.</p>
 	          </div>
+	          <div>
+	            <label class="label" for="newsletterBackgroundColor">Email background</label>
+	            <div class="newsletter-background-controls">
+	              <input id="newsletterBackgroundColor" type="color" value="#ffffff" aria-label="Newsletter background color">
+	              <input id="newsletterBackgroundHex" class="input max-w-32" value="#ffffff" maxlength="7" inputmode="text" aria-label="Newsletter background hex color">
+	              <button class="newsletter-color-preset" type="button" data-newsletter-background="#ffffff" style="background:#ffffff" title="White" aria-label="Use white background"></button>
+	              <button class="newsletter-color-preset" type="button" data-newsletter-background="#fff8ed" style="background:#fff8ed" title="Warm cream" aria-label="Use warm cream background"></button>
+	              <button class="newsletter-color-preset" type="button" data-newsletter-background="#f3f8ef" style="background:#f3f8ef" title="Soft green" aria-label="Use soft green background"></button>
+	              <button class="newsletter-color-preset" type="button" data-newsletter-background="#fff1e8" style="background:#fff1e8" title="Soft orange" aria-label="Use soft orange background"></button>
+	            </div>
+	            <p class="mt-1 text-xs text-zinc-500">Choose the background shown behind the newsletter content. The editor updates as you choose.</p>
+	          </div>
 	          <div class="rounded-2xl border border-zinc-200 p-4 space-y-3">
-	            <div class="flex flex-wrap items-center justify-between gap-2"><div><div class="font-bold">Newsletter image <span class="font-normal text-zinc-500">(optional)</span></div><p class="text-xs text-zinc-500">Shown below the greeting and resized for mobile email.</p></div><button id="removeNewsletterImageBtn" class="btn-soft" type="button">Remove image</button></div>
+	            <div class="flex flex-wrap items-center justify-between gap-2"><div><div class="font-bold">Newsletter image <span class="font-normal text-zinc-500">(optional)</span></div><p class="text-xs text-zinc-500">Shown before the message and resized for mobile email.</p></div><button id="removeNewsletterImageBtn" class="btn-soft" type="button">Remove image</button></div>
 	            <div class="grid gap-3 md:grid-cols-2">
 	              <div><label class="label" for="newsletterImageProduct">Use a product image</label><select id="newsletterImageProduct" class="input"><option value="">Choose a product</option></select></div>
 	              <div><label class="label" for="newsletterImageUpload">Or upload an image</label><div class="flex gap-2"><input id="newsletterImageUpload" class="input min-w-0" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadNewsletterImageBtn" class="btn-soft shrink-0" type="button">Upload</button></div></div>
@@ -9033,6 +9048,14 @@
 	        };
 	      }
 
+	      function setNewsletterBackground(value = "#ffffff"){
+	        const color = /^#[0-9a-f]{6}$/i.test(String(value).trim()) ? String(value).trim().toLowerCase() : "#ffffff";
+	        $("newsletterBackgroundColor").value = color;
+	        $("newsletterBackgroundHex").value = color;
+	        newsletterBodyEditor().style.backgroundColor = color;
+	        return color;
+	      }
+
 	      function formatNewsletterBody(command, value = ""){
 	        newsletterBodyEditor().focus();
 	        if (command === "createLink") {
@@ -9140,6 +9163,7 @@
 	        $("newsletterLanguage").value = counts.en > 0 || counts.el === 0 ? "en" : "el";
 	        $("newsletterSubject").value = "";
 	        setNewsletterBodyText("{greeting}\n\n");
+	        setNewsletterBackground("#ffffff");
 	        $("newsletterCoupon").value = "";
 	        clearNewsletterImage();
 	        setMsg("newsletterComposeMsg", "");
@@ -9154,6 +9178,7 @@
 	        const body = bodyContent.text;
 	        const bodyHtml = bodyContent.html;
 	        const language = $("newsletterLanguage").value;
+	        const backgroundColor = setNewsletterBackground($("newsletterBackgroundHex").value);
 	        const coupon = normalizeCouponCode($("newsletterCoupon").value);
 	        if (!subject || !body) return setMsg("newsletterComposeMsg", "Enter a subject and message.", false);
 	        if (body.length > 12000 || bodyHtml.length > 30000) return setMsg("newsletterComposeMsg", "The message is too long.", false);
@@ -9169,7 +9194,7 @@
 	            method:"POST",
 	            baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
 	            body:JSON.stringify({
-	              action, subject, body, bodyHtml, language, coupon, confirmDuplicate,
+	              action, subject, body, bodyHtml, language, coupon, backgroundColor, confirmDuplicate,
 	              image:{
 	                url:$("newsletterImageUrl").value.trim(),
 	                alt:$("newsletterImageAlt").value.trim(),
@@ -9225,6 +9250,9 @@
 	        const button = event.target.closest("[data-rich-command]");
 	        if (button) formatNewsletterBody(button.dataset.richCommand, button.dataset.richValue || "");
 	      });
+	      $("newsletterBackgroundColor").addEventListener("input", event => setNewsletterBackground(event.target.value));
+	      $("newsletterBackgroundHex").addEventListener("change", event => setNewsletterBackground(event.target.value));
+	      document.querySelectorAll("[data-newsletter-background]").forEach(button => button.addEventListener("click", () => setNewsletterBackground(button.dataset.newsletterBackground)));
 	      $("newsletterImageProduct").addEventListener("change", selectNewsletterProductImage);
 	      $("uploadNewsletterImageBtn").addEventListener("click", uploadNewsletterImage);
 	      $("removeNewsletterImageBtn").addEventListener("click", clearNewsletterImage);

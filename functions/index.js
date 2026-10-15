@@ -4313,12 +4313,13 @@ async function newsletterImageAttachment(rawImageUrl = "") {
   return { content, contentType: contentType === "image/jpg" ? "image/jpeg" : contentType };
 }
 
-async function sendNewsletter({ adminUser, subject, body, bodyHtml = "", coupon = "", language = "en", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
+async function sendNewsletter({ adminUser, subject, body, bodyHtml = "", coupon = "", language = "en", backgroundColor = "#ffffff", testOnly = false, confirmDuplicate = false, publicBaseUrl = GRUBZ_URL, image = {} }) {
   const cleanSubject = String(subject || "").trim().slice(0, 180);
   const cleanBody = String(body || "").trim().slice(0, 12000);
   const cleanBodyHtml = bodyHtml ? sanitizeNewsletterHtml(bodyHtml) : "";
   const couponCode = normalizeCouponCode(coupon || "").slice(0, 80);
   const emailLanguage = String(language || "en").toLowerCase() === "el" ? "el" : "en";
+  const cleanBackgroundColor = /^#[0-9a-f]{6}$/i.test(String(backgroundColor || "").trim()) ? String(backgroundColor).trim().toLowerCase() : "#ffffff";
   const rawImageUrl = String(image.url || "").trim();
   const hasRemoteImage = /^https:\/\//i.test(rawImageUrl);
   const hasInlineImage = /^data:image\/(?:png|jpe?g|webp);base64,/i.test(rawImageUrl);
@@ -4335,7 +4336,7 @@ async function sendNewsletter({ adminUser, subject, body, bodyHtml = "", coupon 
     throw Object.assign(new Error("Select a coupon or remove the {coupon} placeholder before sending."), { status: 400 });
   }
   const contentHash = createHash("sha256")
-    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, bodyHtml: cleanBodyHtml, coupon: couponCode, language: emailLanguage, imageUrl, imageAlt, imageLink }))
+    .update(JSON.stringify({ subject: cleanSubject, body: cleanBody, bodyHtml: cleanBodyHtml, coupon: couponCode, language: emailLanguage, backgroundColor: cleanBackgroundColor, imageUrl, imageAlt, imageLink }))
     .digest("hex");
 
   let recipients = [];
@@ -4411,6 +4412,7 @@ async function sendNewsletter({ adminUser, subject, body, bodyHtml = "", coupon 
     contentHash,
     language: emailLanguage,
     coupon: couponCode,
+    backgroundColor: cleanBackgroundColor,
     recipientCount: recipients.length,
     testOnly,
     status: "sending",
@@ -4447,13 +4449,11 @@ async function sendNewsletter({ adminUser, subject, body, bodyHtml = "", coupon 
       if (embeddedImage) {
         const img = `<img src="cid:newsletter-image" alt="${escapeHtml(imageAlt)}" width="600" style="display:block;width:100%;max-width:600px;height:auto;margin:20px 0;border:0;border-radius:14px;">`;
         const imageHtml = imageLink ? `<a href="${escapeHtml(imageLink)}" style="display:block;text-decoration:none;">${img}</a>` : img;
-        const firstParagraphEnd = bodyHtml.indexOf("</p>");
-        const firstLineBreak = bodyHtml.indexOf("<br>");
-        const insertAt = firstParagraphEnd >= 0 ? firstParagraphEnd + 4 : (firstLineBreak >= 0 ? firstLineBreak + 4 : 0);
-        bodyHtml = insertAt ? `${bodyHtml.slice(0, insertAt)}${imageHtml}${bodyHtml.slice(insertAt)}` : `${imageHtml}${bodyHtml}`;
+        bodyHtml = `${imageHtml}${bodyHtml}`;
       }
       const footerLabel = emailLanguage === "el" ? "Διαγραφή από το newsletter" : "Unsubscribe from this newsletter";
-      const personalizedHtml = `${bodyHtml}<br><br><hr style="border:0;border-top:1px solid #e4e4e7"><p style="font-size:12px;color:#71717a"><a href="${escapeHtml(unsubscribeUrl)}">${footerLabel}</a></p>`;
+      const emailContents = `${bodyHtml}<br><br><hr style="border:0;border-top:1px solid #e4e4e7"><p style="font-size:12px;color:#71717a"><a href="${escapeHtml(unsubscribeUrl)}">${footerLabel}</a></p>`;
+      const personalizedHtml = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:${cleanBackgroundColor};"><tr><td align="center" style="padding:28px 16px;background-color:${cleanBackgroundColor};"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;"><tr><td style="font-family:Arial,sans-serif;color:#18181b;">${emailContents}</td></tr></table></td></tr></table>`;
       const result = await sendEmail({
         to: recipient.email,
         from,
@@ -9321,6 +9321,7 @@ exports.adminNewsletter = onRequest(
             bodyHtml: body.bodyHtml,
             coupon: body.coupon,
             language: body.language,
+            backgroundColor: body.backgroundColor,
             testOnly: body.action === "test",
             confirmDuplicate: body.confirmDuplicate === true,
             publicBaseUrl: newsletterPublicBaseUrl(req),
