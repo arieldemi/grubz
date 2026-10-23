@@ -2,7 +2,17 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { sanitizePilot, pilotMetrics } = require("./collaborationPilot");
+const { sanitizePilot, pilotMetrics, productSalesBeforeDiscountCents } = require("./collaborationPilot");
+
+test("coupon performance uses product sales before discount and excludes shipping", () => {
+  const productSales = productSalesBeforeDiscountCents({
+    subtotal: 10000,
+    discount: 1500,
+    shipping: 700,
+    total: 9200,
+  });
+  assert.equal(productSales, 10000);
+});
 
 test("sanitizes a three-touchpoint pilot", () => {
   const pilot = sanitizePilot({ enabled: true, memberCount: "20000", commissionPercent: 10, posts: [{ reach: "3000", comments: 12 }] });

@@ -20,6 +20,7 @@
       .btn{background:var(--positive);color:#fff;border-radius:8px;padding:.65rem .9rem;font-weight:700;box-shadow:0 1px 2px rgba(37,102,67,.2)}
       .btn:hover{background:var(--positive-hover)}
       .btn-soft{border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:650}
+      .btn:disabled,.btn-soft:disabled{cursor:wait;opacity:.65}
       [data-section-tab].btn-soft:hover{background:#f7f2ed;border-color:#d8c5b7;color:#71391d}
       [data-section-tab].btn{box-shadow:0 1px 2px rgba(37,102,67,.2)}
       .btn-danger{border:1px solid #dc2626;color:#dc2626;background:#fff;border-radius:8px;padding:.6rem .85rem;font-weight:700}
@@ -73,6 +74,12 @@
 	      #ordersTable tr.order-row-note:hover{background:#ffedd5}
 	      #ordersTable tr.order-row-pending-payment{background:#fee2e2;box-shadow:inset 4px 0 0 #dc2626}
 	      #ordersTable tr.order-row-pending-payment:hover{background:#fecaca}
+	      #ordersTable tr.order-row-delivered{background:#ecfdf5!important;color:#71717a;box-shadow:inset 5px 0 0 #059669;opacity:.72}
+	      #ordersTable tr.order-row-delivered:hover{background:#d1fae5!important;opacity:1}
+	      #ordersTable tr.order-row-delivered .order-number-button{color:#047857;text-decoration:line-through;text-decoration-thickness:1px}
+	      #ordersTable tr.order-row-cancelled{background:#f4f4f5!important;color:#71717a;box-shadow:inset 5px 0 0 #71717a;opacity:.62}
+	      #ordersTable tr.order-row-cancelled:hover{background:#e4e4e7!important;opacity:1}
+	      #ordersTable tr.order-row-cancelled .order-number-button{color:#52525b;text-decoration:line-through;text-decoration-thickness:1px}
 	      #ordersListTable thead,#ordersListTable thead *{color:#fff!important}
 	      #ordersListTable thead ::selection{background:#f3a07f;color:#fff!important}
 	      #customersListTable thead,#customersListTable thead *{color:#fff!important}
@@ -89,8 +96,8 @@
 	        #appView.sidebar-collapsed .sidebar-copy,
 	        #appView.sidebar-collapsed .nav-label>span{display:none}
 	        #appView.sidebar-collapsed .sidebar-brand{justify-content:center}
-	        #appView.sidebar-collapsed #sidebarHeader{justify-content:center}
-	        #appView.sidebar-collapsed #sidebarToggle{position:absolute;right:-.8rem;top:1rem;z-index:2}
+	        #appView.sidebar-collapsed #sidebarHeader{flex-direction:column;align-items:center;justify-content:center;gap:.5rem}
+	        #appView.sidebar-collapsed #sidebarToggle{position:static}
 	        #appView.sidebar-collapsed #sidebarToggle svg{transform:rotate(180deg)}
 	        #appView.sidebar-collapsed [data-section-tab],
 	        #appView.sidebar-collapsed #signOutBtn{position:relative;justify-content:center;padding:.65rem}
@@ -125,8 +132,22 @@
 	      #collaborationModal{padding:.5rem}
 	      #collaborationDialog{width:min(48rem,100%);max-height:calc(100vh - 1rem);max-height:calc(100dvh - 1rem);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
 	      #collaborationDialogHeader{position:sticky;top:-1.25rem;z-index:2;margin:-1.25rem -1.25rem .75rem;padding:1.25rem;background:#fff;border-bottom:1px solid #e4e4e7}
+	      .console-page-sticky-header{position:sticky;top:var(--console-mobile-nav-height,0px);z-index:15;display:flex;flex-direction:column;gap:1rem;margin:-1rem -1rem 0;padding:1rem;background:rgba(244,244,245,.96);border-bottom:1px solid #d4d4d8;box-shadow:0 8px 18px -18px rgba(24,24,27,.65);backdrop-filter:blur(10px)}
+	      @media (min-width:1024px){.console-page-sticky-header{top:0;margin:-1.5rem -1.5rem 0;padding:1.5rem}}
 	      @media(max-width:639px){#collaborationDialog{border-radius:6px;padding:1rem}#collaborationDialogHeader{top:-1rem;margin:-1rem -1rem .75rem;padding:1rem;flex-wrap:wrap}}
       .modal-panel{position:relative;background:#fff;border-radius:8px;width:min(96vw,880px);max-height:90vh;overflow:auto}
+	      @media(max-width:639px){
+	        [role="dialog"].fixed{padding:0!important;align-items:stretch!important}
+	        [role="dialog"].fixed>.modal-panel{width:100vw!important;max-width:none!important;height:100vh!important;height:100dvh!important;max-height:100vh!important;max-height:100dvh!important;border-radius:0!important}
+	        .modal-screen-header{position:sticky!important;top:-1rem;z-index:12;margin:-1rem -1rem 1rem!important;padding:1rem!important;background:rgba(255,255,255,.97);border-bottom:1px solid #e4e4e7;box-shadow:0 8px 18px -18px rgba(24,24,27,.65);backdrop-filter:blur(10px)}
+	        .modal-screen-footer{position:sticky!important;bottom:-1rem;z-index:12;margin:1rem -1rem -1rem!important;padding:1rem!important;background:rgba(255,255,255,.97);border-top:1px solid #e4e4e7;box-shadow:0 -8px 18px -18px rgba(24,24,27,.65);backdrop-filter:blur(10px)}
+	        #collaborationDialog{width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100vh!important;max-height:100dvh!important;border-radius:0!important}
+	        #collaborationDialogHeader{top:-1rem}
+	        #boxNowDeliveryPreviewDialog{max-width:none!important;border-radius:0!important}
+	        #orderModal>.modal-panel{height:100dvh!important;max-height:100dvh!important}
+	        #orderModal>.modal-panel>.modal-screen-header{top:0;margin:0 0 .75rem!important}
+	        #orderModalActions.modal-screen-footer{bottom:0;margin:.75rem 0 0!important}
+	      }
 	    #productModal>.modal-panel{width:min(96vw,1080px)}
 	      #orderModal>.modal-panel{height:90vh;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
 	      .thumb{width:72px;height:54px;object-fit:contain;border-radius:6px;border:1px solid #e4e4e7;background:#f4f4f5}
@@ -226,6 +247,9 @@
               <button id="tabProduction" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="profitCalculator">
                 <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5"/><path d="M9 17v-3"/><path d="M12 17v-6"/><path d="M15 17V9"/></svg><span>Reports</span></span>
               </button>
+              <button id="tabScalePlanning" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="scalePlanning">
+                <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/><path d="m15 7 3-3 3 3"/></svg><span>Scale planning</span></span>
+              </button>
               <button id="tabSettings" class="btn-soft text-left shrink-0 inline-flex items-center gap-2" type="button" data-section-tab="settings">
                 <span class="nav-label"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg><span>Settings</span></span>
               </button>
@@ -311,6 +335,7 @@
 	              <div>
 	                <h2 class="text-xl font-extrabold">Orders Manager</h2>
 	                <p id="orderSearchMsg" class="text-sm font-semibold text-zinc-500" role="status" aria-live="polite">0 orders</p>
+	                <div id="orderSalesSummary" class="mt-2 flex flex-wrap gap-2" aria-label="Loaded order sales totals"></div>
 	              </div>
 	              <div class="flex flex-wrap items-end gap-2">
 	                <div class="w-full sm:w-auto">
@@ -735,6 +760,49 @@
                 </div>
               </section>
 
+	          <section id="scalePlanningSection" class="hidden lg:col-span-2 space-y-4">
+                <div class="flex flex-wrap items-end justify-between gap-3">
+                  <div><h2 class="text-xl font-extrabold">Scale planning</h2><p class="text-sm text-zinc-500">Manage biological, production, equipment, staffing, and investment assumptions in one model.</p></div>
+                  <div class="flex gap-2"><button id="scalePlanningReset" class="btn-soft" type="button">Reset assumptions</button><button id="scalePlanningExport" class="btn-soft" type="button">Export JSON</button></div>
+                </div>
+                <div class="flex gap-2 overflow-x-auto border-b border-zinc-200 pb-2" role="tablist" aria-label="Scale planning sections">
+                  <button class="btn shrink-0" type="button" role="tab" data-scale-tab="overview" aria-selected="true">Overview</button>
+                  <button class="btn-soft shrink-0" type="button" role="tab" data-scale-tab="assumptions" aria-selected="false">Assumptions</button>
+                  <button class="btn-soft shrink-0" type="button" role="tab" data-scale-tab="investment" aria-selected="false">Investment plan</button>
+                  <button class="btn-soft shrink-0" type="button" role="tab" data-scale-tab="capacity" aria-selected="false">Production capacity</button>
+                  <button class="btn-soft shrink-0" type="button" role="tab" data-scale-tab="workforce" aria-selected="false">Workforce & costs</button>
+                </div>
+                <div data-scale-panel="overview" role="tabpanel" class="space-y-4">
+                  <div class="panel p-4"><label class="block max-w-md"><span class="label">Available investment (€)</span><input id="scaleInvestmentInput" class="input mt-1 text-lg font-extrabold" type="number" min="0" step="1000"></label></div>
+                  <div id="scaleDecisionBanner" class="rounded-lg border p-4"></div>
+                  <div id="scaleOverviewKpis" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"></div>
+                  <div id="scalePrimaryBottleneck" class="rounded-lg border p-4"></div>
+                  <div class="grid gap-4 xl:grid-cols-2">
+                    <div class="panel overflow-hidden"><div class="border-b border-zinc-200 bg-zinc-50 px-4 py-3"><h3 class="font-extrabold">Affordable configuration</h3></div><div id="scaleConfiguration" class="divide-y text-sm"></div></div>
+                    <div class="panel overflow-hidden"><div class="border-b border-zinc-200 bg-zinc-50 px-4 py-3"><h3 class="font-extrabold">Monthly operating result</h3></div><div id="scaleFinancialSummary" class="divide-y text-sm"></div></div>
+                  </div>
+                </div>
+                <div data-scale-panel="assumptions" role="tabpanel" class="hidden space-y-4">
+                  <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-950"><strong>Single source of truth.</strong> Changes here immediately update every capacity, staffing, investment, and financial result on this page.</div>
+                  <form id="scaleAssumptionsForm" class="grid gap-4 xl:grid-cols-2"></form>
+                </div>
+                <div data-scale-panel="investment" role="tabpanel" class="hidden space-y-4">
+                  <div id="scaleInvestmentKpis" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"></div>
+                  <div class="panel overflow-x-auto"><table class="w-full text-sm"><thead class="bg-zinc-50 text-left"><tr><th class="p-3">Investment component</th><th class="p-3 text-right">Quantity / basis</th><th class="p-3 text-right">Amount</th></tr></thead><tbody id="scaleInvestmentTable"></tbody></table></div>
+                  <div class="panel p-4"><h3 class="font-extrabold">Breeding-unit scenarios</h3><p class="mt-1 text-xs text-zinc-500">Total funding required for each number of breeding units.</p><div id="scaleScenarioLadder" class="mt-3 overflow-x-auto"></div></div>
+                </div>
+                <div data-scale-panel="capacity" role="tabpanel" class="hidden space-y-4">
+                  <div id="scaleCapacityKpis" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"></div>
+                  <div class="panel overflow-hidden"><div class="border-b border-zinc-200 bg-zinc-50 px-4 py-3"><h3 class="font-extrabold">Bottleneck analysis</h3><p class="mt-1 text-xs text-zinc-500">Resources are ranked by capacity utilization. The highest utilization is the first operational constraint.</p></div><div id="scaleBottleneckAnalysis" class="divide-y text-sm"></div></div>
+                  <div class="panel p-4"><h3 class="font-extrabold">Capacity calculation</h3><div id="scaleCapacityFormula" class="mt-3 space-y-2 text-sm"></div></div>
+                </div>
+                <div data-scale-panel="workforce" role="tabpanel" class="hidden space-y-4">
+                  <div id="scaleWorkforceKpis" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"></div>
+                  <div class="grid gap-4 xl:grid-cols-2"><div class="panel overflow-hidden"><div class="border-b border-zinc-200 bg-zinc-50 px-4 py-3"><h3 class="font-extrabold">Monthly recurring costs</h3></div><div id="scaleRecurringCosts" class="divide-y text-sm"></div></div><div class="panel p-4"><h3 class="font-extrabold">Staffing calculation</h3><div id="scaleStaffingFormula" class="mt-3 space-y-2 text-sm"></div></div></div>
+                </div>
+                <p id="scalePlanningStatus" class="text-sm text-zinc-500" role="status" aria-live="polite"></p>
+              </section>
+
 	          <section id="analyticsSection" class="hidden lg:col-span-2 space-y-4">
 	            <div class="flex flex-wrap items-end justify-between gap-3">
 	              <div>
@@ -1140,6 +1208,13 @@
 	                  <h3 id="collaborationModalTitle" class="font-extrabold text-lg">New collaboration</h3>
 	                  <div class="flex gap-2"><button id="deleteCollaborationBtn" class="btn-danger" type="button">Delete</button><button id="closeCollaborationModal" class="btn-soft" type="button">Close</button></div>
 	                </div>
+	                <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+	                  <div class="flex items-center justify-between gap-3">
+	                    <div class="font-bold">Coupon performance</div>
+	                    <button id="refreshCollabMetricsBtn" class="btn-soft px-2 py-1 text-xs" type="button">Refresh</button>
+	                  </div>
+	                  <div id="collabMetrics" class="mt-2 text-sm text-zinc-600"></div>
+	                </div>
 	                <div class="grid gap-2 sm:grid-cols-2">
 	                  <div>
 	                    <label class="label" for="collabCategory">1. Category</label>
@@ -1233,13 +1308,6 @@
 	                    <input id="collabCommission" class="input" placeholder="Commission">
 	                    <label class="inline-flex items-center gap-2 text-sm font-semibold"><input id="collabShippingCovered" type="checkbox" class="h-4 w-4"> Shipping covered</label>
 	                    <textarea id="collabOfferDetails" class="input" rows="3" placeholder="Offer details"></textarea>
-	                    <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-	                      <div class="flex items-center justify-between gap-3">
-	                        <div class="font-bold">Coupon performance</div>
-	                        <button id="refreshCollabMetricsBtn" class="btn-soft px-2 py-1 text-xs" type="button">Refresh</button>
-	                      </div>
-	                      <div id="collabMetrics" class="mt-2 text-sm text-zinc-600"></div>
-	                    </div>
 	                    <details class="rounded-md border border-zinc-200 bg-white p-3" open>
 	                      <summary class="cursor-pointer font-bold">Measurable sales pilot</summary>
 	                      <div class="mt-3 grid gap-2 sm:grid-cols-2">
@@ -1842,7 +1910,7 @@
 	                </div>
 	              </div>
 	              <div id="marketingPanelPosts" class="panel p-4 space-y-4 hidden" data-marketing-panel="posts">
-	                <div><h3 class="font-extrabold text-lg">Facebook & Instagram posts</h3><p class="text-sm text-zinc-500">Prepare product-specific posts, tracked links, destinations, and manual posting history.</p></div>
+	                <div><h3 class="font-extrabold text-lg">Facebook & Instagram posts</h3><p class="text-sm text-zinc-500">Create, preview, and publish posts directly to the GRUBZ Facebook Page or Instagram account.</p><div id="socialPublishingStatus" class="mt-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 text-xs text-zinc-600">Checking Meta publishing connection...</div></div>
 	                <div class="grid gap-4 xl:grid-cols-[minmax(300px,.8fr)_minmax(0,1.2fr)]">
 	                  <form id="socialPostForm" class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-3">
 	                    <input id="socialPostId" type="hidden">
@@ -1851,10 +1919,10 @@
 	                    <div class="grid grid-cols-2 gap-2"><div><label class="label" for="socialPostLanguage">Language</label><select id="socialPostLanguage" class="input"><option value="el">Greek</option><option value="en">English</option></select></div><div><label class="label" for="socialPostStatus">Status</label><select id="socialPostStatus" class="input"><option value="draft">Draft</option><option value="ready">Ready</option><option value="posted">Posted</option></select></div></div>
 	                    <div><label class="label" for="socialPostCampaign">Campaign code</label><input id="socialPostCampaign" class="input" maxlength="100" placeholder="summer-chickens"></div>
 	                    <div><label class="label" for="socialPostContent">Post text</label><textarea id="socialPostContent" class="input" rows="9" maxlength="10000" required></textarea></div>
-	                    <div><label class="label" for="socialPostImageUrl">Image URL (optional)</label><input id="socialPostImageUrl" class="input" type="url" placeholder="https://www.grubz.gr/images/..."></div>
+	                    <div><label class="label" for="socialPostImageUrl">Image URL <span class="font-normal text-zinc-400">(required for Instagram)</span></label><input id="socialPostImageUrl" class="input" type="url" placeholder="https://www.grubz.gr/images/..."><div class="mt-2 flex gap-2"><input id="socialPostImageUpload" class="input min-w-0" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadSocialPostImageBtn" class="btn-soft shrink-0" type="button">Upload</button></div><div id="socialPostImagePreview" class="mt-2 hidden overflow-hidden rounded-lg border border-zinc-200 bg-white"></div></div>
 	                    <div id="socialPostGroupPicker" class="space-y-1"></div>
 	                    <div><label class="label" for="socialPostNotes">Notes</label><textarea id="socialPostNotes" class="input" rows="2"></textarea></div>
-	                    <div class="flex flex-wrap gap-2"><button class="btn" type="submit">Save post</button><button id="newSocialPostBtn" class="btn-soft" type="button">New</button><button id="copySocialPostBtn" class="btn-soft" type="button">Copy text + tracked link</button></div>
+	                    <div class="flex flex-wrap gap-2"><button class="btn" type="submit">Save post</button><button id="publishSocialPostBtn" class="btn-soft" type="button">Publish now</button><button id="newSocialPostBtn" class="btn-soft" type="button">New</button><button id="copySocialPostBtn" class="btn-soft" type="button">Copy text + tracked link</button></div>
 	                    <p id="socialPostsMsg" class="text-sm" role="status" aria-live="polite"></p>
 	                  </form>
 	                  <div><div class="mb-3 flex flex-wrap gap-2"><select id="socialPostsProductFilter" class="input max-w-[190px]"><option value="all">All products</option><option value="happy-chicken">Happy Chicken</option><option value="terragrub">TerraGrub</option></select><select id="socialPostsPlatformFilter" class="input max-w-[170px]"><option value="all">All platforms</option><option value="facebook">Facebook</option><option value="instagram">Instagram</option></select></div><div id="socialPostsList" class="space-y-3"></div></div>
@@ -1884,8 +1952,8 @@
 	              </div>
 	              <div id="marketingPanelCalendar" class="space-y-4 hidden" data-marketing-panel="calendar">
 	                <div class="flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-lg font-extrabold">The Calendar</h3><p class="text-sm text-zinc-500">Plan useful campaigns and receive planning and final reminders at info@grubz.gr.</p></div><div class="flex gap-2"><button id="seedMarketingCalendarBtn" class="btn-soft" type="button">Add starter events</button><button id="newMarketingCalendarBtn" class="btn" type="button">New event</button></div></div>
-	                <div class="grid gap-4 xl:grid-cols-[minmax(320px,.8fr)_minmax(0,1.2fr)]">
-	                  <form id="marketingCalendarForm" class="panel p-4 space-y-3">
+	                <div>
+	                  <form id="marketingCalendarForm" class="hidden space-y-3">
 	                    <input id="marketingCalendarId" type="hidden">
 	                    <div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarTitle">Title</label><input id="marketingCalendarTitle" class="input" required maxlength="180"></div><div><label class="label" for="marketingCalendarTitleEl">Greek title</label><input id="marketingCalendarTitleEl" class="input" maxlength="180"></div></div>
 	                    <div><label class="label" for="marketingCalendarDescription">Opportunity / guardrails</label><textarea id="marketingCalendarDescription" class="input" rows="3"></textarea></div>
@@ -1894,10 +1962,21 @@
 	                    <div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarCategories">Categories (comma-separated)</label><input id="marketingCalendarCategories" class="input" placeholder="chicken, animal, holiday"></div><div><label class="label" for="marketingCalendarAudiences">Audiences (comma-separated)</label><input id="marketingCalendarAudiences" class="input" placeholder="chickens, general"></div></div>
 	                    <div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarReminderDays">Reminder days</label><input id="marketingCalendarReminderDays" class="input" value="10, 2" placeholder="10, 2"></div><div class="flex items-end pb-2"><label class="flex items-center gap-2 text-sm font-semibold"><input id="marketingCalendarEnabled" type="checkbox" checked> Active reminders</label></div></div>
 	                    <details class="rounded-md border border-zinc-200 p-3"><summary class="cursor-pointer font-bold">Source and verification</summary><div class="mt-3 grid gap-2"><input id="marketingCalendarSourceLabel" class="input" placeholder="Source name"><input id="marketingCalendarSourceUrl" class="input" type="url" placeholder="https://..."><input id="marketingCalendarVerified" class="input" type="date"></div></details>
-	                    <div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-2"><div class="font-bold">Marketing draft</div><textarea id="marketingCalendarAngle" class="input" rows="2" placeholder="Campaign angle"></textarea><textarea id="marketingCalendarCaption" class="input" rows="5" placeholder="Social caption"></textarea><input id="marketingCalendarStory" class="input" placeholder="Story text"><input id="marketingCalendarNewsletter" class="input" placeholder="Newsletter subject"><input id="marketingCalendarCta" class="input" placeholder="CTA"><textarea id="marketingCalendarVisual" class="input" rows="2" placeholder="Visual direction"></textarea><button id="generateMarketingCalendarDraftBtn" class="btn-soft" type="button">Generate draft</button></div>
 	                    <div class="flex flex-wrap gap-2"><button class="btn" type="submit">Save event</button><button id="testMarketingCalendarBtn" class="btn-soft" type="button">Send test email</button><button id="deleteMarketingCalendarBtn" class="btn-danger hidden" type="button">Delete</button></div><p id="marketingCalendarMsg" class="text-sm" role="status" aria-live="polite"></p>
 	                  </form>
-	                  <div class="space-y-4"><div class="panel p-4"><div class="mb-3 flex flex-wrap items-end gap-2"><div><label class="label" for="marketingCalendarMonth">Month</label><input id="marketingCalendarMonth" class="input" type="month"></div><input id="marketingCalendarSearch" class="input min-w-[220px] flex-1" type="search" placeholder="Search events..."><select id="marketingCalendarRelevanceFilter" class="input max-w-[180px]"><option value="all">All relevance</option><option value="high">High</option><option value="medium">Medium</option><option value="experimental">Experimental</option></select></div><div class="mb-4 overflow-x-auto"><div class="min-w-[650px]"><div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-zinc-500"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div><div id="marketingCalendarMonthGrid" class="mt-1 grid grid-cols-7 gap-1"></div></div></div><div class="mb-2 font-extrabold">Upcoming events</div><div id="marketingCalendarList" class="grid gap-3 sm:grid-cols-2"></div></div><div class="panel overflow-hidden"><div class="border-b border-zinc-200 p-3 font-extrabold">Reminder history</div><div id="marketingCalendarHistory" class="divide-y"></div></div></div>
+	                  <div class="panel p-4"><div class="mb-3 flex flex-wrap items-end gap-2"><div><label class="label" for="marketingCalendarMonth">Month</label><input id="marketingCalendarMonth" class="input" type="month"></div><input id="marketingCalendarSearch" class="input min-w-[220px] flex-1" type="search" placeholder="Search events..."><select id="marketingCalendarRelevanceFilter" class="input max-w-[180px]"><option value="all">All relevance</option><option value="high">High</option><option value="medium">Medium</option><option value="experimental">Experimental</option></select></div><div class="overflow-x-auto"><div class="min-w-[650px]"><div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-zinc-500"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div><div id="marketingCalendarMonthGrid" class="mt-1 grid grid-cols-7 gap-1"></div></div></div><div id="marketingCalendarList" class="hidden"></div><div id="marketingCalendarHistory" class="hidden"></div></div>
+	                </div>
+	                <div id="marketingCalendarPostModal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="marketingCalendarPostModalTitle">
+	                  <div class="modal-backdrop" data-close-modal="marketingCalendarPostModal"></div>
+	                  <section class="modal-panel w-full max-w-6xl p-4">
+	                    <div class="mb-4 flex items-start justify-between gap-3"><div><h3 id="marketingCalendarPostModalTitle" class="text-lg font-extrabold">Calendar event</h3><p id="marketingCalendarPostEventTitle" class="text-sm text-zinc-500">Review the event and prepare its social post.</p></div><button id="closeMarketingCalendarPostModalBtn" class="btn-soft" type="button">Close</button></div>
+	                    <div id="marketingCalendarEventFields" class="mb-4 rounded-md border border-zinc-200 bg-white p-3"></div>
+	                    <div class="grid gap-4 lg:grid-cols-[minmax(300px,.9fr)_minmax(300px,1.1fr)]">
+	                      <div class="space-y-3"><div class="rounded-md border border-zinc-200 bg-zinc-50 p-3 space-y-3"><div class="font-bold">Content</div><div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarAngle">Campaign angle · Greek</label><textarea id="marketingCalendarAngle" class="input" rows="2" placeholder="Η βασική ιδέα της καμπάνιας"></textarea></div><div><label class="label" for="marketingCalendarAngleEn">Campaign angle · English</label><textarea id="marketingCalendarAngleEn" class="input" rows="2" placeholder="The core campaign idea"></textarea></div></div><div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarCaption">Social caption · Greek</label><textarea id="marketingCalendarCaption" class="input" rows="7" placeholder="Η λεζάντα για Facebook ή Instagram"></textarea></div><div><label class="label" for="marketingCalendarCaptionEn">Social caption · English</label><textarea id="marketingCalendarCaptionEn" class="input" rows="7" placeholder="The Facebook or Instagram caption"></textarea></div></div><div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarStory">Story text · Greek</label><input id="marketingCalendarStory" class="input" placeholder="Σύντομο κείμενο για Story"></div><div><label class="label" for="marketingCalendarStoryEn">Story text · English</label><input id="marketingCalendarStoryEn" class="input" placeholder="Short copy for a Story"></div></div><div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarNewsletter">Newsletter subject · Greek</label><input id="marketingCalendarNewsletter" class="input" placeholder="Θέμα email"></div><div><label class="label" for="marketingCalendarNewsletterEn">Newsletter subject · English</label><input id="marketingCalendarNewsletterEn" class="input" placeholder="Email subject line"></div></div><div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarCta">Call to action · Greek</label><input id="marketingCalendarCta" class="input" placeholder="Για παράδειγμα: Ανακαλύψτε το GRUBZ"></div><div><label class="label" for="marketingCalendarCtaEn">Call to action · English</label><input id="marketingCalendarCtaEn" class="input" placeholder="For example: Shop GRUBZ"></div></div><div class="grid gap-2 sm:grid-cols-2"><div><label class="label" for="marketingCalendarVisual">Visual direction · Greek</label><textarea id="marketingCalendarVisual" class="input" rows="2" placeholder="Περιγράψτε την επιθυμητή εικόνα"></textarea></div><div><label class="label" for="marketingCalendarVisualEn">Visual direction · English</label><textarea id="marketingCalendarVisualEn" class="input" rows="2" placeholder="Describe the visual style and composition"></textarea></div></div><button id="generateMarketingCalendarDraftBtn" class="btn-soft inline-flex items-center gap-2" type="button"><span data-calendar-draft-spinner class="hidden h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"></span><span data-calendar-draft-label>Generate bilingual draft</span></button></div><div class="rounded-md border border-zinc-200 p-3 space-y-2"><div class="font-bold">Image</div><div><label class="label" for="marketingCalendarImagePrompt">AI image prompt · English</label><textarea id="marketingCalendarImagePrompt" class="input" rows="3" placeholder="Describe the image in English, or generate a draft to use its English visual direction..."></textarea></div><button id="generateMarketingCalendarImageBtn" class="btn-soft inline-flex items-center gap-2" type="button"><span data-calendar-image-spinner class="hidden h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"></span><span data-calendar-image-label>Generate image with AI</span></button><div id="marketingCalendarImageIterations" class="grid gap-2 sm:grid-cols-2"></div><div class="text-center text-xs font-semibold uppercase tracking-wide text-zinc-400">or upload your own</div><input id="marketingCalendarImageUrl" class="input" type="url" placeholder="https://www.grubz.gr/images/..."><div class="flex gap-2"><input id="marketingCalendarImageUpload" class="input min-w-0" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadMarketingCalendarImageBtn" class="btn-soft shrink-0" type="button">Upload</button></div><div id="marketingCalendarImagePreview" class="hidden overflow-hidden rounded-lg border border-zinc-200 bg-white"></div></div></div>
+	                      <div class="space-y-3"><div><div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div class="font-bold">Post preview</div><div class="flex rounded-md border border-zinc-200 bg-white p-1 text-xs font-semibold"><label class="cursor-pointer rounded px-3 py-1.5 has-[:checked]:bg-emerald-100 has-[:checked]:text-emerald-900"><input class="sr-only" name="marketingCalendarPublishLanguage" type="radio" value="el" checked> Greek</label><label class="cursor-pointer rounded px-3 py-1.5 has-[:checked]:bg-emerald-100 has-[:checked]:text-emerald-900"><input class="sr-only" name="marketingCalendarPublishLanguage" type="radio" value="en"> English</label></div></div><div id="marketingCalendarPostPreview"></div></div><div class="rounded-md border border-zinc-200 p-3 space-y-2"><div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center gap-2"><input id="marketingCalendarPublishFacebook" type="checkbox" checked> Facebook Page</label><label class="flex items-center gap-2"><input id="marketingCalendarPublishInstagram" type="checkbox" checked> Instagram profile</label></div><div id="marketingCalendarPublishHistory" class="text-xs text-zinc-500"></div></div></div>
+	                    </div>
+	                    <div class="mt-4 flex flex-wrap items-center gap-2"><p id="marketingCalendarPostMsg" class="mr-auto text-sm" role="status" aria-live="polite"></p><button id="saveMarketingCalendarPostBtn" class="btn-soft" type="button">Save draft</button><button id="publishMarketingCalendarBtn" class="btn" type="button">Publish image now</button></div>
+	                  </section>
 	                </div>
 	              </div>
 	              <div id="marketingPanelOpportunities" class="panel p-4 space-y-3 hidden" data-marketing-panel="opportunities">
@@ -2464,11 +2543,6 @@
                 <div id="boxNowSettingsMount" class="space-y-4"></div>
               </div>
               <div id="settingsPanelEmails" class="space-y-4 hidden" data-settings-panel="emails">
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                  <label class="label" for="receiptRecipientEmail">Receipt recipient email</label>
-                  <input id="receiptRecipientEmail" class="input" type="email" autocomplete="email" placeholder="accounting@example.com">
-                  <p class="mt-1 text-xs text-zinc-500">Selected invoice/receipt PDFs from Orders Manager are sent only to this address.</p>
-                </div>
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <h3 class="font-extrabold text-lg">Templates</h3>
@@ -2482,6 +2556,11 @@
                 <div id="templateList" class="space-y-4"></div>
               </div>
               <div id="settingsPanelNotifications" class="space-y-4 hidden" data-settings-panel="notifications">
+                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                  <label class="label" for="receiptRecipientEmail">System notification recipient email</label>
+                  <input id="receiptRecipientEmail" class="input" type="email" autocomplete="email" placeholder="info@example.com">
+                  <p class="mt-1 text-xs text-zinc-500">Receives new-order, signup, chat, contact, feedback, consent, calendar, and selected receipt notifications.</p>
+                </div>
                 <div>
                   <h3 class="font-extrabold text-lg">Order notifications</h3>
                   <p class="text-sm text-zinc-500">Send a Telegram test alert to confirm that the GRUBZ order sound works on your phone. This does not create an order.</p>
@@ -3222,7 +3301,7 @@
 	            <div>
 	              <label class="label" for="o_shippingDate">Upcoming shipping date</label>
 	              <input id="o_shippingDate" class="input" type="date">
-	              <p class="mt-1 text-xs text-zinc-500">Required by the Shipping scheduled email template.</p>
+	              <p class="mt-1 text-xs text-zinc-500">Saved with Save order. It can be changed after a BOX NOW voucher has been created.</p>
 	            </div>
 	            <div>
 	              <label class="label" for="o_tracking">Tracking number</label>
@@ -3801,6 +3880,7 @@
     <script src="/console/profit-calculator.js"></script>
     <script src="/console/profit-calculator-ui.js"></script>
     <script src="/console/profit-data-app.js"></script>
+    <script src="/console/scale-planning.js"></script>
     <script>
       if (!firebase.apps.length && window.GRUBZ_FIREBASE_CONFIG) {
         firebase.initializeApp(window.GRUBZ_FIREBASE_CONFIG);
@@ -3813,6 +3893,42 @@
         ? LOCAL_FUNCTION_API_BASE
         : (location.protocol === "file:" ? FUNCTION_API_BASE : "/api");
       const ADMIN_CHAT_API_BASE = API_BASE;
+	      function prepareStickyPageHeaders(){
+	        const appView = document.getElementById("appView");
+	        const sidebar = appView?.querySelector(":scope > aside");
+	        const content = appView?.querySelector(":scope > div");
+	        if (!appView || !sidebar || !content) return;
+	        content.querySelectorAll(":scope > section[id$='Section']").forEach(section => {
+	          if (section.querySelector(":scope > .console-page-sticky-header")) return;
+	          const title = section.firstElementChild;
+	          if (!title) return;
+	          const header = document.createElement("div");
+	          header.className = "console-page-sticky-header";
+	          section.insertBefore(header, title);
+	          header.appendChild(title);
+	          const localMenu = header.nextElementSibling;
+	          if (localMenu?.matches("[role='tablist']")) header.appendChild(localMenu);
+	        });
+	        const updateOffset = () => appView.style.setProperty("--console-mobile-nav-height", `${window.innerWidth < 1024 ? sidebar.offsetHeight : 0}px`);
+	        updateOffset();
+	        window.addEventListener("resize", updateOffset, { passive:true });
+	        if (typeof ResizeObserver === "function") new ResizeObserver(updateOffset).observe(sidebar);
+	      }
+	      function prepareMobileModalScreens(){
+	        document.querySelectorAll('[role="dialog"] > .modal-panel').forEach(panel => {
+	          const children = Array.from(panel.children);
+	          const header = children.find((child, index) => index < 2 && child.querySelector("h1,h2,h3,h4"));
+	          if (header) header.classList.add("modal-screen-header");
+	          const footer = children.slice().reverse().find(child =>
+	            child.id === "orderModalActions" ||
+	            child.matches("button") ||
+	            (child.matches(".flex,.grid") && child.querySelector(":scope > button, :scope > p + button"))
+	          );
+	          if (footer && footer !== header) footer.classList.add("modal-screen-footer");
+	        });
+	      }
+	      prepareStickyPageHeaders();
+	      prepareMobileModalScreens();
 	      const auth = firebase.auth();
 	      let currentAdminUser = null;
 	      if (LOCAL_HOSTS.has(location.hostname)) {
@@ -3830,6 +3946,19 @@
 	      let ordersNextCursor = null;
 		      let feedbackRows = [];
 		      let feedbackSummary = {};
+		      const FEEDBACK_CACHE_KEY = "grubz_admin_feedback_cache_v1";
+		      const FEEDBACK_CACHE_TTL_MS = LOCAL_HOSTS.has(location.hostname) ? 5 * 60 * 1000 : 60 * 1000;
+		      const feedbackCacheStorage = LOCAL_HOSTS.has(location.hostname) ? localStorage : sessionStorage;
+		      let feedbackLoadedAt = 0;
+		      let feedbackLoadPromise = null;
+		      try {
+		        const cachedFeedback = JSON.parse(feedbackCacheStorage.getItem(FEEDBACK_CACHE_KEY) || "null");
+		        if (cachedFeedback && Array.isArray(cachedFeedback.feedback)) {
+		          feedbackRows = cachedFeedback.feedback;
+		          feedbackSummary = cachedFeedback.summary || {};
+		          feedbackLoadedAt = Number(cachedFeedback.savedAt || 0);
+		        }
+		      } catch {}
 		      let uxAnalytics = null;
 		      let customers = [];
 		      let newsletterSubscribers = [];
@@ -3944,8 +4073,10 @@
 	      let socialOpportunities = [];
 	      let socialGroups = [];
 	      let socialPosts = [];
+	      let socialPublishing = { facebook:false, instagram:false };
 	      let marketingCalendarEvents = [];
 	      let marketingCalendarReminders = [];
+	      let marketingCalendarImageIterations = [];
 	      let selectedSocialGroupIds = new Set();
 	      let editingTemplateIndex = -1;
 	      const defaultSocialAgentSettings = {
@@ -4241,6 +4372,34 @@
 	        const value = Number(kg || 0);
 	        return `${value.toLocaleString("en-GB", { maximumFractionDigits: value >= 10 ? 1 : 2 })} kg`;
 	      };
+	      const orderIsNotShipped = order => {
+	        const fulfillment = statusKey(order?.fulfillmentStatus || "new");
+	        return canonicalOrderStatus(order?.status) === "active" &&
+	          !["shipped", "delivered", "cancelled", "canceled", "returned"].includes(fulfillment);
+	      };
+	      const orderRequiresPreparation = order => {
+	        if (!orderIsNotShipped(order)) return false;
+	        const fulfillment = statusKey(order?.fulfillmentStatus || "new");
+	        const payment = statusKey(order?.paymentStatus || order?.status || "pending_payment");
+	        return fulfillment !== "packed" && [
+	          "paid",
+	          "succeeded",
+	          "complete",
+	          "cash_on_delivery_pending",
+	          "creator_kit_free",
+	          "no_payment_required",
+	        ].includes(payment);
+	      };
+	      const openOrderPreparationSummary = orderList => {
+	        const notShipped = orderList.filter(orderIsNotShipped);
+	        const kilograms = notShipped.filter(orderRequiresPreparation).reduce((totals, order) => {
+	          const orderTotals = orderProductKgTotals(order);
+	          totals.happyChicken += orderTotals.happyChicken;
+	          totals.terragrub += orderTotals.terragrub;
+	          return totals;
+	        }, { happyChicken:0, terragrub:0 });
+	        return { notShippedCount:notShipped.length, kilograms };
+	      };
 	      const orderPricing = o => {
 	        const itemSubtotal = orderItemsSubtotal(o);
 	        const storedSubtotal = Number(o?.amountSubtotal || 0);
@@ -4485,7 +4644,7 @@
           </div>` : ""}`;
       }
       function announce(msg){ $("live").textContent = ""; setTimeout(() => $("live").textContent = msg, 10); }
-      function setMsg(id, msg, ok = true){ const el = $(id); el.className = `text-sm ${ok ? "text-green-700" : "text-red-700"}`; el.textContent = msg; announce(msg); }
+      function setMsg(id, msg, ok = true){ const el = $(id); el.className = `text-sm ${ok ? "text-green-700" : "text-red-700"}`; el.textContent = msg; if(id === "marketingCalendarMsg" && $("marketingCalendarPostMsg")){const modalMsg=$("marketingCalendarPostMsg");modalMsg.className=`mr-auto text-sm ${ok ? "text-green-700" : "text-red-700"}`;modalMsg.textContent=msg;} announce(msg); }
 	      function setProductWritesEnabled(enabled){
 	        productApiReady = enabled;
 	        $("newProductBtn").disabled = !enabled;
@@ -4516,6 +4675,7 @@
 	          !$("fulfillmentEmailPreviewModal").classList.contains("flex") &&
 	          !$("bulkEmailModal").classList.contains("flex")
 	          && !$("collaborationModal").classList.contains("flex")
+	          && !$("marketingCalendarPostModal").classList.contains("flex")
 	        ) {
 	          document.body.style.overflow = "";
 	        }
@@ -4640,6 +4800,9 @@
         } catch (err) {
           throw new Error("Could not reach the admin API. Check that the functions are deployed and CORS is available.");
         }
+        if ([502, 503, 504].includes(resp.status)) {
+          throw new Error(resp.status === 504 ? "The admin operation timed out. Please try again." : "The admin service could not complete the request. Please try again in a moment.");
+        }
         if ((resp.headers.get("content-type") || "").includes("text/html")) {
           throw new Error("Admin API returned the website instead of JSON. Restart the local Firebase hosting emulator or deploy the latest rewrites.");
         }
@@ -4666,6 +4829,7 @@
 	        const { query = "", ...requestOptions } = options;
 	        return api(`/adminGrubzExpenses${query}`, requestOptions);
 	      };
+	      window.grubzScalePlanningApi = (options = {}) => api("/adminSettings", options);
 	      window.dispatchEvent(new Event("grubz-profit-api-ready"));
 
       async function chatAdminApi(path, options = {}){
@@ -4741,12 +4905,7 @@
           window.grubzAdminReady = true;
           showApp(user);
           window.dispatchEvent(new Event("grubz:admin-ready"));
-          nomaSettingsLoaded = false;
-          // Load orders on their own so the local Functions emulator is not
-          // contending with every other console page during its cold start.
-          await loadOrders().catch(() => {});
-          await loadNomaSettings();
-          if (nomaFlowEnabled && localStorage.getItem("grubz_product_manager_tab") === "inventory") await loadBulkNomaInventory();
+          await loadSectionData(currentConsoleSection).catch(() => {});
         } catch (err) {
           currentAdminUser = null;
           window.grubzAdminReady = false;
@@ -4754,7 +4913,6 @@
           showLogin(err.message || "Admin access denied");
           return;
         }
-        await refreshConsoleData();
       });
 
 	      $("signOutBtn").addEventListener("click", () => auth.signOut().then(() => showLogin()));
@@ -4802,17 +4960,24 @@
 	      });
 	      const marketingSections = ["social", "collaborations", "newsletter", "coupons", "feedback", "emailHistory"];
 	      const settingsSections = ["settings", "integrations"];
-	      const consoleSections = ["analytics", "profitCalculator", "orders", "products", "customers", "marketing", "messages", "uxAnalytics", "settingsGroup", ...marketingSections, ...settingsSections];
+	      const consoleSections = ["analytics", "profitCalculator", "scalePlanning", "orders", "products", "customers", "marketing", "messages", "uxAnalytics", "settingsGroup", ...marketingSections, ...settingsSections];
 	      const consoleTabStorageKey = "grubz_console_tab";
 	      const marketingTabStorageKey = "grubz_marketing_tab";
 	      const settingsGroupTabStorageKey = "grubz_settings_group_tab";
 	      const sidebarCollapsedStorageKey = "grubz_console_sidebar_collapsed";
+	      const sectionRoutes = {
+	        analytics:"analytics", profitCalculator:"profit-calculator", scalePlanning:"scale-planning", orders:"orders", products:"products", customers:"customers",
+	        social:"marketing", collaborations:"collaborations", newsletter:"newsletter", coupons:"coupons", feedback:"feedback",
+	        emailHistory:"email-history", messages:"messages", uxAnalytics:"ux-analytics", settings:"settings", integrations:"integrations",
+	      };
+	      const routeSections = Object.fromEntries(Object.entries(sectionRoutes).map(([section, route]) => [route, section]));
+	      const sectionLoadPromises = new Map();
 	      function setupConsoleNavigation(){
 	        const nav = $("signOutBtn")?.parentElement;
 	        if (!nav) return;
 	        $("tabSocialAgent").dataset.sectionTab = "marketing";
 	        $("tabSettings").dataset.sectionTab = "settingsGroup";
-	        const topIds = ["tabAnalytics", "tabOrders", "tabProducts", "tabCustomers", "tabSocialAgent", "tabMessages", "tabUxAnalytics", "tabProduction", "tabSettings"];
+	        const topIds = ["tabAnalytics", "tabOrders", "tabProducts", "tabCustomers", "tabSocialAgent", "tabMessages", "tabUxAnalytics", "tabProduction", "tabScalePlanning", "tabSettings"];
 	        ["tabCoupons", "tabFeedback", "tabNewsletter", "tabCollaborations", "tabEmailHistory", "tabIntegrations"].forEach(id => $(id)?.classList.add("hidden"));
 	        topIds.forEach(id => { const item = $(id); if (item) nav.insertBefore(item, $("signOutBtn")); });
 	        const addSubnav = (sectionId, group, items) => {
@@ -4821,9 +4986,11 @@
 	          const labels = { social:"Marketing", collaborations:"Collaborations", newsletter:"Newsletter", coupons:"Coupons", feedback:"Feedback", emailHistory:"Email history", settings:"Settings", integrations:"Integrations" };
 	          const bar = document.createElement("div");
 	          bar.dataset.consoleGroupNav = group;
-	          bar.className = "mb-4 flex gap-2 overflow-x-auto border-b border-zinc-200 pb-2";
+	          bar.className = "flex gap-2 overflow-x-auto border-b border-zinc-200 pb-2";
 	          bar.innerHTML = items.map(item => `<button class="btn-soft shrink-0" type="button" data-console-group-section="${item}">${labels[item]}</button>`).join("");
-	          section.insertBefore(bar, section.firstChild);
+	          const stickyHeader = section.querySelector(":scope > .console-page-sticky-header");
+	          if (stickyHeader) stickyHeader.appendChild(bar);
+	          else section.insertBefore(bar, section.firstChild);
 	        };
 	        marketingSections.forEach(item => addSubnav(`${item}Section`, "marketing", marketingSections));
 	        settingsSections.forEach(item => addSubnav(`${item}Section`, "settings", settingsSections));
@@ -4854,9 +5021,40 @@
 	        });
 	      }
 	      function savedConsoleSection(){
+	        const route = location.pathname.replace(/^\/console\/?/, "").replace(/\/$/, "");
+	        if (routeSections[route]) return routeSections[route];
 	        const saved = localStorage.getItem(consoleTabStorageKey);
 	        if (saved === "boxnow") return "integrations";
 	        return consoleSections.includes(saved) ? saved : "analytics";
+	      }
+	      function loadSectionData(section){
+	        if (!currentAdminUser || !section) return Promise.resolve();
+	        if (sectionLoadPromises.has(section)) return sectionLoadPromises.get(section);
+	        const task = (async () => {
+	          if (section === "analytics" || section === "orders") return loadOrders();
+	          if (section === "products") {
+	            await loadProducts();
+	            if (localStorage.getItem("grubz_product_manager_tab") === "inventory") {
+	              await loadNomaSettings();
+	              if (nomaFlowEnabled) await loadBulkNomaInventory();
+	            }
+	            return;
+	          }
+	          if (section === "customers") return loadCustomers();
+	          if (section === "social") return Promise.all([loadSocialAgent(), loadMarketingCalendar(), loadAbandonedCarts()]);
+	          if (section === "collaborations") return loadCollaborations();
+	          if (section === "newsletter") return loadNewsletter();
+	          if (section === "coupons") return Promise.all([loadCoupons(), loadProducts()]);
+	          if (section === "feedback") return loadFeedback();
+	          if (section === "emailHistory") return loadEmailHistory();
+	          if (section === "messages") return loadChatConversations(selectedChatConversation?.id || "").then(() => markMessagesRead());
+	          if (section === "uxAnalytics") return loadUxAnalytics();
+	          if (section === "settings") return loadSettings();
+	          if (section === "integrations") return Promise.all([loadSettings(), loadNomaSettings()]);
+	        })();
+	        sectionLoadPromises.set(section, task);
+	        task.then(() => sectionLoadPromises.delete(section), () => sectionLoadPromises.delete(section));
+	        return task;
 	      }
 	      function showSection(section, options = {}){
 	        let requested = consoleSections.includes(section) ? section : "analytics";
@@ -4871,6 +5069,7 @@
 	        $("feedbackSection").classList.toggle("hidden", active !== "feedback");
 	        $("analyticsSection").classList.toggle("hidden", active !== "analytics");
 	        $("profitCalculatorSection").classList.toggle("hidden", active !== "profitCalculator");
+	        $("scalePlanningSection").classList.toggle("hidden", active !== "scalePlanning");
 	        $("uxAnalyticsSection").classList.toggle("hidden", active !== "uxAnalytics");
 	        $("customersSection").classList.toggle("hidden", active !== "customers");
 	        $("newsletterSection").classList.toggle("hidden", active !== "newsletter");
@@ -4896,15 +5095,17 @@
 	          if (marketingSections.includes(active)) localStorage.setItem(marketingTabStorageKey, active);
 	          if (settingsSections.includes(active)) localStorage.setItem(settingsGroupTabStorageKey, active);
 	        }
+	        if (options.updateUrl !== false) {
+	          const nextPath = `/console/${sectionRoutes[active] || "analytics"}/`;
+	          if (location.pathname !== nextPath) {
+	            const method = options.replaceUrl ? "replaceState" : "pushState";
+	            history[method]({ consoleSection:active }, "", nextPath);
+	          }
+	        }
 	        markTabSeen(active);
 	        updateTabBadges();
-	        if (active === "uxAnalytics") loadUxAnalytics().catch(() => {});
-	        if (active === "feedback") loadFeedback().catch(() => {});
-	        if (active === "emailHistory") loadEmailHistory().catch(() => {});
+	        if (currentAdminUser) loadSectionData(active).catch(() => {});
 	        clearInterval(chatPollTimer);
-	        if (active === "messages") {
-	          loadChatConversations(selectedChatConversation?.id || "").then(() => markMessagesRead()).catch(() => {});
-	        }
 	        chatPollTimer = setInterval(() => {
 	          const selectedId = currentConsoleSection === "messages" ? selectedChatConversation?.id || "" : "";
 	          loadChatConversations(selectedId).catch(() => {});
@@ -4912,6 +5113,7 @@
 	      }
 	      setupConsoleNavigation();
 	      setupSidebarCollapse();
+	      window.addEventListener("popstate", () => showSection(savedConsoleSection(), { persist:false, updateUrl:false }));
 	      function mountBoxNowSettings(){
 	        const mount = $("boxNowSettingsMount");
 	        const section = $("boxNowSection");
@@ -4975,20 +5177,32 @@
 	        button.addEventListener("click", () => showMarketingTab(button.dataset.marketingTab));
 	      });
 	      showMarketingTab("settings");
+	      $("marketingCalendarEventFields").append($("marketingCalendarForm"));
+	      $("marketingCalendarForm").classList.remove("hidden");
 	      $("marketingCalendarRecurrence").addEventListener("change", updateMarketingCalendarDateFields);
-	      $("newMarketingCalendarBtn").addEventListener("click", clearMarketingCalendarForm);
+	      $("marketingCalendarImageUrl").addEventListener("input", ()=>{renderMarketingCalendarImagePreview();renderMarketingCalendarPostPreview();});
+	      $("marketingCalendarCaption").addEventListener("input", renderMarketingCalendarPostPreview);
+	      $("marketingCalendarCaptionEn").addEventListener("input", renderMarketingCalendarPostPreview);
+	      document.querySelectorAll('input[name="marketingCalendarPublishLanguage"]').forEach(input=>input.addEventListener("change",renderMarketingCalendarPostPreview));
+	      $("marketingCalendarImageIterations").addEventListener("click",event=>{const button=event.target.closest("[data-use-calendar-image]");if(!button)return;const iteration=marketingCalendarImageIterations[Number(button.dataset.useCalendarImage)];if(!iteration)return;$("marketingCalendarImageUrl").value=iteration.imageUrl;$("marketingCalendarImagePrompt").value=iteration.prompt||"";renderMarketingCalendarImagePreview();renderMarketingCalendarPostPreview();renderMarketingCalendarImageIterations();setMsg("marketingCalendarMsg","Selected this image iteration");});
+	      $("newMarketingCalendarBtn").addEventListener("click",()=>{clearMarketingCalendarForm();openMarketingCalendarPostEditor();});
+	      $("closeMarketingCalendarPostModalBtn").addEventListener("click",()=>closeModal("marketingCalendarPostModal"));
+	      $("saveMarketingCalendarPostBtn").addEventListener("click",saveMarketingCalendarPostDraft);
 	      $("marketingCalendarMonth").value=new Date().toISOString().slice(0,7);
 	      $("marketingCalendarMonth").addEventListener("change", renderMarketingCalendar);
 	      $("marketingCalendarSearch").addEventListener("input", renderMarketingCalendar);
 	      $("marketingCalendarRelevanceFilter").addEventListener("change", renderMarketingCalendar);
-	      const handleMarketingCalendarEdit=event=>{const button=event.target.closest("[data-edit-marketing-calendar]");if(button)editMarketingCalendarEvent(button.dataset.editMarketingCalendar);};
+	      const handleMarketingCalendarEdit=event=>{const button=event.target.closest("[data-edit-marketing-calendar]");if(button){editMarketingCalendarEvent(button.dataset.editMarketingCalendar,{scroll:false});openMarketingCalendarPostEditor();return;}const dayCell=event.target.closest("[data-new-marketing-calendar-date]");if(dayCell){clearMarketingCalendarForm();$("marketingCalendarRecurrence").value="one_time";$("marketingCalendarDate").value=dayCell.dataset.newMarketingCalendarDate;updateMarketingCalendarDateFields();openMarketingCalendarPostEditor();}};
 	      $("marketingCalendarList").addEventListener("click",handleMarketingCalendarEdit);
 	      $("marketingCalendarMonthGrid").addEventListener("click",handleMarketingCalendarEdit);
-	      $("marketingCalendarForm").addEventListener("submit", async event => { event.preventDefault(); try{setMsg("marketingCalendarMsg","Saving event...");await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"save",id:$("marketingCalendarId").value,event:marketingCalendarPayload()})});await loadMarketingCalendar();clearMarketingCalendarForm();setMsg("marketingCalendarMsg","Event saved");}catch(err){setMsg("marketingCalendarMsg",err.message||"Event could not be saved",false);} });
+	      $("marketingCalendarForm").addEventListener("submit", async event => { event.preventDefault(); try{setMsg("marketingCalendarMsg","Saving event...");const data=await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"save",id:$("marketingCalendarId").value,event:marketingCalendarPayload()})});await loadMarketingCalendar();if(data.event)editMarketingCalendarEvent(data.event.id,{scroll:false});setMsg("marketingCalendarMsg","Event saved. It is ready to publish.");}catch(err){setMsg("marketingCalendarMsg",err.message||"Event could not be saved",false);} });
 	      $("seedMarketingCalendarBtn").addEventListener("click", async()=>{try{setMsg("marketingCalendarMsg","Adding starter events...");const data=await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"seed"})});await loadMarketingCalendar();setMsg("marketingCalendarMsg",`${data.created} starter events added`);}catch(err){setMsg("marketingCalendarMsg",err.message||"Starter events could not be added",false);}});
-	      $("generateMarketingCalendarDraftBtn").addEventListener("click",async()=>{try{setMsg("marketingCalendarMsg","Generating a draft...");const data=await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"generateDraft",event:marketingCalendarPayload()})});const draft=data.draft||{};$("marketingCalendarAngle").value=draft.angle||"";$("marketingCalendarCaption").value=draft.socialCaption||"";$("marketingCalendarStory").value=draft.storyText||"";$("marketingCalendarNewsletter").value=draft.newsletterSubject||"";$("marketingCalendarCta").value=draft.cta||"";$("marketingCalendarVisual").value=draft.visualDirection||"";setMsg("marketingCalendarMsg","Draft generated. Review it before saving.");}catch(err){setMsg("marketingCalendarMsg",err.message||"Draft could not be generated",false);}});
+	      $("generateMarketingCalendarDraftBtn").addEventListener("click",async()=>{const button=$("generateMarketingCalendarDraftBtn"),spinner=button.querySelector("[data-calendar-draft-spinner]"),label=button.querySelector("[data-calendar-draft-label]");button.disabled=true;button.setAttribute("aria-busy","true");spinner.classList.remove("hidden");label.textContent="Generating bilingual draft…";try{setMsg("marketingCalendarMsg","AI is preparing the Greek content and English translation. This may take a moment...");const data=await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"generateDraft",event:marketingCalendarPayload()})});const draft=data.draft||{};$("marketingCalendarAngle").value=draft.angle||"";$("marketingCalendarAngleEn").value=draft.angleEn||"";$("marketingCalendarCaption").value=draft.socialCaption||"";$("marketingCalendarCaptionEn").value=draft.socialCaptionEn||"";$("marketingCalendarStory").value=draft.storyText||"";$("marketingCalendarStoryEn").value=draft.storyTextEn||"";$("marketingCalendarNewsletter").value=draft.newsletterSubject||"";$("marketingCalendarNewsletterEn").value=draft.newsletterSubjectEn||"";$("marketingCalendarCta").value=draft.cta||"";$("marketingCalendarCtaEn").value=draft.ctaEn||"";$("marketingCalendarVisual").value=draft.visualDirection||"";$("marketingCalendarVisualEn").value=draft.visualDirectionEn||"";if(!$("marketingCalendarImagePrompt").value.trim())$("marketingCalendarImagePrompt").value=draft.visualDirectionEn||"";renderMarketingCalendarPostPreview();setMsg("marketingCalendarMsg","Bilingual draft generated. Review it before saving.");}catch(err){setMsg("marketingCalendarMsg",err.message||"Draft could not be generated",false);}finally{button.disabled=false;button.removeAttribute("aria-busy");spinner.classList.add("hidden");label.textContent="Generate bilingual draft";}});
+	      $("generateMarketingCalendarImageBtn").addEventListener("click",async()=>{const button=$("generateMarketingCalendarImageBtn"),spinner=button.querySelector("[data-calendar-image-spinner]"),label=button.querySelector("[data-calendar-image-label]"),prompt=$("marketingCalendarImagePrompt").value.trim()||$("marketingCalendarVisualEn").value.trim();if(!prompt)return setMsg("marketingCalendarMsg","Describe the image in English first",false);button.disabled=true;button.setAttribute("aria-busy","true");spinner.classList.remove("hidden");label.textContent=marketingCalendarImageIterations.length?"Creating another iteration…":"Creating image…";try{setMsg("marketingCalendarMsg",`AI is creating image iteration ${marketingCalendarImageIterations.length+1}. This can take a few minutes...`);const data=await api("/adminMarketingCalendar",{method:"POST",baseUrl:LOCAL_HOSTS.has(location.hostname)?LOCAL_FUNCTION_API_BASE:FUNCTION_API_BASE,body:JSON.stringify({action:"generateImage",prompt,event:marketingCalendarPayload()})});const iteration={imageUrl:data.image||"",prompt:data.prompt||prompt,generatedAt:data.generatedAt||new Date().toISOString()};marketingCalendarImageIterations=[...marketingCalendarImageIterations,iteration].slice(-12);$("marketingCalendarImageUrl").value=iteration.imageUrl;renderMarketingCalendarImageIterations();renderMarketingCalendarImagePreview();renderMarketingCalendarPostPreview();setMsg("marketingCalendarMsg",`Image iteration ${marketingCalendarImageIterations.length} created and selected. Adjust the English prompt and generate again, or save this version.`);}catch(err){setMsg("marketingCalendarMsg",err.message||"Image could not be generated",false);}finally{button.disabled=false;button.removeAttribute("aria-busy");spinner.classList.add("hidden");label.textContent=marketingCalendarImageIterations.length?"Generate another iteration":"Generate image with AI";}});
+	      $("uploadMarketingCalendarImageBtn").addEventListener("click",async()=>{const file=$("marketingCalendarImageUpload").files[0];if(!file)return setMsg("marketingCalendarMsg","Choose a PNG, JPG, or WebP image first",false);try{setMsg("marketingCalendarMsg","Preparing and uploading image...");const imageDataUrl=await productImageDataUrl(file);const data=await api("/adminNewsletterImage",{method:"POST",baseUrl:LOCAL_HOSTS.has(location.hostname)?LOCAL_FUNCTION_API_BASE:API_BASE,body:JSON.stringify({imageDataUrl})});$("marketingCalendarImageUrl").value=data.image||"";renderMarketingCalendarImagePreview();renderMarketingCalendarPostPreview();setMsg("marketingCalendarMsg","Image uploaded. Save the draft before publishing.");}catch(err){setMsg("marketingCalendarMsg",err.message||"Image upload failed",false);}});
+	      $("publishMarketingCalendarBtn").addEventListener("click",async()=>{const id=$("marketingCalendarId").value,language=marketingCalendarPublishLanguage(),languageLabel=language==="en"?"English":"Greek";const platforms=[$("marketingCalendarPublishFacebook").checked?"facebook":"",$("marketingCalendarPublishInstagram").checked?"instagram":""].filter(Boolean);if(!id)return setMsg("marketingCalendarMsg","Save the event before publishing",false);if(!platforms.length)return setMsg("marketingCalendarMsg","Choose Facebook, Instagram, or both",false);if(!confirm(`Publish the ${languageLabel} caption and this image to ${platforms.map(value=>value==="facebook"?"Facebook":"Instagram").join(" and ")}? This action is public and cannot be undone here.`))return;try{setMsg("marketingCalendarMsg",`Publishing in ${languageLabel}...`);const data=await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"publish",id,platforms,language})});const updated=data.event;if(updated)marketingCalendarEvents=marketingCalendarEvents.map(item=>item.id===updated.id?updated:item);editMarketingCalendarEvent(id,{scroll:false});renderMarketingCalendar();const results=data.results||[];const success=results.filter(item=>item.ok).map(item=>item.platform);const failed=results.filter(item=>!item.ok);setMsg("marketingCalendarMsg",failed.length?`${success.length?`Published in ${languageLabel} to ${success.join(" and ")}. `:""}${failed.map(item=>`${item.platform}: ${item.error}`).join(" · ")}`:`Published in ${languageLabel} to ${success.join(" and ")}`,!failed.length);}catch(err){setMsg("marketingCalendarMsg",err.message||"Image could not be published",false);}});
 	      $("testMarketingCalendarBtn").addEventListener("click",async()=>{try{setMsg("marketingCalendarMsg","Sending test to info@grubz.gr...");await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"test",event:marketingCalendarPayload()})});setMsg("marketingCalendarMsg","Test email sent to info@grubz.gr");}catch(err){setMsg("marketingCalendarMsg",err.message||"Test email could not be sent",false);}});
-	      $("deleteMarketingCalendarBtn").addEventListener("click",async()=>{const id=$("marketingCalendarId").value;if(!id||!confirm("Delete this calendar event?"))return;try{await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"delete",id})});marketingCalendarEvents=marketingCalendarEvents.filter(item=>item.id!==id);renderMarketingCalendar();clearMarketingCalendarForm();setMsg("marketingCalendarMsg","Event deleted");}catch(err){setMsg("marketingCalendarMsg",err.message||"Event could not be deleted",false);}});
+	      $("deleteMarketingCalendarBtn").addEventListener("click",async()=>{const id=$("marketingCalendarId").value;if(!id||!confirm("Delete this calendar event?"))return;try{await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"delete",id})});marketingCalendarEvents=marketingCalendarEvents.filter(item=>item.id!==id);renderMarketingCalendar();clearMarketingCalendarForm();closeModal("marketingCalendarPostModal");setMsg("marketingCalendarMsg","Event deleted");}catch(err){setMsg("marketingCalendarMsg",err.message||"Event could not be deleted",false);}});
 	      clearMarketingCalendarForm();
 	      function showIdeaWeekTab(tab = "2026-09-07"){
 	        const tabs = Array.from(document.querySelectorAll("[data-idea-week-tab]")).map(button => button.dataset.ideaWeekTab);
@@ -5190,7 +5404,7 @@
 	      document.querySelectorAll("[data-section-tab]").forEach(button => {
 	        button.addEventListener("click", () => showSection(button.dataset.sectionTab));
 	      });
-	      showSection(savedConsoleSection(), { persist:false });
+	      showSection(savedConsoleSection(), { persist:false, replaceUrl:true });
 
 	      const tableSortCollator = new Intl.Collator(undefined, { numeric:true, sensitivity:"base" });
 	      function sortableCellValue(cell){
@@ -6520,7 +6734,7 @@
 	      }
 
 	      function clearSocialPostForm(){
-	        $("socialPostForm").reset(); $("socialPostId").value = ""; $("socialPostLanguage").value = "el"; renderSocialPostGroupPicker([]);
+	        $("socialPostForm").reset(); $("socialPostId").value = ""; $("socialPostLanguage").value = "el"; renderSocialPostGroupPicker([]); renderSocialPostImagePreview();
 	      }
 
 	      function editSocialPost(id){
@@ -6528,7 +6742,19 @@
 	        $("socialPostId").value = post.id; $("socialPostTitle").value = post.title || ""; $("socialPostPlatform").value = post.platform || "facebook";
 	        $("socialPostProduct").value = post.product || "happy-chicken"; $("socialPostLanguage").value = post.language || "el"; $("socialPostStatus").value = post.status || "draft";
 	        $("socialPostCampaign").value = post.campaign || ""; $("socialPostContent").value = post.content || ""; $("socialPostImageUrl").value = post.imageUrl || ""; $("socialPostNotes").value = post.notes || "";
-	        renderSocialPostGroupPicker(post.destinationGroupIds || []); $("socialPostTitle").focus();
+	        renderSocialPostGroupPicker(post.destinationGroupIds || []); renderSocialPostImagePreview(); $("socialPostTitle").focus();
+	      }
+
+	      function renderSocialPostImagePreview(){
+	        const imageUrl = $("socialPostImageUrl").value.trim();
+	        $("socialPostImagePreview").classList.toggle("hidden", !imageUrl);
+	        $("socialPostImagePreview").innerHTML = imageUrl ? `<img src="${esc(imageUrl)}" alt="Post preview" class="max-h-72 w-full bg-zinc-100 object-contain">` : "";
+	      }
+
+	      function renderSocialPublishingStatus(){
+	        const facebook = socialPublishing.facebook ? "Facebook connected" : "Facebook not configured";
+	        const instagram = socialPublishing.instagram ? "Instagram connected" : "Instagram not configured";
+	        $("socialPublishingStatus").innerHTML = `<span class="font-bold">Meta connection:</span> ${esc(facebook)} · ${esc(instagram)}${(!socialPublishing.facebook || !socialPublishing.instagram) ? `<div class="mt-1">Configure the Firebase secrets <code>META_PAGE_ACCESS_TOKEN</code>, <code>META_FACEBOOK_PAGE_ID</code>, and <code>META_INSTAGRAM_ACCOUNT_ID</code>, then deploy <code>adminSocialAgent</code>.</div>` : ""}`;
 	      }
 
 	      function renderSocialGroups(){
@@ -6577,13 +6803,29 @@
 	        const posts = socialPosts.filter(post => (productFilter === "all" || post.product === productFilter) && (platformFilter === "all" || post.platform === platformFilter));
 	        $("socialPostsList").innerHTML = posts.length ? posts.map(post => {
 	          const destinations = (post.destinationGroupIds || []).map(id => socialGroups.find(group => group.id === id)).filter(Boolean);
-	          return `<article class="rounded-md border border-zinc-200 p-3 space-y-2" data-social-post-id="${esc(post.id)}"><div class="flex items-start justify-between gap-3"><div><div class="font-extrabold">${esc(post.title)}</div><div class="text-xs text-zinc-500">${post.platform === "instagram" ? "Instagram" : "Facebook"} · ${post.product === "terragrub" ? "TerraGrub" : "Happy Chicken"} · ${esc(post.language || "el")} · ${esc(post.status || "draft")}</div></div><div class="flex flex-wrap gap-2"><button class="btn-soft" type="button" data-edit-social-post="${esc(post.id)}">Edit</button><button class="btn-soft" type="button" data-copy-social-post="${esc(post.id)}">Copy</button><button class="btn-soft" type="button" data-posted-social-post="${esc(post.id)}">Mark posted</button><button class="btn-danger" type="button" data-delete-social-post="${esc(post.id)}">Delete</button></div></div><p class="whitespace-pre-wrap text-sm text-zinc-700">${esc(post.content).slice(0, 700)}</p><div class="break-all rounded bg-zinc-50 p-2 text-xs">${esc(socialTrackedUrl(post))}</div>${destinations.length ? `<div class="space-y-1">${destinations.map(group => `<div class="flex flex-wrap items-center gap-2 rounded bg-zinc-50 p-2 text-sm"><span class="mr-auto font-semibold">${esc(group.name)}</span><button class="btn-soft" type="button" data-copy-social-destination="${esc(post.id)}" data-group-id="${esc(group.id)}">Copy for group</button><a class="btn-soft" href="${esc(group.url)}" target="_blank" rel="noopener noreferrer">Open group</a></div>`).join("")}</div>` : post.platform === "instagram" ? `<a class="btn-soft inline-flex" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Open Instagram</a>` : ""}</article>`;
+	          const canPublish = Boolean(socialPublishing[post.platform === "instagram" ? "instagram" : "facebook"]);
+	          const publishLabel = post.status === "posted" ? "Republish" : "Publish";
+	          return `<article class="rounded-md border border-zinc-200 p-3 space-y-2" data-social-post-id="${esc(post.id)}"><div class="flex items-start justify-between gap-3"><div><div class="font-extrabold">${esc(post.title)}</div><div class="text-xs text-zinc-500">${post.platform === "instagram" ? "Instagram" : "Facebook"} · ${post.product === "terragrub" ? "TerraGrub" : "Happy Chicken"} · ${esc(post.language || "el")} · ${esc(post.status || "draft")}</div></div><div class="flex flex-wrap gap-2"><button class="btn-soft" type="button" data-edit-social-post="${esc(post.id)}">Edit</button><button class="btn-soft" type="button" data-copy-social-post="${esc(post.id)}">Copy</button><button class="btn" type="button" data-publish-social-post="${esc(post.id)}"${canPublish ? "" : " disabled"}>${publishLabel}</button><button class="btn-soft" type="button" data-posted-social-post="${esc(post.id)}">Mark posted</button><button class="btn-danger" type="button" data-delete-social-post="${esc(post.id)}">Delete</button></div></div>${post.imageUrl ? `<img src="${esc(post.imageUrl)}" alt="" class="max-h-64 w-full rounded bg-zinc-100 object-contain">` : ""}<p class="whitespace-pre-wrap text-sm text-zinc-700">${esc(post.content).slice(0, 700)}</p><div class="break-all rounded bg-zinc-50 p-2 text-xs">${esc(socialTrackedUrl(post))}</div>${post.permalink ? `<a class="text-sm font-bold text-blue-700 hover:underline" href="${esc(post.permalink)}" target="_blank" rel="noopener noreferrer">View published post</a>` : ""}${post.lastPublishError ? `<div class="rounded bg-red-50 p-2 text-xs text-red-700">Last publish error: ${esc(post.lastPublishError)}</div>` : ""}${destinations.length ? `<div class="space-y-1">${destinations.map(group => `<div class="flex flex-wrap items-center gap-2 rounded bg-zinc-50 p-2 text-sm"><span class="mr-auto font-semibold">${esc(group.name)}</span><button class="btn-soft" type="button" data-copy-social-destination="${esc(post.id)}" data-group-id="${esc(group.id)}">Copy for group</button><a class="btn-soft" href="${esc(group.url)}" target="_blank" rel="noopener noreferrer">Open group</a></div>`).join("")}</div>` : ""}</article>`;
 	        }).join("") : `<div class="rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">No matching social posts.</div>`;
 	      }
 
 	      async function copyPreparedSocialPost(post, group = null){
 	        await navigator.clipboard.writeText(`${post.content}\n\n${socialTrackedUrl(post, group)}`);
 	        setMsg("socialPostsMsg", "Post text and tracked link copied");
+	      }
+
+	      async function publishSocialPost(post){
+	        if (!post) return;
+	        const platformName = post.platform === "instagram" ? "Instagram" : "Facebook";
+	        if (!socialPublishing[post.platform === "instagram" ? "instagram" : "facebook"]) throw new Error(`${platformName} publishing is not configured`);
+	        if (post.platform === "instagram" && !post.imageUrl) throw new Error("Instagram requires an uploaded image");
+	        const republish = post.status === "posted";
+	        if (!confirm(`${republish ? "Publish this post again" : "Publish this post now"} on the GRUBZ ${platformName} account? This action is public and cannot be undone from the console.`)) return;
+	        setMsg("socialPostsMsg", `Publishing to ${platformName}...`);
+	        const data = await socialAgentApi("/adminSocialAgent", { method:"POST", body:JSON.stringify({ action:"publishPost", id:post.id, republish }) });
+	        socialPosts = socialPosts.map(item => item.id === data.post.id ? data.post : item);
+	        renderSocialPosts(); editSocialPost(data.post.id);
+	        setMsg("socialPostsMsg", `${platformName} post published${data.published?.permalink ? " — use View published post to open it" : ""}`);
 	      }
 
 	      function updateMarketingCalendarDateFields(){
@@ -6593,16 +6835,26 @@
 	        $("marketingCalendarEasterWrap").classList.toggle("hidden", recurrence !== "orthodox_easter_offset");
 	      }
 	      const calendarCsv = value => String(value || "").split(",").map(item => item.trim()).filter(Boolean);
+	      function renderMarketingCalendarImagePreview(){const imageUrl=$("marketingCalendarImageUrl").value.trim(),preview=$("marketingCalendarImagePreview");preview.classList.toggle("hidden",!imageUrl);preview.innerHTML=imageUrl?`<img src="${esc(imageUrl)}" alt="Calendar post preview" class="max-h-72 w-full bg-zinc-100 object-contain">`:"";}
+	      function renderMarketingCalendarImageIterations(){const selected=$("marketingCalendarImageUrl").value.trim(),container=$("marketingCalendarImageIterations");container.innerHTML=marketingCalendarImageIterations.length?marketingCalendarImageIterations.map((item,index)=>`<article class="overflow-hidden rounded-md border ${item.imageUrl===selected?"border-emerald-500 ring-2 ring-emerald-100":"border-zinc-200"}"><img src="${esc(item.imageUrl)}" alt="AI image iteration ${index+1}" class="aspect-square w-full bg-zinc-100 object-cover"><div class="space-y-1 p-2"><div class="text-xs font-bold">Iteration ${index+1}${item.imageUrl===selected?" · selected":""}</div><button class="btn-soft w-full text-xs" type="button" data-use-calendar-image="${index}"${item.imageUrl===selected?" disabled":""}>${item.imageUrl===selected?"Selected":"Use this image"}</button></div></article>`).join(""):"<p class=\"text-xs text-zinc-500 sm:col-span-2\">Generate as many versions as needed. Every iteration will remain here until you choose the final image.</p>";$("generateMarketingCalendarImageBtn").querySelector("[data-calendar-image-label]").textContent=marketingCalendarImageIterations.length?"Generate another iteration":"Generate image with AI";}
+	      function marketingCalendarPublishLanguage(){return document.querySelector('input[name="marketingCalendarPublishLanguage"]:checked')?.value==="en"?"en":"el";}
+	      function renderMarketingCalendarPostPreview(){const imageUrl=$("marketingCalendarImageUrl").value.trim(),language=marketingCalendarPublishLanguage(),caption=$(language==="en"?"marketingCalendarCaptionEn":"marketingCalendarCaption").value.trim()||(language==="en"?"Your English social caption will appear here.":"Η ελληνική λεζάντα θα εμφανιστεί εδώ.");$("marketingCalendarPostPreview").innerHTML=`<div class="mx-auto max-w-xl overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"><div class="flex items-center gap-3 p-3"><div class="grid h-10 w-10 place-items-center rounded-full bg-[#8b1f17] text-xs font-black text-white">G</div><div><div class="font-bold">GRUBZ</div><div class="text-xs text-zinc-500">Facebook · Instagram · ${language==="en"?"English":"Greek"}</div></div></div><div class="whitespace-pre-wrap px-3 pb-3 text-sm text-zinc-800">${esc(caption)}</div>${imageUrl?`<img src="${esc(imageUrl)}" alt="Post preview" class="max-h-[520px] w-full bg-zinc-100 object-contain">`:`<div class="grid min-h-64 place-items-center bg-zinc-100 p-6 text-center text-sm text-zinc-500">Upload an image to preview the complete post.</div>`}<div class="flex justify-around border-t border-zinc-100 p-3 text-xs font-semibold text-zinc-500"><span>Like</span><span>Comment</span><span>Share</span></div></div>`;}
+	      function renderMarketingCalendarPublishHistory(item={}){const history=Array.isArray(item.publicationHistory)?item.publicationHistory.slice(-6).reverse():[];$("marketingCalendarPublishHistory").innerHTML=history.length?`<div class="font-semibold text-zinc-700">Recent publishing</div>${history.map(entry=>`<div>${entry.ok?"✓":"✕"} ${esc(entry.platform||"")} · ${entry.language==="en"?"English":"Greek"} · ${esc(entry.publishedAt||entry.attemptedAt||"")}${entry.permalink?` · <a class="font-semibold text-blue-700 hover:underline" href="${esc(entry.permalink)}" target="_blank" rel="noopener noreferrer">View post</a>`:""}${entry.error?` · <span class="text-red-700">${esc(entry.error)}</span>`:""}</div>`).join("")}`:"Not published yet.";}
+	      function openMarketingCalendarPostEditor(){const item=marketingCalendarEvents.find(event=>event.id===$("marketingCalendarId").value);$("marketingCalendarPostEventTitle").textContent=$("marketingCalendarTitle").value.trim()||"New calendar event";renderMarketingCalendarImageIterations();renderMarketingCalendarImagePreview();renderMarketingCalendarPostPreview();renderMarketingCalendarPublishHistory(item||{});openModal("marketingCalendarPostModal");}
+	      async function saveMarketingCalendarPostDraft(){try{setMsg("marketingCalendarMsg","Saving post draft...");const data=await api("/adminMarketingCalendar",{method:"POST",body:JSON.stringify({action:"save",id:$("marketingCalendarId").value,event:marketingCalendarPayload()})});if(data.event){$("marketingCalendarId").value=data.event.id;marketingCalendarEvents=[data.event,...marketingCalendarEvents.filter(item=>item.id!==data.event.id)];renderMarketingCalendar();renderMarketingCalendarPublishHistory(data.event);}setMsg("marketingCalendarMsg","Post draft saved");}catch(err){setMsg("marketingCalendarMsg",err.message||"Post draft could not be saved",false);}}
 	      function marketingCalendarPayload(){
 	        const recurrence = $("marketingCalendarRecurrence").value, monthDayValue = $("marketingCalendarMonthDay").value;
-	        return { title:$("marketingCalendarTitle").value.trim(), titleEl:$("marketingCalendarTitleEl").value.trim(), description:$("marketingCalendarDescription").value.trim(), recurrence, monthDay:recurrence === "annual_fixed" && monthDayValue ? monthDayValue.slice(5) : "", date:$("marketingCalendarDate").value, easterOffsetDays:Number($("marketingCalendarEasterOffset").value || 0), relevance:$("marketingCalendarRelevance").value, objective:$("marketingCalendarObjective").value, country:$("marketingCalendarCountry").value.trim(), categories:calendarCsv($("marketingCalendarCategories").value), audiences:calendarCsv($("marketingCalendarAudiences").value), reminderDays:calendarCsv($("marketingCalendarReminderDays").value).map(Number), enabled:$("marketingCalendarEnabled").checked, sourceLabel:$("marketingCalendarSourceLabel").value.trim(), sourceUrl:$("marketingCalendarSourceUrl").value.trim(), lastVerified:$("marketingCalendarVerified").value, draft:{ angle:$("marketingCalendarAngle").value.trim(), socialCaption:$("marketingCalendarCaption").value.trim(), storyText:$("marketingCalendarStory").value.trim(), newsletterSubject:$("marketingCalendarNewsletter").value.trim(), cta:$("marketingCalendarCta").value.trim(), visualDirection:$("marketingCalendarVisual").value.trim() } };
+	        return { title:$("marketingCalendarTitle").value.trim(), titleEl:$("marketingCalendarTitleEl").value.trim(), description:$("marketingCalendarDescription").value.trim(), recurrence, monthDay:recurrence === "annual_fixed" && monthDayValue ? monthDayValue.slice(5) : "", date:$("marketingCalendarDate").value, easterOffsetDays:Number($("marketingCalendarEasterOffset").value || 0), relevance:$("marketingCalendarRelevance").value, objective:$("marketingCalendarObjective").value, country:$("marketingCalendarCountry").value.trim(), categories:calendarCsv($("marketingCalendarCategories").value), audiences:calendarCsv($("marketingCalendarAudiences").value), reminderDays:calendarCsv($("marketingCalendarReminderDays").value).map(Number), enabled:$("marketingCalendarEnabled").checked, sourceLabel:$("marketingCalendarSourceLabel").value.trim(), sourceUrl:$("marketingCalendarSourceUrl").value.trim(), lastVerified:$("marketingCalendarVerified").value, imageUrl:$("marketingCalendarImageUrl").value.trim(), imageIterations:marketingCalendarImageIterations, publishLanguage:marketingCalendarPublishLanguage(), draft:{ angle:$("marketingCalendarAngle").value.trim(), angleEn:$("marketingCalendarAngleEn").value.trim(), socialCaption:$("marketingCalendarCaption").value.trim(), socialCaptionEn:$("marketingCalendarCaptionEn").value.trim(), storyText:$("marketingCalendarStory").value.trim(), storyTextEn:$("marketingCalendarStoryEn").value.trim(), newsletterSubject:$("marketingCalendarNewsletter").value.trim(), newsletterSubjectEn:$("marketingCalendarNewsletterEn").value.trim(), cta:$("marketingCalendarCta").value.trim(), ctaEn:$("marketingCalendarCtaEn").value.trim(), visualDirection:$("marketingCalendarVisual").value.trim(), visualDirectionEn:$("marketingCalendarVisualEn").value.trim() } };
 	      }
 	      function clearMarketingCalendarForm(){
-	        $("marketingCalendarForm").reset(); $("marketingCalendarId").value=""; $("marketingCalendarRecurrence").value="annual_fixed"; $("marketingCalendarMonthDay").value="2000-01-01"; $("marketingCalendarRelevance").value="medium"; $("marketingCalendarObjective").value="engagement"; $("marketingCalendarCountry").value="GR"; $("marketingCalendarReminderDays").value="10, 2"; $("marketingCalendarEnabled").checked=true; $("marketingCalendarCta").value="Shop GRUBZ"; $("deleteMarketingCalendarBtn").classList.add("hidden"); updateMarketingCalendarDateFields(); setMsg("marketingCalendarMsg", "");
+	        $("marketingCalendarForm").reset(); $("marketingCalendarId").value=""; $("marketingCalendarRecurrence").value="annual_fixed"; $("marketingCalendarMonthDay").value="2000-01-01"; $("marketingCalendarRelevance").value="medium"; $("marketingCalendarObjective").value="engagement"; $("marketingCalendarCountry").value="GR"; $("marketingCalendarReminderDays").value="10, 2"; $("marketingCalendarEnabled").checked=true; ["marketingCalendarAngle","marketingCalendarAngleEn","marketingCalendarCaption","marketingCalendarCaptionEn","marketingCalendarStory","marketingCalendarStoryEn","marketingCalendarNewsletter","marketingCalendarNewsletterEn","marketingCalendarVisual","marketingCalendarVisualEn","marketingCalendarImagePrompt","marketingCalendarImageUrl"].forEach(id=>$(id).value=""); marketingCalendarImageIterations=[]; $("marketingCalendarImageUpload").value=""; $("marketingCalendarCta").value="Ανακαλύψτε το GRUBZ"; $("marketingCalendarCtaEn").value="Shop GRUBZ"; document.querySelector('input[name="marketingCalendarPublishLanguage"][value="el"]').checked=true; $("marketingCalendarPublishFacebook").checked=true; $("marketingCalendarPublishInstagram").checked=true; $("deleteMarketingCalendarBtn").classList.add("hidden"); updateMarketingCalendarDateFields(); renderMarketingCalendarImageIterations(); renderMarketingCalendarImagePreview(); renderMarketingCalendarPostPreview(); renderMarketingCalendarPublishHistory(); setMsg("marketingCalendarMsg", "");
 	      }
-	      function editMarketingCalendarEvent(id){
+	      function editMarketingCalendarEvent(id,{scroll=true}={}){
 	        const item=marketingCalendarEvents.find(event=>event.id===id); if(!item)return; const draft=item.draft||{};
-	        $("marketingCalendarId").value=item.id; $("marketingCalendarTitle").value=item.title||""; $("marketingCalendarTitleEl").value=item.titleEl||""; $("marketingCalendarDescription").value=item.description||""; $("marketingCalendarRecurrence").value=item.recurrence||"annual_fixed"; $("marketingCalendarMonthDay").value=`2000-${item.monthDay||"01-01"}`; $("marketingCalendarDate").value=item.date||""; $("marketingCalendarEasterOffset").value=Number(item.easterOffsetDays||0); $("marketingCalendarRelevance").value=item.relevance||"medium"; $("marketingCalendarObjective").value=item.objective||"engagement"; $("marketingCalendarCountry").value=item.country||"GR"; $("marketingCalendarCategories").value=(item.categories||[]).join(", "); $("marketingCalendarAudiences").value=(item.audiences||[]).join(", "); $("marketingCalendarReminderDays").value=(item.reminderDays||[10,2]).join(", "); $("marketingCalendarEnabled").checked=item.enabled!==false; $("marketingCalendarSourceLabel").value=item.sourceLabel||""; $("marketingCalendarSourceUrl").value=item.sourceUrl||""; $("marketingCalendarVerified").value=item.lastVerified||""; $("marketingCalendarAngle").value=draft.angle||""; $("marketingCalendarCaption").value=draft.socialCaption||""; $("marketingCalendarStory").value=draft.storyText||""; $("marketingCalendarNewsletter").value=draft.newsletterSubject||""; $("marketingCalendarCta").value=draft.cta||""; $("marketingCalendarVisual").value=draft.visualDirection||""; $("deleteMarketingCalendarBtn").classList.remove("hidden"); updateMarketingCalendarDateFields(); $("marketingCalendarForm").scrollIntoView({behavior:"smooth",block:"start"});
+	        $("marketingCalendarId").value=item.id; $("marketingCalendarTitle").value=item.title||""; $("marketingCalendarTitleEl").value=item.titleEl||""; $("marketingCalendarDescription").value=item.description||""; $("marketingCalendarRecurrence").value=item.recurrence||"annual_fixed"; $("marketingCalendarMonthDay").value=`2000-${item.monthDay||"01-01"}`; $("marketingCalendarDate").value=item.date||""; $("marketingCalendarEasterOffset").value=Number(item.easterOffsetDays||0); $("marketingCalendarRelevance").value=item.relevance||"medium"; $("marketingCalendarObjective").value=item.objective||"engagement"; $("marketingCalendarCountry").value=item.country||"GR"; $("marketingCalendarCategories").value=(item.categories||[]).join(", "); $("marketingCalendarAudiences").value=(item.audiences||[]).join(", "); $("marketingCalendarReminderDays").value=(item.reminderDays||[10,2]).join(", "); $("marketingCalendarEnabled").checked=item.enabled!==false; $("marketingCalendarSourceLabel").value=item.sourceLabel||""; $("marketingCalendarSourceUrl").value=item.sourceUrl||""; $("marketingCalendarVerified").value=item.lastVerified||"";
+	        $("marketingCalendarAngle").value=draft.angle||""; $("marketingCalendarAngleEn").value=draft.angleEn||""; $("marketingCalendarCaption").value=draft.socialCaption||""; $("marketingCalendarCaptionEn").value=draft.socialCaptionEn||""; $("marketingCalendarStory").value=draft.storyText||""; $("marketingCalendarStoryEn").value=draft.storyTextEn||""; $("marketingCalendarNewsletter").value=draft.newsletterSubject||""; $("marketingCalendarNewsletterEn").value=draft.newsletterSubjectEn||""; $("marketingCalendarCta").value=draft.cta||""; $("marketingCalendarCtaEn").value=draft.ctaEn||""; $("marketingCalendarVisual").value=draft.visualDirection||""; $("marketingCalendarVisualEn").value=draft.visualDirectionEn||""; $("marketingCalendarImagePrompt").value=draft.visualDirectionEn||""; $("marketingCalendarImageUrl").value=item.imageUrl||""; marketingCalendarImageIterations=Array.isArray(item.imageIterations)?item.imageIterations:[];
+	        document.querySelector(`input[name="marketingCalendarPublishLanguage"][value="${item.publishLanguage==="en"?"en":"el"}"]`).checked=true;
+	        $("deleteMarketingCalendarBtn").classList.remove("hidden"); updateMarketingCalendarDateFields(); renderMarketingCalendarImageIterations(); renderMarketingCalendarImagePreview(); renderMarketingCalendarPostPreview(); renderMarketingCalendarPublishHistory(item); if(scroll)$("marketingCalendarForm").scrollIntoView({behavior:"smooth",block:"start"});
 	      }
 	      function renderMarketingCalendar(){
 	        const query=$("marketingCalendarSearch").value.trim().toLowerCase(), relevance=$("marketingCalendarRelevanceFilter").value;
@@ -6610,10 +6862,10 @@
 	        const selectedMonth=$("marketingCalendarMonth").value||new Date().toISOString().slice(0,7), [gridYear,gridMonth]=selectedMonth.split("-").map(Number), firstDay=new Date(Date.UTC(gridYear,gridMonth-1,1)), daysInMonth=new Date(Date.UTC(gridYear,gridMonth,0)).getUTCDate(), mondayOffset=(firstDay.getUTCDay()+6)%7;
 	        const eventDateInMonth=item=>item.recurrence==="annual_fixed"?`${selectedMonth}-${item.monthDay?.slice(3)||""}`:item.recurrence==="one_time"?item.date:(item.nextOccurrence||"");
 	        const monthEvents=rows.map(item=>({item,date:eventDateInMonth(item)})).filter(entry=>entry.date.startsWith(`${selectedMonth}-`)), cells=[];
-	        for(let blank=0;blank<mondayOffset;blank+=1)cells.push(`<div class="min-h-24 rounded bg-zinc-50"></div>`);
-	        for(let day=1;day<=daysInMonth;day+=1){const key=`${selectedMonth}-${String(day).padStart(2,"0")}`,events=monthEvents.filter(entry=>entry.date===key);cells.push(`<div class="min-h-24 rounded border border-zinc-200 p-1"><div class="text-xs font-bold text-zinc-500">${day}</div>${events.map(({item})=>`<button class="mt-1 block w-full rounded ${item.relevance==="high"?"bg-amber-100 text-amber-950":"bg-emerald-50 text-emerald-950"} px-1 py-1 text-left text-xs font-semibold" type="button" data-edit-marketing-calendar="${esc(item.id)}">${esc(item.title)}</button>`).join("")}</div>`);}
+	        for(let blank=0;blank<mondayOffset;blank+=1)cells.push(`<div class="min-h-28 rounded bg-zinc-50"></div>`);
+	        for(let day=1;day<=daysInMonth;day+=1){const key=`${selectedMonth}-${String(day).padStart(2,"0")}`,events=monthEvents.filter(entry=>entry.date===key);cells.push(`<div class="min-h-28 cursor-pointer rounded border border-zinc-200 p-1 transition hover:border-emerald-300 hover:bg-emerald-50/30" data-new-marketing-calendar-date="${key}" title="Create event on ${key}"><div class="grid h-7 w-7 place-items-center rounded text-xs font-bold text-zinc-600">${day}</div>${events.map(({item})=>`<button class="mt-1 block w-full rounded ${item.relevance==="high"?"bg-amber-100 text-amber-950":"bg-emerald-100 text-emerald-950"} px-2 py-1.5 text-left text-xs font-semibold hover:ring-2 hover:ring-emerald-300" type="button" data-edit-marketing-calendar="${esc(item.id)}">${esc(item.title)}</button>`).join("")}</div>`);}
 	        $("marketingCalendarMonthGrid").innerHTML=cells.join("");
-	        $("marketingCalendarList").innerHTML=rows.length?rows.map(item=>`<article class="rounded-md border ${item.enabled===false?"border-zinc-200 opacity-60":item.relevance==="high"?"border-amber-300 bg-amber-50/40":"border-zinc-200"} p-3"><div class="flex items-start justify-between gap-3"><div><div class="font-extrabold">${esc(item.title)}</div>${item.titleEl?`<div class="text-sm text-zinc-600">${esc(item.titleEl)}</div>`:""}</div><span class="rounded-full bg-white px-2 py-1 text-xs font-bold">${esc(item.nextOccurrence||"No future date")}</span></div><div class="mt-2 text-xs text-zinc-500">${esc(item.relevance||"medium")} · ${esc(item.objective||"engagement")} · reminders ${(item.reminderDays||[]).join("/")} days before</div><div class="mt-2 flex flex-wrap gap-1">${(item.categories||[]).map(value=>`<span class="rounded bg-zinc-100 px-2 py-1 text-xs">${esc(value)}</span>`).join("")}</div><p class="mt-2 line-clamp-3 text-sm text-zinc-600">${esc(item.description||item.draft?.angle||"")}</p><button class="btn-soft mt-3" type="button" data-edit-marketing-calendar="${esc(item.id)}">Edit</button></article>`).join(""):`<div class="sm:col-span-2 rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">No calendar events match.</div>`;
+	        $("marketingCalendarList").innerHTML=rows.length?rows.map(item=>`<article class="rounded-md border ${item.enabled===false?"border-zinc-200 opacity-60":item.relevance==="high"?"border-amber-300 bg-amber-50/40":"border-zinc-200"} p-3"><div class="flex items-start justify-between gap-3"><div><div class="font-extrabold">${esc(item.title)}</div>${item.titleEl?`<div class="text-sm text-zinc-600">${esc(item.titleEl)}</div>`:""}</div><span class="rounded-full bg-white px-2 py-1 text-xs font-bold">${esc(item.nextOccurrence||"No future date")}</span></div><div class="mt-2 text-xs text-zinc-500">${esc(item.relevance||"medium")} · ${esc(item.objective||"engagement")} · reminders ${(item.reminderDays||[]).join("/")} days before</div><div class="mt-2 flex flex-wrap gap-1">${(item.categories||[]).map(value=>`<span class="rounded bg-zinc-100 px-2 py-1 text-xs">${esc(value)}</span>`).join("")}</div><p class="mt-2 line-clamp-3 text-sm text-zinc-600">${esc(item.description||item.draft?.angle||"")}</p><div class="mt-3 flex flex-wrap gap-2"><button class="btn-soft" type="button" data-edit-marketing-calendar="${esc(item.id)}">Edit event</button><button class="btn-soft" type="button" data-post-marketing-calendar="${esc(item.id)}">Post editor</button></div></article>`).join(""):`<div class="sm:col-span-2 rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">No calendar events match.</div>`;
 	        $("marketingCalendarHistory").innerHTML=marketingCalendarReminders.length?marketingCalendarReminders.map(item=>`<div class="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"><div><strong>${esc(item.eventTitle||"Event")}</strong><div class="text-xs text-zinc-500">${esc(item.occurrenceDate||"")} · ${Number(item.leadDays||0)} days before · ${esc(item.recipient||"")}</div></div><span class="rounded-full bg-zinc-100 px-2 py-1 text-xs font-bold">${esc(item.status||"")}</span></div>`).join(""):`<div class="p-4 text-sm text-zinc-500">No reminders sent yet.</div>`;
 	      }
 	      async function loadMarketingCalendar(){
@@ -6680,8 +6932,10 @@
 	          socialGroups = data.groups || [];
 	          renderCollaborationFacebookGroupOptions(currentCollaboration()?.facebookGroupId || $("collabFacebookGroup")?.value || "");
 	          socialPosts = data.posts || [];
+	          socialPublishing = data.publishing || { facebook:false, instagram:false };
 	          renderSocialAgent();
 	          renderSocialGroups();
+	          renderSocialPublishingStatus();
 	          renderSocialPosts();
 	          setMsg("socialMsg", "Marketing loaded");
 	        } catch (err) {
@@ -6927,10 +7181,31 @@
 	      $("importFacebookPostsBtn").addEventListener("click", importFacebookPosts);
 	      $("socialPostPlatform").addEventListener("change", () => renderSocialPostGroupPicker(selectedSocialPostGroupIds()));
 	      $("socialPostProduct").addEventListener("change", () => renderSocialPostGroupPicker(selectedSocialPostGroupIds()));
+	      $("socialPostImageUrl").addEventListener("input", renderSocialPostImagePreview);
+	      $("uploadSocialPostImageBtn").addEventListener("click", async () => {
+	        const file = $("socialPostImageUpload").files[0];
+	        if (!file) return setMsg("socialPostsMsg", "Choose a PNG, JPG, or WebP image first", false);
+	        try {
+	          setMsg("socialPostsMsg", "Preparing and uploading image...");
+	          const imageDataUrl = await productImageDataUrl(file);
+	          const data = await api("/adminNewsletterImage", { method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE, body:JSON.stringify({ imageDataUrl }) });
+	          $("socialPostImageUrl").value = data.image || ""; renderSocialPostImagePreview(); setMsg("socialPostsMsg", "Image uploaded");
+	        } catch (err) { setMsg("socialPostsMsg", err.message || "Image upload failed", false); }
+	      });
 	      $("socialPostsProductFilter").addEventListener("change", renderSocialPosts);
 	      $("socialPostsPlatformFilter").addEventListener("change", renderSocialPosts);
 	      $("newSocialPostBtn").addEventListener("click", clearSocialPostForm);
 	      $("copySocialPostBtn").addEventListener("click", () => copyPreparedSocialPost(socialPostFormData()).catch(() => setMsg("socialPostsMsg", "Could not copy automatically", false)));
+	      $("publishSocialPostBtn").addEventListener("click", async () => {
+	        try {
+	          const postData = socialPostFormData();
+	          if (!postData.title || !postData.content) throw new Error("Add an internal title and post text first");
+	          setMsg("socialPostsMsg", "Saving post before publishing...");
+	          const saved = await socialAgentApi("/adminSocialAgent", { method:"POST", body:JSON.stringify({ action:"savePost", post:postData }) });
+	          socialPosts = [saved.post, ...socialPosts.filter(post => post.id !== saved.post.id)];
+	          await publishSocialPost(saved.post);
+	        } catch (err) { setMsg("socialPostsMsg", err.message || "Post could not be published", false); }
+	      });
 	      $("socialPostForm").addEventListener("submit", async event => {
 	        event.preventDefault();
 	        try {
@@ -6943,6 +7218,7 @@
 	      $("socialPostsList").addEventListener("click", async event => {
 	        const edit = event.target.closest("[data-edit-social-post]"); if (edit) { editSocialPost(edit.dataset.editSocialPost); return; }
 	        const copy = event.target.closest("[data-copy-social-post]"); if (copy) { const post = socialPosts.find(item => item.id === copy.dataset.copySocialPost); if (post) await copyPreparedSocialPost(post).catch(() => setMsg("socialPostsMsg", "Could not copy automatically", false)); return; }
+	        const publish = event.target.closest("[data-publish-social-post]"); if (publish) { const post = socialPosts.find(item => item.id === publish.dataset.publishSocialPost); try { await publishSocialPost(post); } catch (err) { setMsg("socialPostsMsg", err.message || "Post could not be published", false); } return; }
 	        const destinationCopy = event.target.closest("[data-copy-social-destination]"); if (destinationCopy) { const post = socialPosts.find(item => item.id === destinationCopy.dataset.copySocialDestination); const group = socialGroups.find(item => item.id === destinationCopy.dataset.groupId); if (post) await copyPreparedSocialPost(post, group).catch(() => setMsg("socialPostsMsg", "Could not copy automatically", false)); return; }
 	        const posted = event.target.closest("[data-posted-social-post]");
 	        if (posted) {
@@ -7122,7 +7398,7 @@
 	                    <div class="font-extrabold">${esc(item.name || "Untitled collaboration")}</div>
 	                    <div class="mt-1 text-xs text-zinc-500">${esc(collaborationStatusLabels[item.status] || item.status || "Lead")} | ${esc(collaborationTypeLabels[item.type] || item.type || "Type")} | Score ${Number(item.score || 0)}</div>
 	                    <div class="mt-1 text-xs text-zinc-500">${esc(offer.products || "")}${offer.couponCode ? ` | Coupon ${esc(offer.couponCode)}` : ""}${item.referralCode ? ` | Ref ${esc(item.referralCode)}` : ""}${item.nextFollowUp ? ` | Follow-up ${esc(item.nextFollowUp)}` : ""}</div>
-	                    ${item.metrics?.orderCount ? `<div class="mt-1 text-xs font-bold text-zinc-700">${Number(item.metrics.orderCount || 0)} order(s) | ${money(item.metrics.revenueCents || 0, item.metrics.currency || "eur")} revenue | ${money(item.metrics.discountCents || 0, item.metrics.currency || "eur")} discount</div>` : ""}
+	                    ${item.metrics?.orderCount ? `<div class="mt-1 text-xs font-bold text-zinc-700">${Number(item.metrics.orderCount || 0)} order(s) | ${money(item.metrics.revenueCents || 0, item.metrics.currency || "eur")} products before discount | ${money(item.metrics.discountCents || 0, item.metrics.currency || "eur")} discount</div>` : ""}
 	                    ${primaryLink ? `<div class="mt-1 text-xs text-[var(--grubz)] break-words">${esc(primaryLink)}</div>` : ""}
 	                  </div>
 	                  <span class="shrink-0 rounded border border-zinc-300 px-2 py-1 text-xs font-bold">${esc(item.category || "creator")}</span>
@@ -7149,15 +7425,15 @@
 	            <div><div class="text-xs text-zinc-500">Coupon orders</div><div class="font-extrabold">${Number(metrics.couponOrderCount || 0)}</div></div>
 	            <div><div class="text-xs text-zinc-500">Referral orders</div><div class="font-extrabold">${Number(metrics.referralOrderCount || 0)}</div></div>
 	            <div><div class="text-xs text-zinc-500">New customers</div><div class="font-extrabold">${Number(metrics.newCustomerCount || 0)}</div></div>
-	            <div><div class="text-xs text-zinc-500">Revenue</div><div class="font-extrabold">${money(metrics.revenueCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Products before discount</div><div class="font-extrabold">${money(metrics.revenueCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Discount</div><div class="font-extrabold">${money(metrics.discountCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Subtotal</div><div class="font-extrabold">${money(metrics.subtotalCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Last order</div><div class="font-extrabold">${esc(ts(metrics.lastOrderAt) || "-")}</div></div>
-	            <div><div class="text-xs text-zinc-500">Average order</div><div class="font-extrabold">${money(metrics.averageOrderValueCents || 0, metrics.currency || "eur")}</div></div>
-	            <div><div class="text-xs text-zinc-500">Commission owed</div><div class="font-extrabold">${money(metrics.commissionCents || 0, metrics.currency || "eur")}</div></div>
-	            <div><div class="text-xs text-zinc-500">Acquisition cost</div><div class="font-extrabold">${money(metrics.acquisitionCostCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Average products per order</div><div class="font-extrabold">${money(metrics.averageOrderValueCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Commission owed</div><div class="font-extrabold" style="color:#2563eb">${money(metrics.commissionCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Acquisition cost</div><div class="font-extrabold" style="color:var(--grubz)">${money(metrics.acquisitionCostCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">CAC / new customer</div><div class="font-extrabold">${metrics.newCustomerCount ? money(metrics.customerAcquisitionCostCents || 0, metrics.currency || "eur") : "-"}</div></div>
-	            <div><div class="text-xs text-zinc-500">Net revenue</div><div class="font-extrabold">${money(metrics.netRevenueCents || 0, metrics.currency || "eur")}</div></div>
+	            <div><div class="text-xs text-zinc-500">Net revenue</div><div class="font-extrabold" style="color:var(--positive)">${money(metrics.netRevenueCents || 0, metrics.currency || "eur")}</div></div>
 	            <div><div class="text-xs text-zinc-500">Visit conversion</div><div class="font-extrabold">${metrics.websiteVisits ? `${(Number(metrics.visitConversionRate || 0) * 100).toFixed(1)}%` : "-"}</div></div>
 	            <div><div class="text-xs text-zinc-500">Engagement rate</div><div class="font-extrabold">${metrics.totalReach ? `${(Number(metrics.engagementRate || 0) * 100).toFixed(1)}%` : "-"}</div></div>
 	            <div><div class="text-xs text-zinc-500">Pilot result</div><div class="font-extrabold capitalize">${esc(metrics.result || "-")}</div></div>
@@ -7165,7 +7441,7 @@
 	          <div class="mt-3 space-y-2">
 	            ${orders.length ? orders.map(order => `
 	              <div class="rounded border border-zinc-200 bg-white p-2 text-xs">
-	                <div class="font-bold">${esc(order.orderNumber || order.id)} | ${money(order.amountTotal || 0, order.currency || metrics.currency || "eur")} | ${esc(order.attributionSource || "attributed")}</div>
+	                <div class="font-bold">${esc(order.orderNumber || order.id)} | ${money(order.productSalesCents || 0, order.currency || metrics.currency || "eur")} products before discount | ${esc(order.attributionSource || "attributed")}</div>
 	                <div class="text-zinc-500">${esc(order.customerName || order.customerEmail || "Customer")} | ${esc(ts(order.createdAt) || "")}</div>
 	              </div>
 	            `).join("") : `<div class="text-xs text-zinc-500">No attributed orders yet.</div>`}
@@ -7550,7 +7826,7 @@
 	              </div>
 	              <div class="text-xl text-amber-500" aria-label="${Number(row.rating || 0)} out of 5 stars">${submitted ? `${"★".repeat(Number(row.rating))}${"☆".repeat(5 - Number(row.rating))}` : "Awaiting response"}</div>
 	            </div>
-	            ${submitted ? `<blockquote class="rounded-md bg-zinc-50 p-3 text-sm text-zinc-700">${esc(row.comment || "No written comment.")}</blockquote><p class="text-xs text-zinc-500">Reward: ${esc(row.couponCode || "not generated")} · Thank-you email: ${esc(row.thankYouEmailStatus || "pending")}</p>` : `<p class="text-sm text-zinc-500">Feedback request sent; no response received yet.</p>`}
+	            ${submitted ? `<blockquote class="rounded-md bg-zinc-50 p-3 text-sm text-zinc-700">${esc(row.comment || "No written comment.")}</blockquote><div class="flex flex-wrap gap-2 text-xs"><span class="rounded-full px-2 py-1 font-bold ${row.publishConsent ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-600"}">${row.publishConsent ? "Publication permitted" : "Not permitted for publication"}</span></div><p class="text-xs text-zinc-500">Reward: ${esc(row.couponCode || "not generated")} · Thank-you email: ${esc(row.thankYouEmailStatus || "pending")}</p>` : `<p class="text-sm text-zinc-500">Feedback request sent; no response received yet.</p>`}
 	            <div>
 	              <label class="label">Internal note</label>
 	              <textarea class="input" rows="2" data-feedback-note>${esc(row.internalNote || "")}</textarea>
@@ -7559,6 +7835,8 @@
 	              <label class="inline-flex items-center gap-2 text-sm font-semibold"><input type="checkbox" data-feedback-reviewed ${row.reviewed ? "checked" : ""}> Reviewed</label>
 	              <div class="flex flex-wrap gap-2">
 	                ${submitted && ["failed", "skipped"].includes(row.thankYouEmailStatus) ? `<button class="btn-soft" type="button" data-retry-feedback-email>Retry reward email</button>` : ""}
+	                ${submitted && !row.publishConsent ? `<button class="btn-soft" type="button" data-send-consent-email>${row.publicationConsentEmailSentAt ? "Resend consent email" : "Send consent email"}</button>` : ""}
+	                ${submitted ? `<button class="btn-soft" type="button" data-send-test-consent-email>Send test consent email</button>` : ""}
 	                <button class="btn-danger" type="button" data-delete-feedback>Delete</button>
 	                <button class="btn-soft" type="button" data-save-feedback>Save review</button>
 	              </div>
@@ -7568,19 +7846,31 @@
 	        renderDashboardFeedback();
 	      }
 
-	      async function loadFeedback(){
-	        setMsg("feedbackMsg", "Loading feedback...");
-	        const data = await api("/adminFeedback", {
-	          baseUrl: LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
-	        });
-	        feedbackRows = Array.isArray(data.feedback) ? data.feedback : [];
-	        feedbackSummary = data.summary || {};
-	        renderFeedback();
-	        setMsg("feedbackMsg", `${feedbackRows.length} feedback request(s) loaded.`);
+	      async function loadFeedback({ force = false } = {}){
+	        if (feedbackLoadedAt) {
+	          renderFeedback();
+	          setMsg("feedbackMsg", `${feedbackRows.length} feedback request(s) loaded.${Date.now() - feedbackLoadedAt > FEEDBACK_CACHE_TTL_MS ? " Refreshing…" : ""}`);
+	        } else {
+	          setMsg("feedbackMsg", "Loading feedback...");
+	        }
+	        if (!force && feedbackLoadedAt && Date.now() - feedbackLoadedAt < FEEDBACK_CACHE_TTL_MS) return;
+	        if (feedbackLoadPromise) return feedbackLoadPromise;
+	        feedbackLoadPromise = (async () => {
+	          const data = await api("/adminFeedback", {
+	            baseUrl: LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
+	          });
+	          feedbackRows = Array.isArray(data.feedback) ? data.feedback : [];
+	          feedbackSummary = data.summary || {};
+	          feedbackLoadedAt = Date.now();
+	          try { feedbackCacheStorage.setItem(FEEDBACK_CACHE_KEY, JSON.stringify({ feedback:feedbackRows, summary:feedbackSummary, savedAt:feedbackLoadedAt })); } catch {}
+	          renderFeedback();
+	          setMsg("feedbackMsg", `${feedbackRows.length} feedback request(s) loaded.`);
+	        })().finally(() => { feedbackLoadPromise = null; });
+	        return feedbackLoadPromise;
 	      }
 
 	      ["feedbackSearch", "feedbackRatingFilter", "feedbackReviewFilter"].forEach(id => $(id).addEventListener(id === "feedbackSearch" ? "input" : "change", renderFeedback));
-	      $("refreshFeedbackBtn").addEventListener("click", () => loadFeedback().catch(err => setMsg("feedbackMsg", err.message || "Feedback could not load", false)));
+	      $("refreshFeedbackBtn").addEventListener("click", () => loadFeedback({ force:true }).catch(err => setMsg("feedbackMsg", err.message || "Feedback could not load", false)));
 	      async function previewFeedbackBulk(){
 	        const button = $("previewFeedbackBulkBtn");
 	        button.disabled = true;
@@ -7615,7 +7905,7 @@
 	            ? "Test invitation sent to info@grubz.gr. Open its link and submit it to test the thank-you email and inactive coupon."
 	            : "Test invitation created, but SMTP delivery is not configured. Use the test link below to continue locally.", Boolean(data.sent));
 	          if (testUrl) $("feedbackBulkPreview").innerHTML = `<strong>End-to-end test ready.</strong> <a class="font-bold underline" href="${esc(testUrl)}" target="_blank" rel="noopener">Open the personal test form</a>. This test can be repeated.`;
-	          await loadFeedback();
+	          await loadFeedback({ force:true });
 	        } catch (err) { setMsg("feedbackMsg", err.message || "End-to-end test could not start.", false); }
 	        finally { button.disabled = false; button.textContent = "Run end-to-end test"; }
 	      });
@@ -7631,7 +7921,7 @@
 	            body:JSON.stringify({ action:"sendBulk" }),
 	          });
 	          setMsg("feedbackMsg", `Campaign batch finished: ${Number(data.sent || 0)} sent, ${Number(data.skipped || 0)} skipped, ${Number(data.failed || 0)} failed${Number(data.remainingEligible || 0) ? `, ${Number(data.remainingEligible)} still eligible—run the next batch to continue` : ""}.`, !Number(data.failed || 0));
-	          await Promise.all([loadFeedback(), loadOrders(), previewFeedbackBulk()]);
+	          await Promise.all([loadFeedback({ force:true }), loadOrders(), previewFeedbackBulk()]);
 	        } catch (err) { setMsg("feedbackMsg", err.message || "Campaign failed.", false); }
 	        finally { button.textContent = "Send to eligible customers"; }
 	      });
@@ -7649,12 +7939,38 @@
 	            retryButton.disabled = true;
 	            setMsg("feedbackMsg", "Retrying reward email...");
 	            await api("/adminFeedback", { method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE, body:JSON.stringify({ action:"retryThankYouEmail", id:card.dataset.feedbackId }) });
-	            await loadFeedback();
+	            await loadFeedback({ force:true });
 	            setMsg("feedbackMsg", "Reward email sent.");
 	          } catch (err) { setMsg("feedbackMsg", err.message || "Reward email retry failed.", false); retryButton.disabled = false; }
 	          return;
 	        }
 	        const deleteButton = event.target.closest("[data-delete-feedback]");
+	        const consentButton = event.target.closest("[data-send-consent-email]");
+	        const testConsentButton = event.target.closest("[data-send-test-consent-email]");
+	        if (testConsentButton) {
+	          const card = testConsentButton.closest("[data-feedback-id]");
+	          if (!card) return;
+	          try {
+	            testConsentButton.disabled = true;
+	            setMsg("feedbackMsg", "Sending test consent email to info@grubz.gr...");
+	            await api("/adminFeedback", { method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE, body:JSON.stringify({ action:"sendPublicationConsentTestEmail", id:card.dataset.feedbackId }) });
+	            setMsg("feedbackMsg", "Test consent email sent to info@grubz.gr.");
+	          } catch (err) { setMsg("feedbackMsg", err.message || "Test consent email could not be sent", false); }
+	          finally { testConsentButton.disabled = false; }
+	          return;
+	        }
+	        if (consentButton) {
+	          const card = consentButton.closest("[data-feedback-id]");
+	          if (!card || !window.confirm("Send this customer a personal publication-consent email?")) return;
+	          try {
+	            consentButton.disabled = true;
+	            setMsg("feedbackMsg", "Sending publication-consent email...");
+	            await api("/adminFeedback", { method:"POST", baseUrl:LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE, body:JSON.stringify({ action:"sendPublicationConsentEmail", id:card.dataset.feedbackId }) });
+	            await loadFeedback({ force:true });
+	            setMsg("feedbackMsg", "Publication-consent email sent.");
+	          } catch (err) { setMsg("feedbackMsg", err.message || "Consent email could not be sent", false); consentButton.disabled = false; }
+	          return;
+	        }
 	        if (deleteButton) {
 	          const card = deleteButton.closest("[data-feedback-id]");
 	          const row = feedbackRows.find(item => item.id === card?.dataset.feedbackId);
@@ -7667,7 +7983,7 @@
 	              method: "DELETE",
 	              baseUrl: LOCAL_HOSTS.has(location.hostname) ? LOCAL_FUNCTION_API_BASE : API_BASE,
 	            });
-	            await Promise.all([loadFeedback(), loadOrders()]);
+	            await Promise.all([loadFeedback({ force:true }), loadOrders()]);
 	            setMsg("feedbackMsg", `Feedback for ${label} deleted.`);
 	          } catch (err) {
 	            setMsg("feedbackMsg", err.message || "Feedback could not be deleted", false);
@@ -7685,7 +8001,7 @@
 	            reviewed: card.querySelector("[data-feedback-reviewed]").checked,
 	            internalNote: card.querySelector("[data-feedback-note]").value,
 	          }) });
-	          await loadFeedback();
+	          await loadFeedback({ force:true });
 	        } catch (err) {
 	          setMsg("feedbackMsg", err.message || "Feedback review could not be saved", false);
 	        } finally { saveButton.disabled = false; }
@@ -7696,7 +8012,7 @@
 	        // Keep this function free of loadOrders() so unrelated pages cannot
 	        // delay the Orders list in the single-process local emulator.
 	        const productResult = await Promise.allSettled([loadProducts()]);
-	        const results = await Promise.allSettled([loadCoupons(), loadFeedback(), loadCustomers(), loadNewsletter(), loadEmailHistory(), loadChatConversations(), loadCollaborations(), loadSocialAgent(), loadAbandonedCarts(), loadSettings()]);
+	        const results = await Promise.allSettled([loadCoupons(), loadCustomers(), loadNewsletter(), loadEmailHistory(), loadChatConversations(), loadCollaborations(), loadSocialAgent(), loadAbandonedCarts(), loadSettings()]);
 	        const failures = [...productResult, ...results].filter(result => result.status === "rejected");
 	        if (failures.length) {
 	          announce("Some console data could not load.");
@@ -7753,7 +8069,7 @@
 		        $("boxnowPriceLarge").value = ((Number(parcelPrices["3"] ?? 1000)) / 100).toFixed(2);
 		        $("boxnowDiscountEnabled").checked = shippingSettings.boxnowFeeDiscountEnabled === true;
 		        $("boxnowDiscountAmount").value = ((Number(shippingSettings.boxnowFeeDiscountCents || 0)) / 100).toFixed(2);
-		        $("receiptRecipientEmail").value = orderEmailSettings.receiptRecipientEmail || "";
+		        $("receiptRecipientEmail").value = orderEmailSettings.notificationRecipientEmail || orderEmailSettings.receiptRecipientEmail || "";
 		        renderEmailPlaceholderSettings();
 		        renderOrderEmailTemplates();
 		        renderBulkEmailTemplateOptions();
@@ -7788,7 +8104,7 @@
 		      async function saveEmailPlaceholders(){
 		        try {
 		          const orderEmails = {
-		            receiptRecipientEmail: $("receiptRecipientEmail").value.trim(),
+		            notificationRecipientEmail: $("receiptRecipientEmail").value.trim(),
 		            placeholders: emailPlaceholderSettingsPayload(),
 		            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
 		          };
@@ -8486,7 +8802,7 @@
 	      }
 
 		      async function saveOrderEmailTemplates(templates){
-		        const orderEmails = { receiptRecipientEmail: $("receiptRecipientEmail").value.trim(), placeholders: emailPlaceholderSettingsPayload(), templates };
+		        const orderEmails = { notificationRecipientEmail: $("receiptRecipientEmail").value.trim(), placeholders: emailPlaceholderSettingsPayload(), templates };
 		        const data = await api("/adminSettings", {
 		          method:"PATCH",
 		          body: JSON.stringify({ orderEmails }),
@@ -8878,7 +9194,7 @@
 	            mode: $("stripeModeLive").checked ? "live" : "test",
 	          };
 		          const orderEmails = {
-		            receiptRecipientEmail: $("receiptRecipientEmail").value.trim(),
+		            notificationRecipientEmail: $("receiptRecipientEmail").value.trim(),
 		            placeholders: emailPlaceholderSettingsPayload(),
 		            templates: Array.isArray(orderEmailSettings.templates) ? orderEmailSettings.templates : [],
 		          };
@@ -10891,6 +11207,23 @@
 	        return '';
 	      }
 
+	      function orderVoucherIcon(order = {}){
+	        const boxNowShipment = order.boxNowShipment || {};
+	        const boxNowParcelIds = Array.isArray(boxNowShipment.parcelIds)
+	          ? boxNowShipment.parcelIds.map(id => String(id || "").trim()).filter(Boolean)
+	          : [];
+	        const boxNowVoucherId = String(boxNowShipment.deliveryRequestId || boxNowParcelIds[0] || "").trim();
+	        const acsVoucherNo = String(order.acsShipment?.voucherNo || "").trim();
+	        const provider = acsVoucherNo ? "ACS" : boxNowVoucherId ? "BOX NOW" : "";
+	        const voucherId = acsVoucherNo || boxNowVoucherId;
+	        if (!provider) return "";
+	        const label = `${provider} delivery voucher issued${voucherId ? ` · ${voucherId}` : ""}`;
+	        const style = provider === "ACS"
+	          ? "border-red-300 bg-red-50 text-red-700"
+	          : "border-violet-300 bg-violet-50 text-violet-700";
+	        return `<span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${style}" role="img" aria-label="${esc(label)}" title="${esc(label)}"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 0 0 6v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a3 3 0 0 0 0-6V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"></path><path d="M13 5v2M13 17v2M13 11v2"></path><path d="m6.5 12 2 2 3.5-4"></path></svg></span>`;
+	      }
+
 	      function orderPdfLines(order){
 	        const pricing = orderDisplayPricing(order);
 	        const finalTotal = Math.max(0, Number(pricing.total || 0));
@@ -11124,6 +11457,27 @@
 	        return `<span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-bold ${styles[key]}">${labels[key]}</span>`;
 	      }
 
+	      function orderShippingDateIcon(order = {}){
+	        const date = dateFromValue(order.shippingDate || order.estimatedShippingDate || order.shipping?.shippingDate);
+	        if (!date || Number.isNaN(date.getTime())) return "";
+	        const label = `Upcoming shipping date: ${date.toLocaleDateString(undefined, { dateStyle:"medium" })}`;
+	        return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-100 text-cyan-800" aria-label="${esc(label)}" title="${esc(label)}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path><path d="m9 16 2 2 4-4"></path></svg></span>`;
+	      }
+
+	      function orderDeliveredIcon(order = {}){
+	        if (statusKey(order.fulfillmentStatus || "") !== "delivered") return "";
+	        return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-emerald-700 bg-emerald-100 text-emerald-900 ring-2 ring-emerald-200" aria-label="Delivered" title="Delivered"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg></span>`;
+	      }
+
+	      function orderIsCancelled(order = {}){
+	        return [order.status, order.fulfillmentStatus].some(value => ["cancelled", "canceled"].includes(statusKey(value || "")));
+	      }
+
+	      function orderCancelledIcon(order = {}){
+	        if (!orderIsCancelled(order)) return "";
+	        return `<span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-zinc-600 bg-zinc-200 text-zinc-800 ring-2 ring-zinc-300" aria-label="Cancelled — no attention required" title="Cancelled — no attention required"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg></span>`;
+	      }
+
 	      let orderAnalyticsRenderHandle = 0;
 	      function scheduleOrderAnalyticsRender(){
 	        if (orderAnalyticsRenderHandle) {
@@ -11141,17 +11495,38 @@
 
 	      function renderOrders(){
 	        const visibleOrders = filteredOrders();
+	        const preparation = openOrderPreparationSummary(visibleOrders);
+	        const operationalSummary = ` · ${preparation.notShippedCount} order${preparation.notShippedCount === 1 ? "" : "s"} not shipped · To prepare: Happy Chicken ${formatKg(preparation.kilograms.happyChicken)} · TerraGrub ${formatKg(preparation.kilograms.terragrub)}`;
+	        const soldOrders = orders.filter(order => {
+	          if (orderIsCancelled(order) || isNoPaymentRequiredOrder(order)) return false;
+	          const payment = statusKey(order.paymentStatus || order.status || "");
+	          const fulfillment = statusKey(order.fulfillmentStatus || "");
+	          return ["paid", "succeeded", "complete", "cash_on_delivery_pending"].includes(payment) ||
+	            ["shipped", "delivered"].includes(fulfillment);
+	        });
+	        const salesTotals = soldOrders.reduce((totals, order) => {
+	          const products = orderProductKgTotals(order);
+	          totals.happyChicken += products.happyChicken;
+	          totals.terragrub += products.terragrub;
+	          totals.revenue += orderRevenueCents(order);
+	          return totals;
+	        }, { happyChicken:0, terragrub:0, revenue:0 });
+	        const salesCurrency = soldOrders.find(order => order.currency)?.currency || "eur";
+	        $("orderSalesSummary").innerHTML = `
+	          <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900">Happy Chicken sold: ${formatKg(salesTotals.happyChicken)}</span>
+	          <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900">TerraGrub sold: ${formatKg(salesTotals.terragrub)}</span>
+	          <span class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-900">Sales: ${money(salesTotals.revenue, salesCurrency)}</span>`;
 	        selectedOrderIds = new Set([...selectedOrderIds].filter(id => orders.some(order => order.id === id)));
 	        updateOrderSelectionActions();
 	        if (!orders.length) {
 	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders to display.</td></tr>`;
-	          $("orderSearchMsg").textContent = "0 orders shown";
+	          $("orderSearchMsg").textContent = `0 orders shown${operationalSummary}`;
 	          scheduleOrderAnalyticsRender();
 	          return;
 	        }
 	        if (!visibleOrders.length) {
 	          $("ordersTable").innerHTML = `<tr><td class="p-3 text-zinc-500" colspan="5">No orders match your search.</td></tr>`;
-	          $("orderSearchMsg").textContent = `0 of ${orders.length} orders shown`;
+	          $("orderSearchMsg").textContent = `0 of ${orders.length} orders shown${operationalSummary}`;
 	          scheduleOrderAnalyticsRender();
 	          return;
 	        }
@@ -11160,21 +11535,27 @@
 	          ? `${orders.length} orders shown`
 	          : `${visibleOrders.length} of ${orders.length} orders shown`}${pendingReviewCount
 	            ? ` · ${pendingReviewCount} BOX NOW review${pendingReviewCount === 1 ? "" : "s"} pending`
-	            : ""}`;
+	            : ""}${operationalSummary}`;
         $("ordersTable").innerHTML = visibleOrders.map(o => `
 	          <tr class="${[
-	            statusKey(o.paymentStatus || o.status || "pending_payment") === "pending_payment" ? "order-row-pending-payment" : "",
+	            statusKey(o.fulfillmentStatus || "") === "delivered" ? "order-row-delivered" : "",
+	            orderIsCancelled(o) ? "order-row-cancelled" : "",
+	            !orderIsCancelled(o) && statusKey(o.fulfillmentStatus || "") !== "delivered" && statusKey(o.paymentStatus || o.status || "pending_payment") === "pending_payment" ? "order-row-pending-payment" : "",
 	            String(o.notes || "").trim() ? "order-row-note" : "",
 	            o.boxNowNotificationReview?.status === "pending" ? "bg-amber-50 hover:bg-amber-100" : "",
 	            "hover:bg-zinc-50",
-	          ].filter(Boolean).join(" ")}"${statusKey(o.paymentStatus || o.status || "pending_payment") === "pending_payment" ? ` title="Pending payment — do not prepare"` : String(o.notes || "").trim() ? ` title="Order has notes"` : ""}>
+	          ].filter(Boolean).join(" ")}"${orderIsCancelled(o) ? ` title="Cancelled — no attention required"` : statusKey(o.fulfillmentStatus || "") === "delivered" ? ` title="Delivered — no attention required"` : statusKey(o.paymentStatus || o.status || "pending_payment") === "pending_payment" ? ` title="Pending payment — do not prepare"` : String(o.notes || "").trim() ? ` title="Order has notes"` : ""}>
             <td class="order-select-cell p-3"><input type="checkbox" class="h-4 w-4" data-order-select="${esc(o.id)}" ${selectedOrderIds.has(o.id) ? "checked" : ""} aria-label="Select order ${esc(orderNumber(o))}"></td>
             <td class="whitespace-nowrap p-3" data-label="Order">
 	              <div class="order-heading-line">
+	                ${orderDeliveredIcon(o)}
 	                ${orderDeliveryIcon(o)}
 	                <button class="order-number-button font-bold text-left leading-snug hover:underline" data-order-doc-id="${esc(o.id)}">${esc(orderNumber(o))}</button>
+	                ${orderVoucherIcon(o)}
+	                ${orderCancelledIcon(o)}
 	                ${orderChatButton(o)}
 	                ${String(o.notes || "").trim() ? `<button class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1" type="button" data-order-note-id="${esc(o.id)}" aria-label="View note for order ${esc(orderNumber(o))}" title="View order note"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h6"></path></svg></button>` : ""}
+	                ${orderShippingDateIcon(o)}
 	              </div>
 	              <div class="mt-2 text-lg font-extrabold leading-tight">${money(o.amountTotal, o.currency)}</div>
 	              <div class="mt-2">
@@ -11230,8 +11611,8 @@
 	      async function emailSelectedReceipts(){
 	        const selected = orders.filter(order => selectedOrderIds.has(order.id));
 	        if (!selected.length) return setMsg("orderMsg", "Select at least one order.", false);
-	        const configuredRecipient = String(orderEmailSettings.receiptRecipientEmail || "").trim();
-	        if (!configuredRecipient) return setMsg("orderMsg", "Set the receipt recipient email in Settings > Emails first.", false);
+	        const configuredRecipient = String(orderEmailSettings.notificationRecipientEmail || orderEmailSettings.receiptRecipientEmail || "").trim();
+	        if (!configuredRecipient) return setMsg("orderMsg", "Set the system notification recipient email in Settings > Notifications first.", false);
 	        const withPdf = selected.filter(order => order.invoiceReceiptPdf?.path);
 	        if (!withPdf.length) return setMsg("orderMsg", "None of the selected orders has an attached invoice/receipt PDF.", false);
 	        const missingCount = selected.length - withPdf.length;
@@ -11310,7 +11691,8 @@
       function orderProductsCanEdit(order = selectedOrder){
         const savedIsNew = order && statusKey(order.fulfillmentStatus || "new") === "new";
         const editorFulfillment = $("o_fulfillment")?.value || order?.fulfillmentStatus || "new";
-        return savedIsNew && statusKey(editorFulfillment) === "new";
+        const hasBoxNowVoucher = Boolean(order?.boxNowShipment?.deliveryRequestId);
+        return savedIsNew && statusKey(editorFulfillment) === "new" && !hasBoxNowVoucher;
       }
 
       function orderEditorItemRows(){
@@ -11333,7 +11715,9 @@
         $("addOrderItemBtn").disabled = !editable || !available.length;
         $("orderItemsEditNote").textContent = editable
           ? "Editable while fulfillment is New. Inactive shop products are available here; totals recalculate from catalog price."
-          : "Products can only be edited while fulfillment is New.";
+          : selectedOrder?.boxNowShipment?.deliveryRequestId
+            ? "Products are locked because a BOX NOW voucher has been created. Shipping date, notes, and other non-voucher fields can still be saved."
+            : "Products can only be edited while fulfillment is New.";
         if (!orderEditorItems.length && available.length && editable) {
           orderEditorItems = [{ id: available[0].id, qty: 1 }];
         }

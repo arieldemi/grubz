@@ -27,6 +27,9 @@ function resolvedFile(urlValue = "/") {
   const candidate = path.resolve(publicDir, `.${requested}`);
   if (candidate !== publicDir && !candidate.startsWith(`${publicDir}${path.sep}`)) return null;
   if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+  if (pathname === "/console" || pathname.startsWith("/console/")) {
+    return path.join(publicDir, "console", "index.html");
+  }
   return path.join(publicDir, "index.html");
 }
 

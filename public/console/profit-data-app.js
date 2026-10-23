@@ -18,6 +18,7 @@
   let periodLoadSequence = 0;
   const productionTabKey = "grubz_reports_tab_v1";
   const nomaConnectionKey = "grubz_noma_connection";
+  const productEconomicsSheetKey = "grubz_product_economics_sheet_url";
   const nomaEnabled = () => window.grubzNomaEnabled === true;
 
   function showProductionTab(tab, persist = true) {
@@ -253,10 +254,16 @@
     logistics:"Logistics (€)", otherVariable:"Other variable costs (€)", fixed:"Fixed overhead (€)",
     depreciation:"Depreciation (€)", interest:"Interest (€)", investment:"Initial investment (€)",
   };
+  function exportedTaxPercent() {
+    const value = Number($("profitCalculatorForm")?.elements?.taxPercent?.value);
+    if (Number.isFinite(value)) return Math.min(100, Math.max(0, value));
+    return Number(window.GrubzProfitCalculator?.DEFAULTS?.taxPercent || 0);
+  }
   function reportSummaryRows(period = selectedReportPeriod()) {
     const totals = aggregate.totals || {};
     return [
       ["GRUBZ operating report", period?.name || ""], ["Period", `${period?.startDate || ""} to ${period?.endDate || ""}`], ["Status", period?.status || ""],
+      ["Estimated income tax rate (%)", exportedTaxPercent()],
       ["Metric", "Value"],
       ...Object.entries(reportMetricLabels).map(([key, label]) => [label, Number(totals[key] || 0)]),
     ];
@@ -270,9 +277,11 @@
     ])];
   }
   function reportProfitRows() {
-    const result = window.GrubzProfitCalculator?.calculate(aggregate.assumptions || {}) || {};
+    const taxPercent = exportedTaxPercent();
+    const result = window.GrubzProfitCalculator?.calculate({ ...(aggregate.assumptions || {}), taxPercent }) || {};
     const rows = [
-      ["Profitability metric", "Value"], ["Total revenue (€)", result.revenue], ["Gross profit (€)", result.grossProfit],
+      ["Profitability metric", "Value"], ["Estimated income tax rate (%)", taxPercent], ["Estimated tax (€)", result.tax],
+      ["Total revenue (€)", result.revenue], ["Gross profit (€)", result.grossProfit],
       ["EBITDA (€)", result.ebitda], ["Net profit (€)", result.netProfit], ["Net margin", result.netMargin],
       ["Operating cash flow (€)", result.operatingCashFlow], ["Full cost / kg (€)", result.costPerKg],
       ["Contribution / kg (€)", result.contributionPerKg], ["Accounting break-even (kg)", result.breakEvenKg],
@@ -295,6 +304,7 @@
     const period = selectedReportPeriod();
     const hasPeriod = Boolean(period);
     $("createGoogleSheetReportBtn").disabled = !hasPeriod || !googleSheetsClientId;
+    if ($("syncProductEconomicsSheetBtn")) $("syncProductEconomicsSheetBtn").disabled = !hasPeriod || !googleSheetsClientId || !(liveShopSales?.summary?.products || []).length;
     $("downloadReportCsvBtn").disabled = !hasPeriod;
     const status = $("reportBuilderMsg");
     if (status && !googleSheetsClientId) {
@@ -335,7 +345,8 @@
     await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(created.spreadsheetId)}/values:batchUpdate`, token, { method:"POST", body:JSON.stringify({ valueInputOption:"RAW", data:sheets.map(sheet => ({ range:`'${sheet.title.replace(/'/g, "''")}'!A1`, majorDimension:"ROWS", values:sheet.rows })) }) });
     const requests = (created.sheets || []).flatMap((createdSheet, index) => {
       const sheetId = createdSheet.properties.sheetId;
-      const headerRows = sheets[index].title === "Summary" ? [0, 3] : [0];
+      const metricHeaderRow = sheets[index].rows.findIndex(row => row?.[0] === "Metric");
+      const headerRows = sheets[index].title === "Summary" && metricHeaderRow >= 0 ? [0, metricHeaderRow] : [0];
       return [
         ...headerRows.map(row => ({ repeatCell:{ range:{ sheetId, startRowIndex:row, endRowIndex:row + 1 }, cell:{ userEnteredFormat:{ backgroundColor:{ red:0.96, green:0.94, blue:0.91 }, textFormat:{ bold:true, foregroundColor:{ red:0.27, green:0.14, blue:0.07 } } } }, fields:"userEnteredFormat(backgroundColor,textFormat)" } })),
         { autoResizeDimensions:{ dimensions:{ sheetId, dimension:"COLUMNS", startIndex:0, endIndex:Math.max(1, ...sheets[index].rows.map(row => row.length)) } } },
@@ -343,6 +354,125 @@
     });
     await googleApi(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(created.spreadsheetId)}:batchUpdate`, token, { method:"POST", body:JSON.stringify({ requests }) });
     return created.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${created.spreadsheetId}/edit`;
+  }
+  function spreadsheetIdFromUrl(value) {
+    const match = String(value || "").trim().match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(String(value || "").trim())) return String(value).trim();
+    throw new Error("Enter a valid Google Sheets URL.");
+  }
+  function ensureProductEconomicsSyncUi() {
+    if ($("productEconomicsSheetUrl")) return;
+    const form = $("reportBuilderForm");
+    if (!form) return;
+    const section = document.createElement("div");
+    section.className = "border-t border-zinc-200 pt-4";
+    section.innerHTML = `<div class="font-bold">Connect Product Economics</div><p class="mt-1 text-xs text-zinc-500">Update an existing GRUBZ economics workbook with paid orders from the selected period.</p><label class="mt-3 block"><span class="label">Google Sheet URL</span><input id="productEconomicsSheetUrl" class="input mt-1" type="url" value="https://docs.google.com/spreadsheets/d/1Zpxsd-thoHQWnkpQ60LhqmX-KU5yuRuq1FGB718UVuk/edit" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label><button id="syncProductEconomicsSheetBtn" class="btn mt-3 w-full" type="button" disabled>Sync real e-shop sales</button><p id="productEconomicsSyncMsg" class="mt-2 text-sm" role="status" aria-live="polite"></p>`;
+    form.appendChild(section);
+  }
+  function sheetName(value) { return `'${String(value).replace(/'/g, "''")}'`; }
+  function formulaNumber(value) { return Number(value || 0).toFixed(6).replace(/0+$/, "").replace(/\.$/, "") || "0"; }
+  async function syncProductEconomicsSheet() {
+    const period = selectedReportPeriod();
+    const summary = liveShopSales?.summary;
+    const products = summary?.products || [];
+    if (!period || !products.length) throw new Error("The selected period has no paid product sales to sync.");
+    const input = $("productEconomicsSheetUrl");
+    const spreadsheetId = spreadsheetIdFromUrl(input.value);
+    localStorage.setItem(productEconomicsSheetKey, input.value.trim());
+    const token = await googleAccessToken();
+    const base = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`;
+    let metadata = await googleApi(`${base}?includeGridData=false`, token);
+    let productSheet = (metadata.sheets || []).find(sheet => sheet.properties?.title === "Product Economics");
+    if (!productSheet) throw new Error('The workbook must contain a "Product Economics" tab.');
+    let salesSheet = (metadata.sheets || []).find(sheet => sheet.properties?.title === "E-shop Sales");
+    if (!salesSheet) {
+      const added = await googleApi(`${base}:batchUpdate`, token, { method:"POST", body:JSON.stringify({ requests:[{ addSheet:{ properties:{ title:"E-shop Sales", gridProperties:{ frozenRowCount:4 } } } }] }) });
+      salesSheet = added.replies?.[0]?.addSheet;
+      metadata = await googleApi(`${base}?includeGridData=false`, token);
+      productSheet = metadata.sheets.find(sheet => sheet.properties?.title === "Product Economics");
+    }
+    const [existing, existingAssumptions, existingUnitEconomics] = await Promise.all([
+      googleApi(`${base}/values/${encodeURIComponent("'Product Economics'!A1:L80")}?valueRenderOption=FORMATTED_VALUE`, token),
+      googleApi(`${base}/values/${encodeURIComponent("'Assumptions'!A1:D80")}?valueRenderOption=FORMATTED_VALUE`, token),
+      googleApi(`${base}/values/${encodeURIComponent("'Unit Economics'!A1:B80")}?valueRenderOption=FORMULA`, token),
+    ]);
+    const rows = existing.values || [];
+    const assumptionRows = existingAssumptions.values || [];
+    const assumptionRow = (labels, excludedRows = []) => {
+      const normalized = labels.map(label => label.toLowerCase());
+      const index = assumptionRows.findIndex((row, rowIndex) => !excludedRows.includes(rowIndex + 1) && normalized.includes(String(row?.[0] || "").trim().toLowerCase()));
+      return index >= 0 ? index + 1 : 0;
+    };
+    const labelledIncomeTaxRow = assumptionRow(["Income tax", "Estimated income tax rate"]);
+    const unitTaxFormula = (existingUnitEconomics.values || []).find(row => String(row?.[0] || "").trim().toLowerCase() === "tax")?.[1] || "";
+    const formulaTaxRow = Number(String(unitTaxFormula).match(/'?Assumptions'?\s*!\s*\$?B\$?(\d+)/i)?.[1] || 0);
+    const incomeTaxRow = labelledIncomeTaxRow || formulaTaxRow;
+    const ordersRow = assumptionRow(["Orders in exported period", "Orders per period", "Orders per month"], [incomeTaxRow]);
+    if (!incomeTaxRow) throw new Error('Could not locate the "Income tax" assumption.');
+    if (!ordersRow) throw new Error('Could not locate the orders assumption.');
+    const summaryIndex = rows.findIndex(row => row?.[0] === "Blended order economics");
+    if (summaryIndex < 6) throw new Error('Could not locate "Blended order economics" in Product Economics.');
+    const productStartIndex = 4;
+    const existingSlots = summaryIndex - 6;
+    const extraRows = Math.max(0, products.length - existingSlots);
+    if (extraRows) {
+      await googleApi(`${base}:batchUpdate`, token, { method:"POST", body:JSON.stringify({ requests:[{ insertDimension:{ range:{ sheetId:productSheet.properties.sheetId, dimension:"ROWS", startIndex:summaryIndex - 2, endIndex:summaryIndex - 2 + extraRows }, inheritFromBefore:true } }] }) });
+    }
+    const currentSlots = existingSlots + extraRows;
+    const currentSummaryRow = summaryIndex + 1 + extraRows;
+    const productEndRow = 4 + currentSlots;
+    const economics = summary.orderEconomics || {};
+    const exportedPeriod = `${period.startDate} to ${period.endDate}`;
+    const taxPercent = exportedTaxPercent();
+    const productRows = products.map((product, index) => {
+      const row = 5 + index;
+      const larvae = formulaNumber(product.larvaeKgPerUnit);
+      const frass = formulaNumber(product.frassKgPerUnit);
+      return [
+        product.name, product.unitWeightKg, product.averageGrossUnitPrice, product.averageNetUnitRevenue,
+        `=IF(B${row}=0,0,D${row}/B${row})`,
+        `=${larvae}*('Unit Economics'!$B$35-Assumptions!$B$18-Assumptions!$B$21)+${frass}*IF('Unit Economics'!$B$10=0,0,('Unit Economics'!$B$18+'Unit Economics'!$B$20+Assumptions!$B$24+Assumptions!$B$25)/'Unit Economics'!$B$10)`,
+        `=${larvae}*(Assumptions!$B$18+Assumptions!$B$21)+${frass}*Assumptions!$B$16`,
+        `=D${row}*Assumptions!$B$23`, `=D${row}-F${row}-G${row}-H${row}`, `=IF(D${row}=0,0,I${row}/D${row})`,
+        product.unitsSold, `=IF(SUM($K$5:$K$${4 + products.length})=0,0,K${row}/SUM($K$5:$K$${4 + products.length}))`,
+      ];
+    });
+    await googleApi(`${base}/values/${encodeURIComponent(`'Product Economics'!A5:L${productEndRow}`)}:clear`, token, { method:"POST", body:"{}" });
+    const s = currentSummaryRow;
+    const summaryWrites = [
+      { range:`${sheetName("Product Economics")}!K4:L4`, values:[["Units sold","Sales mix"]] },
+      { range:`${sheetName("Product Economics")}!A5:L${4 + products.length}`, values:productRows },
+      { range:`${sheetName("Product Economics")}!A${s - 1}:C${s - 1}`, values:[["Exported period", exportedPeriod, period.name || ""]] },
+      { range:`${sheetName("Assumptions")}!A${incomeTaxRow}:D${incomeTaxRow}`, values:[["Income tax", taxPercent / 100, "% of positive pre-tax profit", `Console calculator setting exported for ${period.name || exportedPeriod}`]] },
+      { range:`${sheetName("Assumptions")}!A${ordersRow}:D${ordersRow}`, values:[["Orders in exported period", summary.orderCount, "orders", `Console export: ${period.name || exportedPeriod} (${exportedPeriod})`]] },
+      { range:`${sheetName("Product Economics")}!B${s + 2}`, values:[[economics.averageGrossOrderValue]] },
+      { range:`${sheetName("Product Economics")}!D${s + 2}:E${s + 2}`, values:[["Orders in exported period", summary.orderCount]] },
+      { range:`${sheetName("Product Economics")}!B${s + 3}`, values:[[economics.averageNetOrderRevenue]] },
+      { range:`${sheetName("Product Economics")}!E${s + 3}`, values:[[economics.netProductRevenue]] },
+      { range:`${sheetName("Product Economics")}!B${s + 10}:B${s + 12}`, values:[
+        [`=IF(E${s + 2}=0,0,SUMPRODUCT(F5:F${4 + products.length}+G5:G${4 + products.length},K5:K${4 + products.length})/E${s + 2})`],
+        [`=B${s + 9}-B${s + 10}`], [`=IF(B${s + 3}=0,0,B${s + 11}/B${s + 3})`],
+      ] },
+      { range:`${sheetName("Product Economics")}!E${s + 6}:E${s + 9}`, values:[
+        [`=B${s + 10}*E${s + 2}`], [`=B${s + 11}*E${s + 2}`],
+        [`=B${s + 11}+B${s + 8}-Assumptions!B34`], [`=IF(B${s + 11}<=0,"No break-even",Assumptions!B24/B${s + 11})`],
+      ] },
+    ];
+    const sourceRows = [
+      ["GRUBZ live e-shop sales", period.name || ""], ["Period", `${period.startDate} to ${period.endDate}`],
+      ["Included paid orders", summary.orderCount, "Excluded unpaid", summary.skippedOrderCount, "Refunded", summary.refundedOrderCount, "Estimated income tax rate", taxPercent, "%"],
+      ["SKU","Product","Category","Units sold","Sold kg","Gross revenue","Discount","Net revenue ex VAT","Avg gross / unit","Avg net / unit","Larvae kg / unit","Frass kg / unit"],
+      ...products.map(product => [product.sku,product.name,product.category,product.unitsSold,product.soldKg,product.grossRevenue,product.discount,product.netRevenueExVat,product.averageGrossUnitPrice,product.averageNetUnitRevenue,product.larvaeKgPerUnit,product.frassKgPerUnit]),
+    ];
+    await googleApi(`${base}/values/${encodeURIComponent("'E-shop Sales'!A1:L1000")}:clear`, token, { method:"POST", body:"{}" });
+    await googleApi(`${base}/values:batchUpdate`, token, { method:"POST", body:JSON.stringify({ valueInputOption:"USER_ENTERED", data:[...summaryWrites,{ range:"'E-shop Sales'!A1", values:sourceRows }] }) });
+    await googleApi(`${base}:batchUpdate`, token, { method:"POST", body:JSON.stringify({ requests:[
+      { repeatCell:{ range:{ sheetId:salesSheet.properties.sheetId, startRowIndex:3, endRowIndex:4, startColumnIndex:0, endColumnIndex:12 }, cell:{ userEnteredFormat:{ backgroundColor:{ red:0.95, green:0.96, blue:0.96 }, textFormat:{ bold:true } } }, fields:"userEnteredFormat(backgroundColor,textFormat)" } },
+      { autoResizeDimensions:{ dimensions:{ sheetId:salesSheet.properties.sheetId, dimension:"COLUMNS", startIndex:0, endIndex:12 } } },
+      { addConditionalFormatRule:{ rule:{ ranges:[{ sheetId:productSheet.properties.sheetId, startRowIndex:4, endRowIndex:4 + products.length, startColumnIndex:8, endColumnIndex:10 }], booleanRule:{ condition:{ type:"NUMBER_LESS", values:[{ userEnteredValue:"0" }] }, format:{ backgroundColor:{ red:0.976, green:0.839, blue:0.839 }, textFormat:{ foregroundColor:{ red:0.6, green:0.106, blue:0.106 }, bold:true } } } }, index:0 } },
+    ] }) });
+    return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${productSheet.properties.sheetId}`;
   }
   function entryTitle(entry) {
     if (entry.type === "batch") return `Batch ${entry.batchId || "record"}: ${number.format(entry.feedstockKg)} kg → ${number.format(entry.outputKg)} kg larvae + ${number.format(entry.frassKg || 0)} kg frass`;
@@ -428,6 +558,8 @@
     return { ...base, category:$("profitCostCategory").value, amount:$("profitCostAmount").value };
   }
   function init() {
+    ensureProductEconomicsSyncUi();
+    if ($("productEconomicsSheetUrl")) $("productEconomicsSheetUrl").value = localStorage.getItem(productEconomicsSheetKey) || $("productEconomicsSheetUrl").value;
     if (initialized || !$("profitDataAppTitle")) return;
     initialized = true;
     $("profitEntryDate").value = today();
@@ -551,6 +683,23 @@
     });
     $("reportTypeSelect").addEventListener("change", renderReportPreview);
     $("downloadReportCsvBtn").addEventListener("click", downloadReportCsv);
+    $("syncProductEconomicsSheetBtn").addEventListener("click", async () => {
+      const button = $("syncProductEconomicsSheetBtn");
+      const status = $("productEconomicsSyncMsg");
+      try {
+        button.disabled = true;
+        status.className = "mt-2 text-sm text-zinc-600";
+        status.textContent = "Connecting to Google Sheets and loading real e-shop sales…";
+        const url = await syncProductEconomicsSheet();
+        status.className = "mt-2 text-sm text-emerald-700";
+        status.innerHTML = `Product Economics updated from real paid orders. <a class="font-bold underline" href="${esc(url)}" target="_blank" rel="noopener">Open workbook</a>`;
+      } catch (err) {
+        status.className = "mt-2 text-sm text-red-700";
+        status.textContent = err.message || "Product Economics could not be synchronized.";
+      } finally {
+        button.disabled = !selectedReportPeriod() || !googleSheetsClientId || !(liveShopSales?.summary?.products || []).length;
+      }
+    });
     $("reportBuilderForm").addEventListener("submit", async event => {
       event.preventDefault();
       const button = $("createGoogleSheetReportBtn");

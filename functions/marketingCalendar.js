@@ -97,13 +97,26 @@ function sanitizeMarketingEvent(input = {}, previous = {}) {
     lastVerified: dateKey(input.lastVerified ?? previous.lastVerified),
     enabled: input.enabled !== undefined ? input.enabled !== false : previous.enabled !== false,
     reminderDays: reminderDays.length ? reminderDays : [2],
+    imageUrl: String(input.imageUrl ?? previous.imageUrl ?? "").trim().slice(0, 2000),
+    publishLanguage: ["el", "en"].includes(input.publishLanguage) ? input.publishLanguage : (["el", "en"].includes(previous.publishLanguage) ? previous.publishLanguage : "el"),
+    imageIterations: (Array.isArray(input.imageIterations) ? input.imageIterations : previous.imageIterations || []).slice(-12).map(item => ({
+      imageUrl: String(item?.imageUrl || "").trim().slice(0, 2000),
+      prompt: String(item?.prompt || "").trim().slice(0, 4000),
+      generatedAt: String(item?.generatedAt || "").trim().slice(0, 40),
+    })).filter(item => /^https:\/\//i.test(item.imageUrl)),
     draft: {
       angle: String(input.draft?.angle ?? previous.draft?.angle ?? "").trim().slice(0, 1000),
+      angleEn: String(input.draft?.angleEn ?? previous.draft?.angleEn ?? "").trim().slice(0, 1000),
       socialCaption: String(input.draft?.socialCaption ?? previous.draft?.socialCaption ?? "").trim().slice(0, 6000),
+      socialCaptionEn: String(input.draft?.socialCaptionEn ?? previous.draft?.socialCaptionEn ?? "").trim().slice(0, 6000),
       storyText: String(input.draft?.storyText ?? previous.draft?.storyText ?? "").trim().slice(0, 2000),
+      storyTextEn: String(input.draft?.storyTextEn ?? previous.draft?.storyTextEn ?? "").trim().slice(0, 2000),
       newsletterSubject: String(input.draft?.newsletterSubject ?? previous.draft?.newsletterSubject ?? "").trim().slice(0, 180),
+      newsletterSubjectEn: String(input.draft?.newsletterSubjectEn ?? previous.draft?.newsletterSubjectEn ?? "").trim().slice(0, 180),
       cta: String(input.draft?.cta ?? previous.draft?.cta ?? "Shop GRUBZ").trim().slice(0, 300),
+      ctaEn: String(input.draft?.ctaEn ?? previous.draft?.ctaEn ?? "Shop GRUBZ").trim().slice(0, 300),
       visualDirection: String(input.draft?.visualDirection ?? previous.draft?.visualDirection ?? "").trim().slice(0, 2000),
+      visualDirectionEn: String(input.draft?.visualDirectionEn ?? previous.draft?.visualDirectionEn ?? "").trim().slice(0, 2000),
     },
   };
 }

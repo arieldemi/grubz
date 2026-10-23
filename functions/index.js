@@ -11,7 +11,7 @@ const { getAuth: getAdminAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
 const { randomUUID, createHash, timingSafeEqual } = require("crypto");
 const Stripe = require("stripe");
-const { sanitizePilot, pilotMetrics } = require("./collaborationPilot");
+const { sanitizePilot, pilotMetrics, productSalesBeforeDiscountCents } = require("./collaborationPilot");
 const OpenAI = require("openai");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
@@ -40,6 +40,7 @@ const { fetchNomaCredentialInfo, fetchNomaExpenseInvoice, fetchNomaExpenses, fet
 const { encryptNomaCredential, decryptNomaCredential } = require("./nomaCredentialVault");
 const { dateKey, nextOccurrence, sanitizeMarketingEvent, dueReminder } = require("./marketingCalendar");
 const { expenseView, isoDate: expenseIsoDate, parseInvoiceDataUrl, sanitizeExpense } = require("./grubzExpenses");
+const { publishMetaPost } = require("./metaPublishing");
 
 // ----- Secrets -----
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
@@ -66,6 +67,9 @@ const ORDER_NOTIFICATION_FROM = defineSecret("ORDER_NOTIFICATION_FROM");
 const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = defineSecret("TELEGRAM_CHAT_ID");
 const SOCIAL_AGENT_WEBHOOK_SECRET = defineSecret("SOCIAL_AGENT_WEBHOOK_SECRET");
+const META_PAGE_ACCESS_TOKEN = defineSecret("META_PAGE_ACCESS_TOKEN");
+const META_FACEBOOK_PAGE_ID = defineSecret("META_FACEBOOK_PAGE_ID");
+const META_INSTAGRAM_ACCOUNT_ID = defineSecret("META_INSTAGRAM_ACCOUNT_ID");
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 const ACS_COMPANY_ID = defineSecret("ACS_COMPANY_ID");
 const ACS_COMPANY_PASSWORD = defineSecret("ACS_COMPANY_PASSWORD");
@@ -129,6 +133,32 @@ const SOCIAL_AGENT_SETTINGS_DOC = "settings/socialAgent";
 const CHATBOT_SETTINGS_DOC = "settings/chatbot";
 const MARKETING_SETTINGS_DOC = "settings/marketing";
 const NOMA_FLOW_SETTINGS_DOC = "settings/nomaFlow";
+const SCALE_PLANNING_SETTINGS_DOC = "settings/scalePlanning";
+const SCALE_PLANNING_FIELDS = [
+  "investment", "eggsPerBatchG", "batchesPerMonth", "dryFeedPerGramEggsKg", "waterLitersPer25Kg",
+  "theoreticalWetLarvaePerGramEggsKg", "hatchSuccess", "survivalToHarvest", "driedRecovery",
+  "salesUtilization", "driedLarvaePricePerKg", "frassYieldPreparedFeed", "frassSalesUtilization",
+  "frassSalePricePerKg", "frassHandlingCostPerKg", "feedstockCostPerKg", "containerCapex",
+  "containerOpexMonthly", "dryerCapex", "dryerInstallation", "dryerWetThroughputKgHour",
+  "dryerHoursMonth", "sifterCapex", "preparedFeedPerStaffHourKg", "productiveHoursPerFte",
+  "minimumProductionFte", "monthlyCostPerAddedFte", "fixedOverheadMonthly", "operatingRunwayMonths", "workingCapitalMonths",
+  "contingency",
+];
+function sanitizeScalePlanningSettings(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Invalid scale-planning settings");
+  const settings = {};
+  for (const key of SCALE_PLANNING_FIELDS) {
+    if (input[key] == null) continue;
+    const value = Number(input[key]);
+    if (!Number.isFinite(value) || value < 0) throw new Error(`Invalid scale-planning value: ${key}`);
+    settings[key] = value;
+  }
+  return settings;
+}
+async function getScalePlanningSettings() {
+  const snap = await db.doc(SCALE_PLANNING_SETTINGS_DOC).get();
+  return snap.exists ? sanitizeScalePlanningSettings(snap.data() || {}) : null;
+}
 async function isNomaFlowEnabled() {
   const snapshot = await db.doc(NOMA_FLOW_SETTINGS_DOC).get();
   return snapshot.exists && snapshot.data()?.enabled === true;
@@ -147,6 +177,7 @@ const NEWSLETTER_SENDS_COLLECTION = "newsletterSends";
 const NEWSLETTER_IDEAS_COLLECTION = "newsletterIdeas";
 const MARKETING_CALENDAR_COLLECTION = "marketingCalendarEvents";
 const MARKETING_CALENDAR_REMINDERS_COLLECTION = "marketingCalendarReminders";
+const MARKETING_CALENDAR_IMAGES_COLLECTION = "marketingCalendarImages";
 const ORDER_FEEDBACK_COLLECTION = "orderFeedback";
 const PROFIT_PERIODS_COLLECTION = "profitPeriods";
 const PROFIT_ENTRIES_COLLECTION = "profitEntries";
@@ -862,12 +893,12 @@ function parseImageUpload(body = {}) {
   return { id, contentType, buffer, ext };
 }
 
-async function saveProductImageToStorage({ id, contentType, buffer, ext }) {
+async function saveProductImageToStorage({ id, contentType, buffer, ext, bucketNames = FIREBASE_STORAGE_BUCKET_FALLBACKS }) {
   const token = randomUUID();
   const filePath = `product-images/${id}-${Date.now()}.${ext}`;
   let lastError = null;
 
-  for (const bucketName of FIREBASE_STORAGE_BUCKET_FALLBACKS) {
+  for (const bucketName of bucketNames) {
     try {
       const bucket = getStorage().bucket(bucketName);
       const file = bucket.file(filePath);
@@ -879,6 +910,8 @@ async function saveProductImageToStorage({ id, contentType, buffer, ext }) {
         },
         resumable: false,
       });
+      const [exists] = await file.exists();
+      if (!exists) throw Object.assign(new Error("Stored image could not be verified"), { code:404 });
       return {
         bucketName: bucket.name,
         path: filePath,
@@ -1996,7 +2029,7 @@ function collaborationMetricsForAttribution({ couponCode = "", referralCode = ""
   const currency = matchedOrders.find(order => order.currency)?.currency || "eur";
   const totals = matchedOrders.reduce((acc, order) => {
     const pricing = orderPricing(order);
-    acc.revenueCents += Number(pricing.total || order.amountTotal || 0);
+    acc.revenueCents += productSalesBeforeDiscountCents(pricing);
     acc.discountCents += Number(order.amountDiscount || pricing.discount || 0);
     acc.subtotalCents += Number(pricing.subtotal || order.amountSubtotal || 0);
     const createdMs = millisFromTimestamp(order.createdAt);
@@ -2026,6 +2059,7 @@ function collaborationMetricsForAttribution({ couponCode = "", referralCode = ""
       couponCode: couponCodeForOrder(order),
       referralCode: referralCodeForOrder(order),
       attributionSource: referral && referralCodeForOrder(order) === referral ? "referral" : "coupon",
+      productSalesCents: productSalesBeforeDiscountCents(orderPricing(order)),
       discountCents: Number(order.amountDiscount || orderPricing(order).discount || 0),
       customerEmail: order.customer?.email || "",
       customerName: order.customer?.name || "",
@@ -2250,7 +2284,7 @@ async function sendCustomerChatNotificationOnce(conversationId, messageId, custo
     lastAttemptAt: now(),
   }, { merge: true });
   try {
-    const to = secretValue(ORDER_NOTIFICATION_EMAIL, DEFAULT_NOTIFICATION_EMAIL);
+    const to = await systemNotificationRecipientEmail();
     const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
     const message = buildCustomerChatNotification(conversationId, messageId, customer, text);
     const result = await sendEmail({ to, from, subject: message.subject, text: message.text, html: message.html });
@@ -4776,9 +4810,9 @@ function sanitizeOrderEmailSettings(input = {}) {
 function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true } = {}) {
   const templates = Array.isArray(input.templates) ? input.templates : [];
   const placeholders = sanitizeEmailPlaceholderSettings(input.placeholders || {});
-  const receiptRecipientEmail = normalizedEmail(input.receiptRecipientEmail || "");
-  if (receiptRecipientEmail && !validEmailAddress(receiptRecipientEmail)) {
-    throw new Error("Enter a valid receipt recipient email address");
+  const notificationRecipientEmail = normalizedEmail(input.notificationRecipientEmail || input.receiptRecipientEmail || "");
+  if (notificationRecipientEmail && !validEmailAddress(notificationRecipientEmail)) {
+    throw new Error("Enter a valid system notification recipient email address");
   }
   const sanitized = templates
     .map((template = {}) => {
@@ -4821,7 +4855,8 @@ function sanitizeOrderEmailSettingsInternal(input = {}, { includeDefaults = true
   }
 
   return {
-    receiptRecipientEmail,
+    notificationRecipientEmail,
+    receiptRecipientEmail: notificationRecipientEmail,
     placeholders,
     templates: merged.slice(0, 50),
     updatedAt: now(),
@@ -4990,7 +5025,7 @@ async function sendOrderStatusTestEmail(template, adminUser = {}, language = "en
     settings
   );
   const result = await sendEmail({
-    to: DEFAULT_NOTIFICATION_EMAIL,
+    to: await systemNotificationRecipientEmail(),
     from,
     subject: `[TEST] ${message.subject}`,
     text: message.text,
@@ -5129,7 +5164,7 @@ async function sendOrderNotificationOnce(type, order, event, recipientOverride =
     }, { merge: true });
 
   try {
-    const to = String(recipientOverride || "").trim() || secretValue(ORDER_NOTIFICATION_EMAIL, DEFAULT_NOTIFICATION_EMAIL);
+    const to = String(recipientOverride || "").trim() || await systemNotificationRecipientEmail();
     const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
     const message = buildOrderNotification(type, order, event);
     const result = await sendEmail({ to, from, ...message });
@@ -5530,6 +5565,12 @@ function feedbackCustomerKey(email = "") {
   return createHash("sha256").update(normalizedEmail(email)).digest("hex");
 }
 
+async function systemNotificationRecipientEmail() {
+  const settings = await getOrderEmailSettings();
+  const configured = normalizedEmail(settings.notificationRecipientEmail || settings.receiptRecipientEmail || "");
+  return validEmailAddress(configured) ? configured : DEFAULT_NOTIFICATION_EMAIL;
+}
+
 function feedbackCouponCode() {
   return `THANKS10-${randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 }
@@ -5590,6 +5631,35 @@ async function sendFeedbackThankYouEmail(feedbackRef, feedback, couponCode) {
     await feedbackRef.set({ thankYouEmailStatus: "failed", thankYouEmailError: err.message || "Email failed", updatedAt: now() }, { merge: true });
     throw err;
   }
+}
+
+async function sendFeedbackAdminNotification(feedbackRef, feedback = {}, type = "feedback_submitted") {
+  const isConsent = type === "publication_consent_granted";
+  const consoleUrl = `${GRUBZ_URL}/console/feedback/`;
+  const rating = Math.max(0, Math.min(5, Number(feedback.rating || 0)));
+  const customer = String(feedback.customerName || "Customer").trim() || "Customer";
+  const orderNumber = String(feedback.orderNumber || "").trim();
+  const comment = String(feedback.comment || "").trim();
+  const subject = isConsent
+    ? `Feedback publication consent granted${orderNumber ? ` – ${orderNumber}` : ""}`
+    : `New GRUBZ customer feedback${rating ? ` – ${rating}/5` : ""}${orderNumber ? ` – ${orderNumber}` : ""}`;
+  const lines = isConsent
+    ? [`${customer} granted permission to publish their GRUBZ feedback.`, orderNumber ? `Order: ${orderNumber}` : "", "The customer's first name may be shown. Their email and order details must remain private.", `Review feedback: ${consoleUrl}`]
+    : [`${customer} submitted new GRUBZ feedback.`, orderNumber ? `Order: ${orderNumber}` : "", rating ? `Rating: ${rating}/5` : "", comment ? `Comment: ${comment}` : "Comment: No written comment.", `Publication permission: ${feedback.publishConsent === true ? "Granted" : "Not granted"}`, `Review feedback: ${consoleUrl}`];
+  const text = lines.filter(Boolean).join("\n\n");
+  const result = await sendEmail({
+    to: await systemNotificationRecipientEmail(),
+    from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
+    subject,
+    text,
+    html: textToBasicHtml(text).replace(escapeHtml(consoleUrl), `<a href="${escapeHtml(consoleUrl)}">Open Feedback</a>`),
+  });
+  await feedbackRef.set({
+    [`${isConsent ? "publicationConsent" : "feedback"}AdminNotificationStatus`]: result.skipped ? "skipped" : "sent",
+    [`${isConsent ? "publicationConsent" : "feedback"}AdminNotificationSentAt`]: result.skipped ? null : now(),
+    updatedAt: now(),
+  }, { merge: true });
+  return result;
 }
 
 async function sendOrderFeedbackEmail(order, adminUser = {}, options = {}) {
@@ -5854,7 +5924,7 @@ async function sendOrderCommunicationTestEmail(order, type, adminUser = {}, opti
   if (!template) throw Object.assign(new Error("This communication template is missing or disabled."), { status: 400 });
   const message = buildOrderStatusEmail(template, testOrder, order.status || "", order.fulfillmentStatus || "", settings);
   const result = await sendEmail({
-    to: GRUBZ_INFO_EMAIL,
+    to: await systemNotificationRecipientEmail(),
     from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
     subject: `[TEST] ${message.subject}`,
     text: message.text,
@@ -6139,6 +6209,7 @@ exports.orderFeedback = onRequest(
       const rating = Math.round(Number(body.rating || 0));
       if (rating < 1 || rating > 5) return jsonError(res, 400, "Choose a rating from 1 to 5.");
       const comment = String(body.comment || "").trim().slice(0, 2000);
+      const publishConsent = body.publishConsent === true;
       const couponCode = feedbackCouponCode();
       const couponEndsAt = Timestamp.fromMillis(Date.now() + FEEDBACK_COUPON_LIFETIME_DAYS * 24 * 60 * 60 * 1000);
       const couponRef = db.collection(COUPONS_COLLECTION).doc(couponDocId(couponCode));
@@ -6176,6 +6247,9 @@ exports.orderFeedback = onRequest(
         transaction.set(ref, {
           rating,
           comment,
+          publishConsent,
+          publishConsentAt: publishConsent ? now() : null,
+          publishConsentVersion: "2026-10-18",
           status: "submitted",
           couponCode,
           couponEndsAt,
@@ -6196,6 +6270,8 @@ exports.orderFeedback = onRequest(
           customerFeedback: {
             rating,
             comment,
+            publishConsent,
+            publishConsentAt: publishConsent ? now() : null,
             submittedAt: now(),
           },
           updatedAt: now(),
@@ -6207,6 +6283,14 @@ exports.orderFeedback = onRequest(
       } catch (emailError) {
         logger.error("Feedback thank-you email failed", { feedbackId: ref.id, error: emailError.message || "Email failed" });
         thankYouEmail = { failed: true, error: emailError.message || "Email failed" };
+      }
+      if (committedFeedback.testOnly !== true) {
+        try {
+          await sendFeedbackAdminNotification(ref, { ...committedFeedback, rating, comment, publishConsent }, "feedback_submitted");
+        } catch (notificationError) {
+          logger.error("Feedback admin notification failed", { feedbackId: ref.id, error: notificationError.message || "Email failed" });
+          await ref.set({ feedbackAdminNotificationStatus: "failed", feedbackAdminNotificationError: notificationError.message || "Email failed", updatedAt: now() }, { merge: true }).catch(() => {});
+        }
       }
       return res.json({ ok: true, thankYouEmailSent: !thankYouEmail.skipped && !thankYouEmail.failed });
     } catch (err) {
@@ -6312,6 +6396,11 @@ exports.adminFeedback = onRequest(
             status: row.status || "pending",
             rating: Number(row.rating || 0),
             comment: row.comment || "",
+            publishConsent: row.publishConsent === true,
+            publishConsentAt: row.publishConsentAt || null,
+            publishConsentVersion: row.publishConsentVersion || "",
+            publicationConsentEmailStatus: row.publicationConsentEmailStatus || "",
+            publicationConsentEmailSentAt: row.publicationConsentEmailSentAt || null,
             reviewed: row.reviewed === true,
             internalNote: row.internalNote || "",
             createdAt: row.createdAt || null,
@@ -6369,6 +6458,48 @@ exports.adminFeedback = onRequest(
           const row = feedbackSnap.data() || {};
           if (row.status !== "submitted" || !row.couponCode) return jsonError(res, 400, "This feedback has no reward email to retry.");
           const result = await sendFeedbackThankYouEmail(feedbackRef, row, row.couponCode);
+          return res.json({ ok: true, result });
+        }
+        if (action === "sendPublicationConsentEmail" || action === "sendPublicationConsentTestEmail") {
+          const testOnly = action === "sendPublicationConsentTestEmail";
+          const id = String(body.id || "").trim();
+          if (!id || id.includes("/")) return jsonError(res, 400, "Missing feedback ID.");
+          const feedbackRef = db.collection(ORDER_FEEDBACK_COLLECTION).doc(id);
+          const feedbackSnap = await feedbackRef.get();
+          if (!feedbackSnap.exists) return jsonError(res, 404, "Feedback not found.");
+          const row = feedbackSnap.data() || {};
+          if (row.status !== "submitted") return jsonError(res, 400, "Feedback has not been submitted yet.");
+          if (!testOnly && row.publishConsent === true) return jsonError(res, 400, "Publication consent has already been granted.");
+          const recipientEmail = testOnly ? GRUBZ_INFO_EMAIL : normalizedEmail(row.customerEmail || "");
+          if (!recipientEmail) return jsonError(res, 400, "This feedback has no customer email address.");
+          const consentToken = randomUUID();
+          const consentTokenHash = createHash("sha256").update(consentToken).digest("hex");
+          const consentExpiresAt = Timestamp.fromMillis(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          const consentRecordId = testOnly ? randomUUID() : id;
+          const consentUrl = `${GRUBZ_URL}/feedback/consent/?id=${encodeURIComponent(consentRecordId)}&token=${encodeURIComponent(consentToken)}${testOnly ? "&test=1" : ""}`;
+          const greek = normalizeOrderLanguage(row.language) === "el";
+          const customerName = String(row.customerName || "").trim();
+          const greeting = customerName ? (greek ? `Γεια σου ${customerName},` : `Hi ${customerName},`) : (greek ? "Γεια σου," : "Hello,");
+          const subjectBase = greek ? "Μπορούμε να δημοσιεύσουμε την αξιολόγησή σου;" : "May we publish your GRUBZ feedback?";
+          const subject = testOnly ? `[TEST] ${subjectBase}` : subjectBase;
+          const text = greek
+            ? `${greeting}\n\nΣε ευχαριστούμε για την αξιολόγησή σου. Θα θέλαμε την άδειά σου για να τη δημοσιεύσουμε στα κανάλια της GRUBZ. Μπορεί να εμφανιστεί μόνο το μικρό σου όνομα· το email και τα στοιχεία της παραγγελίας σου δεν θα δημοσιευτούν.\n\nΔώσε τη συγκατάθεσή σου εδώ: ${consentUrl}\n\nΟ σύνδεσμος λήγει σε 30 ημέρες. Αν δεν θέλεις να δώσεις άδεια, δεν χρειάζεται να κάνεις τίποτα.`
+            : `${greeting}\n\nThank you for your feedback. We would like your permission to publish it on GRUBZ channels. Only your first name may be shown; your email and order details will not be published.\n\nGive your consent here: ${consentUrl}\n\nThis link expires in 30 days. If you do not wish to grant permission, you do not need to do anything.`;
+          const html = `<p>${escapeHtml(greeting)}</p><p>${greek ? "Σε ευχαριστούμε για την αξιολόγησή σου. Θα θέλαμε την άδειά σου για να τη δημοσιεύσουμε στα κανάλια της GRUBZ. Μπορεί να εμφανιστεί μόνο το μικρό σου όνομα· το email και τα στοιχεία της παραγγελίας σου δεν θα δημοσιευτούν." : "Thank you for your feedback. We would like your permission to publish it on GRUBZ channels. Only your first name may be shown; your email and order details will not be published."}</p><p><a href="${escapeHtml(consentUrl)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">${greek ? "Δώσε συγκατάθεση" : "Give consent"}</a></p><p>${greek ? "Ο σύνδεσμος λήγει σε 30 ημέρες. Αν δεν θέλεις να δώσεις άδεια, δεν χρειάζεται να κάνεις τίποτα." : "This link expires in 30 days. If you do not wish to grant permission, you do not need to do anything."}</p>`;
+          const result = await sendEmail({ to: recipientEmail, from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()), subject, text, html });
+          const consentUpdate = {
+            publicationConsentTokenHash: consentTokenHash,
+            publicationConsentExpiresAt: consentExpiresAt,
+            publicationConsentEmailStatus: result.skipped ? "skipped" : "sent",
+            publicationConsentEmailSentAt: result.skipped ? null : now(),
+            publicationConsentEmailSentBy: adminUser.uid || "",
+            updatedAt: now(),
+          };
+          if (testOnly) {
+            await db.collection("feedbackPublicationConsentTests").doc(consentRecordId).set({ ...consentUpdate, sourceFeedbackId: id, customerName: row.customerName || "", customerEmail: GRUBZ_INFO_EMAIL, language: row.language || "en", status: "pending", testOnly: true, createdAt: now() });
+          } else {
+            await feedbackRef.set(consentUpdate, { merge: true });
+          }
           return res.json({ ok: true, result });
         }
         return jsonError(res, 400, "Unknown feedback action.");
@@ -6437,6 +6568,48 @@ exports.adminFeedback = onRequest(
   }
 );
 
+exports.feedbackPublicationConsent = onRequest(
+  { region: "europe-west1", invoker: "public", secrets: [SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM], cors: ALLOWED_ORIGIN_LIST },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      const id = String(req.query.id || req.body?.id || "").trim();
+      const token = String(req.query.token || req.body?.token || "").trim();
+      const testOnly = String(req.query.test || req.body?.test || "") === "1";
+      if (!id || id.includes("/") || !token) return jsonError(res, 400, "Invalid consent link.");
+      const ref = db.collection(testOnly ? "feedbackPublicationConsentTests" : ORDER_FEEDBACK_COLLECTION).doc(id);
+      const snap = await ref.get();
+      if (!snap.exists) return jsonError(res, 404, "Invalid consent link.");
+      const row = snap.data() || {};
+      const suppliedHash = createHash("sha256").update(token).digest("hex");
+      const validToken = row.publicationConsentTokenHash && safeTimingEqual(suppliedHash, row.publicationConsentTokenHash);
+      if (!validToken) return jsonError(res, 404, "Invalid consent link.");
+      if (row.publishConsent === true) return res.json({ ok: true, granted: true, language: row.language || "en" });
+      if (couponDateMillis(row.publicationConsentExpiresAt) < Date.now()) return jsonError(res, 410, "This consent link has expired.");
+      if (req.method === "GET") return res.json({ ok: true, granted: false, language: row.language || "en", customerName: row.customerName || "" });
+      if (req.method !== "POST") return jsonError(res, 405, "Use GET or POST.");
+      if (req.body?.publishConsent !== true) return jsonError(res, 400, "Please confirm publication permission.");
+      const consentAt = now();
+      await ref.set({ publishConsent: true, publishConsentAt: consentAt, publishConsentVersion: "2026-10-18", publicationConsentTokenHash: FieldValue.delete(), publicationConsentCompletedAt: consentAt, updatedAt: consentAt }, { merge: true });
+      if (row.orderId && row.testOnly !== true && !testOnly) {
+        await db.collection("orders").doc(row.orderId).set({ "customerFeedback.publishConsent": true, "customerFeedback.publishConsentAt": consentAt, updatedAt: consentAt }, { merge: true });
+      }
+      if (!testOnly && row.testOnly !== true) {
+        try {
+          await sendFeedbackAdminNotification(ref, row, "publication_consent_granted");
+        } catch (notificationError) {
+          logger.error("Publication consent admin notification failed", { feedbackId: id, error: notificationError.message || "Email failed" });
+          await ref.set({ publicationConsentAdminNotificationStatus: "failed", publicationConsentAdminNotificationError: notificationError.message || "Email failed", updatedAt: now() }, { merge: true }).catch(() => {});
+        }
+      }
+      return res.json({ ok: true, granted: true, language: row.language || "en" });
+    } catch (err) {
+      logger.error("Feedback publication consent failed", { error: err.message || "Consent failed" });
+      return jsonError(res, Number(err.status || 400), err.message || "Consent could not be saved.");
+    }
+  }
+);
+
 async function sendUserSignupNotification(user = {}) {
   const uid = user.uid || user.email || randomUUID();
   const notificationRef = db.collection("userNotifications").doc(`signup_${uid}`);
@@ -6456,7 +6629,7 @@ async function sendUserSignupNotification(user = {}) {
   }, { merge: true });
 
   try {
-    const to = secretValue(ORDER_NOTIFICATION_EMAIL, DEFAULT_NOTIFICATION_EMAIL);
+    const to = await systemNotificationRecipientEmail();
     const from = secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom());
     const message = buildUserSignupNotification(user);
     const result = await sendEmail({ to, from, ...message });
@@ -8622,9 +8795,9 @@ exports.adminOrders = onRequest(
           if (orderIds.length > 50) return jsonError(res, 400, "Send receipts for no more than 50 orders at once.");
 
           const emailSettings = await getOrderEmailSettings();
-          const recipient = normalizedEmail(emailSettings.receiptRecipientEmail || "");
+          const recipient = normalizedEmail(emailSettings.notificationRecipientEmail || emailSettings.receiptRecipientEmail || "");
           if (!recipient || !validEmailAddress(recipient)) {
-            return jsonError(res, 400, "Set a valid receipt recipient email address in Settings > Emails first.");
+            return jsonError(res, 400, "Set a valid system notification recipient email address in Settings > Notifications first.");
           }
 
           const snapshots = await db.getAll(...orderIds.map(id => db.collection("orders").doc(id)));
@@ -9205,7 +9378,7 @@ exports.contact = onRequest(
         <p style="white-space:pre-wrap">${escapeHtml(message)}</p>
       `;
       const result = await sendEmail({
-        to: GRUBZ_INFO_EMAIL,
+        to: await systemNotificationRecipientEmail(),
         from: secretValue(ORDER_NOTIFICATION_FROM, defaultNotificationFrom()),
         subject,
         text,
@@ -10197,6 +10370,7 @@ exports.adminSocialAgent = onRequest(
     region: "europe-west1",
     invoker: "public",
     cors: ALLOWED_ORIGIN_LIST,
+    secrets: [META_PAGE_ACCESS_TOKEN, META_FACEBOOK_PAGE_ID, META_INSTAGRAM_ACCOUNT_ID],
   },
   async (req, res) => {
     try {
@@ -10214,7 +10388,13 @@ exports.adminSocialAgent = onRequest(
         const opportunities = snap.docs.map(doc => publicSocialOpportunity(doc.id, doc.data()));
         const groups = groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        return res.json({ settings, opportunities, groups, posts });
+        return res.json({
+          settings, opportunities, groups, posts,
+          publishing: {
+            facebook: Boolean(secretValue(META_PAGE_ACCESS_TOKEN) && secretValue(META_FACEBOOK_PAGE_ID)),
+            instagram: Boolean(secretValue(META_PAGE_ACCESS_TOKEN) && secretValue(META_INSTAGRAM_ACCOUNT_ID)),
+          },
+        });
       }
 
       if (req.method === "PATCH") {
@@ -10327,6 +10507,38 @@ exports.adminSocialAgent = onRequest(
           };
           await db.collection(SOCIAL_POSTS_COLLECTION).doc(id).set(record, { merge: true });
           return res.json({ ok: true, post: { id, ...record } });
+        }
+        if (action === "publishPost") {
+          const id = String(body.id || "").trim();
+          if (!id || id.includes("/")) return jsonError(res, 400, "Missing post id");
+          const postRef = db.collection(SOCIAL_POSTS_COLLECTION).doc(id);
+          const postSnap = await postRef.get();
+          if (!postSnap.exists) return jsonError(res, 404, "Social post not found");
+          const post = { id, ...postSnap.data() };
+          if (post.status === "posted" && !body.republish) return jsonError(res, 409, "This post is already marked as posted");
+          try {
+            const published = await publishMetaPost({
+              post,
+              accessToken: secretValue(META_PAGE_ACCESS_TOKEN),
+              pageId: secretValue(META_FACEBOOK_PAGE_ID),
+              instagramAccountId: secretValue(META_INSTAGRAM_ACCOUNT_ID),
+              version: process.env.META_GRAPH_API_VERSION || "v24.0",
+            });
+            const stamp = new Date().toISOString();
+            const historyItem = { destinationId: published.postId, postedAt: stamp, platform: published.platform, permalink: published.permalink || "" };
+            const update = {
+              status: "posted", publishedAt: stamp, publishedBy: adminUser.uid,
+              metaPostId: published.postId, permalink: published.permalink || "",
+              postedDestinations: [...(Array.isArray(post.postedDestinations) ? post.postedDestinations : []), historyItem].slice(-1000),
+              lastPublishError: "", updatedAt: stamp, updatedBy: adminUser.uid,
+            };
+            await postRef.set(update, { merge: true });
+            return res.json({ ok: true, published, post: { ...post, ...update } });
+          } catch (err) {
+            const message = String(err.message || "Meta publishing failed").slice(0, 500);
+            await postRef.set({ lastPublishError: message, lastPublishAttemptAt: new Date().toISOString(), updatedBy: adminUser.uid }, { merge: true });
+            throw err;
+          }
         }
         if (action === "deletePost") {
           const id = String(body.id || "").trim();
@@ -10679,7 +10891,8 @@ exports.adminSettings = onRequest(
         const acs = await getAcsSettings();
         const chatbot = await getChatbotSettings();
         const marketing = await getMarketingSettings();
-        return res.json({ shipping, stripe, orderEmails, boxNow, acs, chatbot, marketing });
+        const scalePlanning = await getScalePlanningSettings();
+        return res.json({ shipping, stripe, orderEmails, boxNow, acs, chatbot, marketing, scalePlanning });
       }
 
       if (req.method === "PATCH" || req.method === "POST") {
@@ -10705,6 +10918,7 @@ exports.adminSettings = onRequest(
         let acs = null;
         let chatbot = null;
         let marketing = null;
+        let scalePlanning = null;
 
         if (
           body.shipping ||
@@ -10778,6 +10992,15 @@ exports.adminSettings = onRequest(
           );
         }
 
+        if (body.scalePlanning) {
+          scalePlanning = sanitizeScalePlanningSettings(body.scalePlanning);
+          await db.doc(SCALE_PLANNING_SETTINGS_DOC).set({
+            ...scalePlanning,
+            updatedAt: now(),
+            updatedBy: adminUser.uid,
+          });
+        }
+
         if (!shipping) shipping = await getShippingSettings();
         if (!stripe) stripe = await effectiveStripeSettings(req, { forceLocalEnvironment: false });
         if (!orderEmails) orderEmails = await getOrderEmailSettings();
@@ -10785,7 +11008,8 @@ exports.adminSettings = onRequest(
         if (!acs) acs = await getAcsSettings();
         if (!chatbot) chatbot = await getChatbotSettings();
         if (!marketing) marketing = await getMarketingSettings();
-        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, acs, chatbot, marketing });
+        if (!scalePlanning) scalePlanning = await getScalePlanningSettings();
+        return res.json({ ok: true, shipping, stripe, orderEmails, boxNow, acs, chatbot, marketing, scalePlanning });
       }
 
       return jsonError(res, 405, "Use GET or PATCH");
@@ -11935,11 +12159,11 @@ function marketingCalendarEmail(event, reminder) {
 }
 
 async function sendMarketingCalendarReminder(event, reminder) {
-  return sendEmail({ to:GRUBZ_INFO_EMAIL, from:newsletterFromAddress(), ...marketingCalendarEmail(event, reminder), language:"en" });
+  return sendEmail({ to:await systemNotificationRecipientEmail(), from:newsletterFromAddress(), ...marketingCalendarEmail(event, reminder), language:"en" });
 }
 
 exports.adminMarketingCalendar = onRequest(
-  { region:"europe-west1", invoker:"public", cors:ALLOWED_ORIGIN_LIST, secrets:[OPENAI_API_KEY, SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM] },
+  { region:"europe-west1", invoker:"public", cors:ALLOWED_ORIGIN_LIST, timeoutSeconds:300, secrets:[OPENAI_API_KEY, SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM, META_PAGE_ACCESS_TOKEN, META_FACEBOOK_PAGE_ID, META_INSTAGRAM_ACCOUNT_ID] },
   async (req, res) => {
     try {
       if (req.method === "OPTIONS") return res.status(204).end();
@@ -11968,14 +12192,79 @@ exports.adminMarketingCalendar = onRequest(
         if (!apiKey) return jsonError(res, 503, "OpenAI is not configured.");
         const client = new OpenAI({ apiKey });
         const response = await client.responses.create({ model:DEFAULT_CHATBOT_SETTINGS.model, store:false, max_output_tokens:1400,
-          instructions:"Create a concise, accurate GRUBZ marketing draft for a calendar event. GRUBZ is a Greek ecommerce brand selling dried Black Soldier Fly larvae products for reptiles, birds, fish, and chickens, plus frass for plants. Return only valid JSON with keys angle, socialCaption, storyText, newsletterSubject, cta, visualDirection. Write natural Greek unless the event clearly calls for English. Do not invent discounts, scientific claims, prices, availability, or guarantees. Never imply a product is suitable for every species. Keep the promotion useful and non-forced.", input:JSON.stringify(input) });
+          instructions:"Create a concise, accurate bilingual GRUBZ marketing draft for a calendar event. GRUBZ is a Greek ecommerce brand selling dried Black Soldier Fly larvae products for reptiles, birds, fish, and chickens, plus frass for plants. Return only valid JSON with keys angle, angleEn, socialCaption, socialCaptionEn, storyText, storyTextEn, newsletterSubject, newsletterSubjectEn, cta, ctaEn, visualDirection, visualDirectionEn. Fields without the En suffix must be natural Greek; every En field must be a faithful, natural English translation. The English visualDirectionEn must work as a standalone AI image prompt. Do not invent discounts, scientific claims, prices, availability, or guarantees. Never imply a product is suitable for every species. Keep the promotion useful and non-forced.", input:JSON.stringify(input) });
         const raw = responseTextFromOpenAI(response).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
         let draft; try { draft = JSON.parse(raw); } catch { return jsonError(res, 502, "The draft generator returned an invalid response."); }
         return res.json({ ok:true, draft:sanitizeMarketingEvent({ ...input, draft }).draft });
       }
+      if (action === "generateImage") {
+        const input = sanitizeMarketingEvent(body.event || {});
+        const apiKey = String(OPENAI_API_KEY.value() || "").trim();
+        if (!apiKey) return jsonError(res, 503, "OpenAI image generation is not configured.");
+        const requestedPrompt = String(body.prompt || input.draft?.visualDirectionEn || "").trim().slice(0, 4000);
+        if (!requestedPrompt) return jsonError(res, 400, "Describe the image you want to create.");
+        const client = new OpenAI({ apiKey });
+        const prompt = [
+          "Create a polished square social-media image for GRUBZ, a Greek ecommerce brand for dried Black Soldier Fly larvae products and insect frass.",
+          `Calendar occasion: ${input.title}${input.titleEl ? ` / ${input.titleEl}` : ""}.`,
+          `Creative direction: ${requestedPrompt}`,
+          input.draft?.socialCaption ? `Post context: ${input.draft.socialCaption.slice(0, 1200)}` : "",
+          "Use a natural, credible commercial-photography style. Keep animal and plant depictions anatomically realistic. Do not add text, logos, prices, discounts, packaging claims, or watermarks unless explicitly requested in the creative direction.",
+        ].filter(Boolean).join("\n");
+        const generated = await client.images.generate({
+          model:"gpt-image-1.5", prompt, size:"1024x1024", quality:"medium", output_format:"jpeg", output_compression:85, n:1,
+        });
+        const base64 = String(generated.data?.[0]?.b64_json || "");
+        if (!base64) return jsonError(res, 502, "The image generator returned no image.");
+        const buffer = Buffer.from(base64, "base64");
+        if (!buffer.length) return jsonError(res, 502, "The generated image was empty.");
+        const stored = await saveProductImageToStorage({
+          id:`calendar-ai-${Date.now()}`, contentType:"image/jpeg", buffer, ext:"jpg",
+          bucketNames:[FIREBASE_STORAGE_BUCKET, "grubz-99b84.appspot.com"],
+        });
+        const publicToken = randomUUID();
+        await db.collection(MARKETING_CALENDAR_IMAGES_COLLECTION).doc(publicToken).set({
+          bucketName:stored.bucketName, path:stored.path, contentType:"image/jpeg", createdAt:now(), createdBy:adminUser.uid,
+        });
+        return res.json({ ok:true, image:`${GRUBZ_URL}/api/marketingImage?token=${encodeURIComponent(publicToken)}`, path:stored.path, prompt:requestedPrompt, generatedAt:new Date().toISOString() });
+      }
       if (action === "test") {
         const input = sanitizeMarketingEvent(body.event || {}); const occurrence = nextOccurrence(input, new Date()) || new Date();
         const result = await sendMarketingCalendarReminder(input, { leadDays:2, occurrence, occurrenceKey:dateKey(occurrence) }); return res.json({ ok:true, result });
+      }
+      if (action === "publish") {
+        const id = String(body.id || "").trim();
+        if (!id || id.includes("/")) return jsonError(res, 400, "Save the calendar event before publishing.");
+        const ref = db.collection(MARKETING_CALENDAR_COLLECTION).doc(id);
+        const snap = await ref.get();
+        if (!snap.exists) return jsonError(res, 404, "Calendar event not found.");
+        const event = { id, ...snap.data() };
+        const publishLanguage = body.language === "en" ? "en" : "el";
+        const caption = String(publishLanguage === "en" ? event.draft?.socialCaptionEn : event.draft?.socialCaption || "").trim();
+        const imageUrl = String(event.imageUrl || "").trim();
+        if (!caption) return jsonError(res, 400, "Add and save a social caption before publishing.");
+        if (!/^https:\/\//i.test(imageUrl)) return jsonError(res, 400, "Upload and save a public image before publishing.");
+        const requested = [...new Set((Array.isArray(body.platforms) ? body.platforms : ["facebook", "instagram"])
+          .map(String).filter(platform => ["facebook", "instagram"].includes(platform)))];
+        if (!requested.length) return jsonError(res, 400, "Choose Facebook, Instagram, or both.");
+        const results = [];
+        for (const platform of requested) {
+          try {
+            const published = await publishMetaPost({
+              post: { platform, content:caption, imageUrl },
+              accessToken:secretValue(META_PAGE_ACCESS_TOKEN),
+              pageId:secretValue(META_FACEBOOK_PAGE_ID),
+              instagramAccountId:secretValue(META_INSTAGRAM_ACCOUNT_ID),
+              version:process.env.META_GRAPH_API_VERSION || "v24.0",
+            });
+            results.push({ platform, language:publishLanguage, ok:true, postId:published.postId, permalink:published.permalink || "", publishedAt:new Date().toISOString() });
+          } catch (err) {
+            results.push({ platform, language:publishLanguage, ok:false, error:String(err.message || "Meta publishing failed").slice(0, 500), attemptedAt:new Date().toISOString() });
+          }
+        }
+        const history = [...(Array.isArray(event.publicationHistory) ? event.publicationHistory : []), ...results].slice(-100);
+        await ref.set({ publishLanguage, publicationHistory:history, lastPublicationResults:results, updatedAt:now(), updatedBy:adminUser.uid }, { merge:true });
+        return res.status(results.every(result => result.ok) ? 200 : 207).json({ ok:results.every(result => result.ok), results, event:publicMarketingCalendarEvent(id, { ...event, publishLanguage, publicationHistory:history, lastPublicationResults:results }) });
       }
       const id = String(body.id || "").trim() || db.collection(MARKETING_CALENDAR_COLLECTION).doc().id; const ref = db.collection(MARKETING_CALENDAR_COLLECTION).doc(id); const previousSnap = await ref.get();
       const event = sanitizeMarketingEvent(body.event || body, previousSnap.exists ? previousSnap.data() : {});
@@ -11985,14 +12274,37 @@ exports.adminMarketingCalendar = onRequest(
   }
 );
 
+exports.marketingImage = onRequest(
+  { region:"europe-west1", invoker:"public", cors:true },
+  async (req, res) => {
+    try {
+      if (req.method === "OPTIONS") return res.status(204).end();
+      if (req.method !== "GET") return jsonError(res, 405, "Use GET");
+      const token = String(req.query.token || "").trim();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) return jsonError(res, 404, "Image not found");
+      const snap = await db.collection(MARKETING_CALENDAR_IMAGES_COLLECTION).doc(token).get();
+      const image = snap.exists ? snap.data() : null;
+      if (!image?.bucketName || !image?.path) return jsonError(res, 404, "Image not found");
+      const [buffer] = await getStorage().bucket(image.bucketName).file(image.path).download();
+      res.set("Content-Type", image.contentType || "image/jpeg");
+      res.set("Cache-Control", "public, max-age=31536000, immutable");
+      return res.status(200).send(buffer);
+    } catch (err) {
+      logger.warn("marketingImage failed", { message:err.message || "Image delivery failed" });
+      return jsonError(res, Number(err.code) === 404 ? 404 : 500, "Image not found");
+    }
+  }
+);
+
 exports.sendMarketingCalendarReminders = onSchedule(
   { region:"europe-west1", schedule:"0 9 * * *", timeZone:"Europe/Athens", secrets:[SMTP_USER, SMTP_PASS, ORDER_NOTIFICATION_FROM] },
   async () => {
     const today = new Date(); const snap = await db.collection(MARKETING_CALENDAR_COLLECTION).where("enabled", "==", true).limit(500).get();
+    const notificationRecipient = await systemNotificationRecipientEmail();
     for (const eventDoc of snap.docs) {
       const event = { id:eventDoc.id, ...eventDoc.data() }; const reminder = dueReminder(event, today); if (!reminder) continue;
       const reminderId = `${eventDoc.id}_${reminder.occurrenceKey}_${reminder.leadDays}`; const reminderRef = db.collection(MARKETING_CALENDAR_REMINDERS_COLLECTION).doc(reminderId);
-      const claimed = await db.runTransaction(async transaction => { const current = await transaction.get(reminderRef); if (current.exists && ["sending", "sent"].includes(current.data()?.status)) return false; transaction.set(reminderRef, { eventId:eventDoc.id, eventTitle:event.title, occurrenceDate:reminder.occurrenceKey, leadDays:reminder.leadDays, recipient:GRUBZ_INFO_EMAIL, status:"sending", createdAt:current.exists ? current.data().createdAt || now() : now(), updatedAt:now() }, { merge:true }); return true; });
+      const claimed = await db.runTransaction(async transaction => { const current = await transaction.get(reminderRef); if (current.exists && ["sending", "sent"].includes(current.data()?.status)) return false; transaction.set(reminderRef, { eventId:eventDoc.id, eventTitle:event.title, occurrenceDate:reminder.occurrenceKey, leadDays:reminder.leadDays, recipient:notificationRecipient, status:"sending", createdAt:current.exists ? current.data().createdAt || now() : now(), updatedAt:now() }, { merge:true }); return true; });
       if (!claimed) continue;
       try { const result = await sendMarketingCalendarReminder(event, reminder); await reminderRef.set({ status:result?.skipped ? "skipped" : "sent", result, sentAt:now(), updatedAt:now() }, { merge:true }); }
       catch (err) { logger.error("Marketing calendar reminder failed", { eventId:eventDoc.id, error:err.message }); await reminderRef.set({ status:"failed", error:String(err.message || "Email failed").slice(0, 1000), updatedAt:now() }, { merge:true }); }

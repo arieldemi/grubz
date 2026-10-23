@@ -42,6 +42,10 @@
               <label id="commentLabel" class="mb-2 block font-bold" for="comment">Tell us more (optional)</label>
               <textarea id="comment" class="w-full rounded-xl border border-zinc-300 p-3 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200" rows="5" maxlength="2000"></textarea>
             </div>
+            <label class="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+              <input id="publishConsent" class="mt-0.5 h-4 w-4 shrink-0 accent-amber-600" type="checkbox">
+              <span id="publishConsentLabel">You may publish my feedback on GRUBZ channels. My first name may be shown; my email and order details will not be published. (Optional)</span>
+            </label>
             <p id="message" class="text-sm" role="status" aria-live="polite"></p>
             <button id="submitBtn" class="w-full rounded-xl bg-zinc-900 px-5 py-3 font-extrabold text-white hover:bg-zinc-700 disabled:opacity-50" type="submit">Send feedback</button>
           </form>
@@ -61,7 +65,7 @@
         en: {
           order: "Order", title: "How was your GRUBZ experience?",
           intro: "Submit your feedback and we’ll email you a unique 10% discount code for your next order.",
-          rating: "Your rating", comment: "Tell us more (optional)", submit: "Send feedback",
+          rating: "Your rating", comment: "Tell us more (optional)", publishConsent: "You may publish my feedback on GRUBZ channels. My first name may be shown; my email and order details will not be published. (Optional)", submit: "Send feedback",
           choose: "Please choose a rating.", saving: "Saving your feedback…",
           error: "Your feedback could not be saved. Please try again.",
           thanks: "Thank you!", recorded: "Your feedback has been recorded. Check your email for your unique 10% discount code.", shop: "Continue shopping",
@@ -69,7 +73,7 @@
         el: {
           order: "Παραγγελία", title: "Πώς ήταν η εμπειρία σου με το GRUBZ;",
           intro: "Υπόβαλε την αξιολόγησή σου και θα σου στείλουμε με email έναν μοναδικό κωδικό έκπτωσης 10% για την επόμενη παραγγελία σου.",
-          rating: "Η αξιολόγησή σου", comment: "Πες μας περισσότερα (προαιρετικά)", submit: "Αποστολή αξιολόγησης",
+          rating: "Η αξιολόγησή σου", comment: "Πες μας περισσότερα (προαιρετικά)", publishConsent: "Μπορείτε να δημοσιεύσετε την αξιολόγησή μου στα κανάλια της GRUBZ. Μπορεί να εμφανιστεί το μικρό μου όνομα· το email και τα στοιχεία της παραγγελίας μου δεν θα δημοσιευτούν. (Προαιρετικό)", submit: "Αποστολή αξιολόγησης",
           choose: "Επίλεξε μια βαθμολογία.", saving: "Αποθήκευση αξιολόγησης…",
           error: "Δεν μπορέσαμε να αποθηκεύσουμε την αξιολόγησή σου. Δοκίμασε ξανά.",
           thanks: "Ευχαριστούμε!", recorded: "Η αξιολόγησή σου καταγράφηκε. Έλεγξε το email σου για τον μοναδικό κωδικό έκπτωσης 10%.", shop: "Συνέχισε τις αγορές",
@@ -84,6 +88,7 @@
         $("intro").textContent = t.intro;
         $("ratingLabel").textContent = t.rating;
         $("commentLabel").textContent = t.comment;
+        $("publishConsentLabel").textContent = t.publishConsent;
         $("submitBtn").textContent = t.submit;
         $("thanksTitle").textContent = t.thanks;
         $("thanksBody").textContent = t.recorded;
@@ -139,7 +144,7 @@
           const response = await fetch("/api/orderFeedback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, rating, comment: $("comment").value }),
+            body: JSON.stringify({ token, rating, comment: $("comment").value, publishConsent: $("publishConsent").checked }),
           });
           const data = await response.json();
           if (!response.ok) throw new Error(data.error || "Save failed");

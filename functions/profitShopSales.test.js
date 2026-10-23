@@ -30,3 +30,29 @@ test("splits mixed larvae and frass bundles by their labelled kilograms", () => 
   assert.equal(result.productRevenue, 30);
   assert.equal(result.frassRevenue, 10);
 });
+
+test("returns SKU-level sales and actual blended order economics", () => {
+  const result = summarizeShopSales([{
+    id:"order-1", paymentStatus:"paid", amountSubtotal:3000, amountDiscount:300, amountShipping:250,
+    items:[
+      { id:"happy-1kg", name:"Happy Chicken 1kg", quantity:2, totalAmount:2000 },
+      { id:"terra-500g", name:"TerraGrub 500g", quantity:1, totalAmount:1000 },
+    ],
+  }], { vatPercent:20 });
+  assert.equal(result.products.length, 2);
+  assert.equal(result.products.find(item => item.sku === "happy-1kg").unitsSold, 2);
+  assert.equal(result.products.find(item => item.sku === "happy-1kg").larvaeKgPerUnit, 1);
+  assert.equal(result.products.find(item => item.sku === "terra-500g").frassKgPerUnit, 0.5);
+  assert.equal(result.orderEconomics.averageItemsPerOrder, 3);
+  assert.equal(result.orderEconomics.averageGrossOrderValue, 30);
+  assert.equal(result.orderEconomics.averageDiscountPerOrder, 3);
+  assert.equal(result.orderEconomics.averageNetOrderRevenue, 22.5);
+  assert.equal(result.orderEconomics.averageShippingCharged, 2.5);
+});
+
+test("excludes refunded orders and reports them separately", () => {
+  const result = summarizeShopSales([{ paymentStatus:"refunded", items:[{ name:"Happy Chicken 1kg", totalAmount:1000 }] }]);
+  assert.equal(result.orderCount, 0);
+  assert.equal(result.refundedOrderCount, 1);
+  assert.equal(result.products.length, 0);
+});

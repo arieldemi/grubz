@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Feedback publication consent | GRUBZ</title>
+    <link rel="stylesheet" href="/styles/tailwind.css">
+  </head>
+  <body class="min-h-screen bg-amber-50 text-zinc-900">
+    <main class="mx-auto flex min-h-screen max-w-xl items-center px-4 py-10">
+      <section class="w-full rounded-3xl border border-amber-200 bg-white p-6 shadow-xl sm:p-8">
+        <a href="/" class="inline-flex items-center gap-3 font-black text-[#71391d]">
+          <img src="/images/grubz-icon-80.png" alt="" class="h-12 w-12">
+          <span class="text-2xl">GRUBZ</span>
+        </a>
+        <p id="loading" class="mt-8 text-zinc-500">Loading your consent form…</p>
+        <div id="invalid" class="mt-8 hidden space-y-3">
+          <h1 id="invalidTitle" class="text-2xl font-black">Consent link unavailable</h1>
+          <p id="invalidText" class="text-zinc-600">This link is invalid or has expired.</p>
+          <a id="invalidHome" class="font-bold underline" href="/">Return to GRUBZ</a>
+        </div>
+        <form id="consentForm" class="mt-8 hidden space-y-5">
+          <h1 id="title" class="text-3xl font-black">May we publish your feedback?</h1>
+          <p id="intro" class="text-zinc-600">Your feedback may appear on GRUBZ websites, social media, or marketing. Only your first name may be shown. Your email and order details will never be published.</p>
+          <label class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <input id="publishConsent" class="mt-1 h-5 w-5 shrink-0 accent-amber-600" type="checkbox" required>
+            <span id="consentLabel" class="font-semibold">I give GRUBZ permission to publish my feedback under these terms.</span>
+          </label>
+          <p id="message" class="text-sm" role="status" aria-live="polite"></p>
+          <button id="submitBtn" class="w-full rounded-xl bg-zinc-900 px-5 py-3 font-extrabold text-white hover:bg-zinc-700 disabled:opacity-50" type="submit">Give permission</button>
+          <p id="optional" class="text-center text-xs text-zinc-500">This is optional. If you do not agree, simply close this page.</p>
+        </form>
+        <div id="thanks" class="mt-8 hidden space-y-3">
+          <h1 id="thanksTitle" class="text-3xl font-black">Thank you!</h1>
+          <p id="thanksText" class="text-zinc-600">Your publication permission has been recorded.</p>
+          <a id="shopLink" class="inline-block font-bold underline" href="/#products">Continue shopping</a>
+        </div>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const id = params.get("id") || "";
+      const token = params.get("token") || "";
+      const test = params.get("test") === "1";
+      let language = "en";
+      const $ = value => document.getElementById(value);
+      const copy = {
+        en: { title:"May we publish your feedback?", intro:"Your feedback may appear on GRUBZ websites, social media, or marketing. Only your first name may be shown. Your email and order details will never be published.", label:"I give GRUBZ permission to publish my feedback under these terms.", submit:"Give permission", optional:"This is optional. If you do not agree, simply close this page.", saving:"Saving your permission…", thanks:"Thank you!", done:"Your publication permission has been recorded.", shop:"Continue shopping", invalid:"Consent link unavailable", invalidText:"This link is invalid or has expired.", home:"Return to GRUBZ" },
+        el: { title:"Μπορούμε να δημοσιεύσουμε την αξιολόγησή σου;", intro:"Η αξιολόγησή σου μπορεί να εμφανιστεί στις ιστοσελίδες, στα κοινωνικά δίκτυα ή στο υλικό προώθησης της GRUBZ. Μπορεί να εμφανιστεί μόνο το μικρό σου όνομα. Το email και τα στοιχεία της παραγγελίας σου δεν θα δημοσιευτούν.", label:"Δίνω στη GRUBZ την άδεια να δημοσιεύσει την αξιολόγησή μου με αυτούς τους όρους.", submit:"Δίνω άδεια", optional:"Αυτό είναι προαιρετικό. Αν δεν συμφωνείς, απλώς κλείσε αυτή τη σελίδα.", saving:"Αποθήκευση συγκατάθεσης…", thanks:"Ευχαριστούμε!", done:"Η συγκατάθεσή σου για δημοσίευση καταγράφηκε.", shop:"Συνέχισε τις αγορές", invalid:"Ο σύνδεσμος δεν είναι διαθέσιμος", invalidText:"Ο σύνδεσμος δεν είναι έγκυρος ή έχει λήξει.", home:"Επιστροφή στο GRUBZ" },
+      };
+      function applyLanguage() {
+        const t = copy[language]; document.documentElement.lang = language;
+        $("title").textContent=t.title; $("intro").textContent=t.intro; $("consentLabel").textContent=t.label; $("submitBtn").textContent=t.submit; $("optional").textContent=t.optional;
+        $("thanksTitle").textContent=t.thanks; $("thanksText").textContent=t.done; $("shopLink").textContent=t.shop; $("invalidTitle").textContent=t.invalid; $("invalidText").textContent=t.invalidText; $("invalidHome").textContent=t.home;
+      }
+      function showThanks(){ $("loading").classList.add("hidden"); $("consentForm").classList.add("hidden"); $("thanks").classList.remove("hidden"); }
+      function showInvalid(){ $("loading").classList.add("hidden"); $("consentForm").classList.add("hidden"); $("invalid").classList.remove("hidden"); }
+      async function load(){
+        if (!id || !token) return showInvalid();
+        try { const response=await fetch(`/api/feedbackPublicationConsent?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}${test ? "&test=1" : ""}`); const data=await response.json(); if(!response.ok) throw new Error(); language=data.language === "el" ? "el" : "en"; applyLanguage(); if(data.granted) return showThanks(); $("loading").classList.add("hidden"); $("consentForm").classList.remove("hidden"); } catch { showInvalid(); }
+      }
+      $("consentForm").addEventListener("submit", async event => { event.preventDefault(); if(!$("publishConsent").checked) return; const t=copy[language]; $("submitBtn").disabled=true; $("message").textContent=t.saving; try { const response=await fetch("/api/feedbackPublicationConsent", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,token,test:test ? "1" : "",publishConsent:true})}); if(!response.ok) throw new Error(); showThanks(); } catch { $("submitBtn").disabled=false; $("message").className="text-sm text-red-700"; $("message").textContent=t.invalidText; } });
+      load();
+    </script>
+  </body>
+</html>

@@ -136,8 +136,7 @@
         .hero-shell{ padding-top:3.5rem; }
         .hero-title{ margin-top:1.5rem; }
       }
-      .product-thumb { display:block; width:100%; height:15rem; object-fit:cover; }
-      @media (min-width: 640px){ .product-thumb { height: 13rem; } }
+      .product-thumb { display:block; width:100%; height:auto; aspect-ratio:3 / 2; object-fit:contain; }
       :focus-visible { outline: 3px solid #111; outline-offset: 3px; }
       .btn:focus-visible, .btn-outline:focus-visible, .btn-soft:focus-visible, .btn-danger:focus-visible { outline-color: var(--grubz-1); }
       .skip-link { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
@@ -209,6 +208,11 @@
       .review-scroll-area::-webkit-scrollbar-track{ background:#f4f4f5; }
       .review-scroll-area::-webkit-scrollbar-thumb{ background:#d04211; border:3px solid #f4f4f5; border-radius:999px; }
       .review-scroll-cue{ background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 42%); }
+      .cart-scroll-cue{
+        bottom:max(1rem, env(safe-area-inset-bottom));
+        width:max-content;
+        max-width:calc(100% - 2rem);
+      }
       .review-modal-panel{
         height:min(720px, calc(100vh - 1rem));
         height:min(720px, calc(100dvh - 1rem));
@@ -221,7 +225,7 @@
     </style>
   </head>
 
-  <body class="antialiased text-zinc-800">
+  <body id="top" class="antialiased text-zinc-800">
     <a href="#main" class="skip-link">Skip to main content</a>
     <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
@@ -251,34 +255,38 @@
         </div>
       </div>
 
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img src="/images/grubz-icon-80.png" alt="GRUBZ icon" class="h-14 w-14"/>
-          <span class="text-2xl font-extrabold tracking-tight" style="color:var(--grubz-4)">GRUBZ</span>
-        </div>
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <a href="#top" class="flex min-w-0 items-center gap-2 sm:gap-3" aria-label="GRUBZ home">
+          <img src="/images/grubz-icon-80.png" alt="" class="h-11 w-11 shrink-0 sm:h-14 sm:w-14"/>
+          <span class="text-xl font-extrabold tracking-tight sm:text-2xl" style="color:var(--grubz-4)">GRUBZ</span>
+        </a>
         <nav class="hidden sm:flex items-center gap-6 text-sm">
-          <a href="#products" class="hover:opacity-80" data-i18n="navProducts">Products</a>
+          <a href="#products" class="hover:opacity-80" data-i18n="ctaShop">Shop products</a>
           <a href="#benefits" class="hover:opacity-80" data-i18n="navBenefits">Benefits</a>
-          <a href="#usage-calculators" class="hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
           <a href="#faq" class="hover:opacity-80" data-i18n="navFAQ">FAQ</a>
-          <a href="#contact" class="hover:opacity-80" data-i18n="navContact">Contact</a>
         </nav>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           <a href="#products" class="btn px-3 py-2 text-sm sm:px-4" data-i18n="buyNow">Buy Now</a>
+          <button id="mobileMenuToggle" class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-800 transition hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9a2f0c] sm:hidden" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path data-mobile-menu-open-icon d="M4 7h16M4 12h16M4 17h16"></path>
+              <path data-mobile-menu-close-icon class="hidden" d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+          </button>
         </div>
       </div>
-      <nav class="flex gap-5 overflow-x-auto border-t border-zinc-100 px-4 py-2 text-sm sm:hidden" aria-label="Mobile navigation">
-        <a href="#products" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navProducts">Products</a>
-        <a href="#benefits" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navBenefits">Benefits</a>
-        <a href="#usage-calculators" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navCalculators">Usage calculators</a>
-        <a href="#faq" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navFAQ">FAQ</a>
-        <a href="#contact" class="shrink-0 font-semibold hover:opacity-80" data-i18n="navContact">Contact</a>
+      <nav id="mobileMenu" class="hidden border-t border-zinc-200 bg-white px-4 pb-4 pt-3 shadow-lg sm:hidden" aria-label="Mobile navigation">
+        <div class="mx-auto grid max-w-6xl gap-2">
+          <a href="#products" class="rounded-lg px-3 py-3 font-semibold hover:bg-orange-50" data-i18n="ctaShop">Shop products</a>
+          <a href="#benefits" class="rounded-lg px-3 py-3 font-semibold hover:bg-orange-50" data-i18n="navBenefits">Benefits</a>
+          <a href="#faq" class="rounded-lg px-3 py-3 font-semibold hover:bg-orange-50" data-i18n="navFAQ">FAQ</a>
+        </div>
       </nav>
     </header>
 
     <main id="main" tabindex="-1" role="main">
       <!-- Hero -->
-      <section class="relative isolate flex min-h-[calc(100svh-130px)] w-full items-start overflow-hidden bg-zinc-950 text-white">
+      <section class="relative isolate flex min-h-[68svh] w-full items-start overflow-hidden bg-zinc-950 text-white sm:min-h-[calc(100svh-130px)]">
         <video id="shopHeroVideo" class="absolute inset-0 -z-20 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata" poster="/images/chicken-rectangle-highres.png" aria-label="Chickens enjoying Happy Chicken larvae">
           <source src="/images/videos/happy-chicken-hero.mp4" type="video/mp4">
           <img src="/images/chicken-rectangle-highres.png" alt="Chickens enjoying Happy Chicken larvae" class="h-full w-full object-cover">
@@ -287,20 +295,20 @@
         <div class="hero-shell mx-auto w-full max-w-6xl px-4 pb-24 pt-10 sm:px-6 sm:pt-14 lg:pt-20">
           <div class="max-w-2xl">
             <h1 class="hero-title text-3xl font-extrabold leading-tight text-shadow sm:text-4xl lg:text-5xl">
-              <span data-i18n="heroTitleL1">Black Soldier Fly (BSF) Larvae</span>
-              <span data-i18n="heroTitleL2">Produced in Greece</span>
+              <span data-i18n="heroTitleL1">Better nutrition for your flock.</span>
+              <span data-i18n="heroTitleL2">Healthier soil for your garden.</span>
             </h1>
             <p class="mt-5 text-lg/7 opacity-95" data-i18n="heroSubtitle">
-              Dried BSF larvae for poultry, birds, reptiles and fish—plus BSF frass for healthier soil.
+              Greek-made BSF products: protein-rich dried larvae for chickens and circular frass to support healthier soil.
             </p>
             <div class="mt-8 flex flex-wrap gap-3">
-              <a href="#products" class="btn" data-i18n="ctaShop">Shop GRUBZ</a>
-              <a href="#benefits" class="btn btn-outline" data-i18n="ctaLearn">Why GRUBZ?</a>
+              <a href="#products" class="btn" data-i18n="ctaShop">Shop products</a>
+              <a href="#benefits" class="btn btn-outline" data-i18n="ctaLearn">See the benefits</a>
             </div>
             <div class="mt-6 flex flex-wrap gap-2 text-sm opacity-95">
-              <span class="chip rounded px-3 py-1" data-i18n="chipProtein">Up to 50% protein</span>
-              <span class="chip rounded px-3 py-1" data-i18n="chipCalcium">Naturally high calcium</span>
-              <span class="chip rounded px-3 py-1" data-i18n="chipSustainable">Sustainably produced</span>
+              <span class="chip rounded px-3 py-1" data-i18n="chipProtein">Protein-rich chicken treats</span>
+              <span class="chip rounded px-3 py-1" data-i18n="chipCalcium">Naturally calcium-rich</span>
+              <span class="chip rounded px-3 py-1" data-i18n="chipSustainable">Made sustainably in Greece</span>
             </div>
           </div>
         </div>
@@ -325,44 +333,10 @@
             </article>
           </div>
 
-          <div class="mt-10 flex flex-wrap gap-3">
+          <div id="storefrontCartActions" class="mt-10 hidden flex flex-wrap gap-3">
             <button id="checkout" class="btn" data-i18n="btnCheckout">Checkout</button>
             <button id="clearCart" class="btn btn-outline" data-i18n="btnClear">Clear cart</button>
           </div>
-        </div>
-      </section>
-
-      <section id="usage-calculators" class="bg-[#f7fbf4] scroll-mt-28">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <div class="max-w-3xl">
-            <h2 class="text-3xl font-extrabold" style="color:var(--grubz-4)" data-i18n="calculatorTitle">Recommended usage calculators</h2>
-            <p class="mt-2 text-zinc-600" data-i18n="calculatorIntro">Estimate how much you need and find a practical package combination. Adjust the usage rate for your own routine.</p>
-          </div>
-          <div class="mt-8 grid gap-6 lg:grid-cols-2">
-            <article id="happy-chicken-calculator" class="card bg-white p-6 space-y-4 scroll-mt-28">
-              <div><h3 class="text-xl font-extrabold" data-i18n="chickenCalcTitle">Happy Chicken calculator</h3><p class="text-sm text-zinc-500" data-i18n="chickenCalcText">For dried BSF larvae used as a supplementary treat, not complete feed.</p></div>
-              <div class="grid sm:grid-cols-2 gap-3">
-                <div><label class="label block min-h-10" for="chickenPlan" data-i18n="chickenPlan">Feeding plan</label><select id="chickenPlan" class="input"><option value="daily" data-i18n="chickenPlanDaily">Daily adult supplement</option><option value="chicks" data-i18n="chickenPlanChicks">Chicks under 8 weeks</option><option value="growers" data-i18n="chickenPlanGrowers">Growers 8–18 weeks</option><option value="layers" data-i18n="chickenPlanLayers">Laying hens</option><option value="large" data-i18n="chickenPlanLarge">Large breeds / roosters</option><option value="peak" data-i18n="chickenPlanPeak">Peak laying / moulting / recovery</option><option value="reward" data-i18n="chickenPlanReward">Occasional reward</option></select></div>
-                <div><label class="label block min-h-10" for="chickenCount" data-i18n="chickenCount">Chickens</label><input id="chickenCount" class="input" type="number" min="1" step="1" value="10"></div>
-                <div><label class="label block min-h-10" for="chickenRate" data-i18n="chickenRate">Grams per bird/serving</label><input id="chickenRate" class="input" type="number" min="2" max="30" step="0.5" value="10"></div>
-                <div><label class="label block min-h-10" for="chickenDays" data-i18n="usageDays">Plan duration (days)</label><input id="chickenDays" class="input" type="number" min="1" max="365" step="1" value="30"></div>
-              </div>
-              <p id="chickenFeedingGuidance" class="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-950"></p>
-              <div id="chickenCalculatorResult" class="rounded-xl bg-orange-50 p-4 text-sm text-orange-950" aria-live="polite"></div>
-            </article>
-            <article id="terragrub-calculator" class="card bg-white p-6 space-y-4 scroll-mt-28">
-              <div><h3 class="text-xl font-extrabold" data-i18n="terraCalcTitle">TerraGrub calculator</h3><p class="text-sm text-zinc-500" data-i18n="terraCalcText">For BSF frass used as a gentle soil amendment.</p></div>
-              <div class="grid sm:grid-cols-2 gap-3">
-                <div><label class="label block min-h-10" for="terraUse" data-i18n="terraUse">Application type</label><select id="terraUse" class="input"><option value="general" data-i18n="terraUseGeneral">General / before planting</option><option value="maintenance" data-i18n="terraUseMaintenance">Maintenance / established beds</option><option value="depleted" data-i18n="terraUseDepleted">Poor or depleted soil</option><option value="topdressing" data-i18n="terraUseTopdressing">Top dressing</option></select></div>
-                <div><label class="label block min-h-10" for="terraArea" data-i18n="terraArea">Soil area (m²)</label><input id="terraArea" class="input" type="number" min="0.1" step="0.1" value="20"></div>
-                <div><label class="label block min-h-10" for="terraRate" data-i18n="terraRate">Grams per m²</label><input id="terraRate" class="input" type="number" min="100" max="2000" step="25" value="500"></div>
-                <div><label class="label block min-h-10" for="terraApplications" data-i18n="terraApplications">Applications</label><input id="terraApplications" class="input" type="number" min="1" max="12" step="1" value="1"></div>
-              </div>
-              <p id="terraApplicationGuidance" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950"></p>
-              <div id="terraCalculatorResult" class="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-950" aria-live="polite"></div>
-            </article>
-          </div>
-          <p class="mt-5 text-xs text-zinc-500" data-i18n="calculatorDisclaimer">Starting guidance only. Animal needs and soil conditions vary; adjust gradually and seek professional advice when appropriate.</p>
         </div>
       </section>
 
@@ -401,26 +375,80 @@
         </div>
       </section>
 
+      <section id="usage-calculators" class="bg-[#f7fbf4] scroll-mt-28">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <div class="max-w-3xl">
+            <h2 class="text-3xl font-extrabold" style="color:var(--grubz-4)" data-i18n="calculatorTitle">Recommended usage calculators</h2>
+            <p class="mt-2 text-zinc-600" data-i18n="calculatorIntro">Estimate how much you need and find a practical package combination. Adjust the usage rate for your own routine.</p>
+          </div>
+          <div class="mt-8 grid gap-6 lg:grid-cols-2">
+            <article id="happy-chicken-calculator" class="card bg-white p-6 space-y-4 scroll-mt-28">
+              <div><h3 class="text-xl font-extrabold" data-i18n="chickenCalcTitle">Happy Chicken calculator</h3><p class="text-sm text-zinc-500" data-i18n="chickenCalcText">For dried BSF larvae used as a supplementary treat, not complete feed.</p></div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div><label class="label block min-h-10" for="chickenPlan" data-i18n="chickenPlan">Feeding plan</label><select id="chickenPlan" class="input"><option value="daily" data-i18n="chickenPlanDaily">Daily adult supplement</option><option value="chicks" data-i18n="chickenPlanChicks">Chicks under 8 weeks</option><option value="growers" data-i18n="chickenPlanGrowers">Growers 8–18 weeks</option><option value="layers" data-i18n="chickenPlanLayers">Laying hens</option><option value="large" data-i18n="chickenPlanLarge">Large breeds / roosters</option><option value="peak" data-i18n="chickenPlanPeak">Peak laying / moulting / recovery</option><option value="reward" data-i18n="chickenPlanReward">Occasional reward</option></select></div>
+                <div><label class="label block min-h-10" for="chickenCount" data-i18n="chickenCount">Chickens</label><input id="chickenCount" class="input" type="number" min="1" step="1" value="10"></div>
+                <div><label class="label block min-h-10" for="chickenRate" data-i18n="chickenRate">Grams per bird/serving</label><input id="chickenRate" class="input" type="number" min="2" max="30" step="0.5" value="10"></div>
+                <div><label class="label block min-h-10" for="chickenDays" data-i18n="usageDays">Plan duration (days)</label><input id="chickenDays" class="input" type="number" min="1" max="365" step="1" value="30"></div>
+              </div>
+              <p id="chickenFeedingGuidance" class="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-950"></p>
+              <div id="chickenCalculatorResult" class="rounded-xl bg-orange-50 p-4 text-sm text-orange-950" aria-live="polite"></div>
+            </article>
+            <article id="terragrub-calculator" class="card bg-white p-6 space-y-4 scroll-mt-28">
+              <div><h3 class="text-xl font-extrabold" data-i18n="terraCalcTitle">TerraGrub calculator</h3><p class="text-sm text-zinc-500" data-i18n="terraCalcText">For BSF frass used as a gentle soil amendment.</p></div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div><label class="label block min-h-10" for="terraUse" data-i18n="terraUse">Application type</label><select id="terraUse" class="input"><option value="general" data-i18n="terraUseGeneral">General / before planting</option><option value="maintenance" data-i18n="terraUseMaintenance">Maintenance / established beds</option><option value="depleted" data-i18n="terraUseDepleted">Poor or depleted soil</option><option value="topdressing" data-i18n="terraUseTopdressing">Top dressing</option></select></div>
+                <div><label class="label block min-h-10" for="terraArea" data-i18n="terraArea">Soil area (m²)</label><input id="terraArea" class="input" type="number" min="0.1" step="0.1" value="20"></div>
+                <div><label class="label block min-h-10" for="terraRate" data-i18n="terraRate">Grams per m²</label><input id="terraRate" class="input" type="number" min="100" max="2000" step="25" value="500"></div>
+                <div><label class="label block min-h-10" for="terraApplications" data-i18n="terraApplications">Applications</label><input id="terraApplications" class="input" type="number" min="1" max="12" step="1" value="1"></div>
+              </div>
+              <p id="terraApplicationGuidance" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950"></p>
+              <div id="terraCalculatorResult" class="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-950" aria-live="polite"></div>
+            </article>
+          </div>
+          <p class="mt-5 text-xs text-zinc-500" data-i18n="calculatorDisclaimer">Starting guidance only. Animal needs and soil conditions vary; adjust gradually and seek professional advice when appropriate.</p>
+        </div>
+      </section>
+
       <!-- FAQ -->
       <section id="faq" class="bg-[#fff7f2] scroll-mt-28">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <h2 class="text-3xl font-extrabold mb-8" style="color:var(--grubz-4)" data-i18n="faqTitle">FAQ</h2>
           <div class="grid gap-4 md:grid-cols-2">
-            <details class="rounded-xl border border-orange-100 bg-white p-5" open>
-              <summary class="cursor-pointer font-extrabold" data-i18n="q1">What animals can eat GRUBZ?</summary>
-              <p class="mt-3 text-sm text-zinc-600" data-i18n="a1">Reptiles, birds, and most aquarium and pond fish.</p>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/animals.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q1">What animals can eat GRUBZ?</span></span></summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a1">Birds, most aquarium and pond fish, and reptiles.</p>
             </details>
-            <details class="rounded-xl border border-orange-100 bg-white p-5">
-              <summary class="cursor-pointer font-extrabold" data-i18n="q2">Do I need to add calcium?</summary>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/feeding-care.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q2">Do I need to add calcium?</span></span></summary>
               <p class="mt-3 text-sm text-zinc-600" data-i18n="a2">BSF larvae are naturally calcium-rich. Follow your vet's advice.</p>
             </details>
-            <details class="rounded-xl border border-orange-100 bg-white p-5">
-              <summary class="cursor-pointer font-extrabold" data-i18n="q3">How should I store them?</summary>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/fresh-delivery.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q3">How should I store them?</span></span></summary>
               <p class="mt-3 text-sm text-zinc-600" data-i18n="a3">Keep sealed in a cool, dry place.</p>
             </details>
-            <details class="rounded-xl border border-orange-100 bg-white p-5">
-              <summary class="cursor-pointer font-extrabold" data-i18n="q4">Are they made in Greece?</summary>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/fresh-delivery.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q4">Are they made in Greece?</span></span></summary>
               <p class="mt-3 text-sm text-zinc-600" data-i18n="a4">Yes, locally produced to ensure quality and traceability.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/feeding-care.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q5">Are Black Soldier Fly larvae safe for chickens?</span></span></summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a5">Yes. Use dried BSF larvae as a supplementary feed or treat, introduce them gradually, and keep complete poultry feed and fresh water as the basis of the diet.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/feeding-care.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q6">How many dried BSF larvae should a chicken eat?</span></span></summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a6">A practical guide for an adult chicken is 10–20 g per day. Adjust for the bird's size, age, activity and the rest of its diet.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/feeding-care.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q7">Can Black Soldier Fly larvae replace complete chicken feed?</span></span></summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a7">No. Dried BSF larvae are a protein- and calcium-rich supplement, not a nutritionally complete poultry feed.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/animals.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q8">Can ducks, quail and other poultry eat BSF larvae?</span></span></summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a8">They can be offered as a supplementary insect treat to many insect-eating poultry and game birds. Use smaller portions for smaller birds and introduce gradually.</p>
+            </details>
+            <details class="rounded-xl border border-orange-100 bg-white p-5" data-faq-item>
+              <summary class="cursor-pointer font-extrabold"><span class="inline-flex items-center gap-3 pr-4"><img src="/images/faq/fresh-delivery.png" alt="" class="h-11 w-11 shrink-0 object-contain" loading="lazy"><span data-i18n="q9">Why can delivery take a little longer?</span></span></summary>
+              <p class="mt-3 text-sm text-zinc-600" data-i18n="a9">We do not keep products sitting in stock. We prepare each order so your beloved animals receive the freshest product possible. Delivery time therefore includes preparation as well as the carrier's transit time.</p>
             </details>
           </div>
         </div>
@@ -685,7 +713,7 @@
           </div>
         </div>
       </div>
-      <div id="cartScrollCue" class="review-scroll-cue pointer-events-none fixed bottom-2 left-1/2 z-30 hidden w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 flex justify-center px-5 pb-3 pt-8 sm:bottom-2">
+      <div id="cartScrollCue" class="cart-scroll-cue pointer-events-none fixed left-1/2 z-30 hidden -translate-x-1/2 flex justify-center">
         <span class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-xs font-bold text-white shadow-lg">
           <span data-i18n="reviewScrollMore">Scroll to see more</span>
           <span aria-hidden="true">↓</span>
@@ -1511,11 +1539,11 @@ async function chatFetch(path, options = {}) {
           madeInGr:"Made in Greece",
           navBenefits:"Benefits", navProducts:"Products", navGame:"Happy Chicken Run", navCalculators:"Usage calculators", navFAQ:"FAQ", navContact:"Contact",
           gamePromoBadge:"Free browser game · No download", gamePromoTitle:"Think your chicken can beat the high score?", gamePromoText:"Jump obstacles, collect GRUBZ treats and challenge your flock.", gamePromoCta:"Play Happy Chicken Run →",
-          buyNow:"Buy Now",
-          heroTitleL1:"Black Soldier Fly (BSF) Larvae", heroTitleL2:"Produced in Greece",
-          heroSubtitle:"Dried BSF larvae for poultry, birds, reptiles and fish—plus BSF frass for healthier soil.",
-          ctaShop:"Shop GRUBZ", ctaLearn:"Why GRUBZ?",
-          chipProtein:"Up to 50% protein", chipCalcium:"Naturally high calcium", chipSustainable:"Sustainably produced",
+          buyNow:"Buy Now", mobileMenuOpen:"Open navigation menu", mobileMenuClose:"Close navigation menu",
+          heroTitleL1:"Better nutrition for your flock.", heroTitleL2:"Healthier soil for your garden.",
+          heroSubtitle:"Greek-made BSF products: protein-rich dried larvae for chickens and circular frass to support healthier soil.",
+          ctaShop:"Shop products", ctaLearn:"See the benefits",
+          chipProtein:"Protein-rich chicken treats", chipCalcium:"Naturally calcium-rich", chipSustainable:"Made sustainably in Greece",
           heroCaption:"Loved by reptiles. Trusted by keepers.",
           benefitsTitle:"Why GRUBZ?",
           b1Title:"Complete Nutrition", b1Text:"Balanced protein, fats, and micronutrients for healthy growth.",
@@ -1550,10 +1578,15 @@ async function chatFetch(path, options = {}) {
           calculatorDisclaimer:"Starting guidance only. Animal needs and soil conditions vary; adjust gradually and seek professional advice when appropriate.",
           btnAdd:"Add to cart", btnCheckout:"Checkout", btnClear:"Clear cart",
           faqTitle:"FAQ",
-          q1:"What animals can eat GRUBZ?", a1:"Reptiles (bearded dragons, geckos), birds (chickens, songbirds), and most aquarium & pond fish.",
+          q1:"What animals can eat GRUBZ?", a1:"Birds (chickens, songbirds), most aquarium & pond fish, and reptiles (bearded dragons, geckos).",
           q2:"Do I need to add calcium?", a2:"BSF larvae are naturally calcium-rich. Many keepers still dust occasionally—follow your vet’s advice.",
           q3:"How should I store them?", a3:"Keep sealed in a cool, dry place. Refrigeration extends freshness.",
           q4:"Are they made in Greece?", a4:"Yes—locally produced to ensure quality and traceability.",
+          q5:"Are Black Soldier Fly larvae safe for chickens?", a5:"Yes. Use dried BSF larvae as a supplementary feed or treat, introduce them gradually, and keep complete poultry feed and fresh water as the basis of the diet.",
+          q6:"How many dried BSF larvae should a chicken eat?", a6:"A practical guide for an adult chicken is 10–20 g per day. Adjust for the bird's size, age, activity and the rest of its diet.",
+          q7:"Can Black Soldier Fly larvae replace complete chicken feed?", a7:"No. Dried BSF larvae are a protein- and calcium-rich supplement, not a nutritionally complete poultry feed.",
+          q8:"Can ducks, quail and other poultry eat BSF larvae?", a8:"They can be offered as a supplementary insect treat to many insect-eating poultry and game birds. Use smaller portions for smaller birds and introduce gradually.",
+          q9:"Why can delivery take a little longer?", a9:"We do not keep products sitting in stock. We prepare each order so your beloved animals receive the freshest product possible. Delivery time therefore includes preparation as well as the carrier's transit time.",
           footTag:"GRUBZ - High Protein Supplement for Poultry, Reptiles, Birds, and Fish",
           footLinks:"Links", footContact:"Contact", footMade:"Made with ❤️ in Greece",
           contactEyebrow:"Contact GRUBZ",
@@ -1704,11 +1737,11 @@ async function chatFetch(path, options = {}) {
           madeInGr:"Παράγεται στην Ελλάδα",
           navBenefits:"Οφέλη", navProducts:"Προϊόντα", navGame:"Happy Chicken Run", navCalculators:"Υπολογιστές χρήσης", navFAQ:"Συχνές Ερωτήσεις", navContact:"Επικοινωνία",
           gamePromoBadge:"Δωρεάν παιχνίδι browser · Χωρίς λήψη", gamePromoTitle:"Μπορεί η κότα σου να σπάσει το ρεκόρ;", gamePromoText:"Πήδα εμπόδια, μάζεψε λιχουδιές GRUBZ και δοκίμασε το κοπάδι σου.", gamePromoCta:"Παίξε Happy Chicken Run →",
-          buyNow:"Αγορά τώρα",
-          heroTitleL1:"Προνύμφες Μαύρης Μύγας (BSF)", heroTitleL2:"Ελληνικής Παραγωγής",
-          heroSubtitle:"Αποξηραμένες προνύμφες BSF για πουλερικά, πτηνά, ερπετά και ψάρια—και frass BSF για υγιέστερο έδαφος.",
-          ctaShop:"Αγορά GRUBZ", ctaLearn:"Γιατί GRUBZ;",
-          chipProtein:"Έως 50% πρωτεΐνη", chipCalcium:"Φυσικά υψηλό ασβέστιο", chipSustainable:"Βιώσιμη παραγωγή",
+          buyNow:"Αγορά τώρα", mobileMenuOpen:"Άνοιγμα μενού πλοήγησης", mobileMenuClose:"Κλείσιμο μενού πλοήγησης",
+          heroTitleL1:"Καλύτερη διατροφή για το κοπάδι σας.", heroTitleL2:"Υγιέστερο έδαφος για τον κήπο σας.",
+          heroSubtitle:"Ελληνικά προϊόντα BSF: αποξηραμένες προνύμφες πλούσιες σε πρωτεΐνη για κότες και κυκλικό frass που υποστηρίζει πιο υγιές έδαφος.",
+          ctaShop:"Δείτε τα προϊόντα", ctaLearn:"Δείτε τα οφέλη",
+          chipProtein:"Λιχουδιές πλούσιες σε πρωτεΐνη", chipCalcium:"Φυσικά πλούσιο σε ασβέστιο", chipSustainable:"Βιώσιμη παραγωγή στην Ελλάδα",
           heroCaption:"Αγαπημένο από τα ερπετά. Εμπιστοσύνη στους κηδεμόνες.",
           benefitsTitle:"Γιατί GRUBZ;",
           b1Title:"Πλήρης Διατροφή", b1Text:"Ισορροπία πρωτεΐνης, λιπών και ιχνοστοιχείων για υγιή ανάπτυξη.",
@@ -1743,10 +1776,15 @@ async function chatFetch(path, options = {}) {
           calculatorDisclaimer:"Αποτελεί αρχική καθοδήγηση. Οι ανάγκες των ζώων και οι συνθήκες του εδάφους διαφέρουν· προσαρμόστε σταδιακά και ζητήστε επαγγελματική συμβουλή όπου χρειάζεται.",
           btnAdd:"Προσθήκη στο καλάθι", btnCheckout:"Ολοκλήρωση αγοράς", btnClear:"Καθαρισμός καλαθιού",
           faqTitle:"Συχνές Ερωτήσεις",
-          q1:"Ποια ζώα τρώνε GRUBZ;", a1:"Ερπετά (π.χ. beardies, geckos), πουλιά και τα περισσότερα ψάρια.",
+          q1:"Ποια ζώα τρώνε GRUBZ;", a1:"Πουλιά (κότες, ωδικά πτηνά), τα περισσότερα ψάρια ενυδρείου και λίμνης και ερπετά (γενειοφόροι δράκοι, γκέκο).",
           q2:"Χρειάζεται πρόσθετο ασβέστιο;", a2:"Οι προνύμφες BSF είναι πλούσιες σε ασβέστιο. Πολλοί κάνουν περιστασιακό dusting.",
           q3:"Πώς αποθηκεύονται;", a3:"Κλειστά, δροσερό και ξηρό μέρος. Το ψυγείο βοηθά.",
           q4:"Παράγονται στην Ελλάδα;", a4:"Ναι — τοπική παραγωγή με ιχνηλασιμότητα.",
+          q5:"Είναι ασφαλείς οι προνύμφες Black Soldier Fly για τις κότες;", a5:"Ναι. Χρησιμοποιήστε τις αποξηραμένες προνύμφες BSF ως συμπλήρωμα ή λιχουδιά, εισαγάγετέ τις σταδιακά και διατηρήστε την πλήρη τροφή πουλερικών και το φρέσκο νερό ως βάση της διατροφής.",
+          q6:"Πόσες αποξηραμένες προνύμφες BSF μπορεί να φάει μια κότα;", a6:"Ένας πρακτικός οδηγός για μια ενήλικη κότα είναι 10–20 g την ημέρα. Προσαρμόστε την ποσότητα ανάλογα με το μέγεθος, την ηλικία, τη δραστηριότητα και την υπόλοιπη διατροφή.",
+          q7:"Μπορούν οι προνύμφες Black Soldier Fly να αντικαταστήσουν την πλήρη τροφή;", a7:"Όχι. Οι αποξηραμένες προνύμφες BSF είναι συμπλήρωμα πλούσιο σε πρωτεΐνη και ασβέστιο, όχι διατροφικά πλήρης τροφή πουλερικών.",
+          q8:"Μπορούν πάπιες, ορτύκια και άλλα πουλερικά να φάνε προνύμφες BSF;", a8:"Μπορούν να προσφερθούν ως συμπληρωματική λιχουδιά εντόμων σε πολλά εντομοφάγα πουλερικά και πτηνά. Δώστε μικρότερες μερίδες στα μικρότερα πτηνά και εισαγάγετε σταδιακά.",
+          q9:"Γιατί μπορεί η παράδοση να χρειαστεί λίγο περισσότερο χρόνο;", a9:"Δεν διατηρούμε προϊόντα σε απόθεμα. Προετοιμάζουμε κάθε παραγγελία ώστε τα αγαπημένα σας ζωάκια να λαμβάνουν το πιο φρέσκο δυνατό προϊόν. Ο χρόνος παράδοσης περιλαμβάνει επομένως τόσο την προετοιμασία όσο και τη μεταφορά από την εταιρεία ταχυμεταφορών.",
           footTag:"GRUBZ - Συμπλήρωμα υψηλής πρωτεΐνης για πουλερικά, ερπετά, πτηνά και ψάρια",
           footLinks:"Σύνδεσμοι", footContact:"Επικοινωνία", footMade:"Φτιαγμένο με ❤️ στην Ελλάδα",
           contactEyebrow:"Επικοινωνία με το GRUBZ",
@@ -2001,6 +2039,7 @@ async function chatFetch(path, options = {}) {
           const key = el.getAttribute("data-i18n");
           if (dict[key]) el.textContent = dict[key];
         });
+        updateFaqStructuredData();
         ["couponCode", "reviewCouponCode"].forEach(id => {
           const input = document.getElementById(id);
           if (input) input.placeholder = dict.couponPlaceholder || "Coupon code";
@@ -2025,6 +2064,25 @@ async function chatFetch(path, options = {}) {
         if (typeof renderAuthButton === "function") renderAuthButton();
       }
 
+      function updateFaqStructuredData(){
+        const mainEntity = Array.from($$('[data-faq-item]')).map(item => ({
+          '@type':'Question',
+          name:item.querySelector('summary')?.textContent.trim() || '',
+          acceptedAnswer:{
+            '@type':'Answer',
+            text:item.querySelector('p')?.textContent.trim() || ''
+          }
+        })).filter(item => item.name && item.acceptedAnswer.text);
+        let script = document.getElementById('faqStructuredData');
+        if (!script) {
+          script = document.createElement('script');
+          script.id = 'faqStructuredData';
+          script.type = 'application/ld+json';
+          document.head.appendChild(script);
+        }
+        script.textContent = JSON.stringify({ '@context':'https://schema.org', '@type':'FAQPage', mainEntity });
+      }
+
       function setLangButtons(l) {
         const en = document.getElementById('lang-en');
         const el = document.getElementById('lang-el');
@@ -2036,6 +2094,42 @@ async function chatFetch(path, options = {}) {
       document.getElementById('lang-en').addEventListener('click', () => switchLanguageRoute('en'));
       document.getElementById('lang-el').addEventListener('click', () => switchLanguageRoute('el'));
       document.getElementById("year").textContent = new Date().getFullYear();
+
+      (function initMobileMenu(){
+        const toggle = document.getElementById("mobileMenuToggle");
+        const menu = document.getElementById("mobileMenu");
+        const openIcon = toggle?.querySelector("[data-mobile-menu-open-icon]");
+        const closeIcon = toggle?.querySelector("[data-mobile-menu-close-icon]");
+        if (!toggle || !menu || !openIcon || !closeIcon) return;
+
+        const setOpen = (open, { returnFocus = false } = {}) => {
+          const dict = i18n[lang()] || i18n.en;
+          menu.classList.toggle("hidden", !open);
+          openIcon.classList.toggle("hidden", open);
+          closeIcon.classList.toggle("hidden", !open);
+          toggle.setAttribute("aria-expanded", String(open));
+          toggle.setAttribute("aria-label", open ? dict.mobileMenuClose : dict.mobileMenuOpen);
+          if (returnFocus) toggle.focus();
+        };
+
+        setOpen(false);
+        toggle.addEventListener("click", () => {
+          setOpen(toggle.getAttribute("aria-expanded") !== "true");
+        });
+        menu.querySelectorAll("a").forEach(link => link.addEventListener("click", () => setOpen(false)));
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
+            setOpen(false, { returnFocus: true });
+          }
+        });
+        document.addEventListener("click", event => {
+          if (toggle.getAttribute("aria-expanded") !== "true") return;
+          if (!menu.contains(event.target) && !toggle.contains(event.target)) setOpen(false);
+        });
+        window.addEventListener("resize", () => {
+          if (window.innerWidth >= 640 && toggle.getAttribute("aria-expanded") === "true") setOpen(false);
+        });
+      })();
 
       /* ---------- Cart ---------- */
       const cart = new Map();
@@ -2051,6 +2145,7 @@ async function chatFetch(path, options = {}) {
           b.disabled = !enabled;
           b.setAttribute("aria-disabled", String(!enabled));
         });
+        document.getElementById("storefrontCartActions")?.classList.toggle("hidden", !enabled);
       }
       function updateCartInfo(){
         const totalItems = cartItemCount();
@@ -5117,7 +5212,7 @@ async function chatFetch(path, options = {}) {
           if (anyModalOpen) return;
           openDialog("firstOrderOfferModal", "firstOrderOfferPanel");
           trackEvent("first_order_offer_popup_view", {});
-        }, 1400);
+        }, 45000);
       }
 
       document.getElementById("firstOrderOfferForm")?.addEventListener("submit", async event => {

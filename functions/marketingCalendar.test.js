@@ -31,8 +31,16 @@ test("sanitizes editable marketing fields", () => {
   const event = sanitizeMarketingEvent({
     title: " World Egg Day ", recurrence: "annual_fixed", monthDay: "10-09",
     categories: ["chicken", "invalid"], audiences: ["chickens"], reminderDays: [2, 10, 2],
+    imageUrl: " https://www.grubz.gr/example.jpg ",
+    publishLanguage: "en",
+    imageIterations: [{ imageUrl:"https://www.grubz.gr/one.jpg", prompt:"First version", generatedAt:"2026-10-18T12:00:00.000Z" }],
+    draft: { socialCaption:"Ελληνικά", socialCaptionEn:"English" },
   });
   assert.equal(event.title, "World Egg Day");
   assert.deepEqual(event.categories, ["chicken"]);
   assert.deepEqual(event.reminderDays, [10, 2]);
+  assert.equal(event.imageUrl, "https://www.grubz.gr/example.jpg");
+  assert.equal(event.publishLanguage, "en");
+  assert.equal(event.imageIterations[0].prompt, "First version");
+  assert.equal(event.draft.socialCaptionEn, "English");
 });

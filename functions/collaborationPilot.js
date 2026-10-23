@@ -5,6 +5,10 @@ function finiteNonNegative(value) {
   return Number.isFinite(number) ? Math.max(0, number) : 0;
 }
 
+function productSalesBeforeDiscountCents(pricing = {}) {
+  return Math.round(finiteNonNegative(pricing.subtotal));
+}
+
 function sanitizePilot(input = {}, existing = {}) {
   const merged = { ...(existing || {}), ...(input || {}) };
   const postInput = Array.isArray(merged.posts) ? merged.posts : [];
@@ -62,4 +66,4 @@ function pilotMetrics(base = {}, pilotInput = {}) {
   };
 }
 
-module.exports = { sanitizePilot, pilotMetrics };
+module.exports = { sanitizePilot, pilotMetrics, productSalesBeforeDiscountCents };
